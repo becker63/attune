@@ -1,3 +1,44 @@
+# Design and source ownership
+
+Attune separates what a repository question means from the work needed to answer
+it. That makes results easier to check and unchanged work easier to reuse.
+
+## Where the decisions live
+
+| Owner | Job |
+| --- | --- |
+| Core | Identify files, symbols, repository versions, and exact query inputs. |
+| Repository | Read observations from Grit, resolve names, and accept supported connections. |
+| Theory | Run small, bounded questions over those connections with Flix Datalog. |
+| Study | Keep predictions, evaluation labels, measurements, and failures separate. |
+| View / ASCII | Explain answers, source witnesses, and recorded work. |
+| Build and runtime support | Launch processes, exchange data, declare dependencies, and enforce isolation. |
+
+Flix owns the meaning of the calculations. Java and build rules handle outside
+work. Bazel records dependencies; BuildBuddy can execute or reuse actions. A
+cached answer is valid only for the inputs and recipe that produced it.
+
+## Boundaries worth keeping
+
+- A complete empty answer differs from missing information or failed execution.
+- Predictions do not read the reference answer used to score them.
+- Saved evidence, authored test cases, and new execution are labelled separately.
+- Compiler/type checks, semantic tests, renderer goldens, and README checks test
+  different properties; none replaces the others.
+- Keep the cognitive-budget review: count authored decision-making separately
+  from mechanical support, fixtures, and inherited code. Moving code does not
+  make its complexity disappear.
+
+See the root [README](../../README.md) for the explanation and commands, and
+[AGENTS.md](../AGENTS.md) for maintenance constraints.
+
+<details>
+<summary>Detailed source map, dependency provenance, licenses, budgets, and implementation history</summary>
+
+The retained record below contains the exact pins, adaptation notes, and dated
+engineering decisions. Its bootstrap plans and measurements describe their
+recorded stages; they are not new acquisition instructions.
+
 # Attune v2 bootstrap design and source map
 
 One concise index: what the bootstrap is made of, which source is declared, and
@@ -3315,3 +3356,5 @@ note that the cognitive class exceeds the around-2500 STOP-AND-JUSTIFY threshold
 is pre-existing and unchanged by this leaf: this leaf adds no new semantic
 algorithm, only one declared corpus boundary and the frozen policy values the
 next feature consumes.
+
+</details>

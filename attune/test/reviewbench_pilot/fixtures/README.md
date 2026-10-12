@@ -1,3 +1,34 @@
+# Saved ReviewBench inputs
+
+These files let the tests reduce completed review runs without asking a model
+again. They are copies or clearly versioned corrections of retained artifacts.
+The raw records stay unchanged.
+
+## Three groups
+
+| Group | What it contains |
+| --- | --- |
+| Pilot | Twenty review slots across ten tasks; final answers, saved checkpoints, usage, tool results, and independent judgments. |
+| Later check | Forty-eight review slots across 24 reserved tasks; frozen task selection, dispatch order, predictions, and invocation records. |
+| Judging | Fifty-nine candidates from the later check, with independent judgments and source-based follow-up where references were missing. |
+
+Final answers and saved checkpoints are separate. A saved finding is not renamed
+as a final delivery. Source delivered through a completed read is counted as
+UTF-8 bytes; file-list metadata delivers no source text. Corrected files keep
+separate names from the original usage/invocation records.
+
+The pilot reference population has 130 positives, including 62 medium-or-high.
+The later check's reference population is produced without model calls from the
+24 pinned golden inputs in `MODULE.bazel`. Its current recall denominator is
+224 positives, across all 24 tasks.
+
+The [public evidence guide](../../../../evidence/README.md) explains the current
+results and table formats. The detailed file provenance remains below for anyone
+checking how a receipt became a summary row.
+
+<details>
+<summary>Exact fixture names, retained sources, and correction history</summary>
+
 # Frozen pilot run-half fixtures
 
 These are ordinary repo fixtures: the provider-free pilot run-half stages read
@@ -67,3 +98,5 @@ reduction is `//test/reviewbench_pilot:reviewbench_holdout_judged`.
 The generation scripts live in the mission library under
 `library/dsh-gate-evidence/pilot-judge/` (`build-fixtures.mjs`,
 `project-tool-outcomes.mjs`, `project-invocations.mjs`, `run-judge.mjs`).
+
+</details>

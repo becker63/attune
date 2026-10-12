@@ -1,3 +1,16 @@
+# Original study plan
+
+This is a historical plan, kept to explain why the workspace and experiments
+were built. Read the root [README](../../README.md) and
+[study summary](../../LOCALIZATION_REPORT.md) for results.
+
+The plan connected three questions: finding files, dividing agent work, and
+reusing expensive computation. Some experiments completed; others did not.
+Its dated permissions do not authorize new model calls during maintenance.
+
+<details>
+<summary>The original implementation and experiment plan</summary>
+
 # Compact Attune: world-shared Bazel DAG and two SWE-rebench studies
 
 ## Plan overview
@@ -101,3 +114,4 @@ The owner-approved cognitive ownership policy is canonical in `library/cognitive
 The old size pause is RESOLVED. Queue the current component/dependency/classification table before substantial new Theory, continue approved subtraction without deleting correct boundaries, and retire the obsolete 4300 compatibility gate in the first accounting feature (not by raising it). Finish concise cleanup/final accounting after real architecture; no new baseline/size-feasibility phase, audit-seal framework or proof requirements. No further numeric owner confirmation is needed; escalate genuinely unresolved trade-offs only.
 
 Final handoff includes tested checkpoint/source identity; actual tree; per-owner/core/presentation/test/support counts; retained/removed components; exact local/remote/study check results and known failures; catalog checksum/schema/subset/split/task/pair attrition denominators; localization Hit@1/5/10, file Recall@1/5/10, MRR@10 with repository-macro/task-micro coverage-aware summaries; pair strata/outcome coverage/TP-FP-TN-FN and abstentions/undefined ratios/task reuse; E0/L/E1/E2 availability and E3 limitations; method freeze and exposure flags; action counts, measured cache/critical-path/stage timing/shard granularity/cold-warm behavior; separately identified Flix memo, action cache, remote dedup and CAS reuse; real/fixture/historical execution distinctions; exact image/platform identities and runtime errors; generated external ASCII; cleanup destinations and bounded gaps. New application-provider spend must be zero. No broad performance, independence, real-agent speedup or improvement claim is required.
+</details>

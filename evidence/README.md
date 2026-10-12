@@ -4,7 +4,7 @@ These are **frozen outputs of completed work**, not a promise of future results.
 Tables copy existing native Flix output bytes. Publication added no model calls
 or measurements.
 [Concise study report](../LOCALIZATION_REPORT.md) ·
-[Unchanged chronological archive](../reports/localization-history.md) ·
+[Unchanged chronological archive](https://github.com/becker63/attune/blob/e9731b823ff2ea706b1330ea48dc70f2befef311/LOCALIZATION_REPORT.md) ·
 [Interactive figures](https://atlas-live-five.vercel.app/#overview)
 
 [Results](#start-with-the-measurements) · [Localization tables](#localization-files-and-metrics) ·
@@ -29,6 +29,12 @@ remains the source, not these current-release tables.
 The five-wait distributions and their 707 observations remain on the
 [website](https://atlas-live-five.vercel.app/#overview), with the SVG figure embedded
 in the [README](../README.md#five-kinds-of-wait). They are not copied here.
+
+The retained [cost comparison](https://atlas-live-five.vercel.app/costs.json)
+shows 78.2× between the prepared Jev-request and inspected-Sol-turn medians;
+The estimated API-price comparison is about 195× for judgment, or 28× after
+first-time embedding requests. The jobs include different work; Sol's actual
+subscription cost is unknown. The report shows the quality tradeoff and assumptions.
 
 ## Localization files and metrics
 
