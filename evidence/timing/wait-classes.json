@@ -1,0 +1,3656 @@
+{
+  "classes": [
+    {
+      "id": "embeddings",
+      "name": "Obtain embeddings",
+      "tool": "Qwen \u00b7 hosted request",
+      "unit": "One request, up to 32 inputs",
+      "boundary": "Synchronous SDK request: provider work, network and provider waiting together. Local preparation and file writing are outside this timer.",
+      "opportunity": "Keep vectors for unchanged inputs. A new issue needs its own vector, not new vectors for every source file.",
+      "observations": [
+        {
+          "id": "request 33",
+          "seconds": 0.834,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 52",
+          "seconds": 1.006,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 240",
+          "seconds": 1.05,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 241",
+          "seconds": 1.081,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 34",
+          "seconds": 1.082,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 32",
+          "seconds": 1.09,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 23",
+          "seconds": 1.096,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 260",
+          "seconds": 1.096,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 117",
+          "seconds": 1.102,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 252",
+          "seconds": 1.112,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 7",
+          "seconds": 1.125,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 54",
+          "seconds": 1.135,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 25",
+          "seconds": 1.151,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 291",
+          "seconds": 1.178,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 263",
+          "seconds": 1.186,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 316",
+          "seconds": 1.241,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 261",
+          "seconds": 1.245,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 226",
+          "seconds": 1.252,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 209",
+          "seconds": 1.263,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 345",
+          "seconds": 1.267,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 286",
+          "seconds": 1.268,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 86",
+          "seconds": 1.275,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 287",
+          "seconds": 1.277,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 146",
+          "seconds": 1.309,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 245",
+          "seconds": 1.31,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 45",
+          "seconds": 1.332,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 72",
+          "seconds": 1.35,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 57",
+          "seconds": 1.357,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 147",
+          "seconds": 1.358,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 193",
+          "seconds": 1.375,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 29",
+          "seconds": 1.375,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 149",
+          "seconds": 1.383,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 192",
+          "seconds": 1.402,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 30",
+          "seconds": 1.411,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 73",
+          "seconds": 1.419,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 230",
+          "seconds": 1.429,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 67",
+          "seconds": 1.432,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 228",
+          "seconds": 1.443,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 65",
+          "seconds": 1.45,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 206",
+          "seconds": 1.46,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 221",
+          "seconds": 1.466,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 142",
+          "seconds": 1.467,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 338",
+          "seconds": 1.467,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 166",
+          "seconds": 1.477,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 253",
+          "seconds": 1.477,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 150",
+          "seconds": 1.488,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 148",
+          "seconds": 1.489,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 295",
+          "seconds": 1.496,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 222",
+          "seconds": 1.503,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 285",
+          "seconds": 1.509,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 216",
+          "seconds": 1.515,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 315",
+          "seconds": 1.521,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 294",
+          "seconds": 1.525,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 325",
+          "seconds": 1.525,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 27",
+          "seconds": 1.552,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 346",
+          "seconds": 1.554,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 254",
+          "seconds": 1.571,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 270",
+          "seconds": 1.575,
+          "detail": "19 embedding inputs"
+        },
+        {
+          "id": "request 20",
+          "seconds": 1.582,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 266",
+          "seconds": 1.585,
+          "detail": "10 embedding inputs"
+        },
+        {
+          "id": "request 233",
+          "seconds": 1.594,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 19",
+          "seconds": 1.601,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 256",
+          "seconds": 1.609,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 225",
+          "seconds": 1.611,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 300",
+          "seconds": 1.627,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 47",
+          "seconds": 1.645,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 21",
+          "seconds": 1.655,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 268",
+          "seconds": 1.676,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 264",
+          "seconds": 1.677,
+          "detail": "14 embedding inputs"
+        },
+        {
+          "id": "request 141",
+          "seconds": 1.678,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 145",
+          "seconds": 1.685,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 304",
+          "seconds": 1.694,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 80",
+          "seconds": 1.694,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 234",
+          "seconds": 1.702,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 312",
+          "seconds": 1.707,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 178",
+          "seconds": 1.717,
+          "detail": "16 embedding inputs"
+        },
+        {
+          "id": "request 83",
+          "seconds": 1.718,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 290",
+          "seconds": 1.735,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 131",
+          "seconds": 1.738,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 61",
+          "seconds": 1.738,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 17",
+          "seconds": 1.743,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 297",
+          "seconds": 1.744,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 310",
+          "seconds": 1.744,
+          "detail": "12 embedding inputs"
+        },
+        {
+          "id": "request 329",
+          "seconds": 1.747,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 134",
+          "seconds": 1.769,
+          "detail": "14 embedding inputs"
+        },
+        {
+          "id": "request 69",
+          "seconds": 1.771,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 13",
+          "seconds": 1.792,
+          "detail": "19 embedding inputs"
+        },
+        {
+          "id": "request 50",
+          "seconds": 1.797,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 26",
+          "seconds": 1.798,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 275",
+          "seconds": 1.798,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 205",
+          "seconds": 1.809,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 77",
+          "seconds": 1.809,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 299",
+          "seconds": 1.815,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 85",
+          "seconds": 1.815,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 46",
+          "seconds": 1.845,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 342",
+          "seconds": 1.847,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 173",
+          "seconds": 1.848,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 324",
+          "seconds": 1.856,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 41",
+          "seconds": 1.859,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 350",
+          "seconds": 1.872,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 262",
+          "seconds": 1.874,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 281",
+          "seconds": 1.877,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 218",
+          "seconds": 1.879,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 332",
+          "seconds": 1.891,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 84",
+          "seconds": 1.894,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 43",
+          "seconds": 1.901,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 31",
+          "seconds": 1.904,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 334",
+          "seconds": 1.914,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 220",
+          "seconds": 1.915,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 289",
+          "seconds": 1.927,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 344",
+          "seconds": 1.927,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 49",
+          "seconds": 1.927,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 201",
+          "seconds": 1.931,
+          "detail": "25 embedding inputs"
+        },
+        {
+          "id": "request 308",
+          "seconds": 1.938,
+          "detail": "24 embedding inputs"
+        },
+        {
+          "id": "request 303",
+          "seconds": 1.947,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 298",
+          "seconds": 1.951,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 311",
+          "seconds": 1.956,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 313",
+          "seconds": 1.958,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 16",
+          "seconds": 1.959,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 132",
+          "seconds": 1.965,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 82",
+          "seconds": 1.966,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 39",
+          "seconds": 1.968,
+          "detail": "27 embedding inputs"
+        },
+        {
+          "id": "request 258",
+          "seconds": 1.973,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 272",
+          "seconds": 1.973,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 309",
+          "seconds": 1.978,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 15",
+          "seconds": 1.987,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 288",
+          "seconds": 1.991,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 273",
+          "seconds": 1.993,
+          "detail": "21 embedding inputs"
+        },
+        {
+          "id": "request 280",
+          "seconds": 1.994,
+          "detail": "21 embedding inputs"
+        },
+        {
+          "id": "request 255",
+          "seconds": 1.997,
+          "detail": "31 embedding inputs"
+        },
+        {
+          "id": "request 42",
+          "seconds": 2.006,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 44",
+          "seconds": 2.007,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 163",
+          "seconds": 2.013,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 137",
+          "seconds": 2.014,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 181",
+          "seconds": 2.026,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 40",
+          "seconds": 2.026,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 129",
+          "seconds": 2.028,
+          "detail": "24 embedding inputs"
+        },
+        {
+          "id": "request 184",
+          "seconds": 2.032,
+          "detail": "11 embedding inputs"
+        },
+        {
+          "id": "request 12",
+          "seconds": 2.056,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 167",
+          "seconds": 2.071,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 284",
+          "seconds": 2.077,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 78",
+          "seconds": 2.08,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 176",
+          "seconds": 2.087,
+          "detail": "19 embedding inputs"
+        },
+        {
+          "id": "request 183",
+          "seconds": 2.088,
+          "detail": "17 embedding inputs"
+        },
+        {
+          "id": "request 343",
+          "seconds": 2.097,
+          "detail": "20 embedding inputs"
+        },
+        {
+          "id": "request 239",
+          "seconds": 2.107,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 172",
+          "seconds": 2.126,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 28",
+          "seconds": 2.133,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 348",
+          "seconds": 2.133,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 306",
+          "seconds": 2.137,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 130",
+          "seconds": 2.139,
+          "detail": "31 embedding inputs"
+        },
+        {
+          "id": "request 229",
+          "seconds": 2.141,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 152",
+          "seconds": 2.175,
+          "detail": "27 embedding inputs"
+        },
+        {
+          "id": "request 322",
+          "seconds": 2.203,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 203",
+          "seconds": 2.245,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 208",
+          "seconds": 2.245,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 212",
+          "seconds": 2.249,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 278",
+          "seconds": 2.251,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 244",
+          "seconds": 2.254,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 139",
+          "seconds": 2.259,
+          "detail": "23 embedding inputs"
+        },
+        {
+          "id": "request 269",
+          "seconds": 2.26,
+          "detail": "31 embedding inputs"
+        },
+        {
+          "id": "request 323",
+          "seconds": 2.261,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 276",
+          "seconds": 2.265,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 238",
+          "seconds": 2.294,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 191",
+          "seconds": 2.3,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 6",
+          "seconds": 2.303,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 9",
+          "seconds": 2.317,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 307",
+          "seconds": 2.322,
+          "detail": "21 embedding inputs"
+        },
+        {
+          "id": "request 259",
+          "seconds": 2.348,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 71",
+          "seconds": 2.36,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 224",
+          "seconds": 2.384,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 267",
+          "seconds": 2.385,
+          "detail": "18 embedding inputs"
+        },
+        {
+          "id": "request 177",
+          "seconds": 2.387,
+          "detail": "20 embedding inputs"
+        },
+        {
+          "id": "request 305",
+          "seconds": 2.397,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 213",
+          "seconds": 2.425,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 168",
+          "seconds": 2.427,
+          "detail": "27 embedding inputs"
+        },
+        {
+          "id": "request 5",
+          "seconds": 2.445,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 347",
+          "seconds": 2.464,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 242",
+          "seconds": 2.479,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 66",
+          "seconds": 2.487,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 283",
+          "seconds": 2.488,
+          "detail": "20 embedding inputs"
+        },
+        {
+          "id": "request 327",
+          "seconds": 2.507,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 211",
+          "seconds": 2.527,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 113",
+          "seconds": 2.539,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 341",
+          "seconds": 2.542,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 326",
+          "seconds": 2.574,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 180",
+          "seconds": 2.576,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 64",
+          "seconds": 2.58,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 133",
+          "seconds": 2.582,
+          "detail": "17 embedding inputs"
+        },
+        {
+          "id": "request 157",
+          "seconds": 2.582,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 236",
+          "seconds": 2.591,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 51",
+          "seconds": 2.602,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 153",
+          "seconds": 2.613,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 301",
+          "seconds": 2.617,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 144",
+          "seconds": 2.63,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 317",
+          "seconds": 2.648,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 274",
+          "seconds": 2.677,
+          "detail": "17 embedding inputs"
+        },
+        {
+          "id": "request 87",
+          "seconds": 2.686,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 164",
+          "seconds": 2.721,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 318",
+          "seconds": 2.739,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 271",
+          "seconds": 2.754,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 162",
+          "seconds": 2.755,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 349",
+          "seconds": 2.758,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 63",
+          "seconds": 2.81,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 282",
+          "seconds": 2.814,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 227",
+          "seconds": 2.815,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 210",
+          "seconds": 2.835,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 204",
+          "seconds": 2.86,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 265",
+          "seconds": 2.902,
+          "detail": "20 embedding inputs"
+        },
+        {
+          "id": "request 215",
+          "seconds": 2.905,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 161",
+          "seconds": 2.95,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 243",
+          "seconds": 2.984,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 59",
+          "seconds": 2.99,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 217",
+          "seconds": 2.993,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 250",
+          "seconds": 3.019,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 321",
+          "seconds": 3.051,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 249",
+          "seconds": 3.069,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 279",
+          "seconds": 3.085,
+          "detail": "19 embedding inputs"
+        },
+        {
+          "id": "request 8",
+          "seconds": 3.132,
+          "detail": "17 embedding inputs"
+        },
+        {
+          "id": "request 116",
+          "seconds": 3.203,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 214",
+          "seconds": 3.215,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 2",
+          "seconds": 3.218,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 196",
+          "seconds": 3.266,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 331",
+          "seconds": 3.271,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 4",
+          "seconds": 3.306,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 319",
+          "seconds": 3.325,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 207",
+          "seconds": 3.412,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 188",
+          "seconds": 3.462,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 55",
+          "seconds": 3.466,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 98",
+          "seconds": 3.518,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 202",
+          "seconds": 3.53,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 330",
+          "seconds": 3.55,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 237",
+          "seconds": 3.569,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 170",
+          "seconds": 3.589,
+          "detail": "21 embedding inputs"
+        },
+        {
+          "id": "request 110",
+          "seconds": 3.591,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 151",
+          "seconds": 3.636,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 186",
+          "seconds": 3.653,
+          "detail": "30 embedding inputs"
+        },
+        {
+          "id": "request 22",
+          "seconds": 3.686,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 335",
+          "seconds": 3.69,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 195",
+          "seconds": 3.701,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 336",
+          "seconds": 3.705,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 198",
+          "seconds": 3.755,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 165",
+          "seconds": 3.761,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 200",
+          "seconds": 3.772,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 3",
+          "seconds": 3.782,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 156",
+          "seconds": 3.794,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 187",
+          "seconds": 3.795,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 219",
+          "seconds": 3.866,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 199",
+          "seconds": 3.875,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 1",
+          "seconds": 3.89,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 75",
+          "seconds": 3.944,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 76",
+          "seconds": 3.959,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 235",
+          "seconds": 3.964,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 296",
+          "seconds": 3.964,
+          "detail": "28 embedding inputs"
+        },
+        {
+          "id": "request 231",
+          "seconds": 3.982,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 197",
+          "seconds": 4.026,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 70",
+          "seconds": 4.12,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 302",
+          "seconds": 4.143,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 140",
+          "seconds": 4.184,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 251",
+          "seconds": 4.2,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 171",
+          "seconds": 4.28,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 81",
+          "seconds": 4.34,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 155",
+          "seconds": 4.381,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 160",
+          "seconds": 4.438,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 333",
+          "seconds": 4.563,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 125",
+          "seconds": 4.612,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 159",
+          "seconds": 4.646,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 112",
+          "seconds": 4.758,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 223",
+          "seconds": 4.895,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 328",
+          "seconds": 4.896,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 340",
+          "seconds": 4.912,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 126",
+          "seconds": 5.079,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 190",
+          "seconds": 5.126,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 24",
+          "seconds": 5.157,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 174",
+          "seconds": 5.227,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 94",
+          "seconds": 5.254,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 114",
+          "seconds": 5.265,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 248",
+          "seconds": 5.306,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 232",
+          "seconds": 5.327,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 135",
+          "seconds": 5.4,
+          "detail": "14 embedding inputs"
+        },
+        {
+          "id": "request 143",
+          "seconds": 5.439,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 109",
+          "seconds": 5.495,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 88",
+          "seconds": 5.512,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 182",
+          "seconds": 5.572,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 58",
+          "seconds": 5.573,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 136",
+          "seconds": 5.69,
+          "detail": "20 embedding inputs"
+        },
+        {
+          "id": "request 104",
+          "seconds": 5.73,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 99",
+          "seconds": 5.84,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 96",
+          "seconds": 5.899,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 138",
+          "seconds": 5.927,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 119",
+          "seconds": 6.098,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 56",
+          "seconds": 6.186,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 154",
+          "seconds": 6.264,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 101",
+          "seconds": 6.27,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 35",
+          "seconds": 6.347,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 185",
+          "seconds": 6.366,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 36",
+          "seconds": 6.456,
+          "detail": "29 embedding inputs"
+        },
+        {
+          "id": "request 38",
+          "seconds": 6.612,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 10",
+          "seconds": 6.665,
+          "detail": "10 embedding inputs"
+        },
+        {
+          "id": "request 60",
+          "seconds": 6.711,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 277",
+          "seconds": 6.756,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 100",
+          "seconds": 6.862,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 320",
+          "seconds": 7.12,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 246",
+          "seconds": 7.336,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 14",
+          "seconds": 7.361,
+          "detail": "10 embedding inputs"
+        },
+        {
+          "id": "request 337",
+          "seconds": 7.406,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 68",
+          "seconds": 7.545,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 189",
+          "seconds": 7.677,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 92",
+          "seconds": 7.733,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 79",
+          "seconds": 7.836,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 122",
+          "seconds": 8.028,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 292",
+          "seconds": 8.089,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 74",
+          "seconds": 8.126,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 351",
+          "seconds": 8.19,
+          "detail": "24 embedding inputs"
+        },
+        {
+          "id": "request 175",
+          "seconds": 8.21,
+          "detail": "18 embedding inputs"
+        },
+        {
+          "id": "request 103",
+          "seconds": 8.268,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 102",
+          "seconds": 8.54,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 90",
+          "seconds": 8.543,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 105",
+          "seconds": 9.175,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 37",
+          "seconds": 9.27,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 124",
+          "seconds": 9.326,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 120",
+          "seconds": 9.461,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 194",
+          "seconds": 9.72,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 314",
+          "seconds": 10.449,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 62",
+          "seconds": 10.576,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 247",
+          "seconds": 10.989,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 179",
+          "seconds": 11.183,
+          "detail": "15 embedding inputs"
+        },
+        {
+          "id": "request 169",
+          "seconds": 12.506,
+          "detail": "22 embedding inputs"
+        },
+        {
+          "id": "request 111",
+          "seconds": 12.586,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 91",
+          "seconds": 12.702,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 115",
+          "seconds": 12.927,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 121",
+          "seconds": 14.244,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 257",
+          "seconds": 14.803,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 11",
+          "seconds": 15.743,
+          "detail": "14 embedding inputs"
+        },
+        {
+          "id": "request 127",
+          "seconds": 15.789,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 123",
+          "seconds": 15.813,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 128",
+          "seconds": 15.975,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 53",
+          "seconds": 16.191,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 107",
+          "seconds": 17.678,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 339",
+          "seconds": 17.717,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 108",
+          "seconds": 17.772,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 293",
+          "seconds": 18.07,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 93",
+          "seconds": 19.415,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 158",
+          "seconds": 22.505,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 95",
+          "seconds": 22.875,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 97",
+          "seconds": 23.503,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 18",
+          "seconds": 26.963,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 118",
+          "seconds": 27.969,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 106",
+          "seconds": 40.85,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 48",
+          "seconds": 63.16,
+          "detail": "32 embedding inputs"
+        },
+        {
+          "id": "request 89",
+          "seconds": 77.513,
+          "detail": "32 embedding inputs"
+        }
+      ],
+      "stats": {
+        "n": 351,
+        "min": 0.834,
+        "max": 77.513,
+        "q1": 1.7974999999999999,
+        "median": 2.427,
+        "q3": 4.4094999999999995,
+        "mean": 4.505407407407407,
+        "low": 0.834,
+        "high": 8.268,
+        "outliers": 35
+      }
+    },
+    {
+      "id": "extraction",
+      "name": "Read source into facts",
+      "tool": "Grit + Java + Flix \u00b7 remote process",
+      "unit": "One source-world extraction",
+      "boundary": "Whole remote extraction process. Native matching, JVM work and Flix processing are not individually timed here. Two extraction envelopes lack a process interval.",
+      "opportunity": "Reuse unchanged file acquisitions. Independent ready worlds may run concurrently; unusually slow files still determine some finishes.",
+      "observations": [
+        {
+          "id": "w69",
+          "seconds": 17.248000000000047,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w71",
+          "seconds": 17.478999999999928,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w70",
+          "seconds": 17.55499999999938,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w24",
+          "seconds": 19.98600000000033,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w26",
+          "seconds": 21.28800000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w92",
+          "seconds": 22.01800000000003,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w25",
+          "seconds": 22.403000000000247,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w63",
+          "seconds": 23.088999999999942,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w23",
+          "seconds": 28.846000000000004,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w17",
+          "seconds": 33.289999999999964,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w19",
+          "seconds": 33.848999999999705,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w18",
+          "seconds": 35.228999999999814,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w16",
+          "seconds": 36.91600000000017,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w52",
+          "seconds": 43.833,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w36",
+          "seconds": 47.13599999999997,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w37",
+          "seconds": 49.64300000000003,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w58",
+          "seconds": 50.577999999999975,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w53",
+          "seconds": 51.29600000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w60",
+          "seconds": 53.16300000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w59",
+          "seconds": 56.678,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w33",
+          "seconds": 60.451999999999316,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w12",
+          "seconds": 62.228999999999814,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w13",
+          "seconds": 62.53099999999995,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w32",
+          "seconds": 62.67700000000059,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w15",
+          "seconds": 63.41000000000031,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w14",
+          "seconds": 63.983000000000175,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w90",
+          "seconds": 64.60500000000047,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w89",
+          "seconds": 66.40200000000004,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w91",
+          "seconds": 66.8690000000006,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w73",
+          "seconds": 66.9380000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w74",
+          "seconds": 68.86899999999969,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w75",
+          "seconds": 69.202,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w64",
+          "seconds": 75.918,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w61",
+          "seconds": 77.0659999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w62",
+          "seconds": 77.0949999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w66",
+          "seconds": 81.42700000000002,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w67",
+          "seconds": 85.6869999999999,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w76",
+          "seconds": 85.70699999999988,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w65",
+          "seconds": 85.80699999999979,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w72",
+          "seconds": 86.02400000000034,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w68",
+          "seconds": 86.03099999999995,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w40",
+          "seconds": 90.13999999999987,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w38",
+          "seconds": 93.0,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w46",
+          "seconds": 93.09899999999993,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w47",
+          "seconds": 93.427,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w39",
+          "seconds": 94.12199999999984,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w54",
+          "seconds": 98.40099999999984,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w48",
+          "seconds": 98.87600000000003,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w56",
+          "seconds": 100.04600000000028,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w55",
+          "seconds": 100.119,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w57",
+          "seconds": 101.21799999999985,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w49",
+          "seconds": 101.23700000000002,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w43",
+          "seconds": 105.57099999999991,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w44",
+          "seconds": 106.50100000000009,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w45",
+          "seconds": 106.65600000000006,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w42",
+          "seconds": 110.31600000000003,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w31",
+          "seconds": 110.31800000000021,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w20",
+          "seconds": 117.46299999999974,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w21",
+          "seconds": 131.49000000000024,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w22",
+          "seconds": 150.91400000000021,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w79",
+          "seconds": 156.02499999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w78",
+          "seconds": 156.42100000000028,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w77",
+          "seconds": 157.10699999999997,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w50",
+          "seconds": 161.833,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w80",
+          "seconds": 162.10600000000068,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w51",
+          "seconds": 177.25,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w81",
+          "seconds": 277.0140000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w82",
+          "seconds": 280.692,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w87",
+          "seconds": 342.5649999999996,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w85",
+          "seconds": 342.77400000000034,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w88",
+          "seconds": 343.70500000000084,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w86",
+          "seconds": 350.24299999999994,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w83",
+          "seconds": 474.1180000000004,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w1",
+          "seconds": 499.005,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w4",
+          "seconds": 502.05899999999997,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w2",
+          "seconds": 502.45799999999997,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w3",
+          "seconds": 515.317,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w28",
+          "seconds": 580.846,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w30",
+          "seconds": 598.3510000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w29",
+          "seconds": 606.6239999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w27",
+          "seconds": 658.3279999999995,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w8",
+          "seconds": 1873.6700000000003,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w11",
+          "seconds": 1916.991,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w10",
+          "seconds": 1920.6739999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w9",
+          "seconds": 1989.6629999999998,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w5",
+          "seconds": 2044.737,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w7",
+          "seconds": 2065.07,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w6",
+          "seconds": 2083.522,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w35",
+          "seconds": 2520.687000000001,
+          "detail": "world extraction process"
+        },
+        {
+          "id": "w34",
+          "seconds": 2548.7440000000006,
+          "detail": "world extraction process"
+        }
+      ],
+      "stats": {
+        "n": 90,
+        "min": 17.248000000000047,
+        "max": 2548.7440000000006,
+        "q1": 62.56750000000011,
+        "median": 93.77449999999993,
+        "q3": 279.77250000000004,
+        "mean": 344.57738888888895,
+        "low": 17.248000000000047,
+        "high": 598.3510000000001,
+        "outliers": 11
+      }
+    },
+    {
+      "id": "theory",
+      "name": "Ask structural questions",
+      "tool": "Theory \u00b7 remote process",
+      "unit": "One world\u2019s Theory preparation",
+      "boundary": "Remote Theory process, including its preparation boundary. Not an isolated join timer; remote action scheduling lies outside the process.",
+      "opportunity": "Prepare answers once for a fixed world. New issues can select from them. Changed worlds require reevaluation under the new identity.",
+      "observations": [
+        {
+          "id": "w63",
+          "seconds": 12.536000000000058,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w70",
+          "seconds": 12.785999999999149,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w69",
+          "seconds": 12.868999999999687,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w71",
+          "seconds": 12.896999999999935,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w90",
+          "seconds": 12.897999999999229,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w18",
+          "seconds": 13.157000000000153,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w91",
+          "seconds": 13.58599999999933,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w89",
+          "seconds": 13.597999999999956,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w92",
+          "seconds": 13.731000000000108,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w19",
+          "seconds": 14.126999999999953,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w72",
+          "seconds": 14.265000000000327,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w65",
+          "seconds": 14.360999999999876,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w17",
+          "seconds": 15.230000000000018,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w16",
+          "seconds": 15.278999999999996,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w52",
+          "seconds": 15.77600000000001,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w66",
+          "seconds": 15.816000000000031,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w32",
+          "seconds": 16.252000000000407,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w36",
+          "seconds": 16.34900000000016,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w67",
+          "seconds": 16.359999999999673,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w74",
+          "seconds": 16.431000000000495,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w47",
+          "seconds": 16.614000000000004,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w33",
+          "seconds": 16.66899999999987,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w58",
+          "seconds": 16.690000000000055,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w20",
+          "seconds": 16.95600000000013,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w68",
+          "seconds": 16.98400000000038,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w85",
+          "seconds": 16.99199999999928,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w87",
+          "seconds": 17.067000000000007,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w75",
+          "seconds": 17.372,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w46",
+          "seconds": 17.485000000000014,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w86",
+          "seconds": 17.700000000000045,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w48",
+          "seconds": 18.048000000000002,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w53",
+          "seconds": 18.385999999999996,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w21",
+          "seconds": 18.411000000000058,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w73",
+          "seconds": 18.530000000000655,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w59",
+          "seconds": 18.732000000000014,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w24",
+          "seconds": 18.891999999999825,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w37",
+          "seconds": 19.072999999999865,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w57",
+          "seconds": 19.11200000000008,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w56",
+          "seconds": 19.126999999999498,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w88",
+          "seconds": 19.128999999999905,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w25",
+          "seconds": 19.184999999999945,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w49",
+          "seconds": 19.610000000000014,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w55",
+          "seconds": 20.042999999999992,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w26",
+          "seconds": 20.233999999999924,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w22",
+          "seconds": 20.34999999999991,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w62",
+          "seconds": 20.872999999999593,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w76",
+          "seconds": 20.92599999999993,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w60",
+          "seconds": 20.928999999999974,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w23",
+          "seconds": 21.067000000000007,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w31",
+          "seconds": 21.21900000000005,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w64",
+          "seconds": 21.423999999999992,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w61",
+          "seconds": 21.489000000000487,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w12",
+          "seconds": 21.729000000000042,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w38",
+          "seconds": 22.494000000000142,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w54",
+          "seconds": 22.626000000000204,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w13",
+          "seconds": 23.496000000000095,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w39",
+          "seconds": 23.539999999999964,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w40",
+          "seconds": 24.003999999999905,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w15",
+          "seconds": 24.355000000000018,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w14",
+          "seconds": 24.851000000000113,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w45",
+          "seconds": 25.923000000000002,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w34",
+          "seconds": 26.35400000000118,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w43",
+          "seconds": 27.557000000000016,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w35",
+          "seconds": 29.182999999999083,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w8",
+          "seconds": 29.78899999999976,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w44",
+          "seconds": 29.966999999999985,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w9",
+          "seconds": 30.202000000000226,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w11",
+          "seconds": 30.78800000000001,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w42",
+          "seconds": 31.10699999999997,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w10",
+          "seconds": 31.480000000000018,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w6",
+          "seconds": 38.60199999999986,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w78",
+          "seconds": 39.35600000000068,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w7",
+          "seconds": 40.24800000000005,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w77",
+          "seconds": 40.73500000000013,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w5",
+          "seconds": 41.35499999999956,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w79",
+          "seconds": 42.249000000000024,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w80",
+          "seconds": 45.26100000000042,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w50",
+          "seconds": 53.139999999999986,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w51",
+          "seconds": 54.551999999999964,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w2",
+          "seconds": 55.622999999999934,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w1",
+          "seconds": 57.40000000000009,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w4",
+          "seconds": 59.28499999999997,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w3",
+          "seconds": 59.79899999999998,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w81",
+          "seconds": 63.8149999999996,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w82",
+          "seconds": 67.72400000000016,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w83",
+          "seconds": 82.86499999999978,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w28",
+          "seconds": 90.41499999999996,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w30",
+          "seconds": 97.0560000000005,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w29",
+          "seconds": 103.84200000000055,
+          "detail": "Theory preparation process"
+        },
+        {
+          "id": "w27",
+          "seconds": 110.40400000000045,
+          "detail": "Theory preparation process"
+        }
+      ],
+      "stats": {
+        "n": 90,
+        "min": 12.536000000000058,
+        "max": 110.40400000000045,
+        "q1": 16.756500000000074,
+        "median": 20.61149999999975,
+        "q3": 30.641500000000065,
+        "mean": 29.075477777777785,
+        "low": 12.536000000000058,
+        "high": 45.26100000000042,
+        "outliers": 13
+      }
+    },
+    {
+      "id": "jev",
+      "name": "Judge a prepared shortlist",
+      "tool": "Jev \u00b7 hosted request with Qwen + Atlas ready",
+      "unit": "One judgment request",
+      "boundary": "The request only: issue, candidate ranking and structural context already exist. It is not cold end-to-end localization time.",
+      "opportunity": "Give the model 32 candidates and bounded context. Keep the repository preparation; ask a new judgment for a new issue.",
+      "observations": [
+        {
+          "id": "elastic__synthetics-244",
+          "seconds": 0.29,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "pinojs__pino-121",
+          "seconds": 0.299,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "pinojs__pino-1199",
+          "seconds": 0.3,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "projectevergreen__greenwood-1085",
+          "seconds": 0.306,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "serverless__serverless-12001",
+          "seconds": 0.307,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "serverless__serverless-11277",
+          "seconds": 0.309,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sindresorhus__got-183",
+          "seconds": 0.313,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "fhir__sushi-1006",
+          "seconds": 0.322,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1533",
+          "seconds": 0.325,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1529",
+          "seconds": 0.326,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "marpple__fxts-102",
+          "seconds": 0.327,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "solid__community-server-1040",
+          "seconds": 0.328,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "fhir__sushi-1000",
+          "seconds": 0.329,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "formidablelabs__urql-1040",
+          "seconds": 0.33,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1019",
+          "seconds": 0.33,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "singapore__renovate-1006",
+          "seconds": 0.331,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "solid__community-server-1170",
+          "seconds": 0.331,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1079",
+          "seconds": 0.333,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "pinojs__pino-1127",
+          "seconds": 0.333,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "stoplightio__spectral-1020",
+          "seconds": 0.334,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sveltejs__kit-3571",
+          "seconds": 0.335,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sveltejs__kit-4140",
+          "seconds": 0.337,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-24",
+          "seconds": 0.338,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "stoplightio__spectral-1077",
+          "seconds": 0.338,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "serverless__serverless-11907",
+          "seconds": 0.34,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "stoplightio__spectral-1227",
+          "seconds": 0.341,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1055",
+          "seconds": 0.343,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1015",
+          "seconds": 0.346,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1006",
+          "seconds": 0.35,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "serverless__serverless-12030",
+          "seconds": 0.351,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "formidablelabs__urql-1117",
+          "seconds": 0.352,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "eslint__eslint-10055",
+          "seconds": 0.353,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "platers__obsidian-linter-1008",
+          "seconds": 0.353,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "firebase__firebase-tools-2271",
+          "seconds": 0.354,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "elastic__synthetics-235",
+          "seconds": 0.355,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "elastic__synthetics-251",
+          "seconds": 0.355,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "firebase__firebase-tools-2291",
+          "seconds": 0.356,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "platers__obsidian-linter-1007",
+          "seconds": 0.357,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "eslint__eslint-10109",
+          "seconds": 0.36,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1001",
+          "seconds": 0.362,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sage__carbon-5356",
+          "seconds": 0.364,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "marpple__fxts-103",
+          "seconds": 0.368,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "formidablelabs__urql-1046",
+          "seconds": 0.369,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-121",
+          "seconds": 0.369,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "singapore__renovate-1018",
+          "seconds": 0.371,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "eslint__eslint-10054",
+          "seconds": 0.372,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "solid__community-server-168",
+          "seconds": 0.379,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1107",
+          "seconds": 0.383,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "eslint__eslint-10103",
+          "seconds": 0.384,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "singapore__renovate-1005",
+          "seconds": 0.385,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "elastic__synthetics-252",
+          "seconds": 0.386,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sindresorhus__got-172",
+          "seconds": 0.387,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1000",
+          "seconds": 0.388,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sveltejs__kit-3570",
+          "seconds": 0.392,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "solid__community-server-148",
+          "seconds": 0.395,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-26",
+          "seconds": 0.397,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-1591",
+          "seconds": 0.402,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "marpple__fxts-104",
+          "seconds": 0.406,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1544",
+          "seconds": 0.41,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sage__carbon-5474",
+          "seconds": 0.412,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1232",
+          "seconds": 0.414,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "platers__obsidian-linter-1001",
+          "seconds": 0.414,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "platers__obsidian-linter-1002",
+          "seconds": 0.422,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sage__carbon-5432",
+          "seconds": 0.429,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "fhir__sushi-1016",
+          "seconds": 0.432,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sindresorhus__got-114",
+          "seconds": 0.432,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "stoplightio__spectral-1059",
+          "seconds": 0.432,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "singapore__renovate-1048",
+          "seconds": 0.436,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "projectevergreen__greenwood-1024",
+          "seconds": 0.437,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sveltejs__kit-3562",
+          "seconds": 0.438,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-107",
+          "seconds": 0.443,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "formidablelabs__urql-1077",
+          "seconds": 0.449,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1309",
+          "seconds": 0.449,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sindresorhus__got-2043",
+          "seconds": 0.451,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "fhir__sushi-1014",
+          "seconds": 0.459,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-25",
+          "seconds": 0.472,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "firebase__firebase-tools-2214",
+          "seconds": 0.48,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3317",
+          "seconds": 0.489,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1016",
+          "seconds": 0.504,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "sage__carbon-5512",
+          "seconds": 0.506,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "pinojs__pino-1137",
+          "seconds": 0.517,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "firebase__firebase-tools-2321",
+          "seconds": 0.542,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3249",
+          "seconds": 0.549,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "projectevergreen__greenwood-1100",
+          "seconds": 0.582,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "marpple__fxts-105",
+          "seconds": 0.62,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3335",
+          "seconds": 0.631,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1000",
+          "seconds": 1.088,
+          "detail": "QS judgment request"
+        },
+        {
+          "id": "projectevergreen__greenwood-1032",
+          "seconds": 1.992,
+          "detail": "QS judgment request"
+        }
+      ],
+      "stats": {
+        "n": 88,
+        "min": 0.29,
+        "max": 1.992,
+        "q1": 0.33775,
+        "median": 0.37,
+        "q3": 0.432,
+        "mean": 0.41598863636363637,
+        "low": 0.29,
+        "high": 0.549,
+        "outliers": 5
+      }
+    },
+    {
+      "id": "sol",
+      "name": "Inspect the issue with Sol",
+      "tool": "gpt-6.1-sol \u00b7 full inspection turn",
+      "unit": "One entire inspected turn",
+      "boundary": "Whole retained inspection turn, including tool interaction. Broader boundary than a Jev request; not a model-kernel latency comparison.",
+      "opportunity": "This arm leaves repository inspection inside the model-led turn. The comparison does not isolate which individual decomposition causes the difference.",
+      "observations": [
+        {
+          "id": "sindresorhus__got-183",
+          "seconds": 15.32,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sindresorhus__got-172",
+          "seconds": 16.269,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3317",
+          "seconds": 17.356,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1000",
+          "seconds": 18.02,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-107",
+          "seconds": 18.948,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "platers__obsidian-linter-1008",
+          "seconds": 19.403,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "pinojs__pino-121",
+          "seconds": 19.437,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "formidablelabs__urql-1077",
+          "seconds": 19.742,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "marpple__fxts-104",
+          "seconds": 20.217,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "pinojs__pino-1199",
+          "seconds": 20.266,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "stoplightio__spectral-1077",
+          "seconds": 20.9,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "elastic__synthetics-244",
+          "seconds": 20.914,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "eslint__eslint-10103",
+          "seconds": 21.393,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-1591",
+          "seconds": 21.572,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "singapore__renovate-1048",
+          "seconds": 21.746,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "stoplightio__spectral-1227",
+          "seconds": 21.885,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-121",
+          "seconds": 22.144,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sage__carbon-5512",
+          "seconds": 22.621,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "formidablelabs__urql-1117",
+          "seconds": 22.73,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "serverless__serverless-12001",
+          "seconds": 22.891,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "singapore__renovate-1006",
+          "seconds": 23.307,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "eslint__eslint-10109",
+          "seconds": 23.48,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sindresorhus__got-114",
+          "seconds": 23.535,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1107",
+          "seconds": 24.471,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "marpple__fxts-103",
+          "seconds": 24.49,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1544",
+          "seconds": 24.642,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "eslint__eslint-10054",
+          "seconds": 24.675,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1533",
+          "seconds": 24.74,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "marpple__fxts-102",
+          "seconds": 24.764,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-24",
+          "seconds": 25.254,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1019",
+          "seconds": 25.41,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1006",
+          "seconds": 25.633,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sindresorhus__got-2043",
+          "seconds": 25.879,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "platers__obsidian-linter-1002",
+          "seconds": 26.159,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "serverless__serverless-11277",
+          "seconds": 26.229,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1016",
+          "seconds": 26.517,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1001",
+          "seconds": 26.739,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1232",
+          "seconds": 27.33,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "pinojs__pino-1137",
+          "seconds": 27.461,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "singapore__renovate-1018",
+          "seconds": 27.747,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "elastic__synthetics-252",
+          "seconds": 28.405,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "firebase__firebase-tools-2291",
+          "seconds": 28.467,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "projectevergreen__greenwood-1032",
+          "seconds": 28.576,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "projectevergreen__greenwood-1024",
+          "seconds": 28.778,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "elastic__synthetics-251",
+          "seconds": 29.106,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "vuejs__eslint-plugin-vue-1015",
+          "seconds": 29.321,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "elastic__synthetics-235",
+          "seconds": 29.386,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "eslint__eslint-10055",
+          "seconds": 29.689,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "solid__community-server-148",
+          "seconds": 29.79,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1079",
+          "seconds": 29.823,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "solid__community-server-1170",
+          "seconds": 29.955,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "ember-cli__eslint-plugin-ember-1055",
+          "seconds": 29.962,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3335",
+          "seconds": 29.967,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sage__carbon-5432",
+          "seconds": 30.047,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sveltejs__kit-3570",
+          "seconds": 30.13,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "serverless__serverless-12030",
+          "seconds": 30.165,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "obsidian-tasks-group__obsidian-tasks-1309",
+          "seconds": 30.257,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "stoplightio__spectral-1059",
+          "seconds": 30.815,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sage__carbon-5474",
+          "seconds": 31.135,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1529",
+          "seconds": 31.174,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sage__carbon-5356",
+          "seconds": 31.24,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "solid__community-server-1040",
+          "seconds": 31.618,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "marpple__fxts-105",
+          "seconds": 31.678,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sveltejs__kit-3571",
+          "seconds": 32.335,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "projectevergreen__greenwood-1085",
+          "seconds": 32.983,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "solid__community-server-168",
+          "seconds": 33.298,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sveltejs__kit-3562",
+          "seconds": 33.601,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-26",
+          "seconds": 34.036,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "platers__obsidian-linter-1007",
+          "seconds": 34.175,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "firebase__firebase-tools-2271",
+          "seconds": 35.068,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "firebase__firebase-tools-2321",
+          "seconds": 35.784,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "sveltejs__kit-4140",
+          "seconds": 36.409,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "formidablelabs__urql-1046",
+          "seconds": 37.206,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "stoplightio__spectral-1020",
+          "seconds": 37.39,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "serverless__serverless-11907",
+          "seconds": 37.987,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__tslint-to-eslint-config-25",
+          "seconds": 38.124,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "pinojs__pino-1127",
+          "seconds": 38.953,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "fhir__sushi-1006",
+          "seconds": 39.26,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "jsx-eslint__eslint-plugin-react-3249",
+          "seconds": 39.546,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "projectevergreen__greenwood-1100",
+          "seconds": 40.111,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "platers__obsidian-linter-1001",
+          "seconds": 42.575,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "joshuakgoldberg__create-typescript-app-1000",
+          "seconds": 43.511,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "formidablelabs__urql-1040",
+          "seconds": 43.604,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "fhir__sushi-1016",
+          "seconds": 43.648,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "fhir__sushi-1014",
+          "seconds": 44.313,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "firebase__firebase-tools-2214",
+          "seconds": 46.307,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "singapore__renovate-1005",
+          "seconds": 47.865,
+          "detail": "Sol inspected turn"
+        },
+        {
+          "id": "fhir__sushi-1000",
+          "seconds": 52.453,
+          "detail": "Sol inspected turn"
+        }
+      ],
+      "stats": {
+        "n": 88,
+        "min": 15.32,
+        "max": 52.453,
+        "q1": 23.521250000000002,
+        "median": 28.942,
+        "q3": 33.37375,
+        "mean": 29.343886363636365,
+        "low": 15.32,
+        "high": 47.865,
+        "outliers": 1
+      }
+    }
+  ],
+  "method": "Quartiles: linear interpolation at (n-1)*q. Whiskers: furthest observed values within 1.5 IQR. All observations shown; durations calculated in seconds before log display.",
+  "population": "Separate retained measurement populations. 351 Qwen requests; 90 extraction and 90 Theory processes; 88 Jev requests and 88 Sol turns. Not a shared schedule or an end-to-end timer.",
+  "provenance": {
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/evidence.json": "59b933a96356ed57c838bb7379aee2e61a43c8e31c3ef19521c44ecb35433c3d",
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/runtime.json": "5da6c072e9b41f159dd323c9f8a17bc27c6a3f9a72e3e75103cda6011aa18481",
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/comparison.json": "0db3e48ef50a49b70b59a8fe02d03b72248c9ff4ee70e095dc0483d13d788748"
+  }
+}

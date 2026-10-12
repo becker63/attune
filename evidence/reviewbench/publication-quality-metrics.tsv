@@ -1,0 +1,44 @@
+publication-quality-metrics	quality-counts	R0_PLAIN	final-only	9	8	5	0	1	0	224	23
+publication-quality-metrics	quality-counts	R0_PLAIN	inclusive	32	21	14	4	1	6	224	81
+publication-quality-metrics	quality-counts	R1_PACKETS	final-only	6	4	3	1	1	0	224	16
+publication-quality-metrics	quality-counts	R1_PACKETS	inclusive	27	17	12	5	1	4	224	62
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	final-only	known-recall	10.3%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	final-only	grounded-precision	62.5%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	final-only	valid-precision	55.6%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	final-only	resolved-precision	55.6%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	final-only	augmented-recall	10.3%	24
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	final-only	known-recall	13.3%	22
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	final-only	grounded-precision	71.4%	7
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	final-only	valid-precision	64.3%	7
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	final-only	resolved-precision	64.3%	7
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	final-only	augmented-recall	13.3%	22
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	inclusive	known-recall	36.2%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	inclusive	grounded-precision	66.7%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	inclusive	valid-precision	56.3%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	inclusive	resolved-precision	69.2%	24
+publication-quality-metrics	quality-metric	micro	R0_PLAIN	inclusive	augmented-recall	37.3%	24
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	inclusive	known-recall	36.0%	22
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	inclusive	grounded-precision	73.1%	13
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	inclusive	valid-precision	53.2%	13
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	inclusive	resolved-precision	72.4%	13
+publication-quality-metrics	quality-metric	macro	R0_PLAIN	inclusive	augmented-recall	36.5%	22
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	final-only	known-recall	7.1%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	final-only	grounded-precision	75.0%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	final-only	valid-precision	66.7%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	final-only	resolved-precision	66.7%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	final-only	augmented-recall	7.6%	24
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	final-only	known-recall	10.6%	22
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	final-only	grounded-precision	75.0%	4
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	final-only	valid-precision	80.0%	5
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	final-only	resolved-precision	80.0%	5
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	final-only	augmented-recall	11.0%	22
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	inclusive	known-recall	27.7%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	inclusive	grounded-precision	70.6%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	inclusive	valid-precision	63.0%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	inclusive	resolved-precision	73.9%	24
+publication-quality-metrics	quality-metric	micro	R1_PACKETS	inclusive	augmented-recall	29.3%	24
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	inclusive	known-recall	27.6%	22
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	inclusive	grounded-precision	68.2%	11
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	inclusive	valid-precision	57.6%	12
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	inclusive	resolved-precision	72.9%	12
+publication-quality-metrics	quality-metric	macro	R1_PACKETS	inclusive	augmented-recall	28.6%	22
