@@ -27,7 +27,7 @@ cold remote wall 51.70 s, unchanged warm graph 0.153 s. Its
 remains the source, not these current-release tables.
 
 The five-wait distributions and their 707 observations remain on the
-[website](https://atlas-live-five.vercel.app/#overview), with a native ASCII figure
+[website](https://atlas-live-five.vercel.app/#overview), with the SVG figure embedded
 in the [README](../README.md#five-kinds-of-wait). They are not copied here.
 
 ## Localization files and metrics
