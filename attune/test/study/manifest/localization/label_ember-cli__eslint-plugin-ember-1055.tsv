@@ -1,0 +1,9 @@
+label	ember-cli__eslint-plugin-ember-1055	w62
+provenance	ember-cli/eslint-plugin-ember	88c231a3cb54248ed0f60f05b9733834bc75e83e	26e9f2ce281904a086db0a543b6d9df2f7550d57861d9eb9978b33b20e16e5f4	reference-patch	112	4013
+entry	modified	README.md	other	source	regular	absent	ineligible
+entry	new	docs/rules/require-fetch-import.md	other	source	regular	absent	ineligible
+entry	modified	lib/index.js	js-ts	source	regular	present	eligible
+entry	new	lib/rules/require-fetch-import.js	js-ts	source	regular	absent	ineligible
+gold	lib/index.js
+coverage	full	4	supported	1
+case	eligible-gold

@@ -1,0 +1,38 @@
+FROZEN JEV REQUEST (post-hoc exploratory extension, 2026-10-07)
+
+PART 1 — the frozen scientific question.
+Frozen before any provider outcome. These exact bytes, and the three outcome
+names, are the prompt identity recorded in every receipt. They never changed.
+
+state (JSON object, shared by every question of one task):
+{"task":"{task}","bug_report":"{bug_report}","rule":"Decide whether the candidate source file must be modified to fix this bug report. Use only the bug report text and the candidate file path."}
+  {task}        = the task's public instance_id
+  {bug_report}  = the first 2000 characters of the task's public problem_statement
+                  (a deterministic prefix of the public catalog projection)
+
+question instruction (string, one question per candidate):
+Candidate file path: {path}
+  {path}        = the candidate's repository-relative path, exactly as the frozen D
+                  ranking records it
+
+outcomes (fixed names; one independent choice per candidate):
+Relevant | NotRelevant | Unknown
+A Failed(kind) transport, decode or validation outcome is never one of these and
+is never mapped to a negative.
+
+question type: choice
+
+PART 2 — mechanical tool encoding (not scientific prompt content).
+The installed jev-mcp server requires, per choice question, a `criteria` object
+mapping each outcome name to a non-empty description string. Its inner schema was
+resolved by probe on 2026-10-07 from 02:36Z (two client-side validation
+rejections, then two accepted probe calls). The descriptions add no information
+beyond the outcome names:
+
+{"Relevant":"must be modified","NotRelevant":"must not be modified","Unknown":"insufficient information"}
+
+The probe's two answers are recorded as mechanical probe evidence and are not
+part of the frozen decision population, which is asked uniformly under the
+resolved encoding. This is the mechanical/API fix the route contract requires to
+be recorded separately from a scientific prompt change: no question text, no
+outcome name and no candidate population changed.

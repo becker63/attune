@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The owner sources are plain files rather than one filegroup per owner: a
+# target declares the exact owner sources it needs, so an unused per-owner
+# filegroup would be dead plumbing. `//src:Attune.flix` carries the `Attune`
+# owner whole -- the module root, the shared nominal envelope and the one exact
+# relation application with its local memo -- after the temporary
+# `Attune/Envelope.flix` and `Attune/Apply.flix` files were folded back into it.
+# `Attune.Repository.flix`, `Attune/Theory.flix`, `Attune.Study.flix`,
+# `Attune.AsciiTree.flix` and `Attune.View.flix` are the other five semantic
+# owners; the mechanical Parquet adapter lives under `platform/tools/parquet/`.
+# A new package that adds authored source still contributes its own
+# `policy_files` filegroup to `//:policy_sources` in the root BUILD file.

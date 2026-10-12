@@ -1,0 +1,39 @@
+FROZEN JEV REQUEST — A-CONTROL CONDITION (post-hoc exploratory P+A ablation)
+
+This template records the exact bytes of the frozen A-control prompt identity.
+It was fixed before any A-pair provider outcome and never edited afterwards: no
+prompt tuning, no invented confidence threshold, no second model and no
+outcome-dependent retry.
+
+PART 1 — the frozen scientific question (A-control).
+
+rule (the state's `rule` field):
+Decide whether the candidate source file must be modified to fix this bug report. Use only the bug report text and the candidate file path.
+
+state (JSON object, shared by every question of one task):
+{"task":"{task}","bug_report":"{bug_report}","rule":"<the rule above>"}
+  {task}       = the task's public instance_id
+  {bug_report} = the first 2000 characters of the task's public problem_statement
+                 (a deterministic prefix of the public catalog projection)
+
+question instruction (string, one question per candidate):
+Candidate file path: {path} (original P+A rank {rank}, P+A score {score})
+  {path}   = the candidate's repository-relative path, exactly as the frozen P+A
+             ranking records it
+  {rank}   = the candidate's original rank in the frozen P+A ranking
+  {score}  = the candidate's frozen P+A ranking score
+
+The A-control condition carries ONLY the task/public issue, the candidate path,
+the original P+A rank, the P+A score and the candidate anchor evidence encoded in
+that rank and score. It physically carries no Repository, Theory, F, D, gold,
+patch, test, interface, oracle or final-metric field.
+
+outcomes (fixed names; one independent choice per candidate):
+Relevant | NotRelevant | Unknown
+A Failed(kind) transport, decode or validation outcome is never one of these and
+is never mapped to a negative.
+
+PART 2 — mechanical tool encoding (not scientific prompt content).
+The installed jev-mcp server requires, per choice question, a `criteria` object
+mapping each outcome name to a non-empty description string:
+{"Relevant":"must be modified","NotRelevant":"must not be modified","Unknown":"insufficient information"}

@@ -1,0 +1,20 @@
+label	projectevergreen__greenwood-1100	w49
+provenance	ProjectEvergreen/greenwood	3003f49d1f0415e6ca2786f49a7747ea3817a774	e1528a1ea2e5e2c6427987c49a46689b451d540558bed504569baf31340be95a	reference-patch	476	19951
+entry	modified	packages/cli/src/commands/build.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/lib/resource-utils.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/lifecycles/bundle.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/lifecycles/compile.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/lifecycles/graph.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/lifecycles/prerender.js	js-ts	source	regular	present	eligible
+entry	deleted	packages/cli/src/plugins/copy/plugin-copy-graph-json.js	js-ts	source	regular	present	eligible
+entry	modified	packages/cli/src/plugins/resource/plugin-standard-html.js	js-ts	source	regular	present	eligible
+gold	packages/cli/src/commands/build.js
+gold	packages/cli/src/lib/resource-utils.js
+gold	packages/cli/src/lifecycles/bundle.js
+gold	packages/cli/src/lifecycles/compile.js
+gold	packages/cli/src/lifecycles/graph.js
+gold	packages/cli/src/lifecycles/prerender.js
+gold	packages/cli/src/plugins/copy/plugin-copy-graph-json.js
+gold	packages/cli/src/plugins/resource/plugin-standard-html.js
+coverage	full	8	supported	8
+case	eligible-gold

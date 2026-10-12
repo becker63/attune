@@ -1,0 +1,106 @@
+load("//platform/build:native.bzl", "native_flix_reject_test", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# Positive native fixture: explicit declared sources compiled and executed by
+# the pinned compiler's authentic native test engine inside the declared
+# pinned user/network namespace.
+native_flix_test(
+    name = "envelope_test",
+    srcs = [
+        "EnvelopeLaw.flix",
+        "//src:Attune.flix",
+    ],
+)
+
+# Isolation fixture: the Flix-owned assertions over the boundary record the
+# mechanical probe wrote from inside the same namespace. These assertions are
+# about the host `unshare` user/network namespace itself, so the target pins
+# that declared mode in every configuration and is tagged `no-remote`: the
+# opt-in remote profile runs in the declared provider container, which creates
+# no such namespace, and the portable route therefore can never be the evidence
+# for this boundary. It runs on the host and passes there as before.
+native_flix_test(
+    name = "isolation_test",
+    srcs = [
+        "IsolationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Isolation.flix",
+    ],
+    host_isolation = True,
+    tags = ["no-remote"],
+)
+
+# Manual negative fixture: a deliberately false native assertion. It is excluded
+# from `bazel test //...` by the `manual` tag; running it directly must fail.
+native_flix_test(
+    name = "false_assertion_test",
+    srcs = [
+        "FalseAssertion.flix",
+        "//src:Attune.flix",
+    ],
+    tags = ["manual"],
+)
+
+# Compiler negative fixture: a File/Symbol domain mismatch must be rejected by
+# the pinned compiler during `check`, with no `main` required.
+native_flix_reject_test(
+    name = "nominal_negative_test",
+    srcs = [
+        "NominalNegative.flix",
+        "//src:Attune.flix",
+    ],
+    expected = "Unable to unify the types",
+)
+
+# VAL-CORE-001: exact nominal identity. Reordering one exact set is the same
+# observation; equal cardinality, a shared basename, another world and another
+# domain stay distinct, and world identity carries origin, content and semantics.
+native_flix_test(
+    name = "core_identity_test",
+    srcs = [
+        "CoreIdentityLaw.flix",
+        "//src:Attune.flix",
+    ],
+)
+
+# VAL-CORE-002: the one exact six-atom application. All six primitive signatures
+# apply, a legal empty answer keeps its world and domain, and an illegal domain
+# composition or a foreign-world fact is a classified rejection.
+native_flix_test(
+    name = "core_apply_test",
+    srcs = [
+        "CoreApplyLaw.flix",
+        "//src:Attune.flix",
+    ],
+)
+
+# VAL-CORE-003: the measured local exact memo. The declared serial fixture has
+# exact hit/miss counts, a real empty reuse, a repeated producer reuse, and
+# equal-output/different-input and cross-world lookups that do not count.
+native_flix_test(
+    name = "core_memo_test",
+    srcs = [
+        "CoreMemoLaw.flix",
+        "//src:Attune.flix",
+    ],
+)
+
+# VAL-CORE-004: typed evidence and artifact values. Witness/no-match/unknown/
+# failure, the tri-state observation, distinct-entity support and artifact
+# identity stay distinct. The Parquet round trip is `//test/seam`.
+native_flix_test(
+    name = "core_evidence_test",
+    srcs = [
+        "CoreEvidenceLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+    ],
+)

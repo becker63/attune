@@ -1,0 +1,7 @@
+label	jsx-eslint__eslint-plugin-react-3335	w45
+provenance	jsx-eslint/eslint-plugin-react	87fb344c9509f8c31e9bd4a49d31576397a89ebc	59ea14178858fb3912cce7e735422ae41937cdb38f968a80d0ea1cbd8015586a	reference-patch	33	1687
+entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	lib/util/isFirstLetterCapitalized.js	js-ts	source	regular	present	eligible
+gold	lib/util/isFirstLetterCapitalized.js
+coverage	full	2	supported	1
+case	eligible-gold

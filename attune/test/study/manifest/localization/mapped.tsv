@@ -1,0 +1,252 @@
+generation	localization-attune-panel-2026-10-06
+bounds	groups	24
+bounds	tasks_per_group	4
+bounds	pairs	32
+bounds	pair_groups	8
+bounds	candidates	256
+bounds	shards_per_world	8
+bounds	shard_size	32
+world	w1	serverless/serverless	2ac55b01bee405c5ca719f4b52166399b9d6f48a	public-archive-at-pinned-revision	world_w1.tsv	facts_w1.tsv	descriptors_w1.tsv
+world	w2	serverless/serverless	4d64730130c44cdfbb872f8a16111df409135dc8	public-archive-at-pinned-revision	world_w2.tsv	facts_w2.tsv	descriptors_w2.tsv
+world	w3	serverless/serverless	83e194cb17b5b932bcc866f2543351b64fde329a	public-archive-at-pinned-revision	world_w3.tsv	facts_w3.tsv	descriptors_w3.tsv
+world	w4	serverless/serverless	17d64e6c94b88a5daf36f28a4fa192c231052cfb	public-archive-at-pinned-revision	world_w4.tsv	facts_w4.tsv	descriptors_w4.tsv
+world	w5	eslint/eslint	22ff6f3ab122f61c10fa51f9b1082f2e6f302938	public-archive-at-pinned-revision	world_w5.tsv	facts_w5.tsv	descriptors_w5.tsv
+world	w6	eslint/eslint	4f595e8a7cc1fefae866d2cf0e758515d6098e3c	public-archive-at-pinned-revision	world_w6.tsv	facts_w6.tsv	descriptors_w6.tsv
+world	w7	eslint/eslint	abc765c1bc6b546db82cb5cd038b66a3aa68b315	public-archive-at-pinned-revision	world_w7.tsv	facts_w7.tsv	descriptors_w7.tsv
+world	w8	FHIR/sushi	2f6adfd82de60ef6d810a3345dc953c7387da732	public-archive-at-pinned-revision	world_w8.tsv	facts_w8.tsv	descriptors_w8.tsv
+world	w9	FHIR/sushi	301e66940a2265a467debff69c5c3bfaeb06931a	public-archive-at-pinned-revision	world_w9.tsv	facts_w9.tsv	descriptors_w9.tsv
+world	w10	FHIR/sushi	663286ef961c7546f71ba9e86e1e6862e4ff7046	public-archive-at-pinned-revision	world_w10.tsv	facts_w10.tsv	descriptors_w10.tsv
+world	w11	FHIR/sushi	d8f56185677f9748d7a759c624bdf3d2192dd3c9	public-archive-at-pinned-revision	world_w11.tsv	facts_w11.tsv	descriptors_w11.tsv
+world	w12	platers/obsidian-linter	d3515fe32804f4ec495d993f10eabbf4b9fa6161	public-archive-at-pinned-revision	world_w12.tsv	facts_w12.tsv	descriptors_w12.tsv
+world	w13	platers/obsidian-linter	5ed573398e717b06f2afa65818224cf0abc1ab2a	public-archive-at-pinned-revision	world_w13.tsv	facts_w13.tsv	descriptors_w13.tsv
+world	w14	platers/obsidian-linter	4cd434c20a3e1384911680c7eaf1414a59ee0205	public-archive-at-pinned-revision	world_w14.tsv	facts_w14.tsv	descriptors_w14.tsv
+world	w15	platers/obsidian-linter	4a0724ab6a3f8340ea3a48f491f6f08bdaa86e57	public-archive-at-pinned-revision	world_w15.tsv	facts_w15.tsv	descriptors_w15.tsv
+world	w16	JoshuaKGoldberg/create-typescript-app	6f260c8df819bd796252ae3797809bf40d915520	public-archive-at-pinned-revision	world_w16.tsv	facts_w16.tsv	descriptors_w16.tsv
+world	w17	JoshuaKGoldberg/create-typescript-app	a64a9c7f55de23c8f80633dd0e6d4353fcd1f220	public-archive-at-pinned-revision	world_w17.tsv	facts_w17.tsv	descriptors_w17.tsv
+world	w18	JoshuaKGoldberg/create-typescript-app	834a44de5b4a7f3e4be4925a68911e192cbba2de	public-archive-at-pinned-revision	world_w18.tsv	facts_w18.tsv	descriptors_w18.tsv
+world	w19	JoshuaKGoldberg/create-typescript-app	be806ca42a57a0e97108d3a736288d225967616a	public-archive-at-pinned-revision	world_w19.tsv	facts_w19.tsv	descriptors_w19.tsv
+world	w20	sveltejs/kit	842337b35a7c5fb49917c409e773ac5d9c61049d	public-archive-at-pinned-revision	world_w20.tsv	facts_w20.tsv	descriptors_w20.tsv
+world	w21	sveltejs/kit	80233c279f94e6aa86888b24147d46141c3ea688	public-archive-at-pinned-revision	world_w21.tsv	facts_w21.tsv	descriptors_w21.tsv
+world	w22	sveltejs/kit	b7ebff7ecdac6b7e6901553ada453743b18d78e4	public-archive-at-pinned-revision	world_w22.tsv	facts_w22.tsv	descriptors_w22.tsv
+world	w23	JoshuaKGoldberg/tslint-to-eslint-config	0c95c3f83e9ab70e77d552210f94928fce6808b3	public-archive-at-pinned-revision	world_w23.tsv	facts_w23.tsv	descriptors_w23.tsv
+world	w24	JoshuaKGoldberg/tslint-to-eslint-config	df0faf840109374be3f74778e4302820de5df497	public-archive-at-pinned-revision	world_w24.tsv	facts_w24.tsv	descriptors_w24.tsv
+world	w25	JoshuaKGoldberg/tslint-to-eslint-config	1f8f414a487a0f8d67c37b7de13fda7848f5ac67	public-archive-at-pinned-revision	world_w25.tsv	facts_w25.tsv	descriptors_w25.tsv
+world	w26	JoshuaKGoldberg/tslint-to-eslint-config	54590cf89a1d6dcac5352a908ee16f75adb087fd	public-archive-at-pinned-revision	world_w26.tsv	facts_w26.tsv	descriptors_w26.tsv
+world	w27	Sage/carbon	f303f8d3d3204b1c947ae749bd6f1bf96233b888	public-archive-at-pinned-revision	world_w27.tsv	facts_w27.tsv	descriptors_w27.tsv
+world	w28	Sage/carbon	5be5f330c7dc88fc30f5362c7d4f9c9d0ada74bf	public-archive-at-pinned-revision	world_w28.tsv	facts_w28.tsv	descriptors_w28.tsv
+world	w29	Sage/carbon	bde9df23ae9b494ebb6a63dc20355337cda5e062	public-archive-at-pinned-revision	world_w29.tsv	facts_w29.tsv	descriptors_w29.tsv
+world	w30	Sage/carbon	18bca960fd0fbd8893c18415eb9a79eed23fdc0a	public-archive-at-pinned-revision	world_w30.tsv	facts_w30.tsv	descriptors_w30.tsv
+world	w31	vuejs/eslint-plugin-vue	47e3f89a554ada9f32acd48088abbb7d40d51b5e	public-archive-at-pinned-revision	world_w31.tsv	facts_w31.tsv	descriptors_w31.tsv
+world	w32	vuejs/eslint-plugin-vue	99fe70dd45097ed4a7c8bdc60cf98e30ee57afac	public-archive-at-pinned-revision	world_w32.tsv	facts_w32.tsv	descriptors_w32.tsv
+world	w33	vuejs/eslint-plugin-vue	ee4143b08d57a279dc17fb5ebccd212dfc122d86	public-archive-at-pinned-revision	world_w33.tsv	facts_w33.tsv	descriptors_w33.tsv
+world	w34	obsidian-tasks-group/obsidian-tasks	d48284e82386548e13c1471fc9dc1771d3d736be	public-archive-at-pinned-revision	world_w34.tsv	facts_w34.tsv	descriptors_w34.tsv
+world	w35	obsidian-tasks-group/obsidian-tasks	1164899d6b4b251db81dff1edcc836d4192d833a	public-archive-at-pinned-revision	world_w35.tsv	facts_w35.tsv	descriptors_w35.tsv
+world	w36	obsidian-tasks-group/obsidian-tasks	7716c2894fd721e6de5691066647822b3c7a1bad	public-archive-at-pinned-revision	world_w36.tsv	facts_w36.tsv	descriptors_w36.tsv
+world	w37	obsidian-tasks-group/obsidian-tasks	04c621db3117b8ccaaa57c10ea212c682e27e716	public-archive-at-pinned-revision	world_w37.tsv	facts_w37.tsv	descriptors_w37.tsv
+world	w38	jlongster/prettier	b37e8c4b361acbe08e716f0aa71f29b4b55fcb5b	public-archive-at-pinned-revision	world_w38.tsv	facts_w38.tsv	descriptors_w38.tsv
+world	w39	jlongster/prettier	7a84cdbc3430441c992912c15509cfb788925084	public-archive-at-pinned-revision	world_w39.tsv	facts_w39.tsv	descriptors_w39.tsv
+world	w40	jlongster/prettier	6557bc76b39d668254ee1847de3691044c71adc8	public-archive-at-pinned-revision	world_w40.tsv	facts_w40.tsv	descriptors_w40.tsv
+world	w41	jlongster/prettier	d25881530f658cda4a516fbbbf60aea6182a1285	public-archive-at-pinned-revision	world_w41.tsv	facts_w41.tsv	descriptors_w41.tsv
+world	w42	jsx-eslint/eslint-plugin-react	2575bba0ae30b1b0b4013539be3b0dc4eb8114eb	public-archive-at-pinned-revision	world_w42.tsv	facts_w42.tsv	descriptors_w42.tsv
+world	w43	jsx-eslint/eslint-plugin-react	ef733fd420c821f7159b28f4a36ce5e09375f9b8	public-archive-at-pinned-revision	world_w43.tsv	facts_w43.tsv	descriptors_w43.tsv
+world	w44	jsx-eslint/eslint-plugin-react	aac7fb9bc48427539839280ea522ccbe50458ac1	public-archive-at-pinned-revision	world_w44.tsv	facts_w44.tsv	descriptors_w44.tsv
+world	w45	jsx-eslint/eslint-plugin-react	87fb344c9509f8c31e9bd4a49d31576397a89ebc	public-archive-at-pinned-revision	world_w45.tsv	facts_w45.tsv	descriptors_w45.tsv
+world	w46	ProjectEvergreen/greenwood	76f943ef09dedce2c3ee9deecb562c298d00f271	public-archive-at-pinned-revision	world_w46.tsv	facts_w46.tsv	descriptors_w46.tsv
+world	w47	ProjectEvergreen/greenwood	e7a08b6fcf7aa60f69491ec6aff591823991b7f6	public-archive-at-pinned-revision	world_w47.tsv	facts_w47.tsv	descriptors_w47.tsv
+world	w48	ProjectEvergreen/greenwood	7ff06de494ddebd1e97e6ba65401d5c931b0eaf6	public-archive-at-pinned-revision	world_w48.tsv	facts_w48.tsv	descriptors_w48.tsv
+world	w49	ProjectEvergreen/greenwood	3003f49d1f0415e6ca2786f49a7747ea3817a774	public-archive-at-pinned-revision	world_w49.tsv	facts_w49.tsv	descriptors_w49.tsv
+world	w50	solid/community-server	b0208bf4699ce96c4e30ab6603089c1d8b5f2aef	public-archive-at-pinned-revision	world_w50.tsv	facts_w50.tsv	descriptors_w50.tsv
+world	w51	solid/community-server	e604c0c2e427f7cf426cda6e3a52c2d72b997057	public-archive-at-pinned-revision	world_w51.tsv	facts_w51.tsv	descriptors_w51.tsv
+world	w52	solid/community-server	b1991cb08ae722aae497104067a7a455456952c7	public-archive-at-pinned-revision	world_w52.tsv	facts_w52.tsv	descriptors_w52.tsv
+world	w53	solid/community-server	f6f45c0ece35ed72c14224925e4711ae4d756520	public-archive-at-pinned-revision	world_w53.tsv	facts_w53.tsv	descriptors_w53.tsv
+world	w54	FormidableLabs/urql	8e7fc5ce1451b24f569343011da717362c1ba3f0	public-archive-at-pinned-revision	world_w54.tsv	facts_w54.tsv	descriptors_w54.tsv
+world	w55	FormidableLabs/urql	2527996491103e5ce17328071e67583f5b498c70	public-archive-at-pinned-revision	world_w55.tsv	facts_w55.tsv	descriptors_w55.tsv
+world	w56	FormidableLabs/urql	935db592cf3365e29d351d654d6bdd7d3bc1e9d1	public-archive-at-pinned-revision	world_w56.tsv	facts_w56.tsv	descriptors_w56.tsv
+world	w57	FormidableLabs/urql	da5a2eba69afdc5c176066c1ea1e2311d4c1435d	public-archive-at-pinned-revision	world_w57.tsv	facts_w57.tsv	descriptors_w57.tsv
+world	w58	marpple/FxTS	54cf5d26171a9c7632d459c97b5c2853b4190ac9	public-archive-at-pinned-revision	world_w58.tsv	facts_w58.tsv	descriptors_w58.tsv
+world	w59	marpple/FxTS	7b099745fd3038f9155d74b8b76c3a7561073a9e	public-archive-at-pinned-revision	world_w59.tsv	facts_w59.tsv	descriptors_w59.tsv
+world	w60	marpple/FxTS	2738b9ae070b173d0bd78036168f09426581401c	public-archive-at-pinned-revision	world_w60.tsv	facts_w60.tsv	descriptors_w60.tsv
+world	w61	ember-cli/eslint-plugin-ember	fcdb389919d704177bdf78bbf6ca2f21b30e516b	public-archive-at-pinned-revision	world_w61.tsv	facts_w61.tsv	descriptors_w61.tsv
+world	w62	ember-cli/eslint-plugin-ember	88c231a3cb54248ed0f60f05b9733834bc75e83e	public-archive-at-pinned-revision	world_w62.tsv	facts_w62.tsv	descriptors_w62.tsv
+world	w63	ember-cli/eslint-plugin-ember	9cde36a38d1e57cd64812a7a44ac0f42df16905c	public-archive-at-pinned-revision	world_w63.tsv	facts_w63.tsv	descriptors_w63.tsv
+world	w64	ember-cli/eslint-plugin-ember	c879157460fad4353f826c924f2e41761427337e	public-archive-at-pinned-revision	world_w64.tsv	facts_w64.tsv	descriptors_w64.tsv
+world	w65	singapore/renovate	8d91a85fb72490c996fd953925a9e3a856c35b5f	public-archive-at-pinned-revision	world_w65.tsv	facts_w65.tsv	descriptors_w65.tsv
+world	w66	singapore/renovate	af8f11dbbfb03982ead3cb627a2a2b49eaa1abd1	public-archive-at-pinned-revision	world_w66.tsv	facts_w66.tsv	descriptors_w66.tsv
+world	w67	singapore/renovate	50295417d4ff68571bd90e9e75cdd1daf5a08ed2	public-archive-at-pinned-revision	world_w67.tsv	facts_w67.tsv	descriptors_w67.tsv
+world	w68	singapore/renovate	0427604de61a6a1783f208d9858320c29950b794	public-archive-at-pinned-revision	world_w68.tsv	facts_w68.tsv	descriptors_w68.tsv
+world	w69	sindresorhus/got	f9f2807e63635432ab175824859caa70e3c583aa	public-archive-at-pinned-revision	world_w69.tsv	facts_w69.tsv	descriptors_w69.tsv
+world	w70	sindresorhus/got	f9078b6440eefd3a8ebf15ff07b61d2bc1b27b8b	public-archive-at-pinned-revision	world_w70.tsv	facts_w70.tsv	descriptors_w70.tsv
+world	w71	sindresorhus/got	cecea2d1081c2dc255995229cbcf4eff92a7efb1	public-archive-at-pinned-revision	world_w71.tsv	facts_w71.tsv	descriptors_w71.tsv
+world	w72	sindresorhus/got	c25af092bf792c2c7e29db848a569f2eb3e527f8	public-archive-at-pinned-revision	world_w72.tsv	facts_w72.tsv	descriptors_w72.tsv
+world	w73	stoplightio/spectral	20774dca6b244aa11dfea9ee76de2a76c5f9d98a	public-archive-at-pinned-revision	world_w73.tsv	facts_w73.tsv	descriptors_w73.tsv
+world	w74	stoplightio/spectral	d2803e9f9a7c6e185cb7ecc6f492cc81f312889f	public-archive-at-pinned-revision	world_w74.tsv	facts_w74.tsv	descriptors_w74.tsv
+world	w75	stoplightio/spectral	ec6b829a8bfa047882b9939738c6f95eb180c5aa	public-archive-at-pinned-revision	world_w75.tsv	facts_w75.tsv	descriptors_w75.tsv
+world	w76	stoplightio/spectral	40a39628cd2cb9e907d5e052d9d186838c70659e	public-archive-at-pinned-revision	world_w76.tsv	facts_w76.tsv	descriptors_w76.tsv
+world	w77	firebase/firebase-tools	ba06f6dc34e64ef53a9cf002bacd6cdd0675749f	public-archive-at-pinned-revision	world_w77.tsv	facts_w77.tsv	descriptors_w77.tsv
+world	w78	firebase/firebase-tools	e04591d4965746af1b7e36873265dcf4cbd5cb6c	public-archive-at-pinned-revision	world_w78.tsv	facts_w78.tsv	descriptors_w78.tsv
+world	w79	firebase/firebase-tools	63ed7b1d005c9d65956910fa8d523571da271bc1	public-archive-at-pinned-revision	world_w79.tsv	facts_w79.tsv	descriptors_w79.tsv
+world	w80	firebase/firebase-tools	c8de003b82acd00dc244a30c6b5c21c615c57b09	public-archive-at-pinned-revision	world_w80.tsv	facts_w80.tsv	descriptors_w80.tsv
+world	w81	GoogleChrome/lighthouse	590bda3a771bae2f2dea4a7a903ecf96a34fdcd9	public-archive-at-pinned-revision	world_w81.tsv	facts_w81.tsv	descriptors_w81.tsv
+world	w82	GoogleChrome/lighthouse	17ac7e23bd70f1b98ddc79f9221ef2831e393119	public-archive-at-pinned-revision	world_w82.tsv	facts_w82.tsv	descriptors_w82.tsv
+world	w83	GoogleChrome/lighthouse	7ffb922b1911e6db114f21d92f37a63f835ba3b7	public-archive-at-pinned-revision	world_w83.tsv	facts_w83.tsv	descriptors_w83.tsv
+world	w84	GoogleChrome/lighthouse	7904efb3d4526e7529fef0ff2566d1aff74c6306	public-archive-at-pinned-revision	world_w84.tsv	facts_w84.tsv	descriptors_w84.tsv
+world	w85	elastic/synthetics	01c81e9607da4c0f57f83c775f810bc22861c5db	public-archive-at-pinned-revision	world_w85.tsv	facts_w85.tsv	descriptors_w85.tsv
+world	w86	elastic/synthetics	769e2e8b36229b1f48be3349d5c1f679ed210ffe	public-archive-at-pinned-revision	world_w86.tsv	facts_w86.tsv	descriptors_w86.tsv
+world	w87	elastic/synthetics	7c3bd6475040967ffae003e0509df502ced35f64	public-archive-at-pinned-revision	world_w87.tsv	facts_w87.tsv	descriptors_w87.tsv
+world	w88	elastic/synthetics	7384dc9588c3773f4f639387047faf3393e621f0	public-archive-at-pinned-revision	world_w88.tsv	facts_w88.tsv	descriptors_w88.tsv
+world	w89	pinojs/pino	c57c25855d89a2c481914672bbdeebe7ec3087c7	public-archive-at-pinned-revision	world_w89.tsv	facts_w89.tsv	descriptors_w89.tsv
+world	w90	pinojs/pino	21ee5e2a03835dca7652f7b66905ae436c92e7d1	public-archive-at-pinned-revision	world_w90.tsv	facts_w90.tsv	descriptors_w90.tsv
+world	w91	pinojs/pino	1726618447f01ed90276d92d2ae196c252770e01	public-archive-at-pinned-revision	world_w91.tsv	facts_w91.tsv	descriptors_w91.tsv
+world	w92	pinojs/pino	5e5e543033f5a0596142e0c8af6693a393c28013	public-archive-at-pinned-revision	world_w92.tsv	facts_w92.tsv	descriptors_w92.tsv
+group	serverless	development	exposed
+group	eslint	development	exposed
+group	sushi	development	exposed
+group	obsidian-linter	development	exposed
+group	create-typescript-app	development	exposed
+group	kit	development	exposed
+group	tslint-to-eslint-config	development	exposed
+group	carbon	development	exposed
+group	eslint-plugin-vue	development	exposed
+group	obsidian-tasks	development	exposed
+group	prettier	development	exposed
+group	eslint-plugin-react	development	exposed
+group	greenwood	development	exposed
+group	community-server	development	exposed
+group	urql	calibration	exposed
+group	fxts	calibration	exposed
+group	eslint-plugin-ember	calibration	exposed
+group	renovate	calibration	exposed
+group	got	calibration	exposed
+group	spectral	final	held-out
+group	firebase-tools	final	held-out
+group	lighthouse	final	held-out
+group	synthetics	final	held-out
+group	pino	final	held-out
+task	serverless__serverless-11277	serverless	w1	localization	unknown
+task	serverless__serverless-11907	serverless	w2	localization	unknown
+task	serverless__serverless-12001	serverless	w3	localization	unknown
+task	serverless__serverless-12030	serverless	w4	localization	unknown
+task	eslint__eslint-10054	eslint	w5	localization	unknown
+task	eslint__eslint-10055	eslint	w5	localization	unknown
+task	eslint__eslint-10103	eslint	w6	localization	unknown
+task	eslint__eslint-10109	eslint	w7	localization	unknown
+task	fhir__sushi-1000	sushi	w8	localization	unknown
+task	fhir__sushi-1006	sushi	w9	localization	unknown
+task	fhir__sushi-1014	sushi	w10	localization	unknown
+task	fhir__sushi-1016	sushi	w11	localization	unknown
+task	platers__obsidian-linter-1001	obsidian-linter	w12	localization	unknown
+task	platers__obsidian-linter-1002	obsidian-linter	w13	localization	unknown
+task	platers__obsidian-linter-1007	obsidian-linter	w14	localization	unknown
+task	platers__obsidian-linter-1008	obsidian-linter	w15	localization	unknown
+task	joshuakgoldberg__create-typescript-app-1000	create-typescript-app	w16	localization	unknown
+task	joshuakgoldberg__create-typescript-app-1529	create-typescript-app	w17	localization	unknown
+task	joshuakgoldberg__create-typescript-app-1533	create-typescript-app	w18	localization	unknown
+task	joshuakgoldberg__create-typescript-app-1544	create-typescript-app	w19	localization	unknown
+task	sveltejs__kit-3562	kit	w20	localization	unknown
+task	sveltejs__kit-3570	kit	w21	localization	unknown
+task	sveltejs__kit-3571	kit	w21	localization	unknown
+task	sveltejs__kit-4140	kit	w22	localization	unknown
+task	joshuakgoldberg__tslint-to-eslint-config-121	tslint-to-eslint-config	w23	localization	unknown
+task	joshuakgoldberg__tslint-to-eslint-config-24	tslint-to-eslint-config	w24	localization	unknown
+task	joshuakgoldberg__tslint-to-eslint-config-25	tslint-to-eslint-config	w25	localization	unknown
+task	joshuakgoldberg__tslint-to-eslint-config-26	tslint-to-eslint-config	w26	localization	unknown
+task	sage__carbon-5356	carbon	w27	localization	unknown
+task	sage__carbon-5432	carbon	w28	localization	unknown
+task	sage__carbon-5474	carbon	w29	localization	unknown
+task	sage__carbon-5512	carbon	w30	localization	unknown
+task	vuejs__eslint-plugin-vue-1001	eslint-plugin-vue	w31	localization	unknown
+task	vuejs__eslint-plugin-vue-1015	eslint-plugin-vue	w32	localization	unknown
+task	vuejs__eslint-plugin-vue-1016	eslint-plugin-vue	w32	localization	unknown
+task	vuejs__eslint-plugin-vue-1019	eslint-plugin-vue	w33	localization	unknown
+task	obsidian-tasks-group__obsidian-tasks-1006	obsidian-tasks	w34	localization	unknown
+task	obsidian-tasks-group__obsidian-tasks-1107	obsidian-tasks	w35	localization	unknown
+task	obsidian-tasks-group__obsidian-tasks-1232	obsidian-tasks	w36	localization	unknown
+task	obsidian-tasks-group__obsidian-tasks-1309	obsidian-tasks	w37	localization	unknown
+task	jlongster__prettier-101	prettier	w38	localization	unknown
+task	jlongster__prettier-107	prettier	w39	localization	unknown
+task	jlongster__prettier-113	prettier	w40	localization	unknown
+task	jlongster__prettier-142	prettier	w41	localization	unknown
+task	jsx-eslint__eslint-plugin-react-1591	eslint-plugin-react	w42	localization	unknown
+task	jsx-eslint__eslint-plugin-react-3249	eslint-plugin-react	w43	localization	unknown
+task	jsx-eslint__eslint-plugin-react-3317	eslint-plugin-react	w44	localization	unknown
+task	jsx-eslint__eslint-plugin-react-3335	eslint-plugin-react	w45	localization	unknown
+task	projectevergreen__greenwood-1024	greenwood	w46	localization	unknown
+task	projectevergreen__greenwood-1032	greenwood	w47	localization	unknown
+task	projectevergreen__greenwood-1085	greenwood	w48	localization	unknown
+task	projectevergreen__greenwood-1100	greenwood	w49	localization	unknown
+task	solid__community-server-1040	community-server	w50	localization	unknown
+task	solid__community-server-1170	community-server	w51	localization	unknown
+task	solid__community-server-148	community-server	w52	localization	unknown
+task	solid__community-server-168	community-server	w53	localization	unknown
+task	formidablelabs__urql-1040	urql	w54	localization	unknown
+task	formidablelabs__urql-1046	urql	w55	localization	unknown
+task	formidablelabs__urql-1077	urql	w56	localization	unknown
+task	formidablelabs__urql-1117	urql	w57	localization	unknown
+task	marpple__fxts-102	fxts	w58	localization	unknown
+task	marpple__fxts-103	fxts	w58	localization	unknown
+task	marpple__fxts-104	fxts	w59	localization	unknown
+task	marpple__fxts-105	fxts	w60	localization	unknown
+task	ember-cli__eslint-plugin-ember-1000	eslint-plugin-ember	w61	localization	unknown
+task	ember-cli__eslint-plugin-ember-1055	eslint-plugin-ember	w62	localization	unknown
+task	ember-cli__eslint-plugin-ember-107	eslint-plugin-ember	w63	localization	unknown
+task	ember-cli__eslint-plugin-ember-1079	eslint-plugin-ember	w64	localization	unknown
+task	singapore__renovate-1005	renovate	w65	localization	unknown
+task	singapore__renovate-1006	renovate	w66	localization	unknown
+task	singapore__renovate-1018	renovate	w67	localization	unknown
+task	singapore__renovate-1048	renovate	w68	localization	unknown
+task	sindresorhus__got-114	got	w69	localization	unknown
+task	sindresorhus__got-172	got	w70	localization	unknown
+task	sindresorhus__got-183	got	w71	localization	unknown
+task	sindresorhus__got-2043	got	w72	localization	unknown
+task	stoplightio__spectral-1020	spectral	w73	localization	unknown
+task	stoplightio__spectral-1059	spectral	w74	localization	unknown
+task	stoplightio__spectral-1077	spectral	w75	localization	unknown
+task	stoplightio__spectral-1227	spectral	w76	localization	unknown
+task	firebase__firebase-tools-2214	firebase-tools	w77	localization	unknown
+task	firebase__firebase-tools-2271	firebase-tools	w78	localization	unknown
+task	firebase__firebase-tools-2291	firebase-tools	w79	localization	unknown
+task	firebase__firebase-tools-2321	firebase-tools	w80	localization	unknown
+task	googlechrome__lighthouse-10184	lighthouse	w81	localization	unknown
+task	googlechrome__lighthouse-10189	lighthouse	w82	localization	unknown
+task	googlechrome__lighthouse-10295	lighthouse	w83	localization	unknown
+task	googlechrome__lighthouse-10460	lighthouse	w84	localization	unknown
+task	elastic__synthetics-235	synthetics	w85	localization	unknown
+task	elastic__synthetics-244	synthetics	w86	localization	unknown
+task	elastic__synthetics-251	synthetics	w87	localization	unknown
+task	elastic__synthetics-252	synthetics	w88	localization	unknown
+task	pinojs__pino-1127	pino	w89	localization	unknown
+task	pinojs__pino-1137	pino	w90	localization	unknown
+task	pinojs__pino-1199	pino	w91	localization	unknown
+task	pinojs__pino-121	pino	w92	localization	unknown
+pair	p1	serverless	serverless__serverless-11277	serverless__serverless-11907	w1
+pair	p2	serverless	serverless__serverless-11277	serverless__serverless-12001	w1
+pair	p3	serverless	serverless__serverless-11277	serverless__serverless-12030	w1
+pair	p4	serverless	serverless__serverless-11907	serverless__serverless-11277	w2
+pair	p5	serverless	serverless__serverless-11907	serverless__serverless-12001	w2
+pair	p6	serverless	serverless__serverless-11907	serverless__serverless-12030	w2
+pair	p7	serverless	serverless__serverless-12001	serverless__serverless-11277	w3
+pair	p8	serverless	serverless__serverless-12001	serverless__serverless-11907	w3
+pair	p9	serverless	serverless__serverless-12001	serverless__serverless-12030	w3
+pair	p10	serverless	serverless__serverless-12030	serverless__serverless-11277	w4
+pair	p11	serverless	serverless__serverless-12030	serverless__serverless-11907	w4
+pair	p12	serverless	serverless__serverless-12030	serverless__serverless-12001	w4
+pair	p13	eslint	eslint__eslint-10054	eslint__eslint-10055	w5
+pair	p14	eslint	eslint__eslint-10054	eslint__eslint-10103	w5
+pair	p15	eslint	eslint__eslint-10054	eslint__eslint-10109	w5
+pair	p16	eslint	eslint__eslint-10055	eslint__eslint-10054	w5
+pair	p17	eslint	eslint__eslint-10055	eslint__eslint-10103	w5
+pair	p18	eslint	eslint__eslint-10055	eslint__eslint-10109	w5
+pair	p19	eslint	eslint__eslint-10103	eslint__eslint-10054	w6
+pair	p20	urql	formidablelabs__urql-1040	formidablelabs__urql-1046	w54
+pair	p21	urql	formidablelabs__urql-1040	formidablelabs__urql-1077	w54
+pair	p22	urql	formidablelabs__urql-1040	formidablelabs__urql-1117	w54
+pair	p23	urql	formidablelabs__urql-1046	formidablelabs__urql-1040	w55
+pair	p24	urql	formidablelabs__urql-1046	formidablelabs__urql-1077	w55
+pair	p25	urql	formidablelabs__urql-1046	formidablelabs__urql-1117	w55
+pair	p26	urql	formidablelabs__urql-1077	formidablelabs__urql-1040	w56
+pair	p27	spectral	stoplightio__spectral-1020	stoplightio__spectral-1059	w73
+pair	p28	spectral	stoplightio__spectral-1020	stoplightio__spectral-1077	w73
+pair	p29	spectral	stoplightio__spectral-1020	stoplightio__spectral-1227	w73
+pair	p30	spectral	stoplightio__spectral-1059	stoplightio__spectral-1020	w74
+pair	p31	spectral	stoplightio__spectral-1059	stoplightio__spectral-1077	w74
+pair	p32	spectral	stoplightio__spectral-1059	stoplightio__spectral-1227	w74

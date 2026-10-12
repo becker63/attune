@@ -1,0 +1,6 @@
+label	fhir__sushi-1006	w9
+provenance	FHIR/sushi	301e66940a2265a467debff69c5c3bfaeb06931a	f4f6338d9545fc7942b61551c8d6734eb1555878e0fd08f8c297fefb9e5fd664	reference-patch	34	1176
+entry	modified	src/ig/IGExporter.ts	js-ts	source	regular	present	eligible
+gold	src/ig/IGExporter.ts
+coverage	full	1	supported	1
+case	eligible-gold

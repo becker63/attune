@@ -1,0 +1,20 @@
+tool	commandExecution	failed	161	6080
+tool	commandExecution	completed	7011	9233
+tool	commandExecution	completed	12923	12393
+tool	commandExecution	completed	6177	17289
+tool	commandExecution	completed	6078	23029
+read	unknown		161	ccb5c85d3714245866b841438e264eb83b66d76c7720f221bb7513f2ab9e512b	127	failed	6080
+read	listFiles		7011	f3b4887aa1441a1e8cd0ff4be0ccc133c7987303dcd007827b35458f4da7e634	0	completed	9233
+read	search	.	7011	f3b4887aa1441a1e8cd0ff4be0ccc133c7987303dcd007827b35458f4da7e634	0	completed	9233
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/src/plugins/resource/plugin-standard-css.js	12923	62574a2c62968d93587ef2877a9f87f3bbb8ed68aa12c03421d9e6659447a0ca	0	completed	12393
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/plugin-postcss/src/index.js	12923	62574a2c62968d93587ef2877a9f87f3bbb8ed68aa12c03421d9e6659447a0ca	0	completed	12393
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/package.json	12923	62574a2c62968d93587ef2877a9f87f3bbb8ed68aa12c03421d9e6659447a0ca	0	completed	12393
+read	listFiles	cli	12923	62574a2c62968d93587ef2877a9f87f3bbb8ed68aa12c03421d9e6659447a0ca	0	completed	12393
+read	search	cli	6177	fbd9e7ce45130fe2266369c7193ab9544c3287b8c7603c06b31264cf71ac7d92	0	completed	17289
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/test/cases/build.config.optimization-default/build.config.optimization-default.spec.js	6177	fbd9e7ce45130fe2266369c7193ab9544c3287b8c7603c06b31264cf71ac7d92	0	completed	17289
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/test/cases/build.config.optimization-default/src/styles/main.css	6177	fbd9e7ce45130fe2266369c7193ab9544c3287b8c7603c06b31264cf71ac7d92	0	completed	17289
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/test/cases/build.config.optimization-default/fixtures/expected.css	6177	fbd9e7ce45130fe2266369c7193ab9544c3287b8c7603c06b31264cf71ac7d92	0	completed	17289
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/src/lib/resource-utils.js	6177	fbd9e7ce45130fe2266369c7193ab9544c3287b8c7603c06b31264cf71ac7d92	0	completed	17289
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/test/cases/build.config.optimization-default/build.config-optimization-default.spec.js	6078	8e1badd216db633c483c30918ae3c26fc09e63ecbc1929102893a4582906fa31	0	completed	23029
+read	search	config.js	6078	8e1badd216db633c483c30918ae3c26fc09e63ecbc1929102893a4582906fa31	0	completed	23029
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-830274220118555219/repo/packages/cli/test/cases/build.config.optimization-default/src/styles/theme.css	6078	8e1badd216db633c483c30918ae3c26fc09e63ecbc1929102893a4582906fa31	0	completed	23029

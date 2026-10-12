@@ -1,0 +1,20 @@
+tool	commandExecution	failed	41	4970
+tool	commandExecution	completed	2286	8888
+tool	commandExecution	completed	5334	13602
+tool	commandExecution	completed	22971	17628
+tool	commandExecution	completed	18310	24142
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	4970
+read	unknown		2286	5fc0f70292253306a97c40215856188720043412050552095c5377727182581c	0	completed	8888
+read	search	Cache.ts	5334	ee8a4806c9b5c0d99dc595100a9f3ed0fa6c8394aadd5e8db326ecce7ae4f08d	0	completed	13602
+read	listFiles	src	5334	ee8a4806c9b5c0d99dc595100a9f3ed0fa6c8394aadd5e8db326ecce7ae4f08d	0	completed	13602
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/Task.ts	22971	7331ba72ab2f4448a65e6df41256d9b42459c3ad22e9303e4960dcaf6ad48bb7	0	completed	17628
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/Query/Sort.ts	22971	7331ba72ab2f4448a65e6df41256d9b42459c3ad22e9303e4960dcaf6ad48bb7	0	completed	17628
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/QueryRenderer.ts	22971	7331ba72ab2f4448a65e6df41256d9b42459c3ad22e9303e4960dcaf6ad48bb7	0	completed	17628
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/Cache.ts	22971	7331ba72ab2f4448a65e6df41256d9b42459c3ad22e9303e4960dcaf6ad48bb7	0	completed	17628
+read	search	Task.test.ts	22971	7331ba72ab2f4448a65e6df41256d9b42459c3ad22e9303e4960dcaf6ad48bb7	0	completed	17628
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/tests/Task.test.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/tests/Sort.test.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/Task.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/src/Task.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142
+read	search	Sort.test.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-18331198212979979766/repo/tests/TestingTools/DateTestHelpers.ts	18310	106f38f2af60a9728fcb5ecb772db06a7e3ca3c8a912cfc15a7092dd606e8b70	0	completed	24142

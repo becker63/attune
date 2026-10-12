@@ -1,0 +1,6 @@
+label	elastic__synthetics-251	w87
+provenance	elastic/synthetics	7c3bd6475040967ffae003e0509df502ced35f64	0c8c5e13a601bde930b53400816f5f32ebc97770c72e677d8a2e05102ee2effe	reference-patch	145	4833
+entry	modified	src/plugins/network.ts	js-ts	source	regular	present	eligible
+gold	src/plugins/network.ts
+coverage	full	1	supported	1
+case	eligible-gold

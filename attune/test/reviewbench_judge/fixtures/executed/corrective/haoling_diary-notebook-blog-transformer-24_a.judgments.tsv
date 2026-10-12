@@ -1,0 +1,2 @@
+adjudged	haoling_diary-notebook-blog-transformer-24	X1	valid	src/lib/drive-client.ts の getAppDataFileByName と findFolderByName は nextPageToken を要求・処理せず、最初のページが空なら即座に不存在と判断します。空ページの後に検索結果が続く場合、前者は誤って DriveNotFoundError を投げ、後者を使う findOrCreateFolder は重複フォルダを作成します。
+adjudged	haoling_diary-notebook-blog-transformer-24	X2	valid	src/lib/drive-errors.ts の parseDriveError はクォータ理由として rateLimitExceeded、userRateLimitExceeded、quotaExceeded のみを認識します。dailyLimitExceeded または storageQuotaExceeded の403レスポンスは、メッセージに「rate limit」が含まれなければ DrivePermissionError となり、日次制限や容量不足を権限不足に誤分類します。

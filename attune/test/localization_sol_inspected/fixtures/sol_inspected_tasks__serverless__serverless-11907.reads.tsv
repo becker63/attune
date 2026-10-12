@@ -1,0 +1,28 @@
+tool	commandExecution	completed	41	7283
+tool	commandExecution	completed	41	7326
+tool	commandExecution	completed	269	12024
+tool	commandExecution	completed	44	12075
+tool	commandExecution	completed	354	12131
+tool	commandExecution	completed	8369	17750
+tool	commandExecution	completed	1398	17798
+tool	commandExecution	completed	14575	24180
+tool	commandExecution	failed	10170	24227
+tool	commandExecution	completed	6266	30307
+tool	commandExecution	completed	5481	30347
+tool	commandExecution	completed	4301	34754
+read	search	lib	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	0	completed	7283
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	0	completed	7326
+read	listFiles		269	be094e91220ae1ce989e5c283ef63c8f3a869262373b5a2db51ad90e0cb5201e	0	completed	12024
+read	search	.	44	7208ee3a36f52902bafa0d648038cec3373260dd8616684accf96fa5edfdc6c9	0	completed	12075
+read	unknown		354	4f57c68a37120e5d14d2a412fa26cbd47af740d206b358971808b7ddcfac8e2d	0	completed	12131
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/lib/plugins/aws/package/compile/functions.js	8369	cd71c278fb30c914b4551a5df0066063647d47b677ff92b83545b4c3814b021c	0	completed	17750
+read	search	provider.js	1398	e9215562843d8b08d36b5da06489eb758501828d9d7e1cdbb8b5ad01e59d3c1e	0	completed	17798
+read	search	functions.test.js	1398	e9215562843d8b08d36b5da06489eb758501828d9d7e1cdbb8b5ad01e59d3c1e	0	completed	17798
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/lib/plugins/aws/provider.js	14575	3b2b50e566f6bd580b3229bd913a3b268d4f124bdd155ae80816d119b3e4f1cc	0	completed	24180
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/test/unit/lib/plugins/aws/package/compile/functions.test.js	14575	3b2b50e566f6bd580b3229bd913a3b268d4f124bdd155ae80816d119b3e4f1cc	0	completed	24180
+read	unknown		10170	b46eb2532bc0d50a112b694720aa11d72a8a23902187f9d4d6ddb37b89a4be45	2	failed	24227
+read	search	functions.test.js	6266	6aabcc0b02554ad74def07555c1e6731c6e45be89c472abfe7da8c0c03560faf	0	completed	30307
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/lib/plugins/aws/provider.js	6266	6aabcc0b02554ad74def07555c1e6731c6e45be89c472abfe7da8c0c03560faf	0	completed	30307
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/lib/plugins/aws/package/compile/functions.js	6266	6aabcc0b02554ad74def07555c1e6731c6e45be89c472abfe7da8c0c03560faf	0	completed	30307
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/test/unit/lib/plugins/aws/package/compile/functions.test.js	5481	39e0be11d320219dcf2361d902cd005c99972c651020360046f14e5b12eb3eee	0	completed	30347
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-3320363868928543469/repo/test/unit/lib/plugins/aws/package/compile/functions.test.js	4301	cd6d6eed2b1b4f0730e28dd38572f53c711433fff2583ebf337d1697e38ceea8	0	completed	34754

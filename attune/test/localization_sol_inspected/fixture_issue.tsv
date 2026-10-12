@@ -1,0 +1,1 @@
+issue	fixture__total	The CLI's status line reports the wrong running total. After the counter has been incremented more than once, the rendered status still shows the initial value instead of the counter's current value.\n\nThe status line should report the counter's current value.

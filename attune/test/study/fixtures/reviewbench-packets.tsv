@@ -1,0 +1,28 @@
+# The declared packet world of the ACTUAL retained ReviewBench change
+# (VAL-SUB-010).
+#
+# This names the IDENTITY of the real `capawesome-team_cli-126` world pair and
+# the human cues of each declared packet. Nothing here is a gold label, a task
+# identity or a repository branch, and no changed file, changed entrypoint,
+# region, digest, byte count, memo decision or accounting number is declared:
+# the stage DERIVES all of them from the actual admitted base/head bytes of the
+# two complete retained worlds (`//test/study:fixtures/retained-world-trees.tsv`,
+# admitted read-only and digest-verified by `//platform/build:retained_worlds.bzl`).
+#
+# Row types (first field):
+#   world       <worldId> <baseRevision> <headRevision> <baseCacheWorld> <headCacheWorld>
+#   packet      <packetId> <operation> <obligationKind> <worldScope> <contract|-> <disclosure> <intent> <reachability|-> <missing>
+#   packet-path <packetId> <repositoryRelativePath>
+#   verify      <hypothesis> <checkKind> <result> <inputs> <preconditions> <limits>
+#
+# The changed-file set, the mandatory changed-entrypoint manifest, the exact
+# region tiling and the whole-world file manifest are all derived from the real
+# bytes; the packets reference repository-relative paths, never line numbers.
+world	capawesome-cli-126	capawesome-team_cli-a03825128b8380f86dcf85e8d3507b3a41d9f775	capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4	capawesome-team_cli-126-base	capawesome-team_cli-126-head
+packet	p1	publication/registry-entry	publication	capawesome-cli-126	package.json#bin	progressive	review whether the newly registered certificate and destination commands are published by the declared publication contract	the declared commands map is evaluated when the CLI entry module loads	read-publication-contract/compiled-artifact@head,read-caller/cli-consumer@head
+packet	p2	contract/certificates-create-options	contract	capawesome-cli-126	defineOptions#apps:certificates:create	progressive	review whether the newly added certificate creation command declares the inputs it requires in a non-interactive run	-	read-caller/certificates-registry@head
+packet-path	p1	src/index.ts
+packet-path	p1	package.json
+packet-path	p1	.npmignore
+packet-path	p2	src/commands/apps/certificates/create.ts
+verify	the newly registered commands are reachable from the declared published entry	base-head	Unknown	published-entry,commands-registry	the declared publication contract includes an artifact of the changed module	the published artifact is not built by this offline stage

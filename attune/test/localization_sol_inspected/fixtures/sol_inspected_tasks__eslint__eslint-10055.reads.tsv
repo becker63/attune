@@ -1,0 +1,21 @@
+tool	commandExecution	failed	162	5602
+tool	commandExecution	completed	1854	10051
+tool	commandExecution	completed	6274	14374
+tool	commandExecution	completed	4483	14433
+tool	commandExecution	completed	19603	19792
+tool	commandExecution	completed	11045	25172
+read	unknown		162	306c9dc82dbfbb6b6d9c5db425cd3547e9aaa80fb82ac2860bff3b94fe28e89f	127	failed	5602
+read	search	.	1854	aeba8625a174d879cb4b4112f7656b3ceacba320fcae046b4db26c57ec050d6b	0	completed	10051
+read	search	indent.js	6274	f488b9fd9c7894ddcd22d7db947b12cbff7c5d80f351e651ca36d8cec1290186	0	completed	14374
+read	search	indent.js	4483	e73879e2e78da1762cf989e4f2613116ebd897585ff4bb1ba5072368aa0301ca	0	completed	14433
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/package.json	4483	e73879e2e78da1762cf989e4f2613116ebd897585ff4bb1ba5072368aa0301ca	0	completed	14433
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/tests/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/tests/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/tests/lib/rules/indent.js	19603	f054d78fb771287e4dace1656f40de317d5a313e54b3b2aac2aecd32c7b6dd16	0	completed	19792
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	11045	0318eea5928a460a6fa0a3760514562fd009da9e8e2c5ffab65305e5a9d5de9a	0	completed	25172
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9032735564853791637/repo/lib/rules/indent.js	11045	0318eea5928a460a6fa0a3760514562fd009da9e8e2c5ffab65305e5a9d5de9a	0	completed	25172
+read	search	index.js	11045	0318eea5928a460a6fa0a3760514562fd009da9e8e2c5ffab65305e5a9d5de9a	0	completed	25172

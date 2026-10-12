@@ -1,0 +1,10 @@
+label	pinojs__pino-1199	w91
+provenance	pinojs/pino	1726618447f01ed90276d92d2ae196c252770e01	4792e892d766b104a0e811b55f1294d736266864511527fd10facd85ab977464	reference-patch	140	4883
+entry	modified	docs/transports.md	other	source	regular	absent	ineligible
+entry	modified	lib/deprecations.js	js-ts	source	regular	present	eligible
+entry	modified	lib/tools.js	js-ts	source	regular	present	eligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+gold	lib/deprecations.js
+gold	lib/tools.js
+coverage	full	4	supported	2
+case	eligible-gold

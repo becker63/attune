@@ -1,0 +1,59 @@
+judged	fernando-msa_bacula-log-archiver-1	C1	14	README describes attachment export as optional, but the script unconditionally saves every attachment with pastaDestino.createFile.
+judged	fernando-msa_bacula-log-archiver-1	C2	14	The optional attachment export claim contradicts the unconditional attachment-saving loop at script lines 49–52.
+judged	supa-magic_spm-19	C1	3	parseGitHubUrl omits the URL branch from its result, and resolveIdentifier always fetches the repository default branch.
+judged	supa-magic_spm-19	C2	3	The explicit tree URL branch is discarded by parseGitHubUrl and replaced with the default branch by resolveIdentifier.
+judged	supa-magic_spm-19	C3	2	The unvalidated skillset.name determines tmpDir through path.join, allowing traversal to relocate the trusted staging directory.
+judged	supa-magic_spm-19	C4	20	downloadEntries passes the manifest repository's location.ref to every entry even when entry.owner and entry.repository identify another repository.
+judged	supa-magic_spm-19	C5	1	safePath uses resolved.startsWith(baseDir), which accepts sibling directory paths sharing the base directory's textual prefix.
+judged	supa-magic_spm-19	C6	2	Manifest validation checks only that name is a string, while install uses it directly to construct the staging directory trusted by safePath.
+judged	supa-magic_spm-19	C7	20	Every FileEntry is converted to a GitHubSource using the parent skillset's location.ref regardless of its repository.
+judged	supa-magic_spm-19	C8	1	The sibling-directory exploit targets safePath's textual startsWith containment check rather than a directory-boundary check.
+judged	PierreJanineh_TechDebtMCP-135	C1	17	The engine constructs a user-controlled RegExp and executes it synchronously without checking for catastrophic backtracking.
+judged	PierreJanineh_TechDebtMCP-135	C2	17	The execution path runs user-controlled regexes synchronously, and its length and flag guards do not prevent catastrophic backtracking.
+judged	PierreJanineh_TechDebtMCP-135	C3	17,18	Validation merely compiles the user-controlled pattern, which is subsequently executed synchronously without a regex-complexity safeguard.
+judged	PierreJanineh_TechDebtMCP-135	C4	17,18	The candidate spans unchecked user-controlled regex compilation in validation and catastrophic-backtracking exposure during synchronous execution.
+judged	PierreJanineh_TechDebtMCP-135	C5	-	Accepting special files with misleading stat sizes is distinct from the references' traversal and filesystem-race issues.
+judged	PierreJanineh_TechDebtMCP-135	C6	-	The Unicode global zero-length-match loop is distinct from G14's concern about non-global regex behavior.
+judged	PierreJanineh_TechDebtMCP-135	C7	4	Besides special-file reads, the candidate explicitly identifies growth between stat and the unbounded read as bypassing the size guard.
+judged	PierreJanineh_TechDebtMCP-135	C8	-	Incrementing lastIndex into a surrogate pair creates a global Unicode empty-match loop, not the non-global behavior described by G14.
+judged	scorbo2_ext-sn-statistics-19	C1	-	Statistics retains the supplied Note list and MonthChart recounts it dynamically, a snapshot-consistency issue absent from the references.
+judged	scorbo2_ext-sn-statistics-19	C2	-	The mutable notes used by MonthChart can diverge from precomputed cached totals, which no reference describes.
+judged	scorbo2_ext-sn-statistics-19	C3	-	This concerns cached Note references producing inconsistent chart values, not any referenced loading-state or cancellation defect.
+judged	scorbo2_ext-sn-statistics-19	C4	-	Statistics stores allNotes directly while MonthChart recomputes counts, an issue distinct from every reference finding.
+judged	scorbo2_ext-sn-statistics-19	C5	12	Like G12, this identifies cancellation clearing shared loading state before the old workers finish, allowing replacement loads and further interference.
+judged	scorbo2_ext-sn-statistics-19	C6	12	The obsolete-callback scenario extends G12's premature cancellation-state reset while worker futures remain active.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C1	24	The Docker CMD still executes node src/webapp/server.js, matching G24's stale runtime caller after the TypeScript rename.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C2	24	The production Dockerfile launches the removed server.js entry point, the same container startup failure described in G24.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C3	21	The VS Code MCP configuration still invokes node src/webapp/mcp-server.js, exactly the stale IDE launch command identified in G21.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C4	21	The MCP configuration targets mcp-server.js rather than the converted TypeScript service, matching G21.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C5	24	start.ps1 resolves server.js and executes it with node, another checked-in runtime caller of the removed backend entry point described in G24.
+judged	RobertAgterhuis_myAgentic-IT-Project-team-V2-331	C6	24	The PowerShell launcher still runs the removed server.js file, matching G24's unupdated runtime callers after the rename.
+judged	Asjas_course-platform-946	C1	-	The fullscreen wrapper caps height at 45vh with overflow-hidden, but no reference addresses video-player clipping.
+judged	Asjas_course-platform-946	C2	-	The fullscreen wrapper clips its VideoPlayer through a 45vh height cap, an issue absent from the reference set.
+judged	Asjas_course-platform-946	C3	11	The parser detects and splits timing lines using literal single-space arrow delimiters, matching G11's whitespace-handling issue.
+judged	Asjas_course-platform-946	C4	11	Literal arrow delimiters and splitting the end timestamp before trimming cause the same valid-whitespace parsing failure described in G11.
+judged	Asjas_course-platform-946	C5	-	The claim concerns inline timestamp markup surviving HTML text extraction, not G1's import-time DOMParser initialization or any other reference issue.
+judged	Asjas_course-platform-946	C6	-	stripVttTags uses HTML DOMParser text extraction, but no reference addresses its handling of WebVTT inline timestamp tags.
+judged	taskless_skills-16	C1	2	init installs only detected tools once any exist, while checkStaleness retains the previous fallback alongside them, matching G2's uncleaned fallback issue.
+judged	taskless_skills-16	C2	2	The existing fallback remains reported by checkStaleness after detected tools prevent init from refreshing it, matching G2's retained fallback issue.
+judged	taskless_skills-16	C3	2	The transition to a detected tool leaves the previous .agents installation untouched and still reported alongside real tools, the lifecycle problem described by G2.
+judged	taskless_skills-16	C4	2	init skips the existing fallback when tools are detected, but checkStaleness still includes it, matching G2's obsolete fallback entry issue.
+judged	rulecom_rule-io-sdk-36	C1	6	All three recipient methods append pagination to the URL and send GET requests without a body, matching G6's pagination transport issue.
+judged	rulecom_rule-io-sdk-36	C2	6	The recipient methods serialize page and per_page as query parameters rather than a JSON GET body, the same contract mismatch described by G6.
+judged	rulecom_rule-io-sdk-36	C3	6	The methods pass only method: 'GET' alongside query-bearing URLs, matching G6 rather than the separate parameter-maintenance or error-test concerns.
+judged	rulecom_rule-io-sdk-36	C4	6	All three methods place pagination in the query string and omit a request body, which is the same API contract issue identified in G6.
+judged	NestDevLab_nestjs-yalc-123	C1	1	Both sync helpers omit guid, and the create path inserts into an entity whose guid primary column has no generation decorator.
+judged	NestDevLab_nestjs-yalc-123	C2	24	findByExternalIdentity passes literal null account and container values to TypeORM, describing the same scope-matching problem as G24.
+judged	NestDevLab_nestjs-yalc-123	C3	24	The candidate identifies the same literal-null lookup predicates in findByExternalIdentity and their potential to match scoped references.
+judged	NestDevLab_nestjs-yalc-123	C4	2,3	upsertExternalRef performs a separate lookup and insert, while OmniExternalRefEntity lacks a unique constraint on the four-part external identity.
+judged	hughdidit_DAISy-Agency-309	C1	17	The non-wrapper heredoc preserves escaped double quotes around the binary name, causing command -v to search for a quote-containing name.
+judged	hughdidit_DAISy-Agency-309	C2	17	The generated non-wrapper probe searches for a literally quoted binary name because the heredoc retains the backslashes before double quotes.
+judged	hughdidit_DAISy-Agency-309	C3	17	The command -v expression at line 279 preserves escaped quotes in the generated probe, incorrectly resolving a name such as "jq" rather than jq.
+judged	hughdidit_DAISy-Agency-309	C4	17	The non-wrapper probe retains backslashes around the interpolated binary name, producing the same literal-quote lookup failure described by G17.
+judged	pnp_cli-microsoft365-7191	C1	2,3	Both tabs list only ExternalConnection.ReadWrite.OwnedBy, matching the omitted external-item permissions for the doctor's search and item retrieval checks.
+judged	pnp_cli-microsoft365-7191	C2	2,3	The contentIngested check is documented, but both permission tabs omit the external-item access identified by G2 and G3.
+judged	pnp_cli-microsoft365-7191	C3	2,3	The missing external-item access for content-ingestion search and retrieval is the same permissions omission described in G2 and G3.
+judged	SolidOS_solid-panes-598	C1	19,20	Both webpack configurations let the generic SVG asset rule also match ?raw imports, describing the same URL-versus-markup problem passed to createUiIcon.
+judged	SolidOS_solid-panes-598	C2	19,20	The candidate describes the overlapping raw SVG and asset/resource rules present in both production and development configurations, matching both references.
+judged	ComposioHQ_agent-orchestrator-1277	C1	5,18	The update smoke tests and doctor source-checkout runtime check both use the obsolete packages/agent-orchestrator/bin/ao.js launcher path.
+judged	ComposioHQ_agent-orchestrator-1277	C2	5,18	Both bundled scripts reference packages/agent-orchestrator/bin/ao.js instead of packages/ao/bin/ao.js in their launcher checks and smoke tests.

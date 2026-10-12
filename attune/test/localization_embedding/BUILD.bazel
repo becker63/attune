@@ -1,0 +1,100 @@
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test")
+load("//test/embedding:world_sources.bzl", "WORLD_SOURCES")
+load("//test/localization_embedding:localization_embedding.bzl", "attune_localization_embedding")
+load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The explicit source closure of the two downstream E stages: the one Study-owned
+# embedding submodule, the canonical metric reducer and the shared owners they
+# consume. It carries no Grit, Theory or Repository dependency, so an E stage
+# cannot rerun a structural stage.
+STAGE_SRCS = [
+    "EmbeddingRankStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+]
+
+# The surviving cohort's E ranking stages and the one canonical metric stage. The
+# macro returns the declared rank targets so the audit binds exactly the trees the
+# same manifest declared.
+_RANK_TARGETS = attune_localization_embedding(
+    name = "embedding_metrics",
+    analysis = LOCALIZATION_ANALYSIS,
+    derived = "//test/localization_runtime:derived_population",
+    exclusions = RUNTIME_CAPPED_EXCLUSIONS,
+    label_template = "//test/study:manifest/localization/label_%s.tsv",
+    mapped = "//test/study:manifest/localization/mapped.tsv",
+    published = "//test/localization_runtime:metrics",
+    query_fixture = "//test/embedding:queries",
+    rank_template = "//test/localization_runtime:rank_%s",
+    shard_template = "//test/embedding:code_%s_%d",
+    stage_srcs = STAGE_SRCS,
+    world_sources = WORLD_SOURCES,
+)
+
+# The corpus-bound audit (`VAL-EMBED-003`, `VAL-EMBED-004`): it reads the real
+# produced E ranking trees, their exact similarity sidecars, the canonical metric
+# table, the baseline reproduction record and the frozen overlap, and checks each
+# one against the frozen deterministic universe and the admitted evaluator
+# labels. `manual`, so the ordinary `bazel test //...` gate never touches the
+# corpus.
+native_flix_consumer_test(
+    name = "embedding_rank_audit",
+    srcs = [
+        "EmbeddingRankAudit.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+    ],
+    declared_files = ["//test/study:manifest/localization/mapped.tsv"],
+    produced = _RANK_TARGETS + [":embedding_metrics"] + [
+        "//test/localization_runtime:rank_%s" % row[1]
+        for row in LOCALIZATION_ANALYSIS
+        if len(row) > 3 and row[0] == "task" and row[2] not in [
+            entry["group"]
+            for entry in RUNTIME_CAPPED_EXCLUSIONS
+        ]
+    ],
+    tags = ["manual"],
+)
+
+# The corpus-free embedding retrieval laws (`VAL-EMBED-003`, `VAL-EMBED-004`):
+# they drive the Study-owned embedding submodule with hand-built declared fixtures
+# and assert the exact cosine, the frozen similarity-descending/ascending-path
+# order, the rank column and sidecar separation, the `Schema.Embedding` bridge and
+# its refusal of a gold artifact, the row/vector admission errors and the exact
+# top-k overlap, gold decomposition, median and aggregate. The law is pure, so the
+# ordinary offline gate runs it.
+native_flix_test(
+    name = "embedding_rank_law",
+    srcs = [
+        "EmbeddingRankLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+    ],
+)
+
+test_suite(
+    name = "all",
+    tags = ["manual"],
+    tests = [
+        ":embedding_rank_audit",
+        ":embedding_rank_law",
+    ],
+)

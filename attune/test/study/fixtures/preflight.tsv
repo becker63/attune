@@ -1,0 +1,3 @@
+arm	label	obligationOperation	obligationEntrypoint	obligationKind	obligationWorldScope	obligationSatisfied	world	revision	path	sha256	startLine	endLine	bytes	delivery
+passive	passive-additional-context	-	-	-	-	false	world-evidence-1	rev-1	source/shop.ts	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	1	2	61	complete
+substitutive	substitutive-obligation-satisfaction	read-consumer	consumer.ts	read	world-evidence-1	false	world-evidence-1	rev-1	source/shop.ts	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	1	2	61	complete

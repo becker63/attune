@@ -1,0 +1,12 @@
+tool	commandExecution	failed	162	4996
+tool	commandExecution	completed	1313	8670
+tool	commandExecution	completed	5068	14348
+tool	commandExecution	completed	4819	14349
+tool	commandExecution	failed	3155	14360
+tool	commandExecution	completed	3846	19308
+read	unknown		162	73eddeb053c3309b7a5fb7741284dbfae12bf85e1d7b613c655140736e1662f5	127	failed	4996
+read	search	.	1313	7f6c1466ccccafaaa35d1b43eb384af1880c1a3185e20e3224216db707052fb2	0	completed	8670
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-8035191897341552857/repo/lib/rules/no-cond-assign.js	5068	3f88df47376742fe4ecbef9ce207af45333187c41cb9bd520cfb0b40fffc4164	0	completed	14348
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-8035191897341552857/repo/tests/lib/rules/no-cond-assign.js	4819	7dbf036e1764b5444e3115029e7d09f54f0427d1a1eeba84063b73fb8c3de530	0	completed	14349
+read	unknown		3155	eb61010eb9334ccabed1bb09bb2af75bdf48ad5f3448ed3d6d50a18e779fe38e	2	failed	14360
+read	search	ast-utils.js	3846	f48ed709216ddc965db7d26172f9b9201693573151e96baa77f86ca882a8ea69	0	completed	19308

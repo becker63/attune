@@ -1,0 +1,86 @@
+# The declared physical schema of the pinned catalog (VAL-DATA-001).
+#
+# The provider-published Arrow feature description of the one immutable pinned
+# file, written as the same bounded pre-order record vocabulary the mechanical
+# inspection records, so the declared expectation and the recorded schema are
+# compared by `Attune.Study.catalogFindings` as ordered values. One record per
+# node: depth, field name, shallow Arrow type, nullability. The list element
+# nodes and the nested `install_config`/`meta` struct children are part of the
+# physical schema and are declared, not skipped.
+field	0	base_commit	utf8	true
+field	0	created_at	utf8	true
+field	0	image_name	utf8	true
+field	0	instance_id	utf8	true
+field	0	interface	utf8	true
+field	0	language	utf8	true
+field	0	license	utf8	true
+field	0	patch	utf8	true
+field	0	pr_description	utf8	true
+field	0	problem_statement	utf8	true
+field	0	repo	utf8	true
+field	0	test_patch	utf8	true
+field	0	FAIL_TO_PASS	list	true
+field	1	element	utf8	true
+field	0	PASS_TO_PASS	list	true
+field	1	element	utf8	true
+field	0	install_config	struct	true
+field	1	base_image_name	utf8	true
+field	1	docker_specs	struct	true
+field	2	_variant	utf8	true
+field	2	bazel_version	utf8	true
+field	2	bun_version	utf8	true
+field	2	cargo_version	utf8	true
+field	2	deno_version	utf8	true
+field	2	docker_version	utf8	true
+field	2	erlang_version	utf8	true
+field	2	gcc_version	utf8	true
+field	2	go_version	utf8	true
+field	2	helm_version	utf8	true
+field	2	java_version	utf8	true
+field	2	jdk_version	utf8	true
+field	2	llvm_version	utf8	true
+field	2	lua_version	utf8	true
+field	2	luajit_version	utf8	true
+field	2	neovim_version	utf8	true
+field	2	node_version	utf8	true
+field	2	npm_version	utf8	true
+field	2	nvim_version	utf8	true
+field	2	pnpm_version	utf8	true
+field	2	python_image	utf8	true
+field	2	python_version	utf8	true
+field	2	redis_version	utf8	true
+field	2	ruby_version	utf8	true
+field	2	rust_version	utf8	true
+field	2	rustc_version	utf8	true
+field	2	solana_version	utf8	true
+field	2	sqlite_version	utf8	true
+field	1	install	list	true
+field	2	element	utf8	true
+field	1	log_parser	utf8	true
+field	1	test_cmd	utf8	true
+field	0	meta	struct	true
+field	1	llm_metadata	struct	true
+field	2	code	utf8	true
+field	2	confidence	float64	true
+field	2	detected_issues	struct	true
+field	3	B1	bool	true
+field	3	B2	bool	true
+field	3	B3	bool	true
+field	3	B4	bool	true
+field	3	B5	bool	true
+field	3	B6	bool	true
+field	2	difficulty	utf8	true
+field	2	external_urls	list	true
+field	3	element	utf8	true
+field	2	intent_completeness	utf8	true
+field	2	pr_categories	list	true
+field	3	element	utf8	true
+field	2	reasoning	utf8	true
+field	2	test_alignment_issues	list	true
+field	3	element	utf8	true
+field	1	num_modified_files	int64	true
+field	1	num_modified_lines	int64	true
+field	1	pr_author	utf8	true
+field	1	pr_labels	list	true
+field	2	element	utf8	true
+field	1	pr_url	utf8	true

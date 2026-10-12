@@ -1,6 +1,0 @@
-{
-  "cases": ["snapshot-revalidation", "cancellation-terminalization"],
-  "arms": ["A", "B", "C"],
-  "seeds": ["1", "2"],
-  "expectedRuns": 12
-}

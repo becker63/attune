@@ -1,0 +1,24 @@
+label	obsidian-tasks-group__obsidian-tasks-1006	w34
+provenance	obsidian-tasks-group/obsidian-tasks	d48284e82386548e13c1471fc9dc1771d3d736be	d9f54a825e88272e0ee064da76fc2b1e94b0c629110e12686c59499d41a93189	reference-patch	686	30461
+entry	modified	docs/installation/index.md	other	source	regular	absent	ineligible
+entry	modified	docs/queries/filters.md	other	source	regular	absent	ineligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	src/Cache.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Commands/CreateOrEdit.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Commands/ToggleDone.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Query/Filter/DescriptionField.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Query/Filter/HeadingField.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Query/Filter/PathField.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Query/Filter/TextField.ts	js-ts	source	regular	present	eligible
+entry	modified	src/Task.ts	js-ts	source	regular	present	eligible
+entry	modified	yarn.lock	other	source	regular	absent	ineligible
+gold	src/Cache.ts
+gold	src/Commands/CreateOrEdit.ts
+gold	src/Commands/ToggleDone.ts
+gold	src/Query/Filter/DescriptionField.ts
+gold	src/Query/Filter/HeadingField.ts
+gold	src/Query/Filter/PathField.ts
+gold	src/Query/Filter/TextField.ts
+gold	src/Task.ts
+coverage	full	12	supported	8
+case	eligible-gold

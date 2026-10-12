@@ -1,0 +1,130 @@
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test")
+load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS", "attune_localization_runtime")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The explicit source closure of the two derived stages: the existing
+# `LocalizationStages.flix` compiled byte-identically, plus the shared owners it
+# already consumes. Reusing the exact same source list is what makes the derived
+# stages produce the same declared artifacts as the original graph and keeps the
+# warm upstream action keys unchanged.
+STAGE_SRCS = [
+    "//test/localization:LocalizationStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The metrics leaf compiles the one canonical reducer plus the shared Study
+# owner whose arm vocabulary it reports. It carries no Grit, Theory or Repository
+# dependency: a scoring consumer must not be able to rerun a structural stage.
+METRIC_SRCS = [
+    "MetricsStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Metrics.flix",
+]
+
+# The runtime-capped localization cohort (`VAL-LOC-002`, `VAL-LOC-005`). Every
+# target is `manual`, so the ordinary `bazel test //...` gate never touches the
+# corpus. The derived stages bind the warm `//test/localization` world, Theory,
+# issue and variant targets; they redeclare no producer.
+attune_localization_runtime(
+    name = "derived_population",
+    analysis = LOCALIZATION_ANALYSIS,
+    exclusions = RUNTIME_CAPPED_EXCLUSIONS,
+    expected_eligible = 85,
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/parquet:attune_parquet",
+    ],
+    metric_srcs = METRIC_SRCS,
+    stage_srcs = STAGE_SRCS,
+)
+
+# The surviving derived tasks: every admitted task whose whole canonical group the
+# runtime cutoff did not exclude. Derived from the same admitted manifest the
+# macro consumes, so the law's declared population cannot drift from the graph.
+_EXCLUDED_GROUPS = [entry["group"] for entry in RUNTIME_CAPPED_EXCLUSIONS]
+
+_WORLD_GROUP = {
+    row[3]: row[2]
+    for row in LOCALIZATION_ANALYSIS
+    if len(row) > 3 and row[0] == "task"
+}
+
+DERIVED_RANK_TARGETS = [
+    ":rank_%s" % row[1]
+    for row in LOCALIZATION_ANALYSIS
+    if len(row) > 3 and row[0] == "task" and row[2] not in _EXCLUDED_GROUPS
+]
+
+# The warm world-extraction trees of the surviving cohort. The law reads each
+# one's declared `sources.tsv` inventory, so the four derived arm rankings are
+# checked against the exact world inventory rather than only against each other.
+# Binding the existing targets is what proves the cohort reused warm work: no
+# extraction target is redeclared here.
+DERIVED_WORLD_TARGETS = [
+    "//test/localization:world_extract_%s" % row[1]
+    for row in LOCALIZATION_ANALYSIS
+    if len(row) > 1 and row[0] == "world" and _WORLD_GROUP.get(
+        row[1],
+        "",
+    ) not in _EXCLUDED_GROUPS
+]
+
+# The derived-cohort law (`VAL-LOC-005`): it audits the real derived selection and
+# the real derived freeze records over the materialized trees, so the post-hoc
+# development denominator, the two observed policies, the one selected policy and
+# the exclusion of the cutoff groups are checked against actual bytes rather than
+# declared intent.
+native_flix_consumer_test(
+    name = "runtime_law",
+    srcs = [
+        "LocalizationRuntimeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    declared_files = ["//test/study:manifest/localization/mapped.tsv"],
+    produced = [":select_policy"] + DERIVED_RANK_TARGETS + DERIVED_WORLD_TARGETS,
+    tags = ["manual"],
+)
+
+# The corpus-free localization metric laws (`VAL-LOC-003`): they drive the one
+# canonical reducer in `Attune.Study.Metrics` with hand-built immutable rankings
+# and gold populations. Recall-versus-hit separation, abstention denominators,
+# undefined ratios, ineligible classifications and the group-equal macro are
+# therefore pinned without touching the corpus. Unlike the corpus-bound targets
+# this law is not `manual`: it is pure, so the ordinary offline gate runs it.
+native_flix_test(
+    name = "metrics_law",
+    srcs = [
+        "MetricsLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Metrics.flix",
+    ],
+)
+
+test_suite(
+    name = "all",
+    tags = ["manual"],
+    tests = [
+        ":metrics_law",
+        ":runtime_law",
+    ],
+)

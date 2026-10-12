@@ -1,0 +1,20 @@
+tool	commandExecution	failed	82	5091
+tool	commandExecution	completed	2736	8699
+tool	commandExecution	completed	966	14167
+tool	commandExecution	completed	10086	21905
+tool	commandExecution	completed	11275	21916
+tool	commandExecution	completed	7493	28064
+read	search	provider-factory	82	4d54d0d8fc1ffcbe3d6de4c8b8a37166457eb01188239f942abd50a26aa7fd49	127	failed	5091
+read	listFiles	test	82	4d54d0d8fc1ffcbe3d6de4c8b8a37166457eb01188239f942abd50a26aa7fd49	127	failed	5091
+read	unknown		2736	6c4236799fa2549c9456e65a91181f53da6283b94fe4a2b1164221ed18262e69	0	completed	8699
+read	search	src	966	566f4e7d948eee34c2d166ccb2fba68acd147e54d5258f849cfe4de98543651a	0	completed	14167
+read	search	src	966	566f4e7d948eee34c2d166ccb2fba68acd147e54d5258f849cfe4de98543651a	0	completed	14167
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/src/identity/configuration/IdentityProviderFactory.ts	10086	fd3a805c2c7e1a148e56c3f903cec14eb6fbe62023ba804fe97c9e86574206a7	0	completed	21905
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/src/identity/configuration/ProviderFactory.ts	10086	fd3a805c2c7e1a148e56c3f903cec14eb6fbe62023ba804fe97c9e86574206a7	0	completed	21905
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/test/unit/identity/configuration/IdentityProviderFactory.test.ts	11275	4d91e8e6d6567709ba0ef8417519bdb7f06e486bad79e45f42763d1348033526	0	completed	21916
+read	listFiles	test	11275	4d91e8e6d6567709ba0ef8417519bdb7f06e486bad79e45f42763d1348033526	0	completed	21916
+read	search	integration	11275	4d91e8e6d6567709ba0ef8417519bdb7f06e486bad79e45f42763d1348033526	0	completed	21916
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/test/integration/Identity.test.ts	7493	fc8b9818a1a978b055a4ebf3ec2c20aa20e6def6c60448c5487f60cfbc0b5f44	0	completed	28064
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/test/integration/Identity.test.ts	7493	fc8b9818a1a978b055a4ebf3ec2c20aa20e6def6c60448c5487f60cfbc0b5f44	0	completed	28064
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-456672568186127877/repo/config/identity/handler/provider-factory/default.json	7493	fc8b9818a1a978b055a4ebf3ec2c20aa20e6def6c60448c5487f60cfbc0b5f44	0	completed	28064
+read	search	config	7493	fc8b9818a1a978b055a4ebf3ec2c20aa20e6def6c60448c5487f60cfbc0b5f44	0	completed	28064

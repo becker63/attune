@@ -1,0 +1,94 @@
+load("//test/reviewbench_context:reviewbench_context.bzl", "CONTEXT_TASKS", "attune_reviewbench_context")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The explicit source closure every declared stage compiles: the context
+# dispatcher plus the shared owners it consumes. One declaration, so every stage
+# action compiles exactly the same set and no stage can reach a source its closure
+# omits. The dispatcher is a thin adapter; the structural scope, the exclusion
+# vocabulary, the structural accounting, the extraction status classification, the
+# bounded Qwen batching, the JEV public-context vocabulary and the bounded
+# assisted-context caps all live in `Attune.Study.ReviewBench`; the earned facts,
+# the index and the scoped coverage live in `Attune.Repository`; the descriptor
+# grammar and the witness lowering live in `Attune.Theory`; and the existing
+# hosted-Qwen provider/model/recipe identity the context record names is the
+# existing `Attune.Study.Qwen` owner's, so no second recipe is stated.
+CONTEXT_SRCS = [
+    "ReviewBenchContextStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The corpus-free context laws are pure and part of the ordinary offline gate, so
+# `bazel test //...` runs them without touching a world, an archive, the pinned
+# Grit engine or a provider.
+CONTEXT_LAW_SRCS = [
+    "ReviewBenchContextLaw.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The corpus-bound context audit reads the real materialized per-world and
+# per-task context trees and the one aggregate context record, and refuses a
+# record outside the declared contract. It is `manual`, so the ordinary gate
+# never runs it, and it names no acquisition producer: a replay of the shared
+# context costs no world download, no Grit extraction and no provider call.
+CONTEXT_AUDIT_SRCS = [
+    "ReviewBenchContextAudit.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The declared shared-context graph (`VAL-REVIEW-002`): the ten verified admitted
+# tasks of the frozen 24-task cohort expanded into their twenty exact base/head
+# world extractions, their ten bounded task contexts and the one aggregate
+# context record. Every world extraction is bounded to the world's changed
+# first-party source and carries the declared 120 s out-of-process world deadline.
+attune_reviewbench_context(
+    name = "reviewbench_context",
+    audit_srcs = CONTEXT_AUDIT_SRCS,
+    grit_libs = ["//platform/support/grit:attune_grit_abi"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    law_srcs = CONTEXT_LAW_SRCS,
+    stage_srcs = CONTEXT_SRCS,
+    tasks = CONTEXT_TASKS,
+)
+
+test_suite(
+    name = "all",
+    tags = ["manual"],
+    tests = [":reviewbench_context_audit"],
+)

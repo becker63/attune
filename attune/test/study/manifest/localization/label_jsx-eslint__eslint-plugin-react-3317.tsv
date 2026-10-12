@@ -1,0 +1,7 @@
+label	jsx-eslint__eslint-plugin-react-3317	w44
+provenance	jsx-eslint/eslint-plugin-react	aac7fb9bc48427539839280ea522ccbe50458ac1	6cde7b82d9dcc39f826f40449d6520b9803e7ec23650eaa40ec19b104bb418b4	reference-patch	77	3087
+entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	lib/rules/jsx-no-literals.js	js-ts	source	regular	present	eligible
+gold	lib/rules/jsx-no-literals.js
+coverage	full	2	supported	1
+case	eligible-gold

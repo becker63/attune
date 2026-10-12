@@ -1,0 +1,915 @@
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_java_test", "native_flix_test", "native_study_stage")
+load("//platform/build:study.bzl", "attune_admission_probe", "attune_study")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+load("//test/study:manifest/manifest.bzl", "ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The world/task/pair fixture population is declared once, by the admitted
+# manifest: `manifest/panel.tsv` names each world's source, facts and descriptor
+# files, and `manifest/analysis.tsv` is the bounded gold-free record set native
+# preparation emitted from it. Restating those paths here would be a second,
+# drift-prone declaration of the same population, so the macro consumes the
+# manifest instead. The evaluator labels under `fixtures/labels/` are a separate
+# declared population, named only by the `label_fixtures` argument, so the only
+# stage that reads one is the declared `reduce_<task>` join.
+
+# The explicit source closure every declared stage compiles: the dispatcher plus
+# the shared owners it consumes. One declaration, so every stage action compiles
+# exactly the same set and no stage can reach a source its closure omits. The
+# dispatcher is a thin adapter; the bounded panel selection, candidate ranking
+# and anchor decoding live in `Attune.Study`, and the descriptor decoding and
+# shard lowering live in `Attune.Theory`.
+STAGE_SRCS = [
+    "Stages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The explicit source closure of the ONE declared compiled evidence operation.
+# The stage dispatcher is a thin adapter over the canonical
+# `Attune.Study.EvidenceOperation` meaning, so the native DSH tool can serve the
+# operation's own materialized records instead of re-deriving them. It is
+# declared once here and consumed by the stage action in `//platform/dsh`, which
+# owns the runfiles location the tool resolves.
+EVIDENCE_STAGE_SRCS = [
+    "EvidenceOperationStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/EvidenceOperation.flix",
+    "//src:Attune/Study/EvidenceSubstrate.flix",
+]
+
+filegroup(
+    name = "evidence_operation_stage_srcs",
+    srcs = EVIDENCE_STAGE_SRCS,
+)
+
+# The declared partial import record of the preserved historical Codex trace
+# (VAL-SUB-016). It is consumed by the native law and by the local supported
+# import action of `//platform/dsh/import`.
+filegroup(
+    name = "historical_trace_fixture",
+    srcs = [
+        "fixtures/historical-codex-prompt.txt",
+        "fixtures/historical-codex-trace.tsv",
+    ],
+)
+
+# The same fixture as a rules_js library, so `//platform/dsh/import` can carry it
+# into its runfiles as a declared data dependency.
+js_library(
+    name = "historical-codex-trace_tsv",
+    srcs = [
+        "fixtures/historical-codex-prompt.txt",
+        "fixtures/historical-codex-trace.tsv",
+    ],
+    visibility = ["//platform/dsh/import:__pkg__"],
+)
+
+# The explicit source closure of the ACTUAL retained-ReviewBench stages: the
+# dispatcher that DERIVES the changed-entrypoint manifest, the exact regions and
+# the packet records from the admitted base/head bytes. It is the only stage
+# closure that reaches the existing mechanical digest seam
+# (`AttuneReviewBench.sha256Hex`), so that Java dependency is declared by these
+# producers alone.
+REVIEWBENCH_INTEGRATION_SRCS = [
+    "ReviewBenchIntegrationStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/EvidenceOperation.flix",
+    "//src:Attune/Study/EvidenceSubstrate.flix",
+]
+
+filegroup(
+    name = "reviewbench_integration_stage_srcs",
+    srcs = REVIEWBENCH_INTEGRATION_SRCS,
+)
+
+# The laws of the ACTUAL retained-ReviewBench packet world (VAL-SUB-010). They
+# consume the tree the `evidence_reviewbench_packets` stage action materialized
+# from the COMPLETE admitted base/head source trees and recompute the mandatory
+# changed-entrypoint manifest, the exact regions and the packet meaning over the
+# SAME admitted bytes: the regions TILE each admitted file, the sealed copy of
+# every admitted whole file carries its declared retained digest, every packet's
+# entrypoints come from the manifest, the retained full-source escape discloses
+# every declared head region, and the whole-world file manifest is complete with
+# an explicit bounded-policy status. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_packet_law",
+    srcs = [
+        "EvidenceReviewBenchPacketLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/retained-world-trees.tsv",
+        "fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_packets"],
+)
+
+# The laws of the ACTUAL runtime acquisition accounting (VAL-SUB-010 runtime
+# half). They consume the tree the `evidence_reviewbench_runtime` stage action
+# materialized and recompute the whole-run exact-identity memo, the
+# unique/total/repeated byte accounting and the observed instrumentation from the
+# SAME delivered exact spans the stage reduced, so the memo and the byte counts
+# are derived from a delivery sequence rather than declared as fixture numbers.
+# The one value an offline replay cannot observe stays the canonical
+# `Unavailable`. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_runtime_law",
+    srcs = [
+        "EvidenceReviewBenchRuntimeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/retained-world-trees.tsv",
+        "fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_runtime"],
+)
+
+# The laws of the ONE ACTUAL native run's own 72-row acquisition ledger
+# (VAL-SUB-010 runtime half, VAL-SUB-012 join). They consume the tree the
+# `evidence_reviewbench_actual_runtime` stage action materialized from the FROZEN
+# immutable record of the authorized remote ReviewBench source smoke, and
+# recompute the whole-run exact-identity memo, the unique/total/repeated byte
+# accounting, the observed instrumentation and the compact
+# scoped-negative/InformationDelta/observational-summary join from the SAME
+# delivery sequence the stage reduced. Every number is derived from the run's own
+# served spans rather than declared as a fixture count, so a repeated delivery is
+# never confused with a physical memo reuse or with independent defect discovery.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_actual_runtime_law",
+    srcs = [
+        "EvidenceReviewBenchActualRuntimeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_actual_runtime"],
+)
+
+# The laws of the SOURCE-DERIVED detector families (VAL-SUB-013, real-source
+# half). They consume the tree the `evidence_reviewbench_detectors` stage action
+# materialized plus the packet world it extracted from, and re-derive the two
+# families' contract facts from the SAME admitted head bytes with the SAME
+# canonical extraction and run the SAME canonical detectors, so the materialized
+# sidecar is the canonical result of the REAL world rather than a declared
+# fixture. Exactly two families exist, every fact carries a changed-head source
+# identity, the funnel is monotone, and both families are model-hidden in BOTH
+# prospective arms. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_detector_law",
+    srcs = [
+        "EvidenceReviewBenchDetectorLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = [
+        "//platform/dsh:evidence_reviewbench_packets",
+        "//platform/dsh:evidence_reviewbench_detectors",
+    ],
+)
+
+# The laws of the four-quadrant delivery accounting (VAL-SUB-010, Gate C offline
+# half). They consume the tree the `evidence_reviewbench_delivery` stage action
+# materialized and recompute the four separated accountings from the SAME
+# per-operation receipts, so a prepared payload, a physically verified read and
+# an accepted model-visible delivery can never be reported as one figure. A
+# failed or unaccepted operation contributes zero visible bytes, and an
+# unobservable later use stays `Unavailable`. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_delivery_law",
+    srcs = [
+        "EvidenceReviewBenchDeliveryLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/reviewbench-delivery-events.jsonl",
+        "fixtures/reviewbench-delivery-ledger.tsv",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_delivery"],
+)
+
+# The laws of the ten-world cohort admission (VAL-SUB-019, Gate D offline half).
+# They consume the tree the `evidence_reviewbench_cohort` stage action materialized
+# over the ACTUAL complete authorized source of all ten original frozen tasks and
+# both revisions and recompute the cohort invariants from the SAME records: both
+# frozen revisions per task, a bounded initial packet with at least one exact
+# changed span, the sealed span text hashing to its declared digest, the credential
+# file `.env` excluded and never admitted, and no CLI/publication prerequisite. The
+# mechanical digest seam is declared beside them. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_cohort_law",
+    srcs = [
+        "EvidenceReviewBenchCohortLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_cohort"],
+)
+# The laws of the metadata-only 24-task HOLDOUT cohort admission (VAL-STUDY-004).
+# They consume the tree the `evidence_reviewbench_holdout_cohort` stage action
+# materialized over the ACTUAL complete authorized source of the frozen holdout 24
+# tasks and both revisions and recompute the SAME cohort invariants the ten-task
+# cohort law recomputes, plus the disjointness of the holdout from the ten pilot
+# tasks. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_holdout_cohort_law",
+    srcs = [
+        "EvidenceReviewBenchHoldoutCohortLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_holdout_cohort"],
+)
+
+# The laws of the ONE offline individual-acquisition-versus-compiled-packet
+# preflight (VAL-SUB-020). They consume the tree the
+# `evidence_reviewbench_preflight` stage action materialized and recompute the
+# comparison from the SAME two arm records: A = one individual source acquisition
+# per exact region, B = the compiled source-bearing packet over the same exact
+# regions. The stage's dimensions are the canonical reduction of the RAW per-call
+# record the `//platform/dsh/tool:preflight_execution` action produced by actually
+# driving the registered tool, so the operation count is the number of REAL calls;
+# the pure paging model is retained only as a model. The two arms must acquire
+# identical exact evidence, the compiled packet uses no more agent-facing
+# operations, and the preflight never claims a token saving. Provider-free and
+# offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_preflight_law",
+    srcs = [
+        "EvidenceReviewBenchPreflightLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_preflight"],
+)
+
+# The laws of the compiled operation: they consume the declared tree the
+# `evidence_operation` stage action materialized and assert it is the canonical
+# Flix reference record of the declared region and the frozen cross-language
+# parity target the native DSH tool's own law reads. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_operation_projection_law",
+    srcs = [
+        "EvidenceOperationProjectionLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceOperation.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "//platform/dsh/tool:fixtures/expected-reference-projection.tsv",
+        "//platform/dsh/tool:fixtures/source/shop.ts",
+        "//platform/dsh/tool:fixtures/world.tsv",
+    ],
+    produced = ["//platform/dsh:evidence_operation_projection"],
+)
+
+# The laws of the declared mechanical-guard declaration: they consume the tree
+# the `evidence_guard` stage action materialized and assert it is the canonical
+# Flix caps and derived finalization reserve and the canonical guard decision at
+# every declared boundary. The DSH lifecycle guard plugin reads the same bytes.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_guard_declaration_law",
+    srcs = [
+        "EvidenceGuardDeclarationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_guard_declaration"],
+)
+
+# The narrow evidence substrate's provider-free laws. They compile the one new
+# owner module plus the canonical core vocabulary it reuses, and they read no
+# corpus, no provider and no build output: every case is a declared fact.
+native_flix_test(
+    name = "evidence_substrate_law",
+    srcs = [
+        "EvidenceSubstrateLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+)
+
+# The laws of the two declared detector sidecars (VAL-SUB-013): they consume the
+# tree the `evidence_detectors` stage action materialized and assert it is the
+# canonical detector result of the declared fixture sites, that exactly two
+# families are exercised, that the funnel is monotone and matches the sidecar,
+# and that both families are model-hidden in BOTH prospective arms. The declared
+# fixture population is named one file at a time so the live workspace audit sees
+# the exact declared input. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_detector_law",
+    srcs = [
+        "EvidenceDetectorLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = ["fixtures/detectors.tsv"],
+    produced = ["//platform/dsh:evidence_detector_sidecar"],
+)
+
+# The laws of the declared offline equal-exact-bytes preflight (VAL-SUB-017):
+# they consume the tree the `evidence_preflight` stage action materialized and
+# assert the two arms supply identical exact bytes, the named obligation is
+# answered only by PHYSICAL exact evidence, and the unobservable observed use and
+# displacement stay `Unavailable`. The declared fixture population is named one
+# file at a time so the live workspace audit sees the exact declared input.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_preflight_law",
+    srcs = [
+        "EvidencePreflightLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = ["fixtures/preflight.tsv"],
+    produced = ["//platform/dsh:evidence_preflight"],
+)
+
+# The laws of the declared packet world (VAL-SUB-010): they consume the tree the
+# `evidence_packets` stage action materialized and assert it is the canonical
+# Flix packet meaning recomputed over the SAME declared fixture and the SAME
+# sealed base/head source bytes: the mandatory changed-entrypoint manifest covers
+# every packet, the disclosed spans carry their exact digests/ranges, the
+# retained full-source escape discloses the whole changed head file,
+# reacquisition reuses an exact identity while still acquiring a distinct one,
+# and the byte accounting separates unique from total bytes. The declared
+# fixture population is named one file at a time so the live workspace audit sees
+# the exact declared inputs. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_packet_law",
+    srcs = [
+        "EvidencePacketLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/packets.tsv",
+        "//platform/dsh/tool:fixtures/packet/cart.base.ts",
+        "//platform/dsh/tool:fixtures/packet/cart.head.ts",
+    ],
+    produced = ["//platform/dsh:evidence_packets"],
+)
+
+# The laws of the MANDATORY changed-entrypoint world over the exact retained
+# ReviewBench source (VAL-SUB-010). They consume the tree the
+# `evidence_reviewbench_world` stage action materialized and recompute the
+# changed-entrypoint manifest over the SAME real admitted base/head bytes of
+# `capawesome-team_cli-126/src/index.ts`: every named symbol must literally occur
+# in the actual head revision, the manifest must name both a CLI entry and a
+# narrow literal import site with exact world/revision/path identity, and the
+# materialized diff identity must report the real digests and the DERIVED byte
+# counts. The retained source is admitted read-only and digest-verified by
+# `//platform/build:retained_worlds.bzl`; no new corpus is acquired and no gold or
+# task identity is read. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_world_law",
+    srcs = [
+        "ReviewBenchWorldLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/reviewbench-world.tsv",
+        "@attune_retained_worlds//:capawesome-cli-index-base",
+        "@attune_retained_worlds//:capawesome-cli-index-head",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_world"],
+)
+
+# The wire-parity laws of the same contract. They read the frozen versioned wire
+# fixtures under `platform/dsh/typert/` through declared bindings, so the
+# canonical Flix meaning and the frozen fixture are compared over the real
+# checked-in bytes. The generated TypeScript side of the same agreement is
+# asserted by `//platform/dsh:typert_generation_test`, which runs the actual
+# pinned Typert generator over the declaration.
+native_flix_java_test(
+    name = "evidence_contract_parity_law",
+    srcs = [
+        "EvidenceContractParityLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = ["//platform/dsh:typert_fixture"],
+    java_deps = [],
+)
+
+# The laws of the one bounded Flix evidence operation. They read the ACTUAL
+# declared source bytes and the declared world/facts fixtures under
+# `platform/dsh/tool/fixtures/` through declared bindings, run the canonical
+# operation and assert its canonical projection against the same frozen parity
+# target the native DSH tool's acquisition projection is compared against by
+# `//platform/dsh/tool:evidence_tool_test`. The fixture population is declared one
+# file at a time so the live workspace audit sees the exact declared inputs.
+native_flix_java_test(
+    name = "evidence_operation_law",
+    srcs = [
+        "EvidenceOperationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceOperation.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "//platform/dsh/tool:fixtures/expected-observation-projection.tsv",
+        "//platform/dsh/tool:fixtures/expected-reference-projection.tsv",
+        "//platform/dsh/tool:fixtures/facts.tsv",
+        "//platform/dsh/tool:fixtures/source/shop.ts",
+        "//platform/dsh/tool:fixtures/world.tsv",
+    ],
+    java_deps = [],
+)
+
+# The offline native/PTC common-mode laws (VAL-SUB-009): native and PTC are
+# compared on identical fixed offline fixtures with the same permissions,
+# deadlines and retained sub-action provenance, and one common mode is frozen in
+# the substrate owner. Provider-free and corpus-free; no second PTC runtime.
+native_flix_java_test(
+    name = "native_ptc_scope_law",
+    srcs = [
+        "NativePtcScopeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = ["fixtures/native-ptc-scope.tsv"],
+    java_deps = [],
+)
+
+# The laws of the three exposed development verification fixtures (VAL-SUB-018).
+# They assert over the declared fixture record that each fixture names an exact
+# head and a concrete feasible check, records an honest `Unavailable`/`Unknown`
+# result rather than a validated true positive, keeps the immutable historical
+# `teamscli` pin beside the separate supplied exposed revision, and injects no
+# hypothesis as a retrospective prompt lead. Provider-free and offline.
+native_flix_java_test(
+    name = "development_verification_law",
+    srcs = ["DevelopmentVerificationLaw.flix"],
+    declared_files = ["fixtures/development-verification.tsv"],
+    java_deps = [],
+)
+
+# The bounded ACTUAL checks of the same three exposed fixtures (VAL-SUB-018):
+# the law reads the exact retained source bytes of the authorized
+# `attune-reviewbench-worlds` revisions (admitted and digest-verified by
+# `//platform/build:retained_worlds.bzl`) and performs each fixture's concrete
+# feasible check. The `usketch#534` precondition is corroborated from the actual
+# source (the editor pointer path calls the unwrapped `hitTest` while the shape
+# registers `withRotation(hitTest)`, and the declared deterministic case differs
+# between raw and rotated); `teamscli#31`'s supplied revision is not retained and
+# stays `Unavailable`; `Artemis#12479`'s precondition was not located in bounded
+# analysis and stays `Unknown`. No new corpus is acquired and no hypothesis is
+# injected as a prompt lead.
+native_flix_java_test(
+    name = "retained_world_verification_law",
+    srcs = ["RetainedWorldVerificationLaw.flix"],
+    declared_files = [
+        "@attune_retained_worlds//:usketch-rotation-util",
+        "@attune_retained_worlds//:usketch-sticky-plugin",
+        "fixtures/development-verification.tsv",
+    ],
+    java_deps = [],
+)
+
+# The laws of the partial historical Codex trace import (VAL-SUB-016). They read
+# the declared partial import record derived from the preserved historical
+# `codex-app-server` trace (an aggregate receipt, not a raw native session) and
+# assert that only the fields the trace actually recorded carry a value, that
+# every other field is the literal `Unavailable` and never fabricated, that no
+# checkpoint or commit event is invented before an actual claim, that the two
+# recorded findings resolve against the exact HEAD revision while a base-revision
+# path stays unavailable, that the import is marked read-only/imported and not
+# resumable, and that the finite approved population is enumerated against the
+# forty assertions. Provider-free and offline.
+native_flix_java_test(
+    name = "evidence_historical_trace_law",
+    srcs = ["HistoricalCodexTraceLaw.flix"],
+    declared_files = ["fixtures/historical-codex-trace.tsv"],
+    java_deps = [],
+)
+
+# The one declared result reducer compiles the same dispatcher plus the Parquet
+# reducer law, which imports the typed Arrow seam. The seam jar is therefore a
+# declared dependency of the reducer stage alone, not of every study stage.
+RESULT_SRCS = STAGE_SRCS + [
+    "Results.flix",
+    "//src:Attune/AsciiTree.flix",
+    "//src:Attune/View.flix",
+]
+
+# Native preparation: the pinned Tester runs the declared panel through the
+# stage dispatcher and materializes one declared tree holding `analysis.tsv` and
+# the loadable `manifest.bzl`. This is the emitted manifest the integration owner
+# admits back into the workspace before the selected study invocation. The
+# declared panel carries no evaluator material: only group/task/pair/world
+# metadata.
+native_study_stage(
+    name = "analysis_prepare",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The same preparation over the declared over-cap panel, so the bounded-truncation
+# laws can prove an exceeded bound is reported rather than silently dropped.
+native_study_stage(
+    name = "analysis_prepare_overflow",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_overflow.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The same preparation over the declared late-pair panel: nine declared groups
+# whose only pairs live in the first (a normally retained pair), the eighth (a
+# pair solely in a later included localization group) and the ninth (a group
+# outside the included pair groups) group. The attrition laws prove the retained
+# pairs survive and the filtered pair is reported explicitly.
+native_study_stage(
+    name = "analysis_prepare_late",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_late.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The same preparation over the declared capped-pair panel: one group whose 36
+# declared pairs exceed the declared pair bound of 32, so the attrition laws can
+# prove the pair-count cap reports its own input/kept/excluded/reason row beside
+# the separate over-bound declaration.
+native_study_stage(
+    name = "analysis_prepare_capped",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_capped.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The complete declared world/task/pair fan-out, expanded from the admitted
+# manifest. Study targets are manual on purpose: `bazel test //...` must not
+# accidentally acquire or run the selected study surface. Every law, variant,
+# anchor and plan this graph consumes is named here, so the live workspace audit
+# sees the exact declared population rather than a macro default.
+attune_study(
+    name = "study",
+    analysis = ANALYSIS,
+    branch_plans = {
+        "a": "fixtures/branches/a.tsv",
+        "ab": "fixtures/branches/ab.tsv",
+        "b": "fixtures/branches/b.tsv",
+        "baseline": "fixtures/branches/baseline.tsv",
+    },
+    label_fixtures = "fixtures/labels",
+    law_srcs = {
+        "bounds_test": "BoundsLaw.flix",
+        "dag_test": "DagLaw.flix",
+        "firewall_test": "FirewallLaw.flix",
+        "manifest_test": "ManifestLaw.flix",
+        "results_test": "ResultsLaw.flix",
+    },
+    parquet_deps = ["//platform/tools/parquet:attune_parquet"],
+    plan = "fixtures/plan.tsv",
+    # The one declared frozen prediction policy: the public gold-free prior a
+    # prediction ranks under. It is consumed only by the `prediction_<task>`
+    # stages, so a policy change invalidates the predictions and their dependents
+    # while the shared world extraction and theory shards stay cached.
+    policy = "fixtures/policy.tsv",
+    result_srcs = RESULT_SRCS,
+    stage_srcs = STAGE_SRCS,
+    variant_files = {
+        "ab": "fixtures/variants/ab.flix",
+        "a": "fixtures/variants/a.flix",
+        "b": "fixtures/variants/b.flix",
+        "baseline": "fixtures/variants/base.flix",
+    },
+)
+
+# The bounded macro-admission regression. Two declared record sets are run
+# through the same production `_bound_violations` contract the study macro
+# enforces over the admitted manifest. The first carries over-bound structural
+# declarations only; the second carries both a `truncated` bound finding and the
+# `truncated pair_attrition` row the preparation emits for a filtered or capped
+# pair (the old `exceeded`-only check admitted the first, and an unrecorded loss
+# produced no row to refuse at all). Under `--define=attune_admission_strict=1`
+# each probe fails on exactly its violations; without the define they only record
+# them, so the ordinary offline gate is never affected.
+_PROBE_BOUNDS = [
+    "bounds\tgroups\t24",
+    "bounds\ttasks_per_group\t4",
+    "bounds\tpairs\t32",
+    "bounds\tpair_groups\t8",
+    "bounds\tcandidates\t256",
+    "bounds\tshards_per_world\t8",
+    "bounds\tshard_size\t32",
+]
+
+_PROBE_OVERBOUND = (
+    ["generation\tprobe-overbound"] +
+    _PROBE_BOUNDS +
+    ["group\tg%d\tacme/x%d\tdevelopment" % (index, index) for index in range(25)] +
+    ["shard\tw1\t%d\t4" % index for index in range(8)] + [
+        "shard\tw1\t8\t40",
+    ] + ["shard\tw2\t%d\t32" % index for index in range(8)] +
+    ["task\tt%d\tg1\tw1\tlocalization\tFile:Shop.flix" % index for index in range(5)]
+)
+
+_PROBE_TRUNCATED = (
+    ["generation\tprobe-truncated"] +
+    _PROBE_BOUNDS + [
+        "truncated\tpairs\t36\t32",
+        "truncated\tpair_attrition\t36\t32\t4\tpair-count-cap",
+    ]
+)
+
+# The declared localization reference-label stage (`VAL-LOC-001`): it re-verifies
+# the exact bytes and recorded physical schema of the same immutable pinned
+# catalog, maps the admitted real catalog panel into the shared study graph's
+# record vocabulary through `Attune.Study`, streams only the declared
+# `instance_id` and `patch` columns one bounded batch at a time, and reduces every
+# selected task's real reference patch through `Attune.Study.referenceLabel`
+# against that exact world's verified clean-source export inventory. It writes the
+# declared evaluator label artifacts, the audited coverage denominators, the
+# mapped public manifest and the classified findings. Manual like every study
+# surface: the ordinary `bazel test //...` gate never fetches or scans the corpus.
+native_study_stage(
+    name = "localization_labels",
+    srcs = [
+        "LocalizationLabels.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    input_names = [
+        "catalog",
+        "exports",
+        "panel",
+        "pin",
+        "schema",
+    ],
+    inputs = [
+        "@swe_rebench_v2_catalog//file:file",
+        "manifest/catalog/export_records.tsv",
+        "manifest/catalog/panel_public.tsv",
+        "//test/catalog:catalog_pin.tsv",
+        "//test/catalog:catalog_schema.tsv",
+    ],
+    java_deps = ["//platform/tools/parquet:attune_parquet"],
+    stage = "localization_labels",
+    tags = ["manual"],
+)
+
+# The declared localization-artifact laws: they audit the tree the label stage
+# materialized over the real admitted panel and the real pinned corpus.
+native_flix_consumer_test(
+    name = "localization_artifact_test",
+    srcs = [
+        "LocalizationArtifactLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = [
+        "manifest/catalog/export_records.tsv",
+        "manifest/catalog/panel_public.tsv",
+    ],
+    produced = [":localization_labels"],
+    tags = ["manual"],
+)
+
+LOCALIZATION_ADMITTED = [
+    "manifest/localization/coverage.tsv",
+    "manifest/localization/exports.tsv",
+    "manifest/localization/findings.tsv",
+    "manifest/localization/label_elastic__synthetics-235.tsv",
+    "manifest/localization/label_elastic__synthetics-244.tsv",
+    "manifest/localization/label_elastic__synthetics-251.tsv",
+    "manifest/localization/label_elastic__synthetics-252.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1000.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1055.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1079.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-107.tsv",
+    "manifest/localization/label_eslint__eslint-10054.tsv",
+    "manifest/localization/label_eslint__eslint-10055.tsv",
+    "manifest/localization/label_eslint__eslint-10103.tsv",
+    "manifest/localization/label_eslint__eslint-10109.tsv",
+    "manifest/localization/label_fhir__sushi-1000.tsv",
+    "manifest/localization/label_fhir__sushi-1006.tsv",
+    "manifest/localization/label_fhir__sushi-1014.tsv",
+    "manifest/localization/label_fhir__sushi-1016.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2214.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2271.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2291.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2321.tsv",
+    "manifest/localization/label_formidablelabs__urql-1040.tsv",
+    "manifest/localization/label_formidablelabs__urql-1046.tsv",
+    "manifest/localization/label_formidablelabs__urql-1077.tsv",
+    "manifest/localization/label_formidablelabs__urql-1117.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10184.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10189.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10295.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10460.tsv",
+    "manifest/localization/label_jlongster__prettier-101.tsv",
+    "manifest/localization/label_jlongster__prettier-107.tsv",
+    "manifest/localization/label_jlongster__prettier-113.tsv",
+    "manifest/localization/label_jlongster__prettier-142.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1000.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1529.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1533.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1544.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-121.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-24.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-25.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-26.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-1591.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3249.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3317.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3335.tsv",
+    "manifest/localization/label_marpple__fxts-102.tsv",
+    "manifest/localization/label_marpple__fxts-103.tsv",
+    "manifest/localization/label_marpple__fxts-104.tsv",
+    "manifest/localization/label_marpple__fxts-105.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1006.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1107.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1232.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1309.tsv",
+    "manifest/localization/label_pinojs__pino-1127.tsv",
+    "manifest/localization/label_pinojs__pino-1137.tsv",
+    "manifest/localization/label_pinojs__pino-1199.tsv",
+    "manifest/localization/label_pinojs__pino-121.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1001.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1002.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1007.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1008.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1024.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1032.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1085.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1100.tsv",
+    "manifest/localization/label_sage__carbon-5356.tsv",
+    "manifest/localization/label_sage__carbon-5432.tsv",
+    "manifest/localization/label_sage__carbon-5474.tsv",
+    "manifest/localization/label_sage__carbon-5512.tsv",
+    "manifest/localization/label_serverless__serverless-11277.tsv",
+    "manifest/localization/label_serverless__serverless-11907.tsv",
+    "manifest/localization/label_serverless__serverless-12001.tsv",
+    "manifest/localization/label_serverless__serverless-12030.tsv",
+    "manifest/localization/label_sindresorhus__got-114.tsv",
+    "manifest/localization/label_sindresorhus__got-172.tsv",
+    "manifest/localization/label_sindresorhus__got-183.tsv",
+    "manifest/localization/label_sindresorhus__got-2043.tsv",
+    "manifest/localization/label_singapore__renovate-1005.tsv",
+    "manifest/localization/label_singapore__renovate-1006.tsv",
+    "manifest/localization/label_singapore__renovate-1018.tsv",
+    "manifest/localization/label_singapore__renovate-1048.tsv",
+    "manifest/localization/label_solid__community-server-1040.tsv",
+    "manifest/localization/label_solid__community-server-1170.tsv",
+    "manifest/localization/label_solid__community-server-148.tsv",
+    "manifest/localization/label_solid__community-server-168.tsv",
+    "manifest/localization/label_stoplightio__spectral-1020.tsv",
+    "manifest/localization/label_stoplightio__spectral-1059.tsv",
+    "manifest/localization/label_stoplightio__spectral-1077.tsv",
+    "manifest/localization/label_stoplightio__spectral-1227.tsv",
+    "manifest/localization/label_sveltejs__kit-3562.tsv",
+    "manifest/localization/label_sveltejs__kit-3570.tsv",
+    "manifest/localization/label_sveltejs__kit-3571.tsv",
+    "manifest/localization/label_sveltejs__kit-4140.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1001.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1015.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1016.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1019.tsv",
+    "manifest/localization/mapped.bzl",
+    "manifest/localization/mapped.tsv",
+    "manifest/localization/scan.tsv",
+]
+
+# The declared localization admission laws: the admitted public mapping, coverage
+# table and evaluator label artifacts under `manifest/localization/` are
+# byte-identical to what the declared label stage emitted, and the admitted label
+# population is exactly the mapped task population. The admitted population is
+# declared here one file at a time, so the live workspace audit sees the exact
+# artifacts rather than a macro default.
+native_flix_consumer_test(
+    name = "localization_admission_test",
+    srcs = [
+        "LocalizationAdmissionLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = LOCALIZATION_ADMITTED,
+    produced = [":localization_labels"],
+    tags = ["manual"],
+)
+
+# The corpus-free localization reference-label laws (`VAL-LOC-001`): they drive
+# the exact production reduction the localization stage runs over the real
+# admitted panel and the real pinned reference patches — the declared supported
+# source extensions, the declared test-path vocabulary, the declared non-regular
+# git modes, the git and plain-unified patch-header reduction, the
+# rename-to-old-path attribution, the preexisting-inventory requirement, the
+# separate full/supported coverage numbers and every declared classified case.
+# No corpus, no target code and no dependency is touched here.
+native_flix_test(
+    name = "localization_law",
+    srcs = [
+        "LocalizationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    tags = ["manual"],
+)
+
+# The declared localization surface (`VAL-LOC-001`): the corpus-free reference
+# label laws, the real-panel label stage and its artifact and admission laws. The
+# fixture graph's own `all` suite above stays the declared fixture study; this
+# suite is the declared way to run the real localization pilot. Manual like every
+# study surface, so the ordinary `bazel test //...` gate never fetches or scans
+# the pinned corpus.
+test_suite(
+    name = "localization",
+    tags = ["manual"],
+    tests = [
+        ":localization_admission_test",
+        ":localization_artifact_test",
+        ":localization_law",
+    ],
+)
+
+attune_admission_probe(
+    name = "admission_probe",
+    rows = _PROBE_OVERBOUND,
+)
+
+# The production admission predicate over the admitted real mapped localization
+# manifest. The mapped rows come from the emitted `mapped.bzl`, so this is the
+# real panel's own vocabulary being checked against the same contract the study
+# macro enforces: the declared record vocabulary, no admitted `truncated` or
+# `exceeded` row, and the panel's own group/per-group task/pair/pair-group
+# bounds. It records the violations it finds and fails only under
+# `--define=attune_admission_strict=1`, so it can never break the offline gate.
+attune_admission_probe(
+    name = "localization_admission_probe",
+    rows = ["\t".join(row) for row in LOCALIZATION_ANALYSIS],
+)
+
+attune_admission_probe(
+    name = "admission_probe_truncated",
+    rows = _PROBE_TRUNCATED,
+)

@@ -1,0 +1,15 @@
+changed	modified	apps/server/src/board-room.ts	6920	import { DurableObject } from "cloudflare:workers";
+changed	modified	apps/server/src/rooms/partition-manager.ts	5426	import { MSG_PARTITION_META } from "@edv4h/usketch-sync";
+changed	modified	apps/server/src/rooms/thumbnail-handler.ts	2239	import { computeMinimap, minimapToSvg, type ShapeData } from "@edv4h/usketch-shared";
+changed	modified	apps/server/src/rooms/yjs-sync.ts	3261	/** Yjs updates バッファの管理と永続化 */
+changed	modified	packages/canvas-engine/src/components/shape-layer.tsx	3189	import type { LayerRenderContext, ShapeData, ShapeRegistry } from "@edv4h/usketch-shared";
+changed	added	packages/shared/src/__tests__/rotation.test.ts	6142	import { describe, expect, it } from "vitest";
+changed	modified	packages/shared/src/index.ts	1399	// Geometry
+changed	added	packages/shared/src/utils/rotation.ts	3785	import type { BoundingBox, Point } from "../types/geometry.js";
+changed	modified	packages/store/src/board-store.ts	5144	import type {
+changed	modified	plugins/usketch-plugin-shape-basic/src/plugin.tsx	6959	import {
+changed	modified	plugins/usketch-plugin-shape-image/src/plugin.tsx	2645	import {
+changed	modified	plugins/usketch-plugin-shape-sticky/src/plugin.tsx	16018	import {
+changed	modified	plugins/usketch-plugin-shape-text/src/plugin.tsx	8805	import {
+changed	modified	plugins/usketch-plugin-shape-wireframe/src/plugin.tsx	5685	import {
+summary	575	577	14	77617

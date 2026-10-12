@@ -1,0 +1,8 @@
+label	elastic__synthetics-244	w86
+provenance	elastic/synthetics	769e2e8b36229b1f48be3349d5c1f679ed210ffe	9e5c8e2fe41ec9ba6a2af9d962f0cd3f2453de94ee229f769336aef42e4f4599	reference-patch	121	4366
+entry	modified	src/common_types.ts	js-ts	source	regular	present	eligible
+entry	modified	src/plugins/network.ts	js-ts	source	regular	present	eligible
+gold	src/common_types.ts
+gold	src/plugins/network.ts
+coverage	full	2	supported	2
+case	eligible-gold

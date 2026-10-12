@@ -1,0 +1,22 @@
+tool	commandExecution	failed	41	5880
+tool	commandExecution	failed	41	5923
+tool	commandExecution	completed	136	9711
+tool	commandExecution	completed	1054	9762
+tool	commandExecution	completed	11181	15724
+tool	commandExecution	completed	9771	15732
+tool	commandExecution	completed	2651	15761
+tool	commandExecution	completed	8104	21499
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	5880
+read	search	lib	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	5923
+read	search	.	136	8604ce500d899d9493c1011cb6b99632fc1321b3e0f612822edf9813d6ec7552	0	completed	9711
+read	search	lib	1054	b7d200223e5ba330d73727161a2fede88c053c735ae781921cdd8ee79dc0db30	0	completed	9762
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/lib/rules/no-reserved-component-names.js	11181	eae49493720824b8dbe3766047d02d453acf0a85da75dba78681b975ba274368	0	completed	15724
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/tests/lib/rules/no-reserved-component-names.js	11181	eae49493720824b8dbe3766047d02d453acf0a85da75dba78681b975ba274368	0	completed	15724
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/lib/utils/index.js	9771	962a988b2a9e4e6e022d56c460eb4cb27426d11053985c55c9b4f000545728c8	0	completed	15732
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/lib/utils/index.js	9771	962a988b2a9e4e6e022d56c460eb4cb27426d11053985c55c9b4f000545728c8	0	completed	15732
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/lib/rules/match-component-file-name.js	9771	962a988b2a9e4e6e022d56c460eb4cb27426d11053985c55c9b4f000545728c8	0	completed	15732
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/lib/rules/component-definition-name-casing.js	9771	962a988b2a9e4e6e022d56c460eb4cb27426d11053985c55c9b4f000545728c8	0	completed	15732
+read	listFiles	rules	2651	21a3544d4fceeeef190eed66afffa618e8a20760b996ee83203274188d0bb1fb	0	completed	15761
+read	search	..	2651	21a3544d4fceeeef190eed66afffa618e8a20760b996ee83203274188d0bb1fb	0	completed	15761
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/tests/lib/rules/component-definition-name-casing.js	8104	25d5a122271cd382c42b8898d35775e4a9c0b9b7375bbbda5334b65f9070c5f6	0	completed	21499
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4311198935033935514/repo/tests/lib/rules/match-component-file-name.js	8104	25d5a122271cd382c42b8898d35775e4a9c0b9b7375bbbda5334b65f9070c5f6	0	completed	21499

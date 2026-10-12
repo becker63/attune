@@ -1,0 +1,18 @@
+tool	commandExecution	failed	41	4165
+tool	commandExecution	completed	608	7848
+tool	commandExecution	completed	1607	13919
+tool	commandExecution	completed	6431	13922
+tool	commandExecution	completed	12947	13927
+tool	commandExecution	completed	16700	18492
+tool	commandExecution	completed	5127	23667
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	4165
+read	search	.	608	04daf3a6f4499b7d1707107af4b92bad26ae69c9f81fc062b41dda8d4837d7cd	0	completed	7848
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/lib/rules/script-indent.js	1607	a43cb2c5453f6c4ec84b82cfaaef3952bdc23a54f83f432305d29e7a9650ef8f	0	completed	13919
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/tests/lib/rules/script-indent.js	6431	4fb2cd6dbd478baecbcf6d6612b7623b08f6a54328d44352dc860ca2f8549782	0	completed	13922
+read	search	indent-common.js	12947	e35a01178bda8ad003e1f904a80c2d98a1a83721d652802509c4101985b7d2cb	0	completed	13927
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/lib/utils/indent-common.js	16700	99ee822036bbb2ceabcc00659babdd75b656d207cd45fd077b981bbdcdaa78e1	0	completed	18492
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/lib/utils/indent-common.js	16700	99ee822036bbb2ceabcc00659babdd75b656d207cd45fd077b981bbdcdaa78e1	0	completed	18492
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/lib/utils/indent-common.js	16700	99ee822036bbb2ceabcc00659babdd75b656d207cd45fd077b981bbdcdaa78e1	0	completed	18492
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-7793779432838040034/repo/lib/utils/indent-common.js	16700	99ee822036bbb2ceabcc00659babdd75b656d207cd45fd077b981bbdcdaa78e1	0	completed	18492
+read	listFiles	script-indent	16700	99ee822036bbb2ceabcc00659babdd75b656d207cd45fd077b981bbdcdaa78e1	0	completed	18492
+read	unknown		5127	d31a1440b7642fca706f3e7fd97aaeb6efbf51f50c732fb1b3e49e41299773cf	0	completed	23667

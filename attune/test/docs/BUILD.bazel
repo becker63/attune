@@ -1,0 +1,74 @@
+load("//platform/build:native.bzl", "native_flix_java_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The declared documents and sources the correspondence fixture may read *inside*
+# this workspace: the operating guidance, the one design note, the typed view
+# comment it compares against a regenerated grammar, the authored Ruby shop world,
+# and the test/source paths the README links to. The checkout-root README.md and
+# LICENSE are bound live from the checkout root by the launcher (see
+# `checkout_files`), because they are maintained outside this nested workspace.
+filegroup(
+    name = "documents",
+    srcs = [
+        "ReadmeCorrespondence.flix",
+        "//:AGENTS.md",
+        "//notes:design.md",
+        "//src:Attune.flix",
+        "//src:Attune/Docs.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/View.flix",
+        "//test/grit:GritSeamTest.flix",
+        "//test/grit:fixtures",
+        "//test/policy:PolicyCases.flix",
+        "//test/view:ApplicationViewLaw.flix",
+        "//test/view:ProofViewLaw.flix",
+        "//test/view:RouteViewLaw.flix",
+        "//test/view:SemanticViewLaw.flix",
+    ],
+)
+
+# The documentation correspondence: the authored shop source flows through the
+# real pinned Grit engine, conservative Flix admission, the typed view and the
+# one writer, and the generated payloads are compared with the actual marked
+# checkout-root README and View comment payloads. A drifted payload, a missing or
+# duplicated marker and a broken local link each fail. The test never rewrites a
+# document. It reads the live checkout-root README, so like the workspace audit
+# it is `local` (never sandboxed or remote) and `external` (Bazel executes it
+# unconditionally, regardless of `--cache_test_results`): a cached verdict could
+# not notice an edited document.
+native_flix_java_test(
+    name = "readme_correspondence_test",
+    srcs = [
+        "ReadmeCorrespondence.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Docs.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/View.flix",
+    ],
+    checkout_files = [
+        "README.md",
+        "LICENSE",
+    ],
+    declared_files = [":documents"],
+    java_deps = [
+        "//test/grit:grit_fixtures",
+        "//platform/tools/grit:attune_grit",
+    ],
+    native_libs = ["//platform/support/grit:attune_grit_abi"],
+    tags = [
+        "external",
+        "local",
+    ],
+    workspace_root = "@local_workspace//:workspace_root.txt",
+)

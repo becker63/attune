@@ -1,0 +1,35 @@
+changed	modified	server/src/ai/prompt-builder.ts	2275	import type { Agent } from "../simulation/agent.js";
+changed	modified	server/src/dialogue/dialogue-engine.ts	4218	import type { DialogueTreeData, DialogueNodeData, ChoiceOptionData } from "@town-zero/shared";
+changed	modified	server/src/dialogue/dialogue-gate.ts	1870	import type { TextTemplate, Fact, Value } from "@town-zero/shared";
+changed	added	server/src/dialogue/dialogue-session.ts	6635	import type { DialogueTreeData, Value, ResourceType } from "@town-zero/shared";
+changed	added	server/src/dialogue/evaluator.ts	6084	import type { Expr, Value, TextTemplate, Fact } from "@town-zero/shared";
+changed	added	server/src/dialogue/executor.ts	2730	import type { Effect, Value, TriggerRule, ResourceType } from "@town-zero/shared";
+changed	added	server/src/dialogue/trees/villager-basic.ts	1575	import { scenario, t } from "@town-zero/shared/script-dsl";
+changed	added	server/src/dialogue/trigger-registry.ts	2356	import type { Expr, Fact, TriggerRule } from "@town-zero/shared";
+changed	modified	server/src/simulation/agent.ts	3850	import type {
+changed	added	server/src/simulation/scenario-loader.ts	1425	import type { ScenarioData, DialogueTreeData } from "@town-zero/shared";
+changed	modified	server/src/simulation/tick.ts	7428	import { GATHER_DURATION, ATTACK_COOLDOWN_TICKS, MERCHANT_SPAWN_INTERVAL } from "@town-zero/shared";
+changed	modified	server/src/simulation/vision.ts	1982	import { DEFAULT_VISION_RADIUS, SCOUT_VISION_RADIUS } from "@town-zero/shared";
+changed	modified	server/test/ai/prompt-builder.test.ts	3737	import { describe, it, expect } from "vitest";
+changed	modified	server/test/dialogue/dialogue-engine.test.ts	7585	import { describe, it, expect } from "vitest";
+changed	added	server/test/dialogue/dialogue-gate.test.ts	3468	import { describe, it, expect } from "vitest";
+changed	added	server/test/dialogue/dialogue-session.test.ts	9571	import { describe, it, expect } from "vitest";
+changed	added	server/test/dialogue/evaluator.test.ts	8811	import { describe, it, expect } from "vitest";
+changed	added	server/test/dialogue/executor.test.ts	4803	import { describe, it, expect } from "vitest";
+changed	added	server/test/dialogue/trigger-registry.test.ts	2946	import { describe, it, expect } from "vitest";
+changed	added	server/test/integration-dialogue.test.ts	2656	import { describe, it, expect } from "vitest";
+changed	added	server/test/script-dsl/builders.test.ts	9091	import { describe, it, expect } from "vitest";
+changed	added	server/test/script-dsl/expressions.test.ts	3560	import { describe, it, expect } from "vitest";
+changed	added	server/test/script-dsl/serialization.test.ts	2495	import { describe, it, expect } from "vitest";
+changed	added	server/test/script-dsl/template.test.ts	1573	import { describe, it, expect } from "vitest";
+changed	added	server/test/simulation/beliefs.test.ts	2372	import { describe, it, expect } from "vitest";
+changed	added	server/test/simulation/scenario-loader.test.ts	6224	import { describe, it, expect } from "vitest";
+changed	modified	shared/package.json	445	{
+changed	modified	shared/src/index.ts	95	export * from "./types.js";
+changed	added	shared/src/script-dsl/builders.ts	7467	import type {
+changed	added	shared/src/script-dsl/expressions.ts	3441	import type { Expr, Value } from "../script-types.js";
+changed	added	shared/src/script-dsl/index.ts	319	export { ExprBuilder, not, fact, local, player, npc, settlement } from "./expressions.js";
+changed	added	shared/src/script-dsl/template.ts	628	import type { TextTemplate, Expr } from "../script-types.js";
+changed	added	shared/src/script-types.ts	2762	import type { ResourceType, Position } from "./types.js";
+changed	modified	shared/src/types.ts	2328	// --- Resources ---
+summary	98	120	34	128805

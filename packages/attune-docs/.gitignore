@@ -1,6 +1,0 @@
-dist/
-.dist-backup/
-.tmp/
-playwright-report/
-playwright/.cache/
-test-results/

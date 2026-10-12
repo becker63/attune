@@ -1,0 +1,10 @@
+contribution	anchors_nonzero	805
+contribution	adjacency_nonzero	1436
+contribution	witnesses_nonzero	2139
+contribution	anchors_without_adjacency	31
+contribution	zero_anchor	12
+contribution	usable_witness	75
+contribution	change_P+A_vs_P	74
+contribution	change_F_vs_P+A	46
+contribution	change_D_vs_P+A	62
+contribution	change_D_vs_F	58

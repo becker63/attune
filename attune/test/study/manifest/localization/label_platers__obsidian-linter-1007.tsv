@@ -1,0 +1,6 @@
+label	platers__obsidian-linter-1007	w14
+provenance	platers/obsidian-linter	4cd434c20a3e1384911680c7eaf1414a59ee0205	15751349b174a0d7e8e6fc2a94f5ceed6aeb89c7b1539d3ead7c89eab853b5d1	reference-patch	13	783
+entry	modified	src/rules/re-index-footnotes.ts	js-ts	source	regular	present	eligible
+gold	src/rules/re-index-footnotes.ts
+coverage	full	1	supported	1
+case	eligible-gold

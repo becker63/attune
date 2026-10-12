@@ -1,0 +1,16 @@
+label	joshuakgoldberg__tslint-to-eslint-config-26	w26
+provenance	JoshuaKGoldberg/tslint-to-eslint-config	54590cf89a1d6dcac5352a908ee16f75adb087fd	b2747893405cc54ce2c2d743ff05b07a77307d3a77f7a3beb99720548125aef8	reference-patch	229	8894
+entry	modified	src/cli/main.ts	js-ts	source	regular	present	eligible
+entry	modified	src/convertConfig.ts	js-ts	source	regular	present	eligible
+entry	modified	src/creation/createNewConfiguration.ts	js-ts	source	regular	present	eligible
+entry	modified	src/creation/formatConvertedRules.ts	js-ts	source	regular	present	eligible
+entry	modified	src/creation/formatMissingRules.ts	js-ts	source	regular	present	eligible
+entry	renamed	src/input/findTslintRules.ts	js-ts	source	regular	present	eligible
+gold	src/cli/main.ts
+gold	src/convertConfig.ts
+gold	src/creation/createNewConfiguration.ts
+gold	src/creation/formatConvertedRules.ts
+gold	src/creation/formatMissingRules.ts
+gold	src/input/findTslintRules.ts
+coverage	full	6	supported	6
+case	eligible-gold

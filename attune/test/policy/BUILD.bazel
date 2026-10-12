@@ -1,0 +1,78 @@
+load("//platform/build:native.bzl", "native_flix_audit_test", "native_flix_declared_test", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The honest counting laws, executed as native Flix tests against the policy's
+# own pure counting functions.
+native_flix_test(
+    name = "count_law_test",
+    srcs = [
+        "CountLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+)
+
+# The named policy cases, defined and evaluated in Flix.
+native_flix_test(
+    name = "policy_cases_test",
+    srcs = [
+        "PolicyCases.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+)
+
+# The owner-approved cognitive-ownership accounting laws: component
+# classification, separate test/support populations, presentation subsets and
+# soft review semantics over the declared population.
+native_flix_declared_test(
+    name = "accounting_law_test",
+    srcs = [
+        "AccountingLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+    declared = "//:policy_sources",
+)
+
+# The hermetic declared-source policy over exactly the declared inputs.
+native_flix_declared_test(
+    name = "declared_source_policy_test",
+    srcs = [
+        "DeclaredPolicyLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+    declared = "//:policy_sources",
+)
+
+# The live read-only uncached workspace audit, as a normal test in the public
+# gate. The target is local and uncached, so every `bazel test //...` re-reads
+# the current workspace tree and a file added after a green run is seen on the
+# next invocation. It also depends on the declared population, so any change to
+# the declared inventory re-runs the audit that exists to find source no BUILD
+# file admits.
+native_flix_audit_test(
+    name = "workspace_audit_test",
+    srcs = [
+        "AuditLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+    data = ["//:policy_sources"],
+    # The exact top-level boundaries the walk must never enter. The audited root
+    # is this nested workspace, whose VCS metadata, agent tooling and read-only
+    # reference checkout all live outside it, so the prune set is empty. There is
+    # no generic hidden-name rule, so an arbitrary hidden directory stays visible
+    # to the audit. The Flix audit test asserts this set equals the policy's own
+    # declaration, so the two cannot drift apart silently.
+    skip = [],
+    workspace_root = "@local_workspace//:workspace_root.txt",
+)

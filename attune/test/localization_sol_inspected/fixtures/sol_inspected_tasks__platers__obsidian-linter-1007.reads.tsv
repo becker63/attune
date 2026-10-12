@@ -1,0 +1,27 @@
+tool	commandExecution	failed	41	6328
+tool	commandExecution	failed	41	6374
+tool	commandExecution	completed	593	9603
+tool	commandExecution	completed	8292	15266
+tool	commandExecution	completed	17479	15280
+tool	commandExecution	completed	14358	15301
+tool	commandExecution	completed	25391	19266
+tool	commandExecution	completed	10624	26523
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6328
+read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6374
+read	listFiles		593	4c4ecfa62aa6be77f88b7c5a7ee4e84aca5fcbe36be4f5ddd55a13bfc102eab3	0	completed	9603
+read	search	.	593	4c4ecfa62aa6be77f88b7c5a7ee4e84aca5fcbe36be4f5ddd55a13bfc102eab3	0	completed	9603
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/rules/re-index-footnotes.ts	8292	68ccebc5fb96113a956fe08de22b7d72a6b188d87104c861847814c41cb3e1b5	0	completed	15266
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/rules/move-footnotes-to-the-bottom.ts	8292	68ccebc5fb96113a956fe08de22b7d72a6b188d87104c861847814c41cb3e1b5	0	completed	15266
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/rules/footnote-after-punctuation.ts	8292	68ccebc5fb96113a956fe08de22b7d72a6b188d87104c861847814c41cb3e1b5	0	completed	15266
+read	listFiles	src	17479	842f10dc2cda8aaebb3c2055039d68506a9b531b4291b54d55742e9b52ff8d0b	0	completed	15280
+read	search	src	17479	842f10dc2cda8aaebb3c2055039d68506a9b531b4291b54d55742e9b52ff8d0b	0	completed	15280
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/__tests__/re-index-footnotes.test.ts	14358	d8dfd970a6d561165148374f6b2355a140739637f5abbbe4eae3c9929dc25939	0	completed	15301
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/__tests__/move-footnotes-to-the-bottom.test.ts	14358	d8dfd970a6d561165148374f6b2355a140739637f5abbbe4eae3c9929dc25939	0	completed	15301
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/utils/ignore-types.ts	25391	b4b5f7d3cce1843b988e8ca27c28ab3d5cf4924864c01010fcef8ed3414cdcb1	0	completed	19266
+read	search	mdast.ts	25391	b4b5f7d3cce1843b988e8ca27c28ab3d5cf4924864c01010fcef8ed3414cdcb1	0	completed	19266
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/rules.ts	25391	b4b5f7d3cce1843b988e8ca27c28ab3d5cf4924864c01010fcef8ed3414cdcb1	0	completed	19266
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/utils/regex.ts	25391	b4b5f7d3cce1843b988e8ca27c28ab3d5cf4924864c01010fcef8ed3414cdcb1	0	completed	19266
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/utils/mdast.ts	10624	5f0f4187d97d37c1026be40dc3eadfc78f3b081ef17fe34e8ab92b70c3a6281c	0	completed	26523
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/src/utils/mdast.ts	10624	5f0f4187d97d37c1026be40dc3eadfc78f3b081ef17fe34e8ab92b70c3a6281c	0	completed	26523
+read	listFiles	__tests__	10624	5f0f4187d97d37c1026be40dc3eadfc78f3b081ef17fe34e8ab92b70c3a6281c	0	completed	26523
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-6782126943323992055/repo/__tests__/common.ts	10624	5f0f4187d97d37c1026be40dc3eadfc78f3b081ef17fe34e8ab92b70c3a6281c	0	completed	26523

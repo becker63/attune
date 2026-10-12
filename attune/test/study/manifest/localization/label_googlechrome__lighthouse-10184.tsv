@@ -1,0 +1,10 @@
+label	googlechrome__lighthouse-10184	w81
+provenance	GoogleChrome/lighthouse	590bda3a771bae2f2dea4a7a903ecf96a34fdcd9	a755cf0690c5b5014faa28fa7d37dbe47033e2fa99b048724caeb9a1453e9df1	reference-patch	36	1430
+entry	modified	lighthouse-cli/cli-flags.js	js-ts	source	regular	present	eligible
+entry	modified	lighthouse-cli/run.js	js-ts	source	regular	present	eligible
+entry	modified	types/externs.d.ts	js-ts	source	regular	present	eligible
+gold	lighthouse-cli/cli-flags.js
+gold	lighthouse-cli/run.js
+gold	types/externs.d.ts
+coverage	full	3	supported	3
+case	eligible-gold

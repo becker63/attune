@@ -1,0 +1,17 @@
+You are localizing a software issue in a clean repository.
+
+Read the issue and inspect the repository as needed.
+
+Your only task is to identify the repository files most likely to require modification to correctly implement the requested fix.
+
+Do not edit code.
+Do not run tests or builds.
+Do not solve the task.
+
+Return at most 10 existing repository-relative source file paths, ranked from most to least likely to require modification.
+
+A multi-file fix is possible. Prefer including every file that may actually require modification rather than forcing an artificially minimal prediction.
+
+Return only paths that exist in this repository.
+
+When finished, emit the required structured result and stop.

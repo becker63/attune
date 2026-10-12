@@ -1,0 +1,12 @@
+replay	source	immutable-frozen-receipts-and-reduced-trees
+replay	provider-calls	0
+replay	model-calls	0
+replay	wall-time	Unavailable
+replay	wall-time-reason	a provider-free native Flix stage does not measure its own wall clock
+replay	holdout-tasks	24
+replay	holdout-observations	48
+replay	holdout-matched-true	26
+replay	holdout-unmatched-valid	9
+replay	holdout-unmatched-invalid	2
+replay	holdout-unmatched-unresolved	10
+replay	holdout-valid-delivered	35

@@ -1,0 +1,6 @@
+label	jlongster__prettier-107	w39
+provenance	jlongster/prettier	7a84cdbc3430441c992912c15509cfb788925084	3ec602faf9092875f498ed4ec3e41b89b8712442648bb03af059773cb5b2ad49	reference-patch	17	565
+entry	modified	src/printer.js	js-ts	source	regular	present	eligible
+gold	src/printer.js
+coverage	full	1	supported	1
+case	eligible-gold

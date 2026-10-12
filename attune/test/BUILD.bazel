@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# Test-only fixtures and laws for the independent compiled test spine.

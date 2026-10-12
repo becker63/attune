@@ -1,0 +1,5 @@
+judged	capawesome-team_cli-126	C1	1	appleApiKeyId is an unset local with no CLI option, so non-interactive API-key creation exits at its required-value check.
+judged	capawesome-team_cli-126	C2	1	The missing appleApiKeyId option leaves the local undefined and makes non-interactive API-key creation fail unconditionally.
+judged	capawesome-team_cli-126	C3	4,37	Certificate, key, and Apple app-specific passwords all use text prompts, covering G4’s credential prompts and G37’s Apple password prompt.
+judged	capawesome-team_cli-126	C4	4,37	The Apple app-specific password uses a text prompt, an exposure described by both G4 and G37.
+judged	capawesome-team_cli-126	C5	4	The certificate password and Android key password use unmasked text prompts, matching G4.

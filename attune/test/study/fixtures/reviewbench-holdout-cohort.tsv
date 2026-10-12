@@ -1,0 +1,32 @@
+# The declared metadata-only 24-task HOLDOUT cohort (VAL-STUDY-004).
+#
+One row per holdout task: `task <stable task id>`. The base/head world ids are
+the mechanical archive names `<task>-base` / `<task>-head`, and the exact
+revisions are read from the declared holdout archive identity record
+(`//test/reviewbench_pilot:holdout-archives.tsv`), so no revision, world or gold
+is restated here. The 24 task ids are the frozen holdout selection drawn from the
+remaining fast cohort and EXCLUDE every original24 task; no pilot task is present.
+task	swarmbase_swarmbase-161
+task	capawesome-team_cli-127
+task	konturio_disaster-ninja-fe-1082
+task	hughdidit_DAISy-Agency-309
+task	confluentinc_mcp-confluent-143
+task	PierreJanineh_TechDebtMCP-135
+task	motif-ui_motifreact-34
+task	Asjas_course-platform-946
+task	wiyco_review-insights-31
+task	pnp_cli-microsoft365-7191
+task	taskless_skills-16
+task	supa-magic_spm-19
+task	NestDevLab_nestjs-yalc-123
+task	ComposioHQ_agent-orchestrator-1277
+task	rcrsr_rill-53
+task	rulecom_rule-io-sdk-36
+task	iTwin_presentation-1288
+task	RobertAgterhuis_myAgentic-IT-Project-team-V2-331
+task	SolidOS_solid-panes-598
+task	fernando-msa_bacula-log-archiver-1
+task	axios_axios-10836
+task	blamechris_chroxy-2266
+task	AY2526S2-CS2103T-W14-3_tp-152
+task	scorbo2_ext-sn-statistics-19

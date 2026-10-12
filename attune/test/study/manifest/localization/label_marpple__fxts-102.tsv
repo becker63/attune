@@ -1,0 +1,8 @@
+label	marpple__fxts-102	w58
+provenance	marpple/FxTS	54cf5d26171a9c7632d459c97b5c2853b4190ac9	dc97b583ecfa6ad84280d31db20d7b739153e8916695c28bcfb58c2b3bcd9ba0	reference-patch	159	3581
+entry	modified	src/index.ts	js-ts	source	regular	present	eligible
+entry	new	src/max.ts	js-ts	source	regular	absent	ineligible
+entry	new	src/min.ts	js-ts	source	regular	absent	ineligible
+gold	src/index.ts
+coverage	full	3	supported	1
+case	eligible-gold

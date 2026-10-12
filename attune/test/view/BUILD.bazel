@@ -1,0 +1,87 @@
+load("//platform/build:native.bzl", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The shared writer's own laws: connectors, root alignment, empty and single
+# node trees, every finite limit, the text policy and the one label policy.
+native_flix_test(
+    name = "ascii_tree_test",
+    srcs = [
+        "AsciiTreeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+    ],
+)
+
+# The typed route and serial-event laws: legal, empty, zero-step and reuse
+# goldens plus the equal-output, missing-producer, cross-world, cross-memo,
+# broken-chain and wrong-domain counterexamples.
+native_flix_test(
+    name = "route_view_test",
+    srcs = [
+        "RouteViewLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/View.flix",
+    ],
+)
+
+# The grammar laws: the complete depth-two continuation tree, the corrected
+# `imported_by` padding and the shared signature table the validator reads.
+native_flix_test(
+    name = "grammar_view_test",
+    srcs = [
+        "GrammarLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/View.flix",
+    ],
+)
+
+# The proof laws: a native Datalog conjunction, its ALL-premise readout, the
+# separately marked alternative, and distinct false/unknown/failure states.
+native_flix_test(
+    name = "proof_view_test",
+    srcs = [
+        "ProofViewLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/View.flix",
+    ],
+)
+
+# The semantic-view laws: induced node/edge sets, the surviving lateral edge,
+# and the exact adjacency fallback for cycles, self-loops and parallel kinds.
+native_flix_test(
+    name = "semantic_view_test",
+    srcs = [
+        "SemanticViewLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/View.flix",
+    ],
+)
+
+# The whole-system application-report laws: independent coordination and
+# localization goldens, the four provenances kept apart, witness-bearing
+# decisions that are never flattened, and the presentation rejections.
+native_flix_test(
+    name = "application_view_test",
+    srcs = [
+        "ApplicationViewLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/View.flix",
+    ],
+)

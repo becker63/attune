@@ -1,0 +1,10 @@
+package(default_visibility = ["//visibility:public"])
+
+# The one approved minimal inference adapter (tokenize / model / vector
+# serialization only). It is a declared input of the embedding producer action.
+exports_files(["adapter.py"])
+
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)

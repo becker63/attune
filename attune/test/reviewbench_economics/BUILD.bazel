@@ -1,0 +1,99 @@
+load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
+load("//platform/build:sol.bzl", "attune_path_manifest")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The shared owners the materialized artifacts already reference. The parent
+# module chain (`Attune` -> `Attune.Study` -> `Attune.Study.ReviewBenchReview`
+# -> `Attune.Study.ReviewBenchEconomics`) must be declared, so the economics
+# owner's own file is listed here and reused by both the stage and the
+# corpus-free laws.
+OWNER_SRCS = [
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewBenchEconomics.flix",
+    "//src:Attune/Study/ReviewBenchReview.flix",
+    "//src:Attune/Theory.flix",
+]
+
+STAGE_SRCS = ["ReviewBenchEconomicsStages.flix"] + OWNER_SRCS
+
+# The frozen observations the economics reduction reads: the twenty review
+# receipts of the paired family, the frozen review summary, the frozen owner
+# judge quality tables and the frozen JEV context summary. Every byte is the
+# already-published observation, committed as an immutable declared input, so the
+# reduction can never re-key or re-execute a live review or judge session.
+attune_path_manifest(
+    name = "economics_fixtures",
+    srcs = glob(["fixtures/**"]),
+)
+
+# The declared paired-economics report stage (`VAL-REVIEW-005`). It reduces the
+# frozen review receipts and the frozen owner-judge quality tables through the
+# ONE canonical `Attune.Study.Metrics` exact-ratio vocabulary and writes the
+# per-review table, the pooled per-arm summaries, the separate cost lines, the
+# cold/warm/replay regimes, the 1/3/10 amortization and the bounded ASCII graphs.
+# Provider-free: 0 review actions, 0 judge actions, 0 Grit and 0 Theory work, so
+# a replay is fixture-only with ZERO provider calls. `manual`, so the ordinary
+# `bazel test //...` gate never runs it.
+#
+# The quality table and the graph's y axis are bound to the DECLARED immutable
+# corrected view `//test/reviewbench_judge:reviewbench_corrected_metrics` (the
+# canonical `Attune.Study.ReviewBenchJudge`/`Attune.Study.Metrics` reduction of
+# the frozen judge/adjudication/corrective observations). The stage reads that
+# provider-free producer tree directly rather than a hand-copied table, so the
+# economics quality statement can never drift from the correction, while the
+# ORIGINAL biased `fixtures/judge/metrics.tsv` is retained as labelled
+# provisional history.
+native_study_stage(
+    name = "reviewbench_economics_report",
+    srcs = STAGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "fixtures",
+        "corrected",
+    ],
+    inputs = [
+        ":economics_fixtures",
+        "//test/reviewbench_judge:reviewbench_corrected_metrics",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_economics_report",
+    tags = ["manual"],
+)
+
+# The corpus-free laws of the economics owner (`VAL-REVIEW-005`): the exact
+# latency reductions, the separate cost-line semantics (an unreturned dollar is
+# `Unavailable`, never zero), the exact amortization arithmetic over the declared
+# 1/3/10 denominators, the planned-versus-actual denominators and the bounded
+# pure ASCII graphs. Pure, so the ordinary offline gate runs them without
+# touching the corpus or a provider.
+native_flix_java_test(
+    name = "reviewbench_economics_law",
+    srcs = ["ReviewBenchEconomicsLaw.flix"] + OWNER_SRCS,
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+)
+
+test_suite(
+    name = "all",
+    tests = [":reviewbench_economics_law"],
+)

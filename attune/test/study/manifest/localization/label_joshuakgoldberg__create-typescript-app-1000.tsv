@@ -1,0 +1,25 @@
+label	joshuakgoldberg__create-typescript-app-1000	w16
+provenance	JoshuaKGoldberg/create-typescript-app	6f260c8df819bd796252ae3797809bf40d915520	3954bba6c1ed675e8196026b58974cb39a21459c6879b6ce06c23efbce77721a	reference-patch	296	10708
+entry	modified	README.md	other	source	regular	absent	ineligible
+entry	modified	src/create/createWithOptions.ts	js-ts	source	regular	present	eligible
+entry	modified	src/initialize/initializeWithOptions.ts	js-ts	source	regular	present	eligible
+entry	modified	src/shared/getGitHubUserAsAllContributor.ts	js-ts	source	regular	present	eligible
+entry	modified	src/shared/options/createRepositoryWithApi.ts	js-ts	source	regular	present	eligible
+entry	modified	src/shared/options/getGitHub.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/addOwnerAsAllContributor.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/addToolAllContributors.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/initializeGitHubRepository/index.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/initializeGitHubRepository/labels/getExistingEquivalentLabels.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/initializeGitHubRepository/labels/initializeRepositoryLabels.ts	js-ts	source	regular	present	eligible
+gold	src/create/createWithOptions.ts
+gold	src/initialize/initializeWithOptions.ts
+gold	src/shared/getGitHubUserAsAllContributor.ts
+gold	src/shared/options/createRepositoryWithApi.ts
+gold	src/shared/options/getGitHub.ts
+gold	src/steps/addOwnerAsAllContributor.ts
+gold	src/steps/addToolAllContributors.ts
+gold	src/steps/initializeGitHubRepository/index.ts
+gold	src/steps/initializeGitHubRepository/labels/getExistingEquivalentLabels.ts
+gold	src/steps/initializeGitHubRepository/labels/initializeRepositoryLabels.ts
+coverage	full	11	supported	10
+case	eligible-gold

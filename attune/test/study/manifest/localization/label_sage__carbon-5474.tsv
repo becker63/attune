@@ -1,0 +1,20 @@
+label	sage__carbon-5474	w29
+provenance	Sage/carbon	bde9df23ae9b494ebb6a63dc20355337cda5e062	b76138ca58b9bf76a3f8cec9a62faae4871cf96000732d26b12262922bccd684	reference-patch	517	18202
+entry	modified	src/components/carbon-provider/carbon-provider.component.tsx	js-ts	source	regular	present	eligible
+entry	new	src/components/carbon-provider/top-modal-context.spec.tsx	js-ts	test	regular	absent	ineligible
+entry	new	src/components/carbon-provider/top-modal-context.tsx	js-ts	source	regular	absent	ineligible
+entry	modified	src/components/dialog-full-screen/dialog-full-screen.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/dialog-full-screen/dialog-full-screen.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/dialog/dialog.component.tsx	js-ts	source	regular	present	eligible
+entry	modified	src/components/dialog/dialog.spec.tsx	js-ts	test	regular	present	ineligible
+entry	modified	src/components/modal/__internal__/modal-manager.spec.ts	js-ts	test	regular	present	ineligible
+entry	modified	src/components/modal/__internal__/modal-manager.ts	js-ts	source	regular	present	eligible
+entry	modified	src/components/sidebar/sidebar.component.tsx	js-ts	source	regular	present	eligible
+entry	modified	src/components/sidebar/sidebar.spec.tsx	js-ts	test	regular	present	ineligible
+gold	src/components/carbon-provider/carbon-provider.component.tsx
+gold	src/components/dialog-full-screen/dialog-full-screen.component.js
+gold	src/components/dialog/dialog.component.tsx
+gold	src/components/modal/__internal__/modal-manager.ts
+gold	src/components/sidebar/sidebar.component.tsx
+coverage	full	11	supported	5
+case	eligible-gold

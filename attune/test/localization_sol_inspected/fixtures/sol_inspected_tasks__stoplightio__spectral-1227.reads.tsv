@@ -1,0 +1,10 @@
+tool	commandExecution	failed	41	4782
+tool	commandExecution	completed	820	7987
+tool	commandExecution	completed	19550	12141
+tool	commandExecution	completed	4097	17052
+read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	4782
+read	unknown		820	201c054d1eeea73ecdb2d9a005fecc506cefa8621ef833a80e93622adbeeaeb5	0	completed	7987
+read	search	src	19550	b8f2ade53d6486403cb9f6681522d58927d7a1f101179ef851cdd99bc0e8d928	0	completed	12141
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-2776028932912604734/repo/src/rulesets/oas/functions/oasPathParam.ts	19550	b8f2ade53d6486403cb9f6681522d58927d7a1f101179ef851cdd99bc0e8d928	0	completed	12141
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-2776028932912604734/repo/src/rulesets/oas/functions/__tests__/oasPathParam.test.ts	19550	b8f2ade53d6486403cb9f6681522d58927d7a1f101179ef851cdd99bc0e8d928	0	completed	12141
+read	unknown		4097	63e1cf4f6558617b73c831052a31790fab7148d4d4eed698bb6d4a140e23b34f	0	completed	17052

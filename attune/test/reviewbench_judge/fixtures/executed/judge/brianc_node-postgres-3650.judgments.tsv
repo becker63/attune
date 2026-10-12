@@ -1,0 +1,6 @@
+judged	brianc_node-postgres-3650	C1	24	pg-pool requires ./diagnostics, but its package files allowlist includes only index.js and esm.
+judged	brianc_node-postgres-3650	C2	24	The new diagnostics.js dependency is omitted by pg-pool's published files allowlist.
+judged	brianc_node-postgres-3650	C3	1	The timeout invokes the previously captured queryCallback and replaces query.callback with a no-op, bypassing traced completion.
+judged	brianc_node-postgres-3650	C4	1	The timeout bypasses the traced callback by invoking queryCallback directly and overwriting query.callback.
+judged	brianc_node-postgres-3650	C5	-	The plain origCb(err, res) call loses the Query receiver, a distinct issue absent from the references.
+judged	brianc_node-postgres-3650	C6	4	The pool's traced function only assigns response.callback, leaving acquisition initiation outside the tracing scope.

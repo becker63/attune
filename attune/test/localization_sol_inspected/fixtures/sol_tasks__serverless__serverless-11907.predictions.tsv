@@ -1,0 +1,3 @@
+prediction	serverless__serverless-11907	1	lib/plugins/aws/package/compile/functions.js
+prediction	serverless__serverless-11907	2	lib/plugins/aws/provider.js
+prediction	serverless__serverless-11907	3	test/unit/lib/plugins/aws/package/compile/functions.test.js

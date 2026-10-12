@@ -1,0 +1,23 @@
+record	holdout-identity	reviewbench-holdout24-v1
+record	holdout-seed	attune-reviewbench-holdout-2026-10-09
+record	planned-population	219
+record	fast-cohort	83
+record	original24-excluded	24
+record	remaining-cohort	59
+record	holdout-selected	24
+record	holdout-size	24
+record	excludes-original24	true
+record	within-remaining	true
+record	distinct-repositories	24
+language	fast	TypeScript	62
+language	fast	JavaScript	14
+language	fast	Java	6
+language	fast	Ruby	1
+language	remaining	TypeScript	45
+language	remaining	JavaScript	10
+language	remaining	Java	4
+language	remaining	Ruby	0
+language	holdout	TypeScript	18
+language	holdout	JavaScript	4
+language	holdout	Java	2
+language	holdout	Ruby	0

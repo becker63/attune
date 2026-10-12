@@ -1,0 +1,6 @@
+label	sindresorhus__got-183	w71
+provenance	sindresorhus/got	cecea2d1081c2dc255995229cbcf4eff92a7efb1	06c6475bc9b0cb860eaa22721808d96a761947c4be56bef9a9d2e9f5770e2907	reference-patch	25	902
+entry	modified	index.js	js-ts	source	regular	present	eligible
+gold	index.js
+coverage	full	1	supported	1
+case	eligible-gold

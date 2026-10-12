@@ -1,0 +1,35 @@
+label	solid__community-server-168	w53
+provenance	solid/community-server	f6f45c0ece35ed72c14224925e4711ae4d756520	8ff3a32b1d8550d38d96b8479164e61cd0facf83ab0fd3ad69f8dc10236a627c	reference-patch	475	20356
+entry	modified	.gitignore	other	source	regular	absent	ineligible
+entry	modified	config/presets/ldp/operation-handler.json	other	source	regular	absent	ineligible
+entry	modified	index.ts	js-ts	source	regular	present	eligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	src/ldp/http/BasicRequestParser.ts	js-ts	source	regular	present	eligible
+entry	modified	src/ldp/http/BasicResponseWriter.ts	js-ts	source	regular	present	eligible
+entry	modified	src/ldp/http/BasicTargetExtractor.ts	js-ts	source	regular	present	eligible
+entry	modified	src/ldp/http/RawBodyParser.ts	js-ts	source	regular	present	eligible
+entry	modified	src/ldp/http/SparqlUpdateBodyParser.ts	js-ts	source	regular	present	eligible
+entry	new	src/ldp/operations/HeadOperationHandler.ts	js-ts	source	regular	absent	ineligible
+entry	modified	src/ldp/operations/PostOperationHandler.ts	js-ts	source	regular	present	eligible
+entry	modified	src/storage/conversion/ChainedConverter.ts	js-ts	source	regular	present	eligible
+entry	deleted	src/storage/conversion/QuadToTurtleConverter.ts	js-ts	source	regular	present	eligible
+entry	deleted	src/storage/conversion/TurtleToQuadConverter.ts	js-ts	source	regular	present	eligible
+entry	modified	src/util/CompositeAsyncHandler.ts	js-ts	source	regular	present	eligible
+entry	modified	src/util/ContentTypes.ts	js-ts	source	regular	present	eligible
+entry	modified	src/util/errors/HttpError.ts	js-ts	source	regular	present	eligible
+entry	new	src/util/errors/InternalServerError.ts	js-ts	source	regular	absent	ineligible
+gold	index.ts
+gold	src/ldp/http/BasicRequestParser.ts
+gold	src/ldp/http/BasicResponseWriter.ts
+gold	src/ldp/http/BasicTargetExtractor.ts
+gold	src/ldp/http/RawBodyParser.ts
+gold	src/ldp/http/SparqlUpdateBodyParser.ts
+gold	src/ldp/operations/PostOperationHandler.ts
+gold	src/storage/conversion/ChainedConverter.ts
+gold	src/storage/conversion/QuadToTurtleConverter.ts
+gold	src/storage/conversion/TurtleToQuadConverter.ts
+gold	src/util/CompositeAsyncHandler.ts
+gold	src/util/ContentTypes.ts
+gold	src/util/errors/HttpError.ts
+coverage	full	18	supported	13
+case	eligible-gold

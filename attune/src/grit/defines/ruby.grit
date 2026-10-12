@@ -1,0 +1,80 @@
+engine marzano(0.1)
+language ruby
+
+// @dialect ruby
+// Ruby sources (`.rb`) are parsed by the pinned upstream `tree-sitter-ruby`
+// grammar (ABI 14) that the frozen Grit closure already carries. Grit returns
+// syntax matches plus logged source values; Attune assigns repository
+// identities, resolves and admits edges, and derives inverse relations one
+// layer above this frontend.
+
+// @syntax structural
+//
+// Explicit namespace and member declarations.
+//
+// All four forms define a symbol:
+//
+//   module Shop
+//     module Pricing
+//       def self.total_cents(items)
+//         items.sum { |item| item }
+//       end
+//     end
+//   end
+//
+//   class Receipt
+//     def render(customer:, items:)
+//       Pricing.total_cents(items)
+//     end
+//   end
+//
+// The match is the whole declaration and the logged value is its source name:
+//
+//   Shop
+//   Pricing
+//   total_cents
+//   Receipt
+//   render
+//
+// One log shape covers every form, so the canonical fact stays uniform. The
+// declaration keyword is still recoverable, because the exact text between the
+// declaration's start and its logged name is the keyword that wrote it:
+//
+//   module Shop                     -> "module "
+//   class Receipt                   -> "class "
+//   def self.total_cents(items)     -> "def self."
+//   def render(customer:, items:)   -> "def "
+//
+// Attune's Flix resolver reads exactly that text: `module`/`class` opens a
+// lexical namespace, `def self.` declares a class-level (singleton) method, and
+// `def ` declares an instance method. Keyword parameters and block-bearing
+// bodies change nothing about the declared name.
+//
+// Dynamically created or anonymous definitions have no stable repository name
+// and are deliberately excluded:
+//
+//   define_method(:total_cents) { |items| items.sum }
+//
+//   Class.new { def render; end }
+//
+// Attune's Flix admission later assigns file and symbol identities, decides
+// which namespace encloses each declaration, and derives the inverse relations.
+//
+// @example A nested module and its singleton method are two declarations.
+// module Shop
+//   module Pricing
+//     def self.total_cents(items)
+//       items.sum
+//     end
+//   end
+// end
+// @end
+
+or {
+  module(name = $name),
+  class(name = $name),
+  method(name = $name),
+  singleton_method(name = $name)
+} as $declaration where {
+  log(message="definition", variable=$name)
+}

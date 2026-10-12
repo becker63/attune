@@ -1,0 +1,17 @@
+family	fixture	classification	importer	program	target	requiredInput	consumption	sourceIdentity	published	allowlisted	dynamic	generated	examined	computed	injected	defaulted	literal	builtin	proved
+import-publication	A-local-unpublished	local	app/entry.ts	-	./lib/format	-	-	rev-1:app/entry.ts	false	false	false	false	true	false	false	false	true	false	true
+import-publication	A-local-unpublished-dup	local	app/other.ts	-	./lib/format	-	-	rev-1:app/other.ts	false	false	false	false	true	false	false	false	true	false	true
+import-publication	A-cross-file-unpublished	cross-file	pages/index.ts	-	../runtime/loader	-	-	rev-1:pages/index.ts	false	false	false	false	true	false	false	false	true	false	true
+import-publication	A-exposed-development-node-postgres	exposed-development	lib/connection.js	-	pg-native	-	-	rev-1:lib/connection.js	false	false	false	false	true	false	false	false	true	false	true
+import-publication	A-covered-published	negative	app/entry.ts	-	./lib/format	-	-	rev-1:app/entry.ts	true	false	false	false	true	false	false	false	true	false	false
+import-publication	A-covered-allowlisted	negative	app/entry.ts	-	./lib/format	-	-	rev-1:app/entry.ts	false	true	false	false	true	false	false	false	true	false	false
+import-publication	A-dynamic-refused	refusal	app/dynamic.ts	-	computed/name	-	-	rev-1:app/dynamic.ts	false	false	true	false	true	false	false	false	true	false	false
+import-publication	A-generated-refused	refusal	app/bundle.ts	-	./generated/registry	-	-	rev-1:app/bundle.ts	false	false	false	true	true	false	false	false	true	false	false
+import-publication	A-unexamined-refused	refusal	app/entry.ts	-	./lib/format	-	-	rev-1:app/entry.ts	false	false	false	false	false	false	false	false	true	false	false
+required-cli-input	B-literal-required	local	-	cli/main.ts	-	--token	options.config	rev-1:cli/main.ts	false	false	false	false	true	false	false	false	true	-	-
+required-cli-input	B-cross-file-required	cross-file	-	cli/run.ts	-	--region	argv[2]	rev-1:cli/run.ts	false	false	false	false	true	false	false	false	true	-	-
+required-cli-input	B-exposed-development-capawesome	exposed-development	-	cli/verify.ts	-	--platform	argv[2]	rev-1:cli/verify.ts	false	false	false	false	true	false	false	false	true	-	-
+required-cli-input	B-covered-defaulted	negative	-	cli/main.ts	-	--token	options.config	rev-1:cli/main.ts	false	false	false	false	true	false	false	true	true	-	-
+required-cli-input	B-computed-refused	refusal	-	cli/main.ts	-	--token	options[flag]	rev-1:cli/main.ts	false	false	false	false	true	true	false	false	true	-	-
+required-cli-input	B-injected-refused	refusal	-	cli/main.ts	-	--token	env.TOKEN	rev-1:cli/main.ts	false	false	false	false	true	false	true	false	true	-	-
+required-cli-input	B-nonliteral-refused	refusal	-	cli/main.ts	-	--token	argv[computed]	rev-1:cli/main.ts	false	false	false	false	true	false	false	false	false	-	-

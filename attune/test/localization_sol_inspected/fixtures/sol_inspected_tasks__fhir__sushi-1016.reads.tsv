@@ -1,0 +1,31 @@
+tool	commandExecution	failed	162	5709
+tool	commandExecution	completed	640	9427
+tool	commandExecution	completed	14640	14193
+tool	commandExecution	completed	8632	20244
+tool	commandExecution	completed	17296	24600
+tool	commandExecution	completed	14221	33410
+tool	commandExecution	completed	4908	39918
+read	unknown		162	3d3d47eda0c93d0c44d7ae8ae9fea6a86750cad85b01e9508852e1c1e944f0f4	127	failed	5709
+read	search	.	640	76f4c26e013efceeae0b6a2954b7a4376826297938b5fd0fb02160b4353ec8ae	0	completed	9427
+read	listFiles		640	76f4c26e013efceeae0b6a2954b7a4376826297938b5fd0fb02160b4353ec8ae	0	completed	9427
+read	search	src	14640	17f993ba337408de8f1c1fa67698e7ea51d605f017590ec4d9f37031de5a1b96	0	completed	14193
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/fshtypes/FshCanonical.ts	14640	17f993ba337408de8f1c1fa67698e7ea51d605f017590ec4d9f37031de5a1b96	0	completed	14193
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/fshtypes/Configuration.ts	14640	17f993ba337408de8f1c1fa67698e7ea51d605f017590ec4d9f37031de5a1b96	0	completed	14193
+read	unknown		8632	55f53ca947455e17ef409a892d3709ca8c5a2b37f3b6c198d0967f268c72f957	0	completed	20244
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/utils/MasterFisher.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/export/Package.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/import/FSHTank.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/fhirtypes/ElementDefinition.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/utils/Fishable.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/import/FSHImporter.ts	17296	3bfd7b6a2d3dbd97281f9a689f96528cf3d6da32e9c875e1c4d371f7efc932f8	0	completed	24600
+read	search	importConfiguration.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/import/FSHTank.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/test/export/InstanceExporter.test.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	search	Package.test.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/export/InstanceExporter.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	search	ElementDefinition.ts	14221	bf60177b6a3c67df9f915d0e13c00770bd64e49ee05d2f2c7f55ba34245e9442	0	completed	33410
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/import/importConfiguration.ts	4908	c99795a261e5aabd56e6c7b7d3766d8b5847d5b68da4a5475801953d734d858e	0	completed	39918
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/fhirtypes/ElementDefinition.ts	4908	c99795a261e5aabd56e6c7b7d3766d8b5847d5b68da4a5475801953d734d858e	0	completed	39918
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/test/export/Package.test.ts	4908	c99795a261e5aabd56e6c7b7d3766d8b5847d5b68da4a5475801953d734d858e	0	completed	39918
+read	search	FSHTank.test.ts	4908	c99795a261e5aabd56e6c7b7d3766d8b5847d5b68da4a5475801953d734d858e	0	completed	39918
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-5137739632054945888/repo/src/export/exportFHIR.ts	4908	c99795a261e5aabd56e6c7b7d3766d8b5847d5b68da4a5475801953d734d858e	0	completed	39918

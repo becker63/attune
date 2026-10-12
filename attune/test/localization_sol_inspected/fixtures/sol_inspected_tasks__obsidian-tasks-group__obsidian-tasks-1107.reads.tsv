@@ -1,0 +1,15 @@
+tool	commandExecution	failed	41	6738
+tool	commandExecution	failed	41	6781
+tool	commandExecution	completed	182	10146
+tool	commandExecution	completed	1850	10193
+tool	commandExecution	completed	10591	14980
+tool	commandExecution	failed	4322	15028
+tool	commandExecution	completed	9552	21667
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6738
+read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6781
+read	search	.	182	863520e26f0e3bc94ac35a0bacb762499d8a85481af80f3f1c2b7276062d09c0	0	completed	10146
+read	unknown		1850	9a65a5f87ddf183e9f1b7981b1d1a036077bdc70dd3426f8a4f172dee697515d	0	completed	10193
+read	unknown		10591	4f0f711ed800aa8e33c005a2bef2f1f7a22b2a6db7463e2268868bb2be3c76fd	0	completed	14980
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-340302318442150561/repo/src/Query/Filter/Field.ts	4322	4ef96bea23dd0ea7ffe80723f7452cdfa24e6fdcf1149bfaf5ab26e53af42910	2	failed	15028
+read	search	Query.ts	4322	4ef96bea23dd0ea7ffe80723f7452cdfa24e6fdcf1149bfaf5ab26e53af42910	2	failed	15028
+read	unknown		9552	1b4a0c8fc4cb444dae39c44aa75fea4c02f596f3e8dde4e6e35f2ce4e26c1e74	0	completed	21667

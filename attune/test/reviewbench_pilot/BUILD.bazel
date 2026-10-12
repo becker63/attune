@@ -1,0 +1,658 @@
+load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
+load("//platform/build:sol.bzl", "attune_path_manifest")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("//platform/dsh:pilot_runner.bzl", "attune_holdout_runners", "attune_pilot_runners")
+
+package(default_visibility = ["//visibility:public"])
+
+# The frozen review prompt as a linked library, so the pilot composition law can
+# consume the SAME declared bytes the runner composes from.
+js_library(
+    name = "prompt_module",
+    srcs = ["prompt.txt"],
+)
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+exports_files(["prompt.txt", "holdout-archives.tsv"])
+
+# The explicit source closure of the pilot freeze stage: the freeze dispatcher
+# plus the canonical owner it reduces and the shared owners both consume. The
+# holdout selection, the arm/protocol identities, the activation rule and the
+# Pareto rule all live in `Attune.Study.ReviewPilot`; the metadata-only cohort,
+# the fast cohort, the distinct-repository preference and the split mechanism
+# live in the existing `Attune.Study.ReviewBench` and `Attune.Study`; the
+# frontend language table lives in `Attune.Repository.Grit`. The mechanical
+# digest seam (`AttuneReviewBench.sha256Hex`) is the only Java dependency.
+PILOT_SRCS = [
+    "ReviewPilotStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The explicit source closure of the appended source-binding declaration: the
+# binding stage plus the separately versioned binding owner
+# (`Attune.Study.ReviewPilotBinding`) and the canonical pilot owner it references.
+PILOT_BINDING_SRCS = [
+    "ReviewPilotBindingStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Study/ReviewPilotBinding.flix",
+    "//src:Attune/Theory.flix",
+]
+# The declared ReviewBench pilot SOURCE-BINDING stage (`VAL-STUDY-002`,
+# `VAL-STUDY-010`). It APPENDS the separately versioned source-access /
+# tool-mount / task-binding record alongside the immutable `1143bc2` freeze
+# outputs: the versioned binding identity rows, their frozen invariants and the
+# per-task / per-arm run configuration. It reduces the frozen freeze dispatch and
+# the already-admitted cohort tool index; it acquires nothing and calls no
+# provider. It consumes the pinned-corpus cohort index, so it is `manual`: the
+# ordinary gate never fetches the corpus.
+native_study_stage(
+    name = "reviewbench_pilot_binding",
+    srcs = PILOT_BINDING_SRCS,
+    input_names = [
+        "freeze",
+        "cohort",
+    ],
+    inputs = [
+        ":reviewbench_pilot_freeze",
+        "//platform/dsh:evidence_reviewbench_cohort",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_binding",
+    tags = ["manual"],
+)
+
+# The explicit source closure of the pilot RUN-half stages: the blinding and
+# reduction dispatcher plus the canonical owner it reduces and the shared owners
+# both consume.
+PILOT_RUN_SRCS = [    "ReviewPilotRunStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The explicit source closure of the holdout-confirmation stage: the selection
+# dispatcher plus the canonical pilot owner whose frozen Pareto rule it applies
+# and the shared owners both consume. It is a separate target from the run-half
+# stages because each stage file owns its own parsing helpers.
+PILOT_HOLDOUT_SRCS = [
+    "ReviewPilotHoldoutStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The explicit source closure of the holdout-confirmation RUN-half reduction: the
+# heldout reduction dispatcher plus the canonical pilot owner whose frozen
+# identities it reads. It is a separate target from the pilot run-half stages
+# because each stage file owns its own parsing helpers.
+PILOT_HOLDOUT_RUN_SRCS = [
+    "ReviewHoldoutRunStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The frozen run-half receipts the reduction stages declare: the ACTUAL delivered
+# finals, the durable committed checkpoints, the normalized candidate findings,
+# the frozen predictions/diagnostics/usage ledger and the ten-task reference
+# population. They are ordinary repo fixtures, so the stages read them without
+# fetching the corpus.
+filegroup(
+    name = "pilot_run_fixture_files",
+    srcs = glob(["fixtures/**"]),
+)
+
+attune_path_manifest(
+    name = "pilot_run_fixtures",
+    srcs = glob(["fixtures/**"]),
+)
+
+# The declared ReviewBench pilot candidate-blinding stage (`VAL-STUDY-002`,
+# `VAL-STUDY-005`). It blinds the ACTUAL delivered findings of the twenty
+# once-only observations — the non-empty FINAL deliveries plus the durable
+# committed CHECKPOINT candidates — into one per-task blinded projection with
+# fresh positional ids and NO producing-arm cell, plus a SEPARATE evaluator-side
+# blinding record. Provider-free and corpus-free: it reads only the frozen
+# receipts and calls no provider.
+native_study_stage(
+    name = "reviewbench_pilot_candidates",
+    srcs = PILOT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_candidates",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench pilot RUN-HALF REDUCTION stage (`VAL-STUDY-002`,
+# `VAL-STUDY-005`, `VAL-STUDY-010`, `VAL-STUDY-011`). It reduces the frozen
+# twenty-slot records together with the independently judged receipts into the
+# canonical run-half record: the per-slot budget/acquisition/delivery table, the
+# separately versioned commit/source/packet refusal projection, the per-arm
+# judged evidence, the all-task reference denominator and the ONE activation
+# decision applied by the unchanged frozen `Attune.Study.ReviewPilot` rule.
+# Provider-free and corpus-free: it reads only the frozen receipts.
+native_study_stage(
+    name = "reviewbench_pilot_run",
+    srcs = PILOT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_run",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench holdout confirmation FREEZE stage (`VAL-STUDY-004`).
+# It reduces the ACTUAL judged pilot outcomes and the immutable metadata-only
+# 24-task holdout into the predeclared Pareto selection and freezes it BEFORE any
+# heldout observation exists, plus the balanced deterministic holdout dispatch of
+# one plain and one selected-policy observation per holdout task. No heldout
+# outcome is an input, because none exists yet; the target is `manual` because it
+# consumes the run-half reduction tree, not the ordinary gate.
+native_study_stage(
+    name = "reviewbench_pilot_holdout_freeze",
+    srcs = PILOT_HOLDOUT_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "holdout",
+        "pilot_run",
+        "fixtures",
+    ],
+    inputs = [
+        ":reviewbench_pilot_freeze",
+        ":reviewbench_pilot_run",
+        ":pilot_run_fixtures",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_holdout_freeze",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench heldout-confirmation RUN-half reduction
+# (`VAL-STUDY-004`). It reduces the FORTY-EIGHT frozen once-only heldout
+# observations — one fresh plain and one fresh selected-policy observation per
+# task of the frozen metadata-only 24-task holdout — into the canonical heldout
+# record: the per-observation table (every budget-stopped and every empty
+# delivery stays a miss), the per-arm usage with the guard-prefix and measured
+# overshoots SEPARATE, the explicit planned/original24/remaining denominator, the
+# per-task RAW paired difference, the honest limited-support statement and the
+# blinded candidate projection. Provider-free and corpus-free: it reads only the
+# frozen receipts and calls no provider.
+native_study_stage(
+    name = "reviewbench_holdout_run",
+    srcs = PILOT_HOLDOUT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_run",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench pilot freeze stage (`VAL-STUDY-001`, `VAL-STUDY-002`,
+# `VAL-STUDY-003`, `VAL-STUDY-010`). It reduces the already-materialized,
+# already-frozen admission projection and the frozen cohort fixture into the
+# metadata-only 24-task holdout, the frozen protocol record, the balanced
+# deterministic dispatch record and the frozen activation and Pareto rules. It
+# acquires nothing and calls no provider, but it consumes the pinned-corpus
+# admission tree, so it is `manual`: the ordinary gate never fetches the corpus.
+native_study_stage(
+    name = "reviewbench_pilot_freeze",
+    srcs = PILOT_SRCS,
+    input_names = [
+        "admission",
+        "cohort",
+        "prompt",
+    ],
+    inputs = [
+        "//test/reviewbench:reviewbench_admission",
+        "//test/study:fixtures/reviewbench-cohort.tsv",
+        "prompt.txt",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_freeze",
+    tags = ["manual"],
+)
+
+# The corpus-free laws of the pilot owner: they drive the exact production arm,
+# protocol, observation, holdout, activation and Pareto rules over declared
+# fixtures. No corpus, no network, no golden finding and no provider is touched,
+# so the ordinary gate runs them.
+native_flix_java_test(
+    name = "reviewbench_pilot_law",
+    srcs = [
+        "ReviewPilotBindingLaw.flix",
+        "ReviewPilotLaw.flix",
+        "ReviewPilotRunStages.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Study/ReviewPilotBinding.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)
+
+test_suite(
+    name = "all",
+    tests = [
+        ":reviewbench_holdout_judge_law",
+        ":reviewbench_holdout_law",
+        ":reviewbench_pilot_law",
+        ":reviewbench_publication_law",
+    ],
+)
+
+# The corpus-free laws of the heldout-confirmation reduction (`VAL-STUDY-004`):
+# the production completion/salvage rule, the DISTINCT guard-prefix and measured
+# overshoots, the exactly-one-observation-per-arm pairing rule and the frozen
+# heldout selection rule, all over declared in-memory records. No corpus, no
+# network, no golden finding, no provider and no fixture file is touched, so the
+# ordinary gate runs them. It is a SEPARATE target from the pilot law because the
+# heldout reduction owns its own parsing helpers.
+native_flix_java_test(
+    name = "reviewbench_holdout_law",
+    srcs = [
+        "ReviewHoldoutRunStages.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)
+
+# The twenty once-only observations of the gated pilot (`VAL-STUDY-002`,
+# `VAL-STUDY-010`, the RUN half). ONE declared DSH action per (task, arm) of the
+# frozen balanced deterministic dispatch: the ten original admitted tasks x
+# `R0_PLAIN`/`R1_PACKETS`. Every target declares its own run identity, its own
+# per-task world binding and its own overlay set; BOTH arms mount the shared
+# bounded plain-read facade, the shared candidate-commit operation and the two
+# model-hidden detector families plus the mechanical lifecycle guard, and ONLY the
+# packet arm additionally mounts the R1-only progressive packet operation. The
+# composed review task of each observation is built at run time from the declared
+# frozen prompt, the task's own public issue and its own changed-file manifest,
+# base/head identities and declared source operations. They are `manual`: the
+# ordinary `bazel test //...` gate never runs a provider, and each one is a
+# once-only scientific observation (no rerun, no replacement, no quality retry).
+attune_pilot_runners(
+    name = "reviewbench_pilot_runners",
+    cohort = "//platform/dsh:evidence_reviewbench_cohort",
+    common_overlays = [
+        "//platform/dsh/tool:attune-guard.plugin.yml",
+        "//platform/dsh/tool:attune-commit.plugin.yml",
+        "//platform/dsh/tool:attune-detector.plugin.yml",
+        "//platform/dsh/tool:attune-plain.plugin.yml",
+        "//platform/dsh/tool:attune-reviewer.plugin.yml",
+    ],
+    issues = "//test/reviewbench_review:reviewbench_review_issues",
+    packet_overlay = "//platform/dsh/tool:attune-packet.plugin.yml",
+    prompt = "prompt.txt",
+    routes = ["//platform/dsh:route-siwc-responses.yml"],
+    world_repo = "@reviewbench_worlds",
+)
+
+# The forty-eight once-only observations of the heldout confirmation
+# (`VAL-STUDY-004`, the RUN half). ONE declared DSH action per (task, arm) of the
+# frozen balanced deterministic holdout dispatch: the metadata-only 24-task
+# holdout x the fresh plain arm `R0_PLAIN` and the freshly selected policy's arm
+# `R1_PACKETS` (the predeclared Pareto selection froze `R1_PACKETS` before any
+# heldout outcome). It reuses the SAME `dsh_agent_run` rule, the SAME shared
+# plain-read facade / candidate-commit operation / hidden detector families /
+# mechanical lifecycle guard, the SAME declared provider route and the SAME
+# frozen prompt bytes as the pilot, so the confirmation uses the identical shared
+# DSH subscription substrate, exact source worlds and judging policy. The
+# per-task holdout world is the holdout task's OWN declared head world, never a
+# pilot world and never a neighbour's. They are `manual`: the ordinary
+# `bazel test //...` gate never runs a provider, and each one is a once-only
+# scientific observation (no heldout tuning, no replacement, no quality retry).
+attune_holdout_runners(
+    name = "reviewbench_holdout_runners",
+    cohort = "//platform/dsh:evidence_reviewbench_holdout_cohort",
+    common_overlays = [
+        "//platform/dsh/tool:attune-guard.plugin.yml",
+        "//platform/dsh/tool:attune-commit.plugin.yml",
+        "//platform/dsh/tool:attune-detector.plugin.yml",
+        "//platform/dsh/tool:attune-plain.plugin.yml",
+        "//platform/dsh/tool:attune-reviewer.plugin.yml",
+    ],
+    issues = "//test/reviewbench_review:reviewbench_holdout_issues",
+    packet_overlay = "//platform/dsh/tool:attune-packet.plugin.yml",
+    prompt = "prompt.txt",
+    routes = ["//platform/dsh:route-siwc-responses.yml"],
+    world_repo = "@reviewbench_holdout_worlds",
+)
+
+# The pinned golden set of every frozen metadata-only 24-task holdout task
+# (`VAL-STUDY-004`). Each file's exact bytes are pinned by SHA-256 in
+# `MODULE.bazel`, so a mutated or substituted golden file fails the fetch
+# instead of entering the heldout judge. The golden set is declared ONLY by
+# `:reviewbench_holdout_references` and by the heldout judge cohort: no review,
+# prediction or assisted-context closure reaches it, and the heldout prediction
+# freeze was committed before any golden byte was acquired.
+HOLDOUT_GOLD = {
+    "swarmbase_swarmbase-161": "@reviewbench_holdout_gold_swarmbase_swarmbase_161//file",
+    "capawesome-team_cli-127": "@reviewbench_holdout_gold_capawesome_team_cli_127//file",
+    "konturio_disaster-ninja-fe-1082": "@reviewbench_holdout_gold_konturio_disaster_ninja_fe_1082//file",
+    "hughdidit_DAISy-Agency-309": "@reviewbench_holdout_gold_hughdidit_DAISy_Agency_309//file",
+    "confluentinc_mcp-confluent-143": "@reviewbench_holdout_gold_confluentinc_mcp_confluent_143//file",
+    "PierreJanineh_TechDebtMCP-135": "@reviewbench_holdout_gold_PierreJanineh_TechDebtMCP_135//file",
+    "motif-ui_motifreact-34": "@reviewbench_holdout_gold_motif_ui_motifreact_34//file",
+    "Asjas_course-platform-946": "@reviewbench_holdout_gold_Asjas_course_platform_946//file",
+    "wiyco_review-insights-31": "@reviewbench_holdout_gold_wiyco_review_insights_31//file",
+    "pnp_cli-microsoft365-7191": "@reviewbench_holdout_gold_pnp_cli_microsoft365_7191//file",
+    "taskless_skills-16": "@reviewbench_holdout_gold_taskless_skills_16//file",
+    "supa-magic_spm-19": "@reviewbench_holdout_gold_supa_magic_spm_19//file",
+    "NestDevLab_nestjs-yalc-123": "@reviewbench_holdout_gold_NestDevLab_nestjs_yalc_123//file",
+    "ComposioHQ_agent-orchestrator-1277": "@reviewbench_holdout_gold_ComposioHQ_agent_orchestrator_1277//file",
+    "rcrsr_rill-53": "@reviewbench_holdout_gold_rcrsr_rill_53//file",
+    "rulecom_rule-io-sdk-36": "@reviewbench_holdout_gold_rulecom_rule_io_sdk_36//file",
+    "iTwin_presentation-1288": "@reviewbench_holdout_gold_iTwin_presentation_1288//file",
+    "RobertAgterhuis_myAgentic-IT-Project-team-V2-331": "@reviewbench_holdout_gold_RobertAgterhuis_myAgentic_IT_Project_team_V2_331//file",
+    "SolidOS_solid-panes-598": "@reviewbench_holdout_gold_SolidOS_solid_panes_598//file",
+    "fernando-msa_bacula-log-archiver-1": "@reviewbench_holdout_gold_fernando_msa_bacula_log_archiver_1//file",
+    "axios_axios-10836": "@reviewbench_holdout_gold_axios_axios_10836//file",
+    "blamechris_chroxy-2266": "@reviewbench_holdout_gold_blamechris_chroxy_2266//file",
+    "AY2526S2-CS2103T-W14-3_tp-152": "@reviewbench_holdout_gold_AY2526S2_CS2103T_W14_3_tp_152//file",
+    "scorbo2_ext-sn-statistics-19": "@reviewbench_holdout_gold_scorbo2_ext_sn_statistics_19//file",
+}
+
+# The declared binding order of the holdout reference stage: one declared
+# golden input per holdout task, named by the task id the reference projection
+# and the judged reduction both key on.
+HOLDOUT_GOLD_TASKS = [
+    "swarmbase_swarmbase-161",
+    "capawesome-team_cli-127",
+    "konturio_disaster-ninja-fe-1082",
+    "hughdidit_DAISy-Agency-309",
+    "confluentinc_mcp-confluent-143",
+    "PierreJanineh_TechDebtMCP-135",
+    "motif-ui_motifreact-34",
+    "Asjas_course-platform-946",
+    "wiyco_review-insights-31",
+    "pnp_cli-microsoft365-7191",
+    "taskless_skills-16",
+    "supa-magic_spm-19",
+    "NestDevLab_nestjs-yalc-123",
+    "ComposioHQ_agent-orchestrator-1277",
+    "rcrsr_rill-53",
+    "rulecom_rule-io-sdk-36",
+    "iTwin_presentation-1288",
+    "RobertAgterhuis_myAgentic-IT-Project-team-V2-331",
+    "SolidOS_solid-panes-598",
+    "fernando-msa_bacula-log-archiver-1",
+    "axios_axios-10836",
+    "blamechris_chroxy-2266",
+    "AY2526S2-CS2103T-W14-3_tp-152",
+    "scorbo2_ext-sn-statistics-19",
+]
+
+HOLDOUT_GOLD_INPUTS = [HOLDOUT_GOLD[task] for task in HOLDOUT_GOLD_TASKS]
+
+# The explicit source closure of the holdout JUDGING stages: the reference
+# projection and the judged reduction plus the canonical judge reduction they
+# reuse. It is a separate target from the run-half stages because each stage
+# file owns its own parsing helpers.
+PILOT_HOLDOUT_JUDGE_SRCS = [
+    "ReviewHoldoutJudgeStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewBenchJudge.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The declared provider-free holdout REFERENCE-POPULATION stage
+# (`VAL-STUDY-004`). It projects each frozen holdout task's pinned golden set
+# through the SAME mechanical boundary the pilot's reference population uses
+# (`AttuneReviewBench.goldReferences`) and writes one driver-format reference
+# projection per task plus the population, eligibility and summary records. It
+# reads no candidate and no judged row, so the reference population is
+# materialized independently of any reviewer or judge output. `manual`: the
+# ordinary `bazel test //...` gate never acquires the golden set.
+native_study_stage(
+    name = "reviewbench_holdout_references",
+    srcs = PILOT_HOLDOUT_JUDGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"] + HOLDOUT_GOLD_TASKS,
+    inputs = [":pilot_run_fixtures"] + HOLDOUT_GOLD_INPUTS,
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_references",
+    tags = ["manual"],
+)
+
+# The declared provider-free holdout JUDGED-REDUCTION stage (`VAL-STUDY-004`).
+# It reduces the FROZEN blinded judge and independent-adjudication receipts of
+# the heldout candidates together with the independently materialized reference
+# population into the canonical per-arm classification: each candidate's
+# declared verdict, the per-task/per-arm finding-level counts and the honest
+# summary. It reuses the ONE canonical `Attune.Study.ReviewBenchJudge`
+# claim/adjudication reduction, so a reference miss is never automatically a
+# false positive, a cross-arm equivalent finding stays symmetrically valid and
+# an unresolved validity stays explicit. It declares NO dependency on any live
+# judge producer: the receipts are frozen as declared fixtures under
+# `fixtures/`, so a stage-source change can never invalidate and re-execute a
+# live session and a replay is always provider-free. `manual`.
+native_study_stage(
+    name = "reviewbench_holdout_judged",
+    srcs = PILOT_HOLDOUT_JUDGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures", "candidates", "references"],
+    inputs = [
+        ":pilot_run_fixtures",
+        ":reviewbench_holdout_run",
+        ":reviewbench_holdout_references",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_judged",
+    tags = ["manual"],
+)
+
+# The declared provider-free policy-faithful holdout QUALITY projection
+# (`VAL-STUDY-005`, `VAL-STUDY-007`, `VAL-CROSS-002`). It INDEPENDENTLY
+# re-derives the as-acquired per-arm classification from the raw frozen judge /
+# adjudication fixtures, asserts byte parity with the frozen judged tree, then
+# publishes the within-arm-policy-faithful corrected projection as a SEPARATE
+# output — the raw receipts stay byte-exact. The correction reinstates a
+# candidate invalidated only against a candidate of the OTHER arm (a cross-arm
+# equivalent is symmetrically valid) and keeps a within-arm restatement a
+# duplicate. Provider-free and corpus-free. `manual`.
+native_study_stage(
+    name = "reviewbench_holdout_quality",
+    srcs = PILOT_HOLDOUT_JUDGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "fixtures",
+        "candidates",
+        "references",
+        "judged",
+    ],
+    inputs = [
+        ":pilot_run_fixtures",
+        ":reviewbench_holdout_run",
+        ":reviewbench_holdout_references",
+        ":reviewbench_holdout_judged",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_quality",
+    tags = ["manual"],
+)
+
+# The declared provider-free PUBLICATION reduction of the measured study
+# (`VAL-STUDY-005..009`, `VAL-STUDY-011`, `VAL-CROSS-001..002`). It reduces the
+# ALREADY-REDUCED canonical receipts of the pilot run half, the heldout run half
+# and the policy-faithful holdout quality projection into the compact study
+# record the root report cites: the headline quality of both arms, the compact
+# per-task table (budget, acquisition, source candidates, valid delivered,
+# interruption), the evidence-displacement classification and the non-gate 5x
+# diagnostic. It calls no model/JEV/Qwen/original producer and reads only the
+# immutable frozen receipts and reduced trees. `manual`.
+PUBLICATION_SRCS = ["ReviewPublicationStages.flix"] + [
+    src
+    for src in PILOT_HOLDOUT_JUDGE_SRCS
+    if src != "ReviewHoldoutJudgeStages.flix"
+]
+
+native_study_stage(
+    name = "reviewbench_publication",
+    srcs = PUBLICATION_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "fixtures",
+        "pilot_run",
+        "holdout_run",
+        "holdout_quality",
+    ],
+    inputs = [
+        ":pilot_run_fixtures",
+        ":reviewbench_pilot_run",
+        ":reviewbench_holdout_run",
+        ":reviewbench_holdout_quality",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_publication",
+    tags = ["manual"],
+)
+
+# The corpus-free law of the publication reduction (`VAL-STUDY-011`,
+# `VAL-CROSS-002`): one per-(task, arm) compact row is derived only from that
+# arm's own frozen records, never borrowing the other arm's candidate population
+# and never promoting an invalid or unresolved candidate to a valid delivery. No
+# corpus, no network, no golden finding, no provider and no fixture file is
+# touched, so the ordinary gate runs it. It is a SEPARATE target from the other
+# laws because the publication reduction owns its own parsing helpers.
+native_flix_java_test(
+    name = "reviewbench_publication_law",
+    srcs = PUBLICATION_SRCS,
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)
+
+# The corpus-free laws of the holdout judging (`VAL-STUDY-004`): an unmatched
+# candidate is never automatically false and routes to source-grounded
+# adjudication, a cross-arm equivalent finding stays symmetrically valid, a
+# within-arm restatement deduplicates through the canonical claim, and the arm
+# population stays disjoint, complete and reproducibly ordered. No corpus, no
+# network, no golden finding and no provider is touched, so the ordinary gate
+# runs them.
+native_flix_java_test(
+    name = "reviewbench_holdout_judge_law",
+    srcs = ["ReviewHoldoutJudgeStages.flix"] + [
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Study/ReviewBenchJudge.flix",
+        "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+)

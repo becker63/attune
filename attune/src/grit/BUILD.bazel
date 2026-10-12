@@ -1,0 +1,44 @@
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population: the
+# retained commented Grit entry-point inventory for all eight admitted language
+# surfaces (JS/JSX/TS/TSX, Java, Flix, Starlark/Bazel and the approved bounded
+# Ruby arm).
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The maintained query inventory, packaged as immutable JAR resources by the
+# narrow JVM facade. One entry point per relation per admitted language:
+# `defines`, `imports` and `calls`. The population is listed rather than
+# globbed, so the declared inventory names every frontend it carries.
+filegroup(
+    name = "programs",
+    srcs = [
+        "calls/flix.grit",
+        "calls/java.grit",
+        "calls/javascript.grit",
+        "calls/jsx.grit",
+        "calls/ruby.grit",
+        "calls/starlark.grit",
+        "calls/tsx.grit",
+        "calls/typescript.grit",
+        "defines/flix.grit",
+        "defines/java.grit",
+        "defines/javascript.grit",
+        "defines/jsx.grit",
+        "defines/ruby.grit",
+        "defines/starlark.grit",
+        "defines/tsx.grit",
+        "defines/typescript.grit",
+        "imports/flix.grit",
+        "imports/java.grit",
+        "imports/javascript.grit",
+        "imports/jsx.grit",
+        "imports/ruby.grit",
+        "imports/starlark.grit",
+        "imports/tsx.grit",
+        "imports/typescript.grit",
+    ],
+)

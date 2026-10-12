@@ -1,0 +1,77 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//platform/build:native.bzl", "native_flix_java_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The authored Ruby source-as-data world: the shop sources and the named
+# negative fixtures. These files are declared inputs and fixture bytes only:
+# they are never compiled, executed or resolved at build time, and the frontend
+# reads them through the launcher's declared binding. The population is listed
+# rather than globbed, so the declared inventory names every fixture it carries.
+filegroup(
+    name = "fixtures",
+    srcs = [
+        "fixtures/instance/register.rb",
+        "fixtures/negative/ambiguous/caller.rb",
+        "fixtures/negative/ambiguous/left.rb",
+        "fixtures/negative/ambiguous/right.rb",
+        "fixtures/negative/computed_require.rb",
+        "fixtures/negative/dynamic_dispatch.rb",
+        "fixtures/negative/missing_require.rb",
+        "fixtures/negative/reopened_declaration.rb",
+        "fixtures/shop/checkout.rb",
+        "fixtures/shop/pricing.rb",
+        "fixtures/shop/receipt.rb",
+    ],
+)
+
+# The carried native/editor support metadata the pin-correspondence fixture
+# reads: the one Grit repository rule that pins the frozen closure and the
+# Flix grammar, and the Zed assets that pin the same grammar revision. They are
+# declared data only, never executed and never resolved at build time.
+filegroup(
+    name = "support_assets",
+    srcs = [
+        "//platform/build:grit_repository.bzl",
+        "//platform/zed:zed_assets",
+    ],
+)
+
+# The mechanical fixture reader. It maps a declared name onto the prepared
+# runfiles path the launcher bound and returns the exact bytes; it classifies
+# nothing and decides no case.
+java_library(
+    name = "grit_fixtures",
+    srcs = ["GritFixtures.java"],
+    javacopts = ["--release=22"],
+)
+
+# The native Flix fixtures drive the real pinned Grit engine through the ABI
+# with the packaged query inventory, the declared Ruby world and the prepared
+# shared library. The approved Ruby arm is exercised through the same entry
+# point as the seven retained languages.
+native_flix_java_test(
+    name = "grit_ruby_test",
+    srcs = [
+        "GritSeamTest.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+    ],
+    declared_files = [
+        ":fixtures",
+        ":support_assets",
+    ],
+    java_deps = [
+        ":grit_fixtures",
+        "//platform/tools/grit:attune_grit",
+    ],
+    native_libs = ["//platform/support/grit:attune_grit_abi"],
+)

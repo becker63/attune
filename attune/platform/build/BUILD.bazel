@@ -1,0 +1,28 @@
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+exports_files([
+    "embedding.bzl",
+    "embedding_runtime.bzl",
+    "grit_repository.bzl",
+    "native.bzl",
+    "unshare_repository.bzl",
+    "workspace_root.bzl",
+])
+
+# The declared native route reads this condition to choose its isolation
+# mechanism. The ordinary gate leaves it unset, so the native actions run
+# inside the declared pinned `unshare` user/network namespace. The opt-in
+# `--config=remote` profile sets `--define=attune_native_isolation=platform`,
+# which the remote profile must use because the pinned Nix `unshare` binary
+# cannot execute off-host and because the declared BuildBuddy container already
+# denies the guest network through its own `dockerNetwork=off` property.
+config_setting(
+    name = "platform_native_isolation",
+    values = {"define": "attune_native_isolation=platform"},
+)

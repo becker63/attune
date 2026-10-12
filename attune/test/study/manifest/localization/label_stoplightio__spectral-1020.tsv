@@ -1,0 +1,7 @@
+label	stoplightio__spectral-1020	w73
+provenance	stoplightio/spectral	20774dca6b244aa11dfea9ee76de2a76c5f9d98a	a31b749a2b3f0aa8a9735dafb5eaddb5a16872bcbc8c7205aecb72571d30ac99	reference-patch	80	2875
+entry	modified	docs/getting-started/rulesets.md	other	source	regular	absent	ineligible
+entry	modified	src/linter.ts	js-ts	source	regular	present	eligible
+gold	src/linter.ts
+coverage	full	2	supported	1
+case	eligible-gold

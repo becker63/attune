@@ -1,0 +1,6 @@
+prediction	projectevergreen__greenwood-1100	1	packages/cli/src/lifecycles/bundle.js
+prediction	projectevergreen__greenwood-1100	2	packages/cli/src/lifecycles/prerender.js
+prediction	projectevergreen__greenwood-1100	3	packages/cli/src/lifecycles/compile.js
+prediction	projectevergreen__greenwood-1100	4	packages/cli/test/cases/serve.default.ssr/serve.default.ssr.spec.js
+prediction	projectevergreen__greenwood-1100	5	packages/cli/test/cases/serve.default.ssr/src/templates/app.html
+prediction	projectevergreen__greenwood-1100	6	packages/cli/src/lifecycles/serve.js

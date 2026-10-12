@@ -1,0 +1,10 @@
+label	sage__carbon-5356	w27
+provenance	Sage/carbon	f303f8d3d3204b1c947ae749bd6f1bf96233b888	e118c6bb07f402c98a3fbf7033c513c0e082f3c521a089e66433f60c5373648d	reference-patch	203	7476
+entry	modified	src/__internal__/focus-trap/focus-trap.spec.tsx	js-ts	test	regular	present	ineligible
+entry	modified	src/components/toast/toast.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/toast/toast.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/toast/toast.style.js	js-ts	source	regular	present	eligible
+gold	src/components/toast/toast.component.js
+gold	src/components/toast/toast.style.js
+coverage	full	4	supported	2
+case	eligible-gold

@@ -1,0 +1,7 @@
+label	stoplightio__spectral-1227	w76
+provenance	stoplightio/spectral	40a39628cd2cb9e907d5e052d9d186838c70659e	599426a4cc9e5452a10e50e81de084aab50a700cbbfdf71b2bbcaa60ca467d36	reference-patch	43	1966
+entry	modified	docs/reference/openapi-rules.md	other	source	regular	absent	ineligible
+entry	modified	src/rulesets/oas/functions/oasPathParam.ts	js-ts	source	regular	present	eligible
+gold	src/rulesets/oas/functions/oasPathParam.ts
+coverage	full	2	supported	1
+case	eligible-gold

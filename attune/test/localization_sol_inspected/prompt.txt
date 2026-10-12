@@ -1,0 +1,16 @@
+You are localizing a software issue in a clean repository.
+
+Your only task is to localize the issue: identify the repository files most likely to require modification to correctly implement the requested fix. Do not solve the issue. Do not edit code. Do not run tests or builds.
+
+You must inspect the repository before you answer:
+- Search the mounted repository to find the code relevant to the issue.
+- Read the relevant implementation source files themselves, not only their names, before you decide.
+- Follow definitions, callers, imports and tests when that is useful for establishing which files the fix would touch.
+
+Then return at most 10 EXISTING repository-relative source file paths, ranked from most to least likely to require modification. Return fewer files when fewer are genuinely warranted; never pad the list with unrelated files.
+
+A multi-file fix is possible: prefer including every file that may actually require modification over forcing an artificially minimal prediction. Return only paths that exist in this repository.
+
+Abstain, returning an empty list, only if after inspecting the repository you cannot establish any relevant file.
+
+When finished, emit the required structured result and stop.

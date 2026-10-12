@@ -1,0 +1,2 @@
+judged	rulecom_rule-io-sdk-40	C1	20,21	Both listApiKeys() and createApiKey() use requestV3(), which logs the full response containing secret key values in debug mode.
+judged	rulecom_rule-io-sdk-40	C2	20,21	It identifies the same credential leakage through requestV3() response logging for both API-key listing and creation.

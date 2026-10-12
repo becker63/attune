@@ -1,0 +1,2 @@
+prediction	serverless__serverless-12030	1	lib/plugins/aws/package/compile/events/schedule.js
+prediction	serverless__serverless-12030	2	test/unit/lib/plugins/aws/package/compile/events/schedule.test.js

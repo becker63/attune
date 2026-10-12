@@ -1,0 +1,15 @@
+# The one declared DSH overlay that mounts the mechanical lifecycle guard.
+#
+# It is a loader patch list (`--patch`) whose single patch INSERTS the guard as
+# a new profile row, exactly like the evidence-tool overlay beside it. The row's
+# `name` is a RELATIVE module specifier, which the declared DSH loader anchors
+# beside this file, so the guard resolves from this package's own directory.
+#
+# The guard reads the declared `evidence_guard_declaration` tree that ships
+# beside the profile (the caps, the derived reserve and the canonical decision
+# matrix the Flix owner materialized), so no cap or decision rule is restated in
+# this overlay or in TypeScript. A run may override the declaration location and
+# the durable record path through the guard's declared config or environment.
+- insert:
+    - id: attune-lifecycle-guard
+      name: ./guard.mjs

@@ -1,0 +1,386 @@
+"""The one native DSH tool of the narrow evidence substrate (owner-authorized 2026-10-09).
+
+This package holds the authored Cordis plugin that registers ONE `defineTool`
+tool through the real pinned `@deepseek-ai/dsh-tools` surface, the tiny
+supported-subset bridge that projects the generated evidence contract into the
+DSH parameter dialect, and the runtime world/range/permission boundary that
+refuses an out-of-scope or denied read before any sealed source byte is read.
+
+It is a separate Bazel package because the declared DSH loader resolves the
+plugin by its npm package name from the linked `node_modules` tree of
+`//platform/dsh`, and a first-party package link points at the Bazel package
+directory of the linked target. Nothing here is fetched, installed or resolved
+from a host `node_modules`.
+"""
+
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary", "js_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The linked first-party package the DSH loader imports by name. It carries the
+# one evidence tool and the one mechanical lifecycle guard: two authored Cordis
+# plugins of the same narrow integration package, each mounted by its own
+# declared overlay row.
+js_library(
+    name = "evidence_tool_package",
+    srcs = [
+        "boundary.mjs",
+        "catalog_probe.mjs",
+        "commit_record.mjs",
+        "commit_tool.mjs",
+        "detector_sidecar.mjs",
+        "evidence_tool.mjs",
+        "guard.mjs",
+        "packet_boundary.mjs",
+        "packet_tool.mjs",
+        "plain_tool.mjs",
+        "package.json",
+        "tool_schema.mjs",
+    ],
+)
+
+# The declared world manifest, sealed source and frozen cross-language parity
+# targets of the tool law.
+filegroup(
+    name = "evidence_tool_fixtures",
+    srcs = [
+        "fixtures/boundary-world.tsv",
+        "fixtures/expected-observation-projection.tsv",
+        "fixtures/expected-reference-projection.tsv",
+        "fixtures/facts.tsv",
+        "fixtures/source/shop.ts",
+        "fixtures/world.tsv",
+    ],
+)
+
+# The declared loader overlay that mounts the tool into a composed DSH profile.
+exports_files([
+    "attune-commit.plugin.yml",
+    "attune-detector.plugin.yml",
+    "attune-guard.plugin.yml",
+    "attune-packet.plugin.yml",
+    "attune-plain.plugin.yml",
+    "attune-reviewer.plugin.yml",
+    "attune-tool.plugin.yml",
+    "catalog_probe.plugin.yml",
+    "fixtures/boundary-world.tsv",
+    "fixtures/expected-observation-projection.tsv",
+    "fixtures/expected-reference-projection.tsv",
+    "fixtures/facts.tsv",
+    "fixtures/packet/cart.base.ts",
+    "fixtures/packet/cart.head.ts",
+    "fixtures/packet/packet-world.tsv",
+    "fixtures/source/shop.ts",
+    "fixtures/world.tsv",
+])
+
+# The declared sealed base/head source bytes of the packet world (VAL-SUB-010)
+# and the world manifest the packet tool reads. They are declared inputs of the
+# packet stage action and of the packet tool law; nothing here is fetched.
+filegroup(
+    name = "packet_fixtures",
+    srcs = [
+        "fixtures/packet/cart.base.ts",
+        "fixtures/packet/cart.head.ts",
+        "fixtures/packet/packet-world.tsv",
+    ],
+)
+
+# The overlays and the declared fixture world as one linked library, so the DSH
+# adapter's `js_binary` can carry them in its runfiles as declared data.
+js_library(
+    name = "evidence_tool_runfiles",
+    srcs = [
+        "attune-commit.plugin.yml",
+        "attune-detector.plugin.yml",
+        "attune-guard.plugin.yml",
+        "attune-packet.plugin.yml",
+        "attune-plain.plugin.yml",
+        "attune-reviewer.plugin.yml",
+        "attune-tool.plugin.yml",
+        "catalog_probe.plugin.yml",
+        "fixtures/boundary-world.tsv",
+        "fixtures/expected-observation-projection.tsv",
+        "fixtures/expected-reference-projection.tsv",
+        "fixtures/facts.tsv",
+        "fixtures/packet/cart.base.ts",
+        "fixtures/packet/cart.head.ts",
+        "fixtures/packet/packet-world.tsv",
+        "fixtures/source/shop.ts",
+        "fixtures/world.tsv",
+    ],
+)
+
+# The laws of the one native packet tool over the REAL retained ReviewBench
+# world. They read the compiled `evidence_reviewbench_packets` tree the canonical
+# Flix stage materialized from the COMPLETE admitted base/head source trees, its
+# region manifest and its whole-world file manifest, register the REAL `defineTool`
+# definition the pinned DSH surface produced, and drive the progressive
+# disclosure, the retained full-source escape and the retained whole-file escape
+# of the complete changed world, plus every refusal path. Provider-free and
+# offline.
+js_test(
+    name = "packet_test",
+    data = [
+        ":evidence_tool_package",
+        ":packet_fixtures",
+        "//platform/dsh:evidence_reviewbench_packets",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "packet_test.mjs",
+)
+
+js_test(
+    name = "evidence_tool_test",
+    data = [
+        ":evidence_tool_fixtures",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_operation_projection",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
+        "//platform/dsh:typert_package_a",
+    ],
+    entry_point = "tool_test.mjs",
+)
+
+# The complete authorized source of the TEN original frozen tasks and BOTH
+# revisions, as the already-declared digest-verified `@reviewbench_worlds` archive
+# filegroups the corpus-bound cohort stage reads. They are declared here so the
+# cohort tool law can resolve an ordinary UNCHANGED file of either revision
+# through the SAME registered tool against the real retained archive bytes,
+# rather than only naming it in a population manifest. No byte is copied: the
+# runfiles tree carries the declared archive members themselves.
+filegroup(
+    name = "cohort_worlds",
+    srcs = [
+        "@reviewbench_worlds//:EdV4H_usketch-534-base",
+        "@reviewbench_worlds//:EdV4H_usketch-534-head",
+        "@reviewbench_worlds//:agent-sh_agentsys-298-base",
+        "@reviewbench_worlds//:agent-sh_agentsys-298-head",
+        "@reviewbench_worlds//:brianc_node-postgres-3650-base",
+        "@reviewbench_worlds//:brianc_node-postgres-3650-head",
+        "@reviewbench_worlds//:caasi_town-zero-6-base",
+        "@reviewbench_worlds//:caasi_town-zero-6-head",
+        "@reviewbench_worlds//:capawesome-team_cli-126-base",
+        "@reviewbench_worlds//:capawesome-team_cli-126-head",
+        "@reviewbench_worlds//:haoling_diary-notebook-blog-transformer-24-base",
+        "@reviewbench_worlds//:haoling_diary-notebook-blog-transformer-24-head",
+        "@reviewbench_worlds//:heyitsaamir_teamscli-31-base",
+        "@reviewbench_worlds//:heyitsaamir_teamscli-31-head",
+        "@reviewbench_worlds//:jenkinsci_gitea-plugin-141-base",
+        "@reviewbench_worlds//:jenkinsci_gitea-plugin-141-head",
+        "@reviewbench_worlds//:ls1intum_Artemis-12479-base",
+        "@reviewbench_worlds//:ls1intum_Artemis-12479-head",
+        "@reviewbench_worlds//:rulecom_rule-io-sdk-40-base",
+        "@reviewbench_worlds//:rulecom_rule-io-sdk-40-head",
+    ],
+)
+
+# The mechanical OFFLINE execution of the ONE
+# individual-acquisition-versus-compiled-packet preflight (VAL-SUB-020). It is a
+# declared `ctx.actions.run` of the `preflight_exec` js_binary over the SAME
+# compiled `evidence_reviewbench_packets` world: it drives the REAL registered
+# packet tool in two bounded acquisition strategies (one individual `region`
+# acquisition per distinct declared span, and the compiled packets' own
+# progressive disclosure), paging each piece through the tool's deterministic
+# continuation, and materializes the RAW per-call record. The canonical reduction
+# of those actual calls into the compared dimensions is the Flix
+# `evidence_reviewbench_preflight` stage's own, so the pure paging model is
+# retained only as a MODEL and never as the executed proof. It adds no compiler,
+# planner, DAG, scheduler or agent, calls no provider and reads no gold.
+js_binary(
+    name = "preflight_exec",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_packets",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "preflight_exec.mjs",
+    tags = ["manual"],
+)
+
+js_run_binary(
+    name = "preflight_execution",
+    srcs = ["//platform/dsh:evidence_reviewbench_packets"],
+    outs = ["preflight-execution.tsv"],
+    args = [
+        "--packets",
+        "$(location //platform/dsh:evidence_reviewbench_packets)",
+        "--out",
+        "$(location :preflight-execution.tsv)",
+    ],
+    tags = ["manual"],
+    tool = ":preflight_exec",
+    # The rules_js launcher is a small shell script that needs the ordinary
+    # `mktemp`/`uname`/`dirname` utilities on `PATH`. That is a launcher detail,
+    # not a dependency of this action: every input the driver reads is declared
+    # (the compiled packet world and its sealed bytes), no package is fetched or
+    # installed, no credential is present and the execution is deterministic.
+    use_default_shell_env = True,
+)
+
+# The laws of the SAME registered packet tool over the TEN materialized cohort
+# worlds (VAL-SUB-019, Gate D offline half). They read the
+# `evidence_reviewbench_cohort` tree the canonical Flix stage materialized for
+# EVERY one of the ten original frozen tasks — each task's changed world in the
+# tool's own declared format with its exact changed bytes sealed beside it — and
+# drive the REAL `defineTool` definition the pinned DSH surface produced over the
+# progressive disclosure, the full-source escape and the retained whole-file
+# escape of each task, plus the refusal and unsupported-encoding paths. The
+# declared `@reviewbench_worlds` archives are carried as runfiles too, so an
+# ordinary UNCHANGED file of either revision of every task is read whole through
+# the SAME tool against its real retained bytes. The corpus-bound cohort stage is
+# `manual`, so this law is `manual` too: the ordinary `bazel test //...` gate must
+# never fetch or scan the pinned corpus.
+js_test(
+    name = "cohort_test",
+    data = [
+        ":cohort_worlds",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "cohort_test.mjs",
+    # The declared `@reviewbench_worlds` archive members live in an external
+    # repository, so they stay in their own runfiles location instead of being
+    # copied into this package's output tree: the whole-file escape resolves them
+    # by their declared archive-relative reference, and no corpus byte is copied.
+    no_copy_to_bin = [":cohort_worlds"],
+    tags = ["manual"],
+)
+
+# The laws of the SHARED bounded plain-read facade over the TEN cohort worlds
+# (the user-approved `## Pilot source-access binding`). They register the REAL
+# `defineTool` definition the pinned DSH surface produced and drive the bounded
+# `list` / `read` / `whole-file` operations over every task: the COMPLETE
+# authorized population through a bounded manifest, an ordinary UNCHANGED file of
+# BOTH revisions read whole against its retained archive bytes, an `overflow` file
+# served whole with its explicit status, an exact declared line range, and every
+# refusal path. The declared `@reviewbench_worlds` archives are carried as
+# runfiles, so the whole-file reads verify against the real retained bytes rather
+# than a copy. The corpus-bound cohort stage is `manual`, so this law is `manual`
+# too: the ordinary `bazel test //...` gate must never fetch the pinned corpus.
+js_test(
+    name = "plain_test",
+    data = [
+        ":cohort_worlds",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+        "attune-plain.plugin.yml",
+    ],
+    entry_point = "plain_test.mjs",
+    no_copy_to_bin = [":cohort_worlds"],
+    tags = ["manual"],
+)
+
+# The provider-free laws of the per-task / per-arm pilot review-task composition
+# and of the fail-closed pilot binding check (`VAL-STUDY-002`, `VAL-STUDY-010`).
+# They read ONLY declared inputs: the frozen prompt, the admitted public issue
+# record, the declared cohort root with each task's own changed-file manifest,
+# sealed region manifest and revision record, and the complete whole-world file
+# manifest. They compose the twenty once-only tasks exactly as the pilot runner
+# does, assert that every composed line comes from a declared input, and refuse a
+# missing or wrong per-task world provider-free. No provider, no model, no golden
+# finding and no review label is touched. `manual`, because it reads the pinned
+# corpus the cohort stage admitted.
+js_test(
+    name = "pilot_task_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:pilot_task_module",
+        "//test/reviewbench_pilot:prompt_module",
+        "//test/reviewbench_review:reviewbench_review_issues",
+    ],
+    entry_point = "pilot_task_test.mjs",
+    no_copy_to_bin = ["//platform/dsh:evidence_reviewbench_cohort"],
+    tags = ["manual"],
+)
+
+# The laws of the one mechanical lifecycle guard. They read the REAL guard
+# declaration and canonical decision matrix the `evidence_guard_declaration`
+# stage action materialized from `Attune.Study.EvidenceSubstrate`, assert the
+# mechanical guard reproduces the canonical decision at every declared boundary,
+# and drive the plugin over a synthetic event stream to prove it accumulates the
+# normalized provider total with cached input counted once, never stops a run
+# inside its caps, stops the live loop at the cap and writes the canonical
+# budget-stop record. Provider-free and offline.
+js_test(
+    name = "guard_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_guard_declaration",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
+    ],
+    entry_point = "guard_test.mjs",
+)
+
+# The laws of the shared candidate-commit interface and its durable recording.
+# They register the REAL commit tool definition, resolve its delivered evidence
+# against the declared world, and drive the REAL lifecycle guard over a synthetic
+# native event stream: a commit is recorded durably and the review continues, a
+# stop delivers exactly the committed findings the run counted, an interruption
+# keeps them, a resume restores them and a fresh session invents none. They also
+# assert the TypeScript serialization is byte-identical to the canonical Flix
+# `checkpointLine` the pinned compiler materialized. Provider-free and offline.
+js_test(
+    name = "commit_test",
+    data = [
+        ":evidence_tool_fixtures",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_guard_declaration",
+        "//platform/dsh:evidence_operation_projection",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
+        "//platform/dsh:typert_package_a",
+    ],
+    entry_point = "commit_test.mjs",
+)
+
+# The laws of the declared REVIEWER-profile binding of the gated pilot. They pin
+# the declared overlay bytes the pilot composes, so a later edit that re-enables a
+# broad native surface fails offline. The runtime half of the same fix is the
+# provider-free catalog proof that composes the real profile and reads the ACTUAL
+# registered tool names. Provider-free and offline.
+js_test(
+    name = "binding_test",
+    data = [
+        "attune-reviewer.plugin.yml",
+        "attune-commit.plugin.yml",
+        "attune-tool.plugin.yml",
+    ],
+    entry_point = "binding_test.mjs",
+)
+
+# The laws of the model-hidden detector sidecar. They read the REAL
+# `evidence_reviewbench_detectors` tree the `evidence_reviewbench_detectors`
+# stage action materialized from `Attune.Study.EvidenceSubstrate` over the ACTUAL
+# admitted ReviewBench source (the declared default of the common prospective
+# profile), assert the plugin materializes exactly those declared bytes,
+# registers NO model-facing tool and declares both families invisible in BOTH
+# prospective arms AND in the DIAGNOSTIC arm the mounting overlay declares, and
+# assert the existing override hook still selects the synthetic declared fixture
+# tree when a diagnostic asks for it. They also read the DECLARED mounting
+# overlay's own bytes and load its declared config through the real pinned
+# Cordis Context, so the declared configuration is proved to load while an
+# absent or unknown arm stays refused (fail-closed). Provider-free and offline.
+js_test(
+    name = "detector_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_detector_sidecar",
+        "//platform/dsh:evidence_reviewbench_detectors",
+        "//platform/dsh:node_modules",
+        "attune-detector.plugin.yml",
+    ],
+    entry_point = "detector_test.mjs",
+)

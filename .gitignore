@@ -1,10 +1,65 @@
-.direnv/
-.envrc
-.attune-runtime/
-.nx/
-coverage/
-dist/
+# Read-only reference checkout: a sibling Git repository, maintained separately
+# and never parent implementation or a build input.
+/attuneflix/
+
+# Agent tooling definitions for this mission. They are not project source and
+# must never be admitted to Nix, Bazel, the CAS or the source policy, so they are
+# deliberately untracked: Git-backed flake collection then filters them out of
+# the store input instead of copying them there.
+/.factory/
+
+# Local credentials. Only the narrow BuildBuddy helper in attune/flake.nix reads
+# this file, internally; agents, tests, actions and the store never see it.
+/.env
+/.env.*
+!/.env.example
+
+# Bazel convenience symlinks, should any ever be generated at the checkout root.
+/bazel-*
+
+# Preserved user bundle at the checkout root (owner amendment, 2026-10-05). It is
+# kept intact and is not project source, so it is never an action, Nix or CAS
+# input; this ignore rule is what Git-backed flake collection filters out.
+/repomix-output.xml
+
+# Local agent/session state (not authored project configuration).
+/.pi/
+
+# Credentials in nested workspaces; keep shareable example/template files.
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Dependency trees and local tool caches.
 node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.direnv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build products. Do not ignore build/: it contains authored Starlark.
+/attune/bazel-*
+/attune/platform/zed/target/
+/attune/platform/zed/grammars/
+/attune/platform/zed/extension.wasm
 result
 result-*
-repomix-output.xml
+*.class
+*.jar
+*.fpkg
+
+# Generated repository packs, including split and alternate-format outputs.
+repomix-output.*
+
+# Editor and operating-system residue.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
