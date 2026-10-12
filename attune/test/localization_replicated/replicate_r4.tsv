@@ -1,3 +1,0 @@
-#replicate	replicate_id	condition	wall_ms	declared_tasks	rpc	logical_decisions	retries	input_tokens	output_tokens	cost	latency_min_ms	latency_median_ms	latency_p95_ms	latency_max_ms	status_ok	status_failed
-replicate	4	A	30007	96	88	2756	0	320708	123126	0.013469736	242	300	417	507	88	0
-replicate	4	S	31715	96	88	2756	0	519579	123177	0.021822318	266	326	473	1337	88	0

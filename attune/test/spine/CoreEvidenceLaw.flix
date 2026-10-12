@@ -82,11 +82,10 @@ def artifactIdentityRejectsAChangedSchemaOrInput(): Unit \ Assert = {
 /// A gold-shaped evaluator input has no path into prediction.
 @Test
 def goldHasNoPathIntoPrediction(): Unit \ Assert = {
-    let gold = Study.goldArtifact(Study.GoldLabel.GoldLabel("modified-pricing.rb"), "task-1");
+    let gold = { schema = Study.Schema.Gold, producer = "fixture-evaluator", input = "task-1", payload = "modified-pricing.rb" };
     let embedding = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
     Assert.assertEq(expected = Study.Schema.Gold, gold#schema);
     Assert.assertEq(expected = None, Study.predictInput(gold));
     Assert.assertEq(expected = Some(Study.PredictionInput.PredictionInput("vectors")), Study.predictInput(embedding));
-    Assert.assertEq(expected = "prediction:vectors", Study.predict(Study.PredictionInput.PredictionInput("vectors")));
     Assert.assertEq(expected = false, Result.isOk(Study.accept(gold, embedding)))
 }

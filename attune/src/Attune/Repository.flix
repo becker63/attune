@@ -1,44 +1,16 @@
-/// Conservative repository admission over the canonical Grit facts.
+/// Turn source matches into relationships we can justify.
 ///
-/// The Grit frontends are syntax-only: they match declarations, imports and
-/// call expressions, and log one value per match. This module is where Attune
-/// decides what those matches *mean* in a repository: it assigns file and
-/// symbol identities, resolves each reference the way its own language writes
-/// it, admits only the edge it can justify, and derives the inverse relations
-/// from the forward ones exactly once.
+///     source -> Grit matches -> qualified names -> unique targets -> six relations
+///                                            \-> missing or ambiguous: record why
 ///
-/// Three jobs stay separate, in this order:
+/// Grit finds syntax: declarations, imports, and calls. This module gives those
+/// matches meaning. Imports follow each language's path rules. Calls belong to
+/// their enclosing declaration and require a uniquely resolved target. Ruby's
+/// constant-qualified calls have a separate bounded rule.
 ///
-/// 1. **Syntax** (the pinned Grit engine) produces facts: kind, path, matched
-///    range and logged value range.
-/// 2. **Identity** (here) turns each declaration fact into a qualified symbol
-///    from the enclosing declaration keywords the same file wrote.
-/// 3. **Resolution and admission** (here) turns an import or a call into an
-///    edge only when exactly one admitted target could be meant.
-///
-/// Import resolution is per language, because each frontend writes its
-/// references differently: JavaScript/JSX/TypeScript/TSX resolve a quoted
-/// relative module specifier against the candidate extensions and `index`
-/// files, Java resolves a dotted type reference to its source file, Flix
-/// resolves a qualified module reference to the file that names the longest
-/// admitted module prefix, Starlark resolves a repository-relative label, and
-/// Ruby resolves a literal `require_relative` beside the requiring file. Every
-/// path is admitted only on a unique match; a match of zero or more than one
-/// candidate stays unresolved.
-///
-/// Call resolution follows the reference law. For the seven retained languages
-/// a call is owned by the narrowest declaration that encloses it in the same
-/// file, and it is admitted to the uniquely named target in that same file or,
-/// when the file declares no such name, to the uniquely named target in the
-/// repository; a dynamic callee, an ownerless call and an ambiguous name are
-/// each refused by name. Ruby keeps its own bounded rule as an additional
-/// branch: a constant-qualified call inside a `module`/`class` method resolves
-/// to the unique singleton declaration of that constant path, and a computed
-/// require, a missing target, a non-constant receiver, a constant path
-/// reachable from more than one scope and a reopened declaration are refused.
-///
-/// Everything else is reported as an explicit refusal with a named reason, and
-/// no edge is invented. A refusal is evidence, not an empty result.
+/// Unresolved references stay visible as refusals. They never become invented
+/// edges or proof that no relationship exists. The inverse relations come from
+/// the admitted forward edges.
 pub mod Attune.Repository {
 
     import attune.grit.AttuneGrit

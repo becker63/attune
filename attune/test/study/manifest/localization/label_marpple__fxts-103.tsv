@@ -1,9 +1,0 @@
-label	marpple__fxts-103	w58
-provenance	marpple/FxTS	54cf5d26171a9c7632d459c97b5c2853b4190ac9	dc97b583ecfa6ad84280d31db20d7b739153e8916695c28bcfb58c2b3bcd9ba0	reference-patch	140	3106
-entry	modified	src/index.ts	js-ts	source	regular	present	eligible
-entry	new	src/reverse.ts	js-ts	source	regular	absent	ineligible
-entry	modified	src/sort.ts	js-ts	source	regular	present	eligible
-gold	src/index.ts
-gold	src/sort.ts
-coverage	full	3	supported	2
-case	eligible-gold

@@ -1,4 +1,0 @@
-adjudged	haoling_diary-notebook-blog-transformer-24	C1	valid	src/lib/drive-client.ts の getAppDataFileByName と findFolderByName は nextPageToken を取得せず、最初のページが空なら不存在と判定します。Drive files.list は途中で空ページを返し得るため、既存ファイルの見落としや findOrCreateFolder による重複作成につながります。
-adjudged	haoling_diary-notebook-blog-transformer-24	C2	invalid	C1 と同じ指摘の重複です。src/lib/drive-client.ts の同じ名前検索処理について、nextPageToken の未取得による不存在の誤判定と重複フォルダ作成を指摘しています。
-adjudged	haoling_diary-notebook-blog-transformer-24	C3	valid	src/lib/drive-errors.ts の parseDriveError はクォータ理由として rateLimitExceeded、userRateLimitExceeded、quotaExceeded のみを判定しています。403 の dailyLimitExceeded と storageQuotaExceeded は通常のメッセージでも「rate limit」に一致せず、誤って DrivePermissionError に分類されます。
-adjudged	haoling_diary-notebook-blog-transformer-24	C4	invalid	C3 に含まれる dailyLimitExceeded の分類漏れと重複しています。src/lib/drive-errors.ts の同じ理由判定と403分岐に対する修正で解消されるため、独立した指摘ではありません。

@@ -1,6 +1,0 @@
-label	projectevergreen__greenwood-1024	w46
-provenance	ProjectEvergreen/greenwood	76f943ef09dedce2c3ee9deecb562c298d00f271	c654f2865fb3750210d3e4fd7b90d88732a1ba63d16d2d8089ce6494d3a4be88	reference-patch	13	721
-entry	modified	packages/cli/src/lifecycles/prerender.js	js-ts	source	regular	present	eligible
-gold	packages/cli/src/lifecycles/prerender.js
-coverage	full	1	supported	1
-case	eligible-gold

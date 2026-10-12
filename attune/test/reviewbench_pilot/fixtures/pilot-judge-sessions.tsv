@@ -1,8 +1,0 @@
-session	role	task	status	failure	candidate_count	match_count	judgment_count	final_bytes
-session	judge	EdV4H_usketch-534	ok		3	3	Unavailable	705
-session	judge	caasi_town-zero-6	ok		7	7	Unavailable	1301
-session	judge	capawesome-team_cli-126	ok		2	2	Unavailable	393
-session	judge	haoling_diary-notebook-blog-transformer-24	ok		8	8	Unavailable	1570
-session	adjudicate	haoling_diary-notebook-blog-transformer-24	ok		8	Unavailable	8	2537
-session	judge	jenkinsci_gitea-plugin-141	ok		4	4	Unavailable	733
-session	judge	rulecom_rule-io-sdk-40	ok		4	4	Unavailable	738

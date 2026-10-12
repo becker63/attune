@@ -5,14 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * The in-namespace step of one native Flix test.
- *
- * <p>It runs inside the declared pinned {@code unshare} user/network namespace,
- * records the boundary evidence, then launches the pinned compiler's authentic
- * native test engine over the explicit declared files. It is pure process
- * mechanics: it decides no policy and inspects no source.
- */
+/** Record the active isolation boundary, then compile and run declared Flix files. */
 public final class NativeInner {
     private NativeInner() {}
 
@@ -22,6 +15,11 @@ public final class NativeInner {
         String hostNetns = args[2];
 
         BoundaryProbe.write(work.resolve("attune-boundary.tsv"), hostNetns);
+
+        if (args[3].equals("run")) {
+            List<Path> files = Arrays.stream(args).skip(4).map(Path::of).toList();
+            System.exit(NativeTester.run(List.of(), files, true));
+        }
 
         if (args[3].equals("java")) {
             int jarCount = Integer.parseInt(args[4]);

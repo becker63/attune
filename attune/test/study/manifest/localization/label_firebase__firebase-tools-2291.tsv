@@ -1,9 +1,0 @@
-label	firebase__firebase-tools-2291	w79
-provenance	firebase/firebase-tools	63ed7b1d005c9d65956910fa8d523571da271bc1	8c47339fd51307e9be8dfbebd78e70907f9e0b1ae61246e34ce7a7f93ac3943b	reference-patch	68	2995
-entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
-entry	modified	src/emulator/emulatorLogger.ts	js-ts	source	regular	present	eligible
-entry	modified	src/emulator/functionsEmulatorRuntime.ts	js-ts	source	regular	present	eligible
-gold	src/emulator/emulatorLogger.ts
-gold	src/emulator/functionsEmulatorRuntime.ts
-coverage	full	3	supported	2
-case	eligible-gold

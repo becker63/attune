@@ -1,7 +1,0 @@
-prediction	elastic__synthetics-235	1	src/reporters/index.ts
-prediction	elastic__synthetics-235	2	src/core/runner.ts
-prediction	elastic__synthetics-235	3	src/parse_args.ts
-prediction	elastic__synthetics-235	4	src/cli.ts
-prediction	elastic__synthetics-235	5	src/common_types.ts
-prediction	elastic__synthetics-235	6	src/reporters/base.ts
-prediction	elastic__synthetics-235	7	__tests__/cli.test.ts

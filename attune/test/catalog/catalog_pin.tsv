@@ -1,9 +1,0 @@
-# The declared identity of the one approved public catalog input (VAL-DATA-001).
-#
-# The main issue-based `nebius/SWE-rebench-V2` release at one immutable revision
-# and one immutable path inside it. The URL encodes both, and the provider's own
-# SHA-256 pins the exact bytes, so a mutated, substituted, `main`-substituted or
-# different-revision file cannot satisfy this record. The acquisition stage
-# recomputes the SHA-256 and the byte count of the materialized bytes and reduces
-# them against this declaration through `Attune.Study.catalogFindings`.
-pin	10483de0f50fe5da545942705a76c6150171af7f	data/train-00000-of-00001.parquet	https://huggingface.co/datasets/nebius/SWE-rebench-V2/resolve/10483de0f50fe5da545942705a76c6150171af7f/data/train-00000-of-00001.parquet	0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad	428839266

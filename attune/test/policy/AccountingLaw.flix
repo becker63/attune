@@ -75,11 +75,8 @@ def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"))
 }
 
-/// The migration of the last test-placed semantics left no hidden algorithm: a
-/// blanket `test/** -> Fixture` rule is now honest because the P06 descriptor
-/// safety lives in `Attune.Theory` and the P08 decision settlement lives in
-/// `Attune.Study`, so an ordinary test file is a fixture with no cognitive
-/// exception. No test path is carved out of the fixture rule any more.
+/// Algorithms stay in their semantic owners. Ordinary laws are fixtures;
+/// the three artifact-writing adapters have their own accounting below.
 @Test
 def migratedSemanticsLeaveNoHiddenTestAlgorithm(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Theory.flix"));
@@ -176,11 +173,11 @@ def componentTablePartitionsTheRawCodeTotal(): Unit \ { Assert, IO } = {
     println(componentLines(cs));
     let a = accountingOf(cs);
     let cognitiveComponents =
-        "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule"
+        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule"
             :: Nil;
     let mechanicalComponents =
-        "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules" :: "embedding" :: "sol"
-            :: "reviewbench" :: "inference" :: "dsh-adapter" :: Nil;
+        "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules"
+            :: "inference" :: "dsh-adapter" :: Nil;
     Assert.assertEq(expected = cognitiveOf(a), sumComponents(cs, cognitiveComponents));
     Assert.assertEq(expected = mechanicalOf(a), sumComponents(cs, mechanicalComponents));
     Assert.assertEq(expected = fixturesOf(a), codeForComponent(cs, "tests"));
@@ -216,4 +213,13 @@ def theReportSuppliesPhysicalAndNonblankTotals(): Unit \ { Assert, IO } = {
     Assert.assertEq(expected = nonblankOf(c), physicalOf(c) - blankOf(c));
     Assert.assertEq(expected = true, String.contains(substr = "physical=" + "${physicalOf(c)}", report));
     Assert.assertEq(expected = true, String.contains(substr = "nonblank=" + "${nonblankOf(c)}", report))
+}
+
+/// Materialization adapters count as authored support, regardless of their path.
+@Test
+def retainedStageAdaptersDoNotDisappearIntoFixtureCounts(): Unit \ Assert = {
+    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("test/study/Stages.flix"));
+    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("test/study/Results.flix"));
+    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("test/study/EvidenceOperationStages.flix"));
+    Assert.assertEq(expected = "workflow", componentOf("src/Attune/Effects.flix"))
 }

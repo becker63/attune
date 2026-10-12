@@ -1,47 +1,15 @@
+/// Compare a ranking with the files required by its reference fix.
 ///
-/// The one canonical localization retrieval metric reducer (`VAL-LOC-003`).
+///     ranking + evaluator labels -> per-task scores -> population summaries
 ///
-/// This module is the single reduction path from an immutable localization
-/// ranking to a retrieval metric. It is deliberately downstream-only: no
-/// extraction, Theory, variant, selection or ranking stage imports it, so the
-/// frozen prediction graph is unaffected by its existence. The canonical
-/// metrics leaf and the later post-hoc exploratory JEV extension both reduce
-/// through these exact functions rather than carrying a second metric engine.
+/// Hit@k asks whether any required file is in the first k. Recall@k measures the
+/// fraction recovered. FileAcc@k requires every required file. Reciprocal rank
+/// measures how early the first match appears. These are different questions.
 ///
-/// The metric vocabulary is the report's own: Hit@k (did any gold path appear
-/// within the first k positions), file Recall@k (what fraction of the task's
-/// eligible gold paths appeared within the first k), and MRR@k (the reciprocal
-/// of the first gold path's rank, or zero when no gold path is inside k). Every
-/// value is an exact rational, never a floating-point approximation, so the
-/// task-micro and group-equal macro summaries are computed without rounding
-/// drift and are rendered once, at the edge.
-///
-/// The strict file-accuracy extension (`VAL-STRICT-001`) adds FileAcc@k to the
-/// same reducer, never a second engine: a per-task all-gold indicator that is
-/// one exactly when EVERY eligible gold path of the task appears inside the
-/// first k positions and zero otherwise. It is deliberately distinct from the
-/// Hit family (which asks only whether any gold path is inside k) and from file
-/// Recall@k (which reports the retrieved fraction rather than requiring all of
-/// it). A task whose eligible gold count exceeds k can never satisfy the
-/// subset condition, so it is a measured false rather than an undefined value;
-/// an empty or ineligible task stays undefined exactly as the other metrics
-/// leave it. The strict metric population is declared separately in
-/// `strictMetrics()` so the already-published seven-metric tables stay
-/// byte-identical and no frozen artifact is recomputed.
-///
-/// A ratio with a zero denominator is not representable: Recall over a task
-/// with no eligible gold path is undefined, and such a task is excluded from
-/// the eligible population by the caller rather than scored as zero.
-///
-/// The module also owns the population reductions, because they are the same
-/// scientific statement as the per-task values: the task-micro mean and the
-/// task-within-group then group-equal macro mean. Each reduction returns a
-/// `MetricSummary` with its own explicit counts, so the all-eligible
-/// denominator can never shrink silently. An abstained arm (an absent or empty
-/// ranking) is a measured miss retained in the denominator; a genuinely
-/// undefined member is counted as undefined and refuses the mean instead of
-/// quietly disappearing from it.
-///
+/// Scores are exact fractions until rendering. A task with no eligible gold is
+/// undefined; an empty prediction for an eligible task is a miss. Summaries carry
+/// their denominators, so missing measurements cannot silently improve a mean.
+/// Prediction never reads evaluator labels.
 pub mod Attune.Study.Metrics {
 
     /// One exact non-negative rational. The denominator is never zero.

@@ -259,11 +259,12 @@ fixtures, historical corrected-v2 replay, and external execution remain separate
 observations remain on the website. The ordinary
 [README test command](README.md#reproduce-and-inspect) exercises provider-free
 laws, rendering, and correspondence. ReviewBench publication can be regenerated
-from pinned cached inputs without fetching; the [evidence guide](evidence/README.md)
+from the archived implementation and pinned cached inputs without fetching; the [evidence guide](evidence/README.md)
 gives the command and availability limits. Larger localization source archives
 and external embedding fixtures are not bundled in this release.
 
 The original developer checkout retains an unrelated user directory that fails
 `//test/policy:workspace_audit_test` (87 ignored-forbidden findings). It was not
-deleted or admitted to publication. The curated release passed all 79 targets. The original user directory remains
-preserved; its audit failure is not counted as a pass.
+deleted or admitted to publication. The complete study snapshot passed 79 targets before the source cleanup. The
+current test command checks the retained implementation. The original user
+directory remains preserved; its audit failure is not counted as a pass.

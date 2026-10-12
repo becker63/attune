@@ -1,7 +1,0 @@
-label	formidablelabs__urql-1117	w57
-provenance	FormidableLabs/urql	da5a2eba69afdc5c176066c1ea1e2311d4c1435d	4cf7677f993ca078118a3b917d11c7871c41586ae6de7418ae99c01f91f8790f	reference-patch	33	1350
-entry	new	.changeset/gentle-grapes-love.md	other	source	regular	absent	ineligible
-entry	modified	exchanges/retry/src/retryExchange.ts	js-ts	source	regular	present	eligible
-gold	exchanges/retry/src/retryExchange.ts
-coverage	full	2	supported	1
-case	eligible-gold

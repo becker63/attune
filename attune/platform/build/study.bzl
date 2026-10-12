@@ -431,7 +431,7 @@ def attune_study(
         srcs = [law_srcs["manifest_test"]],
         produced = [":analysis_prepare"],
         declared_files = ["manifest/analysis.tsv"],
-        tags = ["manual"],
+        tags = [],
     )
     native_flix_consumer_test(
         name = "bounds_test",
@@ -446,13 +446,13 @@ def attune_study(
             "manifest/panel_late.tsv",
             "manifest/panel_overflow.tsv",
         ],
-        tags = ["manual"],
+        tags = [],
     )
     native_flix_consumer_test(
         name = "dag_test",
         srcs = [law_srcs["dag_test"]],
         produced = produced,
-        tags = ["manual"],
+        tags = [],
     )
     native_flix_consumer_test(
         name = "firewall_test",
@@ -462,13 +462,13 @@ def attune_study(
         # firewall law reads the same declared bytes the prediction stage does
         # and checks the prediction carries exactly that identity.
         declared_files = [_label(package, policy)],
-        tags = ["manual"],
+        tags = [],
     )
     native_flix_consumer_test(
         name = "results_test",
         srcs = [law_srcs["results_test"]],
         produced = [":results"],
-        tags = ["manual"],
+        tags = [],
     )
 
     native.test_suite(
@@ -479,7 +479,7 @@ def attune_study(
             ":firewall_test",
             ":results_test",
         ],
-        tags = ["manual"],
+        tags = [],
     )
     native.test_suite(
         name = "all",
@@ -490,5 +490,5 @@ def attune_study(
             ":manifest_test",
             ":results_test",
         ],
-        tags = ["manual"],
+        tags = [],
     )

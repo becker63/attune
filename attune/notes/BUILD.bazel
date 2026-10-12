@@ -1,16 +1,4 @@
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population.
-filegroup(
-    name = "policy_files",
-    srcs = glob(["**"]),
-)
-
-# The one checked design note and the approved mission statement. The design
-# note carries the component/source map, the pins and licenses, the per-file
-# adaptation record, the current counts and the migration record. They are
-# declared documents, never build actions.
-exports_files([
-    "design.md",
-    "mission.md",
-])
+filegroup(name = "policy_files", srcs = glob(["**"]))
+exports_files(["design.md"])

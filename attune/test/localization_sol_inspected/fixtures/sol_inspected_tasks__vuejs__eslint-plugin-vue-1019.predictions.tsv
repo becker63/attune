@@ -1,6 +1,0 @@
-prediction	vuejs__eslint-plugin-vue-1019	1	lib/rules/no-reserved-component-names.js
-prediction	vuejs__eslint-plugin-vue-1019	2	tests/lib/rules/no-reserved-component-names.js
-prediction	vuejs__eslint-plugin-vue-1019	3	lib/rules/component-definition-name-casing.js
-prediction	vuejs__eslint-plugin-vue-1019	4	lib/rules/match-component-file-name.js
-prediction	vuejs__eslint-plugin-vue-1019	5	tests/lib/rules/component-definition-name-casing.js
-prediction	vuejs__eslint-plugin-vue-1019	6	tests/lib/rules/match-component-file-name.js

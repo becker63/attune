@@ -104,3 +104,23 @@ native_flix_test(
         "//src:Attune/Study.flix",
     ],
 )
+
+# Production effect laws: saved answers cannot cross input identities.
+native_flix_test(
+    name = "effects_reading_test",
+    srcs = [
+        "EffectsReading.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+    ],
+)
+
+native_flix_reject_test(
+    name = "undeclared_effect_test",
+    srcs = ["UndeclaredEffect.flix"],
+    expected = "Unexpected effect",
+)

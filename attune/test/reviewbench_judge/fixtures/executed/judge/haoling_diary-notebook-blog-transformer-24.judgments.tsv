@@ -1,4 +1,0 @@
-judged	haoling_diary-notebook-blog-transformer-24	C1	-	名前検索で nextPageToken を取得せず空ページを不存在と判断する問題であり、参照所見の重複選択・競合・検索範囲の問題とは異なります。
-judged	haoling_diary-notebook-blog-transformer-24	C2	-	名前検索のページ巡回不足による既存ファイルの見落としを指しており、この問題に対応する参照所見はありません。
-judged	haoling_diary-notebook-blog-transformer-24	C3	-	403 の分類対象から dailyLimitExceeded と storageQuotaExceeded が漏れる問題であり、G19 のステータスコード統合の問題とは異なります。
-judged	haoling_diary-notebook-blog-transformer-24	C4	-	dailyLimitExceeded が理由一覧にも「rate limit」の文字列判定にも一致しない問題であり、対応する参照所見はありません。

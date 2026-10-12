@@ -1,104 +1,12 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test")
-load("//test/embedding:world_sources.bzl", "WORLD_SOURCES")
-load("//test/localization_qwen:localization_qwen.bzl", "attune_localization_qwen")
-load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
-load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+load("//platform/build:native.bzl", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population.
 filegroup(
     name = "policy_files",
     srcs = glob(["**"]),
 )
 
-# The committed sanitized fixture identity record the repository rule admits the
-# host fixtures through (`name`, `side`, `logical_rows`, `unique_inputs`,
-# `truncated_rows`, `cap_code_units`, `provider`, `resolved_model`, `recipe`,
-# `sha256`). It carries identity only: no vector payload, no request, no response
-# and no credential is recorded here.
-exports_files(["fixture-manifest.tsv"])
-
-# The explicit source closure of the two downstream Q stages: the one Study-owned
-# hosted-Qwen submodule, the shared embedding vocabulary it reuses, the canonical
-# metric reducer and the shared owners they consume. It carries no Grit, Theory or
-# Repository dependency, so a Q stage cannot rerun a structural stage.
-STAGE_SRCS = [
-    "QwenStages.flix",
-    "//src:Attune.flix",
-    "//src:Attune/Coverage.flix",
-    "//src:Attune/Study.flix",
-    "//src:Attune/Study/Embedding.flix",
-    "//src:Attune/Study/Metrics.flix",
-    "//src:Attune/Study/Qwen.flix",
-]
-
-# The surviving cohort's Q ranking stages and the one canonical metric stage. The
-# macro returns the declared rank targets so the audit binds exactly the trees the
-# same manifest declared.
-_RANK_TARGETS = attune_localization_qwen(
-    name = "qwen_metrics",
-    analysis = LOCALIZATION_ANALYSIS,
-    derived = "//test/localization_runtime:derived_population",
-    embedding_rank_template = "//test/localization_embedding:rank_e_%s",
-    exclusions = RUNTIME_CAPPED_EXCLUSIONS,
-    label_template = "//test/study:manifest/localization/label_%s.tsv",
-    mapped = "//test/study:manifest/localization/mapped.tsv",
-    published = "//test/localization_embedding:embedding_metrics",
-    query_fixture = "@attune_qwen_fixtures//:queries",
-    rank_template = "//test/localization_runtime:rank_%s",
-    shard_template = "@attune_qwen_fixtures//:code_%s_%d",
-    stage_srcs = STAGE_SRCS,
-    world_sources = WORLD_SOURCES,
-)
-
-_EXCLUDED_GROUPS = [entry["group"] for entry in RUNTIME_CAPPED_EXCLUSIONS]
-
-_SURVIVING_TASKS = [
-    row[1]
-    for row in LOCALIZATION_ANALYSIS
-    if len(row) > 3 and row[0] == "task" and row[2] not in _EXCLUDED_GROUPS
-]
-
-# The corpus-bound audit (`VAL-QWEN-002`, `VAL-QWEN-003`): it reads the real
-# produced Q ranking trees, their exact similarity sidecars, the declared fixture
-# identities, the canonical metric table, the exact contrasts, the baseline
-# reproduction record, the frozen overlap and the three-way gold decomposition,
-# and checks each one against the frozen deterministic universe, the frozen
-# CodeRankEmbed fixture rows and the admitted evaluator labels. `manual`, so the
-# ordinary `bazel test //...` gate never touches the corpus.
-native_flix_consumer_test(
-    name = "qwen_audit",
-    srcs = [
-        "QwenAudit.flix",
-        "//src:Attune.flix",
-        "//src:Attune/Coverage.flix",
-        "//src:Attune/Study.flix",
-        "//src:Attune/Study/Embedding.flix",
-        "//src:Attune/Study/Metrics.flix",
-        "//src:Attune/Study/Qwen.flix",
-    ],
-    declared_files = [
-        "fixture-manifest.tsv",
-        "//test/study:manifest/localization/mapped.tsv",
-    ],
-    produced = _RANK_TARGETS + [":qwen_metrics"] + [
-        "//test/localization_embedding:rank_e_%s" % task
-        for task in _SURVIVING_TASKS
-    ] + [
-        "//test/localization_runtime:rank_%s" % task
-        for task in _SURVIVING_TASKS
-    ],
-    tags = ["manual"],
-)
-
-# The corpus-free hosted-Qwen laws (`VAL-QWEN-001`, `VAL-QWEN-002`,
-# `VAL-QWEN-003`): they drive the Study-owned hosted-Qwen submodule with hand-built
-# declared fixtures and assert the frozen route/recipe/model identity, the exact
-# cosine, the frozen similarity-descending/ascending-path order, the rank column
-# and sidecar separation, the `Schema.Embedding` bridge, the row/vector admission
-# errors, the exact three-way gold partition and the exact signed contrast. The
-# law is pure, so the ordinary offline gate runs it.
 native_flix_test(
     name = "qwen_law",
     srcs = [
@@ -109,14 +17,5 @@ native_flix_test(
         "//src:Attune/Study/Embedding.flix",
         "//src:Attune/Study/Metrics.flix",
         "//src:Attune/Study/Qwen.flix",
-    ],
-)
-
-test_suite(
-    name = "all",
-    tags = ["manual"],
-    tests = [
-        ":qwen_audit",
-        ":qwen_law",
     ],
 )

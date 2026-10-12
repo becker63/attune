@@ -1,6 +1,0 @@
-label	solid__community-server-1040	w50
-provenance	solid/community-server	b0208bf4699ce96c4e30ab6603089c1d8b5f2aef	9578bb851401995a1e04688845845fcc471c8fa86cc3601544b8b6808b667c10	reference-patch	68	2887
-entry	modified	RELEASE_NOTES.md	other	source	regular	absent	ineligible
-entry	modified	config/identity/handler/provider-factory/identity.json	other	source	regular	absent	ineligible
-coverage	full	2	supported	0
-case	unsupported

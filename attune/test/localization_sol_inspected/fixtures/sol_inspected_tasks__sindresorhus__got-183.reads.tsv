@@ -1,8 +1,0 @@
-tool	commandExecution	failed	162	4456
-tool	commandExecution	completed	406	8152
-tool	commandExecution	completed	8157	12549
-tool	commandExecution	completed	4845	12616
-read	unknown		162	b46c5a0d5aa590fc43e75c097f745ce24d58a801ddafe0e181fb56cfa4c883fd	127	failed	4456
-read	listFiles	.	406	c05ed4be2fc6a6601818e22ffd821ec43739ec7c1827a2fa68042e92161a6e78	0	completed	8152
-read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4488436033208160103/repo/index.js	8157	80a3a2b953ca12984ae4e72e3324421b3cb6e1195761cfbf3a2ccb315fa40b86	0	completed	12549
-read	unknown		4845	fb16e9a5366b490f746d798d5b9fb3c84f5b6cec6056dffa3a0932edc456683f	0	completed	12616

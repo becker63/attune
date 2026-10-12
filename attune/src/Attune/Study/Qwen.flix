@@ -1,30 +1,13 @@
+/// Rank files by how closely their Qwen vectors match an issue's vector.
 ///
-/// The Study-owned hosted-Qwen embedding submodule (`VAL-QWEN-001/002/003`).
+///     issue vector + file vectors -> cosine similarity -> ordered paths
+///                                                         |
+///                                                   tied score: path order
 ///
-/// This module owns the one scientific statement of the hosted Qwen branch Q of
-/// the post-hoc exploratory embedding extension: how a declared hosted embedding
-/// fixture row becomes a typed prediction input, how the frozen cosine between a
-/// task query and a candidate code file is computed, and how the A/E/Q
-/// populations and their gold decomposition are counted. It is deliberately
-/// downstream-only: no extraction, Theory, variant, selection or ranking stage
-/// imports it, so the frozen deterministic prediction graph is unaffected by its
-/// existence, and the hosted provider is never reachable from a metric consumer.
-///
-/// The row vocabulary is the same declared immutable embedding fixture record the
-/// pinned CodeRankEmbed producer already emits, so the hosted branch adds a
-/// provider and a recipe rather than a second fixture format: the logical
-/// identity is `(provider, resolved model, recipe, exact input bytes)` and the
-/// vector payload is **data, never identity**. The module admits a row through
-/// the existing `Schema.Embedding` boundary and never re-derives the recipe, so a
-/// ranking consumer cannot see the model.
-///
-/// The frozen similarity is cosine on the two unnormalized model outputs,
-/// computed by normalizing each side once at this one declared point; cosine is
-/// explicitly user-allowed and no parallel-engine parity is claimed. The order is
-/// similarity descending, then path ascending — the same frozen tie rule the
-/// deterministic and CodeRankEmbed arms use, so the three embedding arms are
-/// ranked by one statement and no candidate is dropped.
-///
+/// This module keeps the frozen provider recipe, admits recorded rows, and ranks
+/// them. Model, recipe, and exact input identify a request; its vector is the
+/// answer. Unmeasured files stay in the ranking with an explicit marker.
+/// Provider acquisition lives in the archived study. Nothing here calls a model.
 pub mod Attune.Study.Qwen {
 
     use Attune.Study
@@ -57,14 +40,9 @@ pub mod Attune.Study.Qwen {
     pub def recipeIdentity(): String =
         "qwen3-embedding-8b-instruct-queryprefix-rawtrunc32768cu-native4096-unnormalized-cosine-v1"
 
-    /// The frozen truncation cap of the recipe, in UTF-16 code units of the
-    /// decoded declared text. It is a provable bound: a byte-oriented tokenizer
-    /// emits at most one token per byte, so a cap of 32,768 code units can never
-    /// exceed the model's documented 32,768-token context, whatever the content
-    /// density. The declared raw bytes are truncated to this cap before the query
-    /// instruction prefix is applied, on both sides, and the row records both the
-    /// raw-bytes identity and the exact embedded-bytes identity so the cap is
-    /// auditable rather than invisible.
+    /// Historical input cap, in UTF-16 code units, before the query prefix.
+    /// This bounds text length, not model tokens. Recorded rows retain both raw
+    /// and prepared-input identities so truncation is visible.
     pub def capCodeUnits(): Int32 = 32768
 
     /// The frozen query instruction. It is applied to the query side only; the

@@ -1,6 +1,0 @@
-label	jlongster__prettier-101	w38
-provenance	jlongster/prettier	b37e8c4b361acbe08e716f0aa71f29b4b55fcb5b	7d398befde49460283b529a089611e1b72ba057c44dd3dd1487f75831dc4b649	reference-patch	33	1060
-entry	modified	src/printer.js	js-ts	source	regular	present	eligible
-gold	src/printer.js
-coverage	full	1	supported	1
-case	eligible-gold

@@ -1,21 +1,14 @@
-/// The one Attune owner: world and nominal entity identity, the six atoms,
-/// exact typed finite frontiers, one application and its local exact memo.
+/// Follow one relationship from an exact set of files or symbols.
 ///
-/// This file is the whole `Attune` module. The shared nominal envelope and the
-/// one relation application were previously separate temporary owner files
-/// (`Attune/Envelope.flix` and `Attune/Apply.flix`). Flix requires a public
-/// module to be declared at the top level of a file whose path matches its own
-/// name, so those two modules are folded back into `Attune` here rather than
-/// left beside it or wrapped in a forwarding module: the definitions keep one
-/// home and the extra files are gone.
+///     files --defines--> symbols --calls--> symbols --defined_in--> files
 ///
-/// Identity is deliberately nominal. A `FileId` and a `SymbolId` are different
-/// types, so the pinned compiler rejects a program that mixes domains. A
-/// frontier carries its world and its complete finite element set, so equality
-/// compares the world, the domain and every element rather than a display name.
-/// The one evaluator applies one directed atom to one exact frontier and
-/// produces an exact typed frontier or a classified rejection, never an empty
-/// success for an illegal route.
+/// FileId and SymbolId are separate types, even for equal names. A frontier is
+/// the set reached so far, together with its repository world. A world includes
+/// source identity and the rules used to interpret that source.
+///
+/// Applying a relation either returns a typed set or explains why the step is
+/// invalid. An empty valid answer is different from an invalid step. Reuse below
+/// requires the same world, relation, and complete input set.
 pub mod Attune {
     /// One repository world identity. Two worlds never compare equal unless
     /// they are the same world.

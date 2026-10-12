@@ -212,28 +212,11 @@ pub mod Attune.Policy {
     /// support, maintained Grit query source (including the approved Ruby entry
     /// points), Ruby fixture data and the carried Zed editor assets, whose pinned
     /// Flix grammar revision is the single revision the Grit integration reuses.
-    /// The upstream grammar checkout preserved beside the Zed assets is untracked
-    /// editor work and is never a build input, but it sits inside the audited
-    /// workspace, so the admitted `platform/zed/` family keeps it from being
-    /// reported as authored source.
-    ///
-    /// Two paths this list used to admit are retired because nothing lives there:
-    /// `test/proposals/` (the last bootstrap-era test-only proposal, P08, is now
-    /// production source in `Attune.Study`) and `src/native/ruby/` (the approved
-    /// Ruby arm is the maintained Grit rule plus the pinned closure, not a
-    /// first-party `src/native/` tree, and `src/native/` itself is gone). An
-    /// admission for an empty tree is not an exemption; it is unowned policy.
-    ///
-    /// One exact path is admitted by name: `platform/tools/embedding/adapter.py`,
-    /// the single mechanical inference adapter of the owner-approved post-hoc
-    /// exploratory embedding branch. It is not a general Python admission — it
-    /// tokenizes declared inputs, runs the one digest-pinned third-party model
-    /// and serializes the raw vectors, carries no ingestion, ranking, metrics or
-    /// scientific policy, and every other `.py` path stays forbidden.
+    /// Foreign-language sources are limited to inherited support, editor assets,
+    /// Grit queries, and authored Ruby fixtures. No Python adapter is admitted.
     pub def isAdmittedForeign(path: String): Bool =
         hasPrefix("platform/support/", path) or hasPrefix("platform/vendor/", path)
             or hasPrefix("platform/zed/", path)
-            or path == "platform/tools/embedding/adapter.py"
             or hasSuffix(".grit", path)
             or (hasPrefix("test/", path) and hasSuffix(".rb", path))
 
@@ -691,17 +674,14 @@ pub mod Attune.Policy {
     /// mechanical presentation.
     pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
 
-    /// No test-placed semantic exception remains. An earlier accounting carried
-    /// a bounded explicit list for reusable algorithms that a compact owner had
-    /// not absorbed yet (P06 descriptor safety, then P08 decision settlement).
-    /// P06 now lives in `Attune.Theory` and P08's typed prior/request/evidence
-    /// and `settle` contract now lives in `Attune.Study`, so the blanket
-    /// `test/** -> Fixture` rule below hides no algorithm and no special case is
-    /// needed. A semantic algorithm under any placement still counts as
-    /// cognitive: the rule is simply that it belongs in a production owner.
+    /// These retained adapters materialize declared fixture records. Their I/O
+    /// and serialization remain authored support even though tests exercise them.
+    pub def isStudyAdapter(path: String): Bool =
+        path == "test/study/Stages.flix" or path == "test/study/Results.flix"
+            or path == "test/study/EvidenceOperationStages.flix"
+
     def isMechanicalPath(path: String): Bool =
         hasPrefix("platform/tools/", path)
-            or hasPrefix("platform/embedding/", path)
             or hasPrefix("platform/dsh/", path)
             or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
 
@@ -714,6 +694,7 @@ pub mod Attune.Policy {
         // cognitive under any path rather than an inherited or fixture exemption.
         else if (hasSuffix(".grit", path)) Ownership.Cognitive
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) Ownership.Support
+        else if (isStudyAdapter(path)) Ownership.Mechanical
         else if (hasPrefix("test/", path)) Ownership.Fixture
         else if (isMechanicalPath(path)) Ownership.Mechanical
         else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
@@ -724,9 +705,9 @@ pub mod Attune.Policy {
     /// and memo) plus the canonical generic coverage/evidence/support values;
     /// `theory` is the sixth semantic owner.
     pub def componentNames(): List[String] =
-        "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
+        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
             :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
-            :: "build-rules" :: "embedding" :: "sol" :: "reviewbench" :: "inference"
+            :: "build-rules" :: "inference"
             :: "dsh-adapter"
             :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
@@ -735,6 +716,8 @@ pub mod Attune.Policy {
         else if (isGritClosureRule(path)) "grit-rule"
         else if (isBuildFile(path) or isRootMetadata(path) or hasPrefix("notes/", path)) "metadata"
         else if (hasSuffix(".grit", path)) "frontends"
+        else if (isStudyAdapter(path)) "build-rules"
+        else if (path == "src/Main.flix" or path == "src/Attune/Effects.flix") "workflow"
         else if (path == "src/Attune/AsciiTree.flix") "ascii"
         else if (path == "src/Attune.flix" or path == "src/Attune/Coverage.flix") "core"
         else if (hasPrefix("src/Attune/Repository", path)) "repository"
@@ -746,31 +729,7 @@ pub mod Attune.Policy {
         else if (hasPrefix("platform/tools/parquet/", path)) "parquet"
         else if (hasPrefix("platform/tools/boundary/", path)) "boundary"
         else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
-        else if (hasPrefix("platform/embedding/", path)) "embedding"
-        else if (hasPrefix("platform/tools/embedding/", path)) "embedding"
-        // The standalone Sol localization arm's mechanical app-server driver is
-        // its own mechanical tool family, exactly as the embedding adapter is:
-        // every mechanical path must belong to a named mechanical component, or
-        // the component table would silently drop the measured lines.
-        else if (hasPrefix("platform/tools/sol/", path)) "sol"
-        // The ReviewBench corpus boundary (the declared metadata projection and
-        // the exact base/head export diff) is its own mechanical tool family,
-        // exactly as the Arrow seam and the Sol driver are: every mechanical path
-        // must belong to a named mechanical component, or the component table
-        // would silently drop the measured lines.
-        else if (hasPrefix("platform/tools/reviewbench/", path)) "reviewbench"
-        // The ReviewBench native OpenRouter Decisions boundary (the approved
-        // LangChain4j HTTP transport and its mechanical receipt runner) is its own
-        // mechanical tool family, exactly as the Sol driver and the ReviewBench
-        // corpus boundary are: every mechanical path must belong to a named
-        // mechanical component, or the component table would silently drop the
-        // measured lines.
         else if (hasPrefix("platform/tools/inference/", path)) "inference"
-        // The owner-approved narrow DSH/Typert adapter is its own mechanical
-        // packaging family, exactly as the Arrow seam, the Sol driver and the
-        // ReviewBench boundaries are: every mechanical path must belong to a
-        // named mechanical component, or the component table would silently drop
-        // the measured lines.
         else if (hasPrefix("platform/dsh/", path)) "dsh-adapter"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"

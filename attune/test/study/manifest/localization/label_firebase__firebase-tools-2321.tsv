@@ -1,7 +1,0 @@
-label	firebase__firebase-tools-2321	w80
-provenance	firebase/firebase-tools	c8de003b82acd00dc244a30c6b5c21c615c57b09	3de5ec1c22a9529d3a1f2a53e60f1a1f981439737ee56537ccddfce897dff7dc	reference-patch	115	3768
-entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
-entry	modified	src/emulator/workQueue.ts	js-ts	source	regular	present	eligible
-gold	src/emulator/workQueue.ts
-coverage	full	2	supported	1
-case	eligible-gold

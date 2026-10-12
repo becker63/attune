@@ -1,7 +1,0 @@
-label	stoplightio__spectral-1059	w74
-provenance	stoplightio/spectral	d2803e9f9a7c6e185cb7ecc6f492cc81f312889f	e493f9dac5758d2792a6821a29fb8eba1cd4299af38f55f9535b2c38336f1716	reference-patch	157	4667
-entry	modified	docs/reference/functions.md	other	source	regular	absent	ineligible
-entry	modified	docs/reference/openapi-rules.md	other	source	regular	absent	ineligible
-entry	modified	src/rulesets/oas/index.json	other	source	regular	absent	ineligible
-coverage	full	3	supported	0
-case	unsupported

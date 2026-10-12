@@ -1,6 +1,0 @@
-label	platers__obsidian-linter-1001	w12
-provenance	platers/obsidian-linter	d3515fe32804f4ec495d993f10eabbf4b9fa6161	7545239a6308462d9e05e89b6f6c30f2fb4d0ddef7b2db9a44ec4f59c6720572	reference-patch	43	1448
-entry	modified	src/utils/mdast.ts	js-ts	source	regular	present	eligible
-gold	src/utils/mdast.ts
-coverage	full	1	supported	1
-case	eligible-gold

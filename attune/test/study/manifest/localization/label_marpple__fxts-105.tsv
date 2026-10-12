@@ -1,8 +1,0 @@
-label	marpple__fxts-105	w60
-provenance	marpple/FxTS	2738b9ae070b173d0bd78036168f09426581401c	55dc0f502b1be8265c6ec428470ef4a75269c25ee11305ba557f6401f50c6e3e	reference-patch	140	3561
-entry	new	src/add.ts	js-ts	source	regular	absent	ineligible
-entry	modified	src/index.ts	js-ts	source	regular	present	eligible
-entry	new	src/isNumber.ts	js-ts	source	regular	absent	ineligible
-gold	src/index.ts
-coverage	full	3	supported	1
-case	eligible-gold

@@ -1,29 +1,11 @@
-"""The narrow hermetic DSH adapter closure (owner-authorized 2026-10-09).
-
-This package packages ONE thing: the pinned DSH 0.2.0-rc.2 agent runtime and its
-declared npm dependency graph, so the mission's native AgentLoop can run as a
-declared Bazel action locally and on the pinned arm64 RBE platform. It does not
-Bazelize the upstream DSH monorepo, does not register a second agent runtime, and
-adds no provider, transport or credential path of its own.
-
-The npm graph is translated from the committed `pnpm-lock.yaml` (itself the
-ordinary `pnpm import` of the unchanged user `package-lock.json`) by the
-`dsh_npm` extension in `MODULE.bazel`; no host `npm install` and no global
-package can repair a missing dependency, because an undeclared dependency fails
-the action.
-"""
-
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_test")
 load("@aspect_rules_js//npm:defs.bzl", "npm_link_package")
 load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
 load("//platform/build:native.bzl", "native_study_stage")
-load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
 load("//platform/dsh:typert_package.bzl", "typert_package")
-load("//test/reviewbench_pilot:holdout_worlds.bzl", "REVIEWBENCH_HOLDOUT_WORLDS")
 
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population.
 filegroup(
     name = "policy_files",
     srcs = glob(
@@ -35,33 +17,8 @@ filegroup(
     ),
 )
 
-exports_files([
-    "dsh_agent.bzl",
-    "pilot_runner.bzl",
-    "pilot_task.mjs",
-    "package.json",
-    "package-lock.json",
-    "pnpm-lock.yaml",
-])
-
-# The declared per-task / per-arm pilot composition module of the launcher, as a
-# linked library so both the launcher itself and the pilot composition law can
-# consume the SAME declared source rather than a copy.
-js_library(
-    name = "pilot_task_module",
-    srcs = ["pilot_task.mjs"],
-)
-
-# The one npm link tree of this package: every package the DSH lock names is
-# linked under `platform/dsh/node_modules` from declared Bazel repositories.
 npm_link_all_packages(name = "node_modules")
 
-# The one authored Cordis plugin of the narrow evidence substrate, linked into
-# the same `node_modules` tree under its own package name so the DECLARED DSH
-# loader resolves it exactly like every other plugin. This is a first-party
-# package link, not an npm install: no lockfile entry, no fetch and no host
-# `node_modules` is involved, and the plugin's own relative imports and bare
-# `@deepseek-ai/dsh-tools` peer resolve through the same linked tree.
 npm_link_package(
     name = "node_modules/@attune/dsh-evidence-tool",
     src = "//platform/dsh/tool:evidence_tool_package",
@@ -70,24 +27,6 @@ npm_link_package(
     version = "0.0.0",
 )
 
-# The ONE declared compiled evidence operation (the mechanical bridge from the
-# native DSH tool to canonical Flix meaning).
-#
-# `native_study_stage` is ONE declared `ctx.actions.run` of the mechanical
-# launcher driving the pinned compiler's authentic native Tester over the
-# declared `evidence_operation` stage law: it reads the declared world manifest,
-# the declared world identity record, the declared facts and the ACTUAL declared
-# sealed source bytes, applies the canonical `Attune.Study.EvidenceOperation`
-# meaning, and materializes the operation's own canonical records
-# (`reference-projections.tsv`, `observation-projections.tsv`) into a declared
-# output tree. The authored DSH tool SERVES those materialized records, so the
-# live tool path returns the compiled operation's output rather than a
-# TypeScript re-derivation of it; no guard or packet policy is restated in TS.
-#
-# The stage law lives in `//test/study` (it is a fixture-scoped `@Test`
-# dispatcher, exactly like every other declared stage) while the ACTION is
-# declared here, so the materialized tree sits beside the tool that consumes it
-# and the tool resolves it without reaching for a path of its own.
 native_study_stage(
     name = "evidence_operation_projection",
     srcs = ["//test/study:evidence_operation_stage_srcs"],
@@ -106,509 +45,12 @@ native_study_stage(
     stage = "evidence_operation",
 )
 
-# The ONE declared mechanical-guard declaration of the narrow evidence substrate.
-#
-# It is the same `native_study_stage` shape as the compiled operation above, over
-# the SAME declared stage sources, and it materializes what Flix owns about the
-# run limits: the frozen caps, the derived finalization reserve
-# (`guard-declaration.tsv`) and the canonical guard-decision boundary matrix
-# (`guard-decisions.tsv`). The DSH lifecycle guard plugin READS this tree, so the
-# caps, the reserve and every boundary decision come from the Flix owner and no
-# copy of them is restated in TypeScript or in an overlay.
-native_study_stage(
-    name = "evidence_guard_declaration",
-    srcs = ["//test/study:evidence_operation_stage_srcs"],
-    stage = "evidence_guard",
-)
-
-# The ONE declared detector sidecar of the narrow evidence substrate.
-#
-# It is the same `native_study_stage` shape over the SAME declared stage sources
-# and it materializes the two detector families' outcomes over the declared
-# detector fixture sites (`detector-sidecar.tsv`), the honest
-# generated -> inspected -> articulated -> verified -> committed -> delivered ->
-# adjudicated funnel (`detector-funnel.tsv`) and the declared model visibility of
-# each family in each prospective arm (`detector-visibility.tsv`). The sidecar is
-# a model-HIDDEN declared artifact of the run: it is never a model-facing tool
-# and never part of a session event stream, so a detector output is never the
-# definition of an arm.
-native_study_stage(
-    name = "evidence_detector_sidecar",
-    srcs = ["//test/study:evidence_operation_stage_srcs"],
-    input_names = ["detectors"],
-    inputs = ["//test/study:fixtures/detectors.tsv"],
-    stage = "evidence_detectors",
-)
-
-# The ONE declared offline equal-exact-bytes preflight of the narrow evidence
-# substrate.
-#
-# It is the same `native_study_stage` shape over the SAME declared stage sources
-# and it materializes the per-arm packet/obligation records
-# (`preflight-arms.tsv`) and the provider-free preflight output
-# (`preflight-result.tsv`) from the declared equal-byte fixture arms. It calls no
-# model and no provider: a fixture result is never an LLM saving.
-native_study_stage(
-    name = "evidence_preflight",
-    srcs = ["//test/study:evidence_operation_stage_srcs"],
-    input_names = ["preflight"],
-    inputs = ["//test/study:fixtures/preflight.tsv"],
-    stage = "evidence_preflight",
-)
-
-# The ONE declared packet world of the narrow evidence substrate (VAL-SUB-010).
-#
-# It is the same `native_study_stage` shape over the SAME declared stage sources.
-# It reads a BOUNDED declared diff fixture (one changed file in two revisions,
-# two exact declared regions of its head revision, the mandatory
-# changed-entrypoint manifest and the declared packets that reference them) plus
-# the ACTUAL sealed base/head source bytes, applies the canonical packet meaning
-# and materializes the changed-entrypoint manifest, the progressive packet
-# records with their exact spans/digests/ranges, the retained full-source escape,
-# the ordered memoized reacquisition decisions, the unique-vs-total byte
-# accounting, the honest packet instrumentation and the bounded verification
-# records. It acquires no corpus and calls no provider.
-native_study_stage(
-    name = "evidence_packets",
-    srcs = ["//test/study:evidence_operation_stage_srcs"],
-    input_names = [
-        "baseSource",
-        "headSource",
-        "packets",
-    ],
-    inputs = [
-        "//platform/dsh/tool:fixtures/packet/cart.base.ts",
-        "//platform/dsh/tool:fixtures/packet/cart.head.ts",
-        "//test/study:fixtures/packets.tsv",
-    ],
-    stage = "evidence_packets",
-)
-
-# The MANDATORY changed-entrypoint world of ONE real changed file of the exact
-# retained ReviewBench corpus (VAL-SUB-010). It is the same `native_study_stage`
-# shape over the same declared stage sources, but its base/head bytes are the
-# ALREADY-AUTHORIZED `attune-reviewbench-worlds` source of
-# `capawesome-team_cli-126/src/index.ts`, admitted read-only and digest-verified
-# by `//platform/build:retained_worlds.bzl` (never fetched, never a new corpus).
-# The stage DERIVES the changed-entrypoint manifest from the actual bytes; the
-# declared world record only names the identity. No gold, target label or task
-# branching is read or written.
-native_study_stage(
-    name = "evidence_reviewbench_world",
-    srcs = ["//test/study:evidence_operation_stage_srcs"],
-    input_names = [
-        "baseSource",
-        "headSource",
-        "world",
-    ],
-    inputs = [
-        "@attune_retained_worlds//:capawesome-cli-index-base",
-        "@attune_retained_worlds//:capawesome-cli-index-head",
-        "//test/study:fixtures/reviewbench-world.tsv",
-    ],
-    stage = "evidence_reviewbench_world",
-)
-
-# The declared REAL-SOURCE packet world of the exact retained ReviewBench change
-# (VAL-SUB-010). It is the same `native_study_stage` shape over the integration
-# stage closure, and it reads the ACTUAL admitted bytes of the COMPLETE two
-# authorized `capawesome-team_cli-126` base/head source trees, admitted read-only
-# and digest-verified one file at a time by `//platform/build:retained_worlds.bzl`
-# (never fetched, never a new corpus). The stage DERIVES the complete changed-file
-# set, the mandatory changed-entrypoint manifest, the exact regions with their
-# UTF-8/newline digests (through the existing mechanical
-# `AttuneReviewBench.sha256Hex` seam), the progressive packet records, the
-# retained full-source escape, the whole-world file manifest with its explicit
-# bounded-policy status, the declared replay of the tool's serving contract and
-# the sealed copies the packet boundary verifies against. No gold, target label
-# or task branching is read or written.
-native_study_stage(
-    name = "evidence_reviewbench_packets",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "trees",
-        "world",
-    ],
-    inputs = [
-        "//test/study:fixtures/retained-world-trees.tsv",
-        "//test/study:fixtures/reviewbench-packets.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_packets",
-    world_sources = ["@attune_retained_world_trees//:all"],
-)
-
-# The declared runtime acquisition accounting of ONE run of the packet tool over
-# that same world (VAL-SUB-010 runtime half). It reduces the run's OWN ledger of
-# served exact spans against the declared region manifest, so the exact-identity
-# memo, the unique/total/repeated byte accounting and the observed acquisitions,
-# packet uses and obligations are derived from the delivery sequence rather than
-# declared. Without a bound session ledger it reduces the declared replay of the
-# tool's serving contract over the same real region identities, and the one value
-# no offline replay can observe stays the canonical `Unavailable`.
-native_study_stage(
-    name = "evidence_reviewbench_runtime",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "regions",
-        "world",
-    ],
-    inputs = [
-        ":evidence_reviewbench_packets",
-        "//test/study:fixtures/reviewbench-packets.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_runtime",
-)
-
-# The declared canonical reduction of the ONE ACTUAL native run's OWN 72-row
-# acquisition ledger (VAL-SUB-010 runtime half). It is the SAME
-# `evidence_reviewbench_runtime` stage action, but its ledger binding is the
-# frozen immutable record of the authorized remote ReviewBench source smoke
-# (`library/dsh-gate-evidence/remote-reviewbench-source-smoke/dsh-home/
-# attune-packet-ledger.tsv`, 72 rows), admitted as a normal declared input rather
-# than a synthetic declared count. The stage therefore reduces the run's ACTUAL
-# delivery sequence: the exact-identity memo, the unique/total/repeated byte
-# accounting, the acquisitions/reuses and the spans reached outside the initial
-# progressive evidence are all derived from real native events, and the compact
-# scoped-negative/InformationDelta/observational-summary join is materialized
-# beside them. It calls no provider and acquires no corpus.
-native_study_stage(
-    name = "evidence_reviewbench_actual_runtime",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "ledger",
-        "regions",
-        "world",
-    ],
-    inputs = [
-        "//test/study:fixtures/reviewbench-runtime-ledger.tsv",
-        ":evidence_reviewbench_packets",
-        "//test/study:fixtures/reviewbench-packets.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_runtime",
-)
-
-# The declared SOURCE-DERIVED detector families of the narrow evidence substrate
-# (VAL-SUB-013, real-source half). It is the same `native_study_stage` shape over
-# the integration stage closure and it reads the ACTUAL admitted bytes of the
-# COMPLETE `capawesome-team_cli_126` base/head trees (the same declared
-# `world_sources` the packet world uses). The stage derives the two families'
-# contract facts from the real changed head source with the generic lexical
-# extraction and the declared `package.json` dependency contract, runs the SAME
-# two canonical detectors over them, and materializes the model-HIDDEN sidecar,
-# the honest funnel and the both-arm invisibility record. It acquires no corpus,
-# reads no gold and calls no provider.
-native_study_stage(
-    name = "evidence_reviewbench_detectors",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "trees",
-        "world",
-    ],
-    inputs = [
-        "//test/study:fixtures/retained-world-trees.tsv",
-        "//test/study:fixtures/reviewbench-packets.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_detectors",
-    world_sources = ["@attune_retained_world_trees//:all"],
-)
-
-# The declared four-quadrant delivery accounting of the corrected source-bearing
-# protocol (VAL-SUB-010, Gate C offline half). It is the same
-# `native_study_stage` shape over the integration stage closure. It DERIVES the
-# ACCEPTED receipt from the retained native smoke's own `events.jsonl` (an
-# accepted, postprocessing-completed `status=completed` tool result carrying the
-# exact declared sealed span identity, its digest and its delivered/omitted byte
-# counts) joined with the run's own prepared ledger row, and reduces the declared
-# deterministic FAULT fixtures (an unaccepted schema/render-failed operation and an
-# interrupted return) as the operations that contribute zero model-visible bytes.
-# It materializes the four separated accountings (physical acquisition, prepared
-# payload, model-visible delivery, observable use) plus the receipt rows
-# themselves, so a schema rejection, a render failure or an interrupted return is
-# never counted as delivery. It calls no provider and acquires no corpus.
-native_study_stage(
-    name = "evidence_reviewbench_delivery",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "receipts",
-        "events",
-        "ledger",
-    ],
-    inputs = [
-        "//test/study:fixtures/reviewbench-delivery.tsv",
-        "//test/study:fixtures/reviewbench-delivery-events.jsonl",
-        "//test/study:fixtures/reviewbench-delivery-ledger.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_delivery",
-)
-
-# The declared ten-world cohort admission (VAL-SUB-019, Gate D offline half). It
-# admits the ACTUAL complete authorized source of all ten original frozen tasks and
-# both revisions through the declared digest-verified `@reviewbench_worlds` archive
-# route, derives each task's complete changed set from the real base/head bytes
-# through the existing mechanical export diff, and materializes a bounded initial
-# packet per task carrying the ACTUAL changed source text with exact span digests.
-# It ALSO materializes, for EVERY task, that task's changed world in the packet
-# boundary's own declared format — the region manifest, the whole-world file
-# manifest, the compiled packet projection and the sealed changed bytes — so the
-# SAME registered native tool (`//platform/dsh/tool:packet_tool`) can be exercised
-# over each of the ten worlds by `//platform/dsh/tool:cohort_test`, not just
-# declared in a Flix-only shape. An unsupported or overflow changed file carries an
-# explicit status and no region, so it is named rather than silently dropped.
-# It reads no gold and no evaluator label, imposes no CLI/publication prerequisite,
-# and excludes the credential file named `.env` before any read. The target is
-# `manual` on purpose: the ordinary `bazel test //...` gate must never fetch or
-# scan the pinned corpus.
-native_study_stage(
-    name = "evidence_reviewbench_cohort",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "cohort",
-        "archives",
-    ],
-    inputs = [
-        "//test/study:fixtures/reviewbench-cohort.tsv",
-        "//test/reviewbench:archives.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_cohort",
-    tags = ["manual"],
-    world_sources = [
-        "@reviewbench_worlds//:EdV4H_usketch-534-base",
-        "@reviewbench_worlds//:EdV4H_usketch-534-head",
-        "@reviewbench_worlds//:agent-sh_agentsys-298-base",
-        "@reviewbench_worlds//:agent-sh_agentsys-298-head",
-        "@reviewbench_worlds//:brianc_node-postgres-3650-base",
-        "@reviewbench_worlds//:brianc_node-postgres-3650-head",
-        "@reviewbench_worlds//:caasi_town-zero-6-base",
-        "@reviewbench_worlds//:caasi_town-zero-6-head",
-        "@reviewbench_worlds//:capawesome-team_cli-126-base",
-        "@reviewbench_worlds//:capawesome-team_cli-126-head",
-        "@reviewbench_worlds//:haoling_diary-notebook-blog-transformer-24-base",
-        "@reviewbench_worlds//:haoling_diary-notebook-blog-transformer-24-head",
-        "@reviewbench_worlds//:heyitsaamir_teamscli-31-base",
-        "@reviewbench_worlds//:heyitsaamir_teamscli-31-head",
-        "@reviewbench_worlds//:jenkinsci_gitea-plugin-141-base",
-        "@reviewbench_worlds//:jenkinsci_gitea-plugin-141-head",
-        "@reviewbench_worlds//:ls1intum_Artemis-12479-base",
-        "@reviewbench_worlds//:ls1intum_Artemis-12479-head",
-        "@reviewbench_worlds//:rulecom_rule-io-sdk-40-base",
-        "@reviewbench_worlds//:rulecom_rule-io-sdk-40-head",
-    ],
-)
-# The declared metadata-only 24-task HOLDOUT cohort admission (VAL-STUDY-004). It
-# is the SAME declared cohort admission over the frozen holdout tasklist and the
-# declared digest-verified `@reviewbench_holdout_worlds` archive route: 24 tasks,
-# both frozen revisions, the same bounded initial packet, the same complete
-# whole-world manifest and the same per-task registered-tool world, materialized
-# with the SAME shared `reviewbenchCohort` implementation the ten-task cohort uses
-# so the two stages can never drift apart. The holdout tasks are drawn from the
-# remaining fast cohort and EXCLUDE every original24 task, so no pilot task and no
-# pilot world is admitted here. It reads no gold and no evaluator label, and it
-# calls no provider. The target is `manual` on purpose: the ordinary
-# `bazel test //...` gate must never fetch or scan the pinned corpus.
-native_study_stage(
-    name = "evidence_reviewbench_holdout_cohort",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "cohort",
-        "archives",
-    ],
-    inputs = [
-        "//test/study:fixtures/reviewbench-holdout-cohort.tsv",
-        "//test/reviewbench_pilot:holdout-archives.tsv",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_holdout_cohort",
-    tags = ["manual"],
-    world_sources = REVIEWBENCH_HOLDOUT_WORLDS,
-)
-
-# The declared ONE offline individual-acquisition-versus-compiled-packet preflight
-# (VAL-SUB-020). Its declared input is the RAW per-call record the
-# `//platform/dsh/tool:preflight_execution` action materialized by ACTUALLY driving
-# the registered packet tool in two bounded acquisition strategies over the SAME
-# exact evidence, beside the compiled packet world itself. The stage canonically
-# REDUCES those actual calls into the compared dimensions — identities, text bytes,
-# actions, the agent-facing operation count, completeness, output size, coverage
-# escape, the four-quadrant accounting and event fidelity — and it materializes the
-# pure paging MODEL separately as `preflight-model.tsv`, labelled as a model rather
-# than as executed proof. A piece larger than one page needs MORE calls, so the
-# operation count is measured and the replacement is never inflated. It adds no
-# compiler, planner, DAG, scheduler or agent, and it is a mechanical test, never a
-# token-saving claim. Provider-free and offline.
-native_study_stage(
-    name = "evidence_reviewbench_preflight",
-    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = [
-        "execution",
-        "packets",
-    ],
-    inputs = [
-        "//platform/dsh/tool:preflight-execution.tsv",
-        ":evidence_reviewbench_packets",
-    ],
-    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
-    stage = "evidence_reviewbench_preflight",
-)
-
-# The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
-# unchanged, and the linked node_modules tree is the whole declared runtime
-# dependency closure, so Node's ordinary resolution finds every DSH plugin. The
-# linked evidence tool is the ONE authored plugin of this adapter, and the
-# contract bridge it reuses is declared beside it so the plugin's own relative
-# import resolves from the runfiles rather than from an accident of the build.
-js_binary(
-    name = "dsh",
-    data = [
-        ":evidence_detector_sidecar",
-        ":evidence_guard_declaration",
-        ":evidence_operation_projection",
-        ":evidence_packets",
-        ":evidence_reviewbench_detectors",
-        ":evidence_reviewbench_packets",
-        ":node_modules",
-        ":node_modules/@attune/dsh-evidence-tool",
-        ":typert_bridge",
-        ":typert_package_a",
-        "//platform/dsh/tool:evidence_tool_runfiles",
-        # The declared per-task / per-arm pilot composition module of the
-        # launcher. It is an ordinary declared input of the same package as
-        # `entry.mjs`, so the launcher's own relative import resolves from the
-        # runfiles rather than from a host path. When `ATTUNE_DSH_PILOT` is
-        # absent it changes nothing about a run.
-        ":pilot_task_module",
-    ],
-    entry_point = "entry.mjs",
-    tags = ["manual"],
-)
-
-# The dedicated remote platform of the DSH provider gate. It is the SAME pinned
-# arm64 container image and the SAME declared external-network contract the
-# inherited Sol and ReviewBench review arms already use, and it injects the SAME
-# existing BuildBuddy `ACCESS_TOKEN` org secret. Nothing about the platform,
-# pool, image or credential exchange is new; only the declared action on it is.
-platform(
-    name = "remote",
-    constraint_values = [
-        "@platforms//os:linux",
-        "@platforms//cpu:arm64",
-    ],
-    exec_properties = {
-        "Arch": "arm64",
-        "OSFamily": "Linux",
-        "container-image": "docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
-        "network": "external",
-        "env-secrets": "ACCESS_TOKEN",
-        "recycle-runner": "false",
-        "EstimatedCPU": "1",
-        "EstimatedMemory": "2GB",
-    },
-)
-
-# The container/platform probe of the DSH adapter. It makes NO provider call and
-# reads NO secret: it runs the hermetic DSH CLI's own `--version` on the declared
-# remote platform, so the launcher, the hermetic Node runtime and the npm closure
-# are proven to load in the pinned arm64 RBE container before any credentialed
-# run. `no-local` keeps it honest: it can only be remote evidence.
-dsh_agent_run(
-    name = "remote_probe",
-    tags = ["manual"],
-    version_only = True,
-)
-
-# The local Cordis load proof of the same artifact is run from the built binary
-# directly (see library/dsh-substrate.md): composing the declared profile loads
-# every declared DSH plugin from the linked npm closure, proving the produced
-# package loads locally with no host `node_modules`. It is not a Bazel action
-# because the rules_js launcher needs `uname`/`dirname` on `PATH`, which the
-# hermetic action environment deliberately does not carry.
-
-# The same load proof on the pinned arm64 RBE platform, so the produced package
-# is shown to load through Cordis on both platforms.
-dsh_agent_run(
-    name = "remote_load",
-    dump_config = True,
-    tags = ["manual"],
-)
-
-# The mandatory direct-provider gate (VAL-SUB-001). One native DSH AgentLoop
-# through the user-authorized declared `siwc-responses` route with an explicit
-# `gpt-6.1-sol`/medium declaration, the existing scoped SIWC `ACCESS_TOKEN`
-# injected by the existing BuildBuddy secret exchange, one model-issued tool call
-# with its result and the native session persisted as a declared output. It is
-# `manual`: the ordinary `bazel test //...` gate never runs a provider.
-dsh_agent_run(
-    name = "provider_gate_smoke",
-    routes = ["route-siwc-responses.yml"],
-    tags = ["manual"],
-    task = "Use the bash tool to run: printf 'GATE_OK'. Then reply with the exact command output.",
-)
-
-# The one native DSH run that exercises the AUTHORED evidence tool end to end
-# (VAL-SUB-002/003/007). It boots the SAME declared `siwc-responses` route as the
-# gate above and mounts the declared evidence-tool overlay, so one native
-# AgentLoop calls `attune_evidence_operation` twice: once for a region the
-# declared world names (whose canonical projection must equal the frozen
-# cross-language parity target the Flix operation law also asserts) and once for
-# a region it does not (which the runtime boundary refuses before any sealed
-# source byte is read). The native session tree and the event stream are declared
-# outputs. It is `manual`: the ordinary `bazel test //...` gate never runs a
-# provider.
-dsh_agent_run(
-    name = "evidence_tool_smoke",
-    plugin_patches = ["//platform/dsh/tool:attune-tool.plugin.yml"],
-    routes = ["route-siwc-responses.yml"],
-    tags = ["manual"],
-    task = "Do exactly two things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns.",
-)
-
-# The ONE final authorized gold-blind remote integration smoke that folds in the
-# COMPILED-operation AND the COMPILED-packet path (VAL-SUB-002/003/007 remote,
-# VAL-SUB-010 runtime half). It boots the SAME declared `siwc-responses` route as
-# the gate above and mounts BOTH authored tool overlays, so one native AgentLoop
-# on the pinned arm64 RBE calls `attune_evidence_operation` (the compiled Flix
-# operation's own materialized record for a declared region, plus the runtime
-# boundary refusal for an undeclared one) AND `attune_packet_operation` (the
-# compiled packet world, progressive and then the retained full-source escape).
-# No gold, no target label and no task identity is handed to the model: it names
-# only the declared world, revisions, ranges and packet ids. The native session
-# tree and the `--json` event stream are declared outputs, so the run is
-# materialized into the CAS and can be imported locally through the supported
-# persistence API. It is `manual`: the ordinary `bazel test //...` gate never
-# runs a provider.
-dsh_agent_run(
-    name = "reviewbench_integration_smoke",
-    plugin_patches = [
-        "//platform/dsh/tool:attune-detector.plugin.yml",
-        "//platform/dsh/tool:attune-packet.plugin.yml",
-        "//platform/dsh/tool:attune-tool.plugin.yml",
-    ],
-    routes = ["route-siwc-responses.yml"],
-    tags = ["manual"],
-    task = "Do exactly five things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns. Third call attune_packet_operation with packet 'p1', disclosure 'progressive', path '-', revision '-', and report the returned uniqueBytes and totalBytes. Fourth call attune_packet_operation with packet 'p1', disclosure 'full-source', path '-', revision '-', and report the returned totalBytes. Fifth call attune_packet_operation with packet 'p1', disclosure 'whole-file', path 'src/index.ts', revision 'capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4', and report the returned bytes and sha256.",
-)
-# --------------------------------------------------------------------------
-# The narrow Typert boundary (VAL-SUB-004/005/006).
-#
-# `typert/` holds the versioned wire contract of the narrow evidence contract,
-# its one authoritative TypeScript public declaration and the tiny
-# supported-subset bridge. The laws below run the REAL pinned
-# `@deepseek-ai/dsh-typert-generator` analyzer/emitter over that fixture and
-# assert parity, determinism, drift detection and fail-closed refusal. They are
-# provider-free and offline, so the ordinary `bazel test //...` gate runs them.
-# --------------------------------------------------------------------------
-
 filegroup(
     name = "typert_fixture",
     srcs = [
         "typert/bridge.mjs",
-        "typert/contract-surface.v1.txt",
-        "typert/contract.wire.v1.json",
+        "typert/contract.wire.v2.json",
+        "typert/contract-surface.v2.txt",
         "typert/packages/attune-evidence/package.json",
         "typert/packages/attune-evidence/src/index.ts",
         "typert/packages/attune-evidence/tsconfig.json",
@@ -616,13 +58,11 @@ filegroup(
     ],
 )
 
-# The supported-subset bridge and the frozen wire contract as a linked library,
-# so another package's rules_js target can consume them as declared deps.
 js_library(
     name = "typert_bridge",
     srcs = [
         "typert/bridge.mjs",
-        "typert/contract.wire.v1.json",
+        "typert/contract.wire.v2.json",
     ],
 )
 
@@ -635,21 +75,6 @@ js_test(
     entry_point = "typert/typert_generation_test.mjs",
 )
 
-# --------------------------------------------------------------------------
-# The declared generation and installable package (VAL-SUB-008).
-#
-# `typert_package` is ONE declared `ctx.actions.run` of the real pinned Typert
-# generator: it generates the transport declaration from the declared fixture
-# and assembles the installable Cordis package (`dsh.bundle` patch, generated
-# contract identity, authored entry and manifest) into a declared output tree.
-# Two independent targets are built so the package law can prove the output is
-# byte-identical, and the package law loads the built package through the real
-# `@deepseek-ai/cordis` Context and typechecks it with the pinned TypeScript
-# compiler. Nothing here contacts a provider or fetches a package.
-# --------------------------------------------------------------------------
-
-# The declared contributor fixture the real generator analyzes. It is named one
-# file at a time so the live workspace audit sees the exact population.
 _TYPERT_PACKAGE_SRCS = [
     "typert/packages/attune-evidence/package.json",
     "typert/packages/attune-evidence/src/index.ts",
@@ -670,8 +95,8 @@ filegroup(
 js_binary(
     name = "typert_build",
     data = [
-        ":node_modules",
         "typert/bridge.mjs",
+        ":node_modules",
     ],
     entry_point = "typert/package_build.mjs",
     tags = ["manual"],
@@ -679,17 +104,17 @@ js_binary(
 
 typert_package(
     name = "typert_package_a",
+    srcs = _TYPERT_PACKAGE_SRCS,
     install = [":typert_install"],
     manifest = "typert/install/manifest.json",
-    srcs = _TYPERT_PACKAGE_SRCS,
     tsconfig = "typert/tsconfig.host.json",
 )
 
 typert_package(
     name = "typert_package_b",
+    srcs = _TYPERT_PACKAGE_SRCS,
     install = [":typert_install"],
     manifest = "typert/install/manifest.json",
-    srcs = _TYPERT_PACKAGE_SRCS,
     tsconfig = "typert/tsconfig.host.json",
 )
 
@@ -704,17 +129,3 @@ js_test(
     ],
     entry_point = "typert/package_test.mjs",
 )
-
-# --------------------------------------------------------------------------
-# The one native DSH tool of the narrow evidence substrate (VAL-SUB-002/003/007).
-#
-# `tool/` is its own Bazel package (so the first-party npm link points at the
-# package directory) and holds the authored Cordis plugin that registers ONE
-# `defineTool` tool, the tiny supported-subset bridge that projects the
-# generated contract into the DSH parameter dialect, and the runtime
-# world/range/permission boundary. Its law runs the REAL `defineTool` definition
-# the pinned `@deepseek-ai/dsh-tools` surface produced over the declared world
-# manifest, the declared sealed source and the frozen cross-language parity
-# target the Flix `evidence_operation_law` also asserts. It is provider-free and
-# offline, so the ordinary `bazel test //...` gate runs it.
-# --------------------------------------------------------------------------

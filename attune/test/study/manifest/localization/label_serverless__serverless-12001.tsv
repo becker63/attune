@@ -1,6 +1,0 @@
-label	serverless__serverless-12001	w3
-provenance	serverless/serverless	83e194cb17b5b932bcc866f2543351b64fde329a	fac0e5e5e82c441349634235424563f82b30e82e04b821c9460bbafbc4ff7bc1	reference-patch	18	800
-entry	modified	lib/plugins/aws/custom-resources/index.js	js-ts	source	regular	present	eligible
-gold	lib/plugins/aws/custom-resources/index.js
-coverage	full	1	supported	1
-case	eligible-gold

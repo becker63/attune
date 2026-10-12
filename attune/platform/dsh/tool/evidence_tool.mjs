@@ -73,7 +73,7 @@ export function loadWireContract(config) {
   const source =
     typeof explicit === 'string' && explicit.length > 0
       ? explicit
-      : new URL('../typert/contract.wire.v1.json', import.meta.url)
+      : new URL('../typert/contract.wire.v2.json', import.meta.url)
   return JSON.parse(readFileSync(source, 'utf8'))
 }
 

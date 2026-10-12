@@ -1,1 +1,0 @@
-judged	jenkinsci_gitea-plugin-141	C1	7	The unhandled fetchVersion exception exits sendNotifications before createCommitStatus, matching G7’s missing WARNING fallback when version detection fails.

@@ -1,6 +1,0 @@
-label	singapore__renovate-1048	w68
-provenance	singapore/renovate	0427604de61a6a1783f208d9858320c29950b794	3fb24f8c2aa2b9489ae89415ea6e3a02cf567f7f278180db4339d347eda11944	reference-patch	19	713
-entry	modified	lib/workers/branch/schedule.js	js-ts	source	regular	present	eligible
-gold	lib/workers/branch/schedule.js
-coverage	full	1	supported	1
-case	eligible-gold

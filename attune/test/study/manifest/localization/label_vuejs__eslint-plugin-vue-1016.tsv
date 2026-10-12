@@ -1,7 +1,0 @@
-label	vuejs__eslint-plugin-vue-1016	w32
-provenance	vuejs/eslint-plugin-vue	99fe70dd45097ed4a7c8bdc60cf98e30ee57afac	a7fb6fe456d5233055ca62385c5359dc08e5626dd7274a346a60005e7c426c22	reference-patch	85	3267
-entry	modified	lib/utils/indent-common.js	js-ts	source	regular	present	eligible
-entry	modified	package.json	other	source	regular	absent	ineligible
-gold	lib/utils/indent-common.js
-coverage	full	2	supported	1
-case	eligible-gold

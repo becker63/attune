@@ -1,5 +1,0 @@
-prediction	firebase__firebase-tools-2321	1	src/emulator/workQueue.ts
-prediction	firebase__firebase-tools-2321	2	src/emulator/functionsEmulator.ts
-prediction	firebase__firebase-tools-2321	3	src/emulator/functionsRuntimeWorker.ts
-prediction	firebase__firebase-tools-2321	4	src/test/emulators/workQueue.spec.ts
-prediction	firebase__firebase-tools-2321	5	src/test/emulators/functionsRuntimeWorker.spec.ts
