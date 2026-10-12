@@ -1,50 +1,20 @@
-/// Theory: bounded canonical descriptors lowered to fixed native Flix fragments.
+/// Ask a small question whose relationships must all hold together.
 ///
-/// Theory is the one owner of the admitted finite template family. It decides
-/// exactly three things and nothing else.
+///     imports(a, shared) + imports(b, shared) + a != b
+///                         |
+///                         +-- which files share an import?
 ///
-/// **Admission.** A descriptor carries one to three positive binary atoms over
-/// at most four typed role slots, at most two projected outputs and at most one
-/// bound inequality. A role's nominal domain is derived from the core atom
-/// signature table, so a role used as a file in one atom and as a symbol in
-/// another is unsafe and rejects. The positive atoms must be connected, no atom
-/// may name the same role twice, and every output and inequality role must be
-/// bound by a positive atom.
+/// A descriptor names the relationships, their roles, and the answers to return.
+/// Admission checks connectedness and types, with at most three relationships,
+/// four roles, two outputs, and one inequality. Every output must be bound.
 ///
-/// **Canonical identity.** Two descriptors name the same candidate exactly when
-/// one consistent renaming of their role slots makes the atom bodies, the bound
-/// inequality and the projected outputs equal. The canonical form is the least
-/// of the at most `maxRenamings()` renamings, so role spelling, conjunct body
-/// order and duplicate conjuncts normalize while a changed inequality, a
-/// reversed relation direction and a changed output role stay distinct. This is
-/// alpha-equivalence, not graph isomorphism and not logical equivalence.
+/// Renaming roles or reordering relationships gives the same canonical question.
+/// Changing direction, outputs, or inequality gives a different question. This
+/// checks consistent renaming; it does not prove arbitrary queries equivalent.
 ///
-/// **Lowering.** One deterministic population of at most `maxCandidates()`
-/// canonical candidates is sharded at about `shardSize()` descriptors per shard,
-/// at most `maxShards()` shards per world. The declared shard index is carried
-/// explicitly, so `shardAt` selects exactly that one node's own bounded slice
-/// (`theory_shard_<world>_<index>`) rather than a guessed or first chunk, and an
-/// index outside the bounded list is an empty slice. A world's facts and that
-/// slice's descriptors become native `Edge` and `Desc` facts, and the fixed
-/// compiler-checked rule set below materializes anchor-free `Binding` and
-/// `Output` rows. Only the `Task` rule joins an application anchor, so a task or
-/// pair join never re-evaluates the structure. Candidate and world are part of
-/// every intermediate and result row, so no witness crosses a partition, and
-/// duplicate candidate ids can never union distinct descriptors.
-///
-/// The `Desc` shape a rule selects on is the relation-independent lowering key
-/// `shapeKey(lowering(...))`, not the full canonical form: relation spelling can
-/// reorder the role wiring under alpha-canonicalization, so keying a rule on the
-/// canonical shape would let some admitted conjunction select no rule and answer
-/// empty. `lowering` minimizes the role wiring with the relation names ignored
-/// and transforms the relation, output and inequality slots by the same renaming,
-/// so every spelling of one structural wiring lands on one fixed rule family
-/// while descriptor identity keeps its public canonical form.
-///
-/// Theory reads no document, contacts no provider, ranks no task and owns no
-/// verdict. It consumes core values and one world's facts through
-/// `Attune.Coverage` and never imports Study or View. There is no runtime rule
-/// text, no second evaluator and no search.
+/// Bounded descriptor batches become facts for fixed native Flix Datalog rules.
+/// Rules produce answers per world and candidate; task anchors join afterwards.
+/// Bazel can reuse that task-independent work. No runtime rule text is compiled.
 pub mod Attune.Theory {
 
     use Attune.Coverage.WorldFacts

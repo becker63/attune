@@ -1,6 +1,0 @@
-label	joshuakgoldberg__tslint-to-eslint-config-25	w25
-provenance	JoshuaKGoldberg/tslint-to-eslint-config	1f8f414a487a0f8d67c37b7de13fda7848f5ac67	74ed773608f8abe380fc502c10520c0200058979fdc14aee3fdd2076bd5096f1	reference-patch	21	778
-entry	modified	src/creation/createNewConfiguration.ts	js-ts	source	regular	present	eligible
-gold	src/creation/createNewConfiguration.ts
-coverage	full	1	supported	1
-case	eligible-gold

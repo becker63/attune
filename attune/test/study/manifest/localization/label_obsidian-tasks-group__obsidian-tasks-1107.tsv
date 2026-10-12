@@ -1,7 +1,0 @@
-label	obsidian-tasks-group__obsidian-tasks-1107	w35
-provenance	obsidian-tasks-group/obsidian-tasks	1164899d6b4b251db81dff1edcc836d4192d833a	a52b2e056690fbb4a883723d2777598372e2eef4207f3cac807063a19e544c94	reference-patch	27	1300
-entry	modified	docs/queries/filters.md	other	source	regular	absent	ineligible
-entry	modified	src/Query/Filter/TagsField.ts	js-ts	source	regular	present	eligible
-gold	src/Query/Filter/TagsField.ts
-coverage	full	2	supported	1
-case	eligible-gold

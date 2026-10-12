@@ -1,24 +1,9 @@
-"""Bazel-owned native Flix test rules for the Attune v2 bootstrap.
+"""Compile and run explicit Flix sources inside declared Bazel actions.
 
-Native Flix `@Test` declarations are the only first-party executable
-entrypoints. Each test target compiles explicit declared Flix sources with the
-pinned 0.76.1 compiler's authentic native test engine, inside the declared
-pinned user/network namespace, with no synthesized `flix.toml` project mode, no
-authored application main, no fat JAR, no custom test engine and no registry.
-
-Isolation has exactly two declared modes, and the mechanical boundary never
-claims one it did not create. The ordinary gate leaves the isolation condition
-unset and runs inside the pinned util-linux `unshare` user/network namespace.
-The opt-in `--config=remote` profile sets `platform_native_isolation`, so a
-remote action declares neither that Nix-store binary nor its closure and runs
-directly in the declared provider container, whose own `dockerNetwork=off`
-property denies the guest network.
-
-The only Java involved is the small mechanical launcher in
-`//platform/tools/boundary`, which prepares the metadata manifest and the
-process boundary. Policy,
-classification, verdict formatting, fixture cases and isolation assertions live
-in Flix.
+The default demo runs main; tests use the pinned compiler's native test engine.
+Local actions use a pinned user/network namespace. The opt-in remote profile
+uses the BuildBuddy container's network isolation. Java resolves paths and
+launches processes; Flix owns policy, assertions, and results.
 """
 
 load("@rules_java//java/common:java_info.bzl", "JavaInfo")
@@ -84,6 +69,20 @@ def _native_test(name, srcs, flags, extra_data, size, tags, data, host_isolation
             "-Dattune.flix=$(rlocationpath %s)" % _FLIX,
         ] + attune_isolation_flags(host_isolation),
         tags = tags,
+    )
+
+def native_flix_binary(name, srcs):
+    """Run one ordinary Flix main inside the same offline boundary as the tests."""
+    native.java_binary(
+        name = name,
+        main_class = "attune.tools.boundary.NativeLaunch",
+        runtime_deps = ["//platform/tools/boundary:native_launch"],
+        data = srcs + attune_isolation_data(False) + [_FLIX],
+        jvm_flags = [
+            "-Dattune.mode=run",
+            "-Dattune.tests=" + _rlocation(srcs),
+            "-Dattune.flix=$(rlocationpath %s)" % _FLIX,
+        ] + attune_isolation_flags(False),
     )
 
 def native_flix_test(name, srcs, size = "small", tags = [], data = [], host_isolation = False):
@@ -479,13 +478,7 @@ def _native_study_stage_impl(ctx):
     # profile runs directly in the provider container and declares neither the
     # Nix-store binary nor its closure.
     declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath) + jars
-    declared_inputs.extend(ctx.files.world_sources)
     declared_inputs.extend(ctx.files.native_libs)
-    # A population a stage opens through a declared path manifest carries no
-    # binding name of its own, so its bytes are declared here: the manifest names
-    # the action paths, and these are the artifacts those paths name. Without
-    # this the action would name a path it never declared as an input.
-    declared_inputs.extend(ctx.files.extra_inputs)
     args = ctx.actions.args()
     if jars:
         args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
@@ -495,22 +488,6 @@ def _native_study_stage_impl(ctx):
         # launcher only makes the declared paths absolute and forwards them; it
         # loads nothing and decides nothing.
         args.add("-Dattune.libs=" + ",".join([library.path for library in ctx.files.native_libs]))
-    if ctx.files.world_sources:
-        # A whole-world stage (the clean-source extraction) declares every source
-        # byte of one exact world here. A world can carry thousands of files, so
-        # the declared list is written to a declared manifest file and bound as
-        # `world_manifest` rather than joined onto the command line: a single
-        # argument would exceed the platform's argument-length limit. The
-        # launcher rewrites that manifest into the absolute-path `worldsources`
-        # binding, so the stage law reads the exact declared source set rather
-        # than a path of its own.
-        world_manifest = ctx.actions.declare_file(ctx.label.name + ".worldsources.txt")
-        ctx.actions.write(
-            world_manifest,
-            "\n".join([source.path for source in ctx.files.world_sources]) + "\n",
-        )
-        args.add("-Dattune.world_manifest=" + world_manifest.path)
-        declared_inputs.append(world_manifest)
     if ctx.file.receipt_plan:
         # A declared measurement stage: the launcher executes this bounded argv
         # plan through the mechanical receipt boundary before the stage law runs,
@@ -534,12 +511,6 @@ def _native_study_stage_impl(ctx):
     args.add("-Dattune.mode=stage")
     args.add("-Dattune.stage=" + ctx.attr.stage)
     args.add("-Dattune.label=" + ctx.label.name)
-    if ctx.attr.deadline_seconds > 0:
-        # A stage that declares a bounded wall-clock deadline hands it to the
-        # existing mechanical launcher, which kills the stage's child worker
-        # out-of-process when the declared bound is exceeded. No in-process
-        # cancellation is created or claimed; the world stays a partial UNKNOWN.
-        args.add("-Dattune.stage_deadline=" + str(ctx.attr.deadline_seconds))
     args.add("-Dattune.outputs=" + out.path)
     args.add("-Dattune.tests=" + ",".join(sources))
     if specs:
@@ -565,11 +536,8 @@ _native_study_stage = rule(
         "input_names": attr.string_list(),
         "stage": attr.string(mandatory = True),
         "receipt_plan": attr.label(allow_single_file = True),
-        "deadline_seconds": attr.int(default = 0),
         "java_deps": attr.label_list(providers = [JavaInfo]),
         "native_libs": attr.label_list(allow_files = True),
-        "world_sources": attr.label_list(allow_files = True),
-        "extra_inputs": attr.label_list(allow_files = True),
         "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
         "unshare_binary": attr.label(allow_single_file = True),
         "unshare_closure": attr.label(allow_files = True),
@@ -581,48 +549,19 @@ _native_study_stage = rule(
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
-def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], extra_inputs = [], host_isolation = False, deadline_seconds = 0, **kwargs):
-    """Materialize one declared study stage tree through the authentic native Tester.
-
-    The action runs the pinned compiler's authentic native test engine over the
-    explicit declared stage sources with the declared input artifacts bound by
-    name, then materializes the declared output tree that stage's law wrote into.
-    The launcher decides no policy: it creates the output directory, binds the
-    inputs and the exact output location, and fails when the engine failed or the
-    law wrote nothing.
-
-    `inputs` and `input_names` are positional pairs: each declared input artifact
-    is bound under the matching name, so the stage law resolves a declared name
-    rather than a path of its own. Each input must resolve to exactly one
-    artifact.
-
-    `receipt_plan` names a declared bounded argv plan the launcher executes
-    through the mechanical process-receipt boundary before the stage law runs;
-    the law then reduces the real receipts. `java_deps` names the explicit
-    dependency jars a Java-backed stage law (the Arrow Parquet reducer) compiles
-    and runs against. `native_libs` names the prepared shared libraries a stage
-    law that drives the pinned native Grit engine loads. `world_sources` names a
-    whole declared world source set: the launcher rewrites it into an
-    absolute-path manifest bound as `worldsources`, so a clean-source extraction
-    stage reads exactly the declared source bytes.
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], host_isolation = False, **kwargs):
+    """Run a Flix artifact-writing stage with named inputs and one output tree.
 
     Args:
-      name: the stage target name, which also names its declared tree output.
-      stage: the declared stage identity the law dispatches on.
-      srcs: the explicit declared Flix stage sources.
-      inputs: the declared input artifacts, in the same order as `input_names`.
-      input_names: the declared binding name of each input.
-      receipt_plan: the declared bounded argv plan this measurement stage executes.
-      java_deps: the explicit dependency jars a Java-backed stage law consumes.
-      native_libs: the prepared shared libraries a native-engine stage law loads.
-      world_sources: the declared whole-world source set a stage reads by path.
-      extra_inputs: declared artifacts the stage opens through a declared path
-        manifest. They carry no binding name of their own, so a population a
-        stage names by manifest declares its own bytes here.
-      host_isolation: pins the host `unshare` boundary instead of the portable route.
-      deadline_seconds: the declared out-of-process wall-clock bound, or 0 for the
-        ordinary unbounded wait; a stage that declares one is killed by the
-        launcher when it exceeds the bound and stays a partial UNKNOWN.
+      name: target and output tree name.
+      stage: operation selected by the Flix stage.
+      srcs: explicit Flix sources.
+      inputs: one artifact per name in input_names.
+      input_names: names the stage uses to open its declared inputs.
+      receipt_plan: optional bounded process plan, executed before the stage.
+      java_deps: dependency jars for the compiler.
+      native_libs: prepared shared libraries for a native boundary.
+      host_isolation: require the local user/network namespace.
       **kwargs: forwarded to the underlying rule.
     """
     if len(inputs) != len(input_names):
@@ -651,11 +590,8 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
         inputs = inputs,
         input_names = input_names,
         receipt_plan = receipt_plan,
-        deadline_seconds = deadline_seconds,
         java_deps = java_deps,
         native_libs = native_libs,
-        world_sources = world_sources,
-        extra_inputs = extra_inputs,
         isolation = isolation,
         unshare_binary = unshare_binary,
         unshare_closure = unshare_closure,

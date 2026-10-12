@@ -1,7 +1,0 @@
-label	ember-cli__eslint-plugin-ember-107	w63
-provenance	ember-cli/eslint-plugin-ember	9cde36a38d1e57cd64812a7a44ac0f42df16905c	eea3be0aa0bd0ecd8a74a1e6e056c33d4a320d6933c2720775d5dda11cad7253	reference-patch	63	2925
-entry	modified	README.md	other	source	regular	absent	ineligible
-entry	modified	lib/rules/use-brace-expansion.js	js-ts	source	regular	present	eligible
-gold	lib/rules/use-brace-expansion.js
-coverage	full	2	supported	1
-case	eligible-gold

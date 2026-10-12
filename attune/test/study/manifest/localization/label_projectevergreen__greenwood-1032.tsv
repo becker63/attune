@@ -1,6 +1,0 @@
-label	projectevergreen__greenwood-1032	w47
-provenance	ProjectEvergreen/greenwood	e7a08b6fcf7aa60f69491ec6aff591823991b7f6	9cab037a8c6984b4ecc88f1cd435b62ea3cce656f9f469bf719e44e5ccc68bef	reference-patch	49	1682
-entry	modified	packages/cli/src/plugins/resource/plugin-standard-css.js	js-ts	source	regular	present	eligible
-gold	packages/cli/src/plugins/resource/plugin-standard-css.js
-coverage	full	1	supported	1
-case	eligible-gold

@@ -1,9 +1,0 @@
-label	sindresorhus__got-2043	w72
-provenance	sindresorhus/got	c25af092bf792c2c7e29db848a569f2eb3e527f8	16910a89a83a08478dabfba2ea8f7bf5205a05acf0e41a720504654be2b089c3	reference-patch	53	1769
-entry	modified	documentation/3-streams.md	other	source	regular	absent	ineligible
-entry	modified	source/core/index.ts	js-ts	source	regular	present	eligible
-entry	modified	source/core/response.ts	js-ts	source	regular	present	eligible
-gold	source/core/index.ts
-gold	source/core/response.ts
-coverage	full	3	supported	2
-case	eligible-gold

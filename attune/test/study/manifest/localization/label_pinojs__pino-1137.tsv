@@ -1,8 +1,0 @@
-label	pinojs__pino-1137	w90
-provenance	pinojs/pino	21ee5e2a03835dca7652f7b66905ae436c92e7d1	4e5aa7c2188d11820491a6ce7839fc5c542e5dbbad8ad32004df2a3b9219a28e	reference-patch	28	676
-entry	modified	file.js	js-ts	source	regular	present	eligible
-entry	modified	lib/proto.js	js-ts	source	regular	present	eligible
-gold	file.js
-gold	lib/proto.js
-coverage	full	2	supported	2
-case	eligible-gold

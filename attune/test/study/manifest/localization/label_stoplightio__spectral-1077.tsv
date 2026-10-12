@@ -1,6 +1,0 @@
-label	stoplightio__spectral-1077	w75
-provenance	stoplightio/spectral	ec6b829a8bfa047882b9939738c6f95eb180c5aa	789d72804d018952a319565a8c4026af369e7866be7e2ef0b67223538b932771	reference-patch	209	6775
-entry	modified	src/rulesets/oas/functions/oasPathParam.ts	js-ts	source	regular	present	eligible
-gold	src/rulesets/oas/functions/oasPathParam.ts
-coverage	full	1	supported	1
-case	eligible-gold

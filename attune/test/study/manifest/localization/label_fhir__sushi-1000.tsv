@@ -1,6 +1,0 @@
-label	fhir__sushi-1000	w8
-provenance	FHIR/sushi	2f6adfd82de60ef6d810a3345dc953c7387da732	9e5b784cc263371bd6289a6354bddcbfbc9c156c11ed0f475ee1721aca45f814	reference-patch	17	723
-entry	modified	src/export/InstanceExporter.ts	js-ts	source	regular	present	eligible
-gold	src/export/InstanceExporter.ts
-coverage	full	1	supported	1
-case	eligible-gold

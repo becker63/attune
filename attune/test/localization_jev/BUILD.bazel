@@ -1,96 +1,12 @@
-load("//platform/build:native.bzl", "native_flix_test", "native_study_stage")
-load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
-load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+load("//platform/build:native.bzl", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population.
 filegroup(
     name = "policy_files",
     srcs = glob(["**"]),
 )
 
-# The post-hoc exploratory JEV A pair (`VAL-JEV-001/002/003`) is a strictly
-# downstream consumer. It binds the warm `//test/localization_runtime` arm ranking
-# trees and the admitted evaluator label artifacts; it declares no world
-# extraction, Theory lowering, variant ranking or selection target, so running it
-# re-executes no upstream action and no frozen deterministic result is touched.
-#
-# `decisions_A.tsv` and `decisions_S.tsv` are the admitted sanitized typed-decision
-# manifests of the paired A ablation: one row per logical decision carrying the
-# frozen decision fields (condition, task, public candidate path, original P+A
-# rank, typed outcome, structural-evidence flags) followed by the batch-level
-# provider evidence read back from the persisted receipt. They were produced by
-# the approved mission-local Java mechanical receipt writer over the configured
-# MCP stdio `jev_decide` route; the writer's receipts stay local, non-cacheable
-# mission artifacts and are never a Bazel, Nix or CAS input. The manifests are
-# immutable public fixtures (no payload, no response, no credential).
-#
-# The frozen prompt identities are recorded here as the exact template bytes:
-# `prompt_a.template.txt` (A-control) and `prompt_a_structure.template.txt`
-# (A-structure), both fixed before any A-pair outcome.
-STAGE_SRCS = [
-    "JevStages.flix",
-    "//src:Attune.flix",
-    "//src:Attune/Coverage.flix",
-    "//src:Attune/Study.flix",
-    "//src:Attune/Study/Jev.flix",
-    "//src:Attune/Study/Metrics.flix",
-]
-
-_EXCLUDED_GROUPS = [entry["group"] for entry in RUNTIME_CAPPED_EXCLUSIONS]
-
-# The surviving tasks of the frozen runtime-capped cohort, derived from the same
-# admitted manifest the cohort macro consumes so the JEV population cannot drift
-# from the deterministic result it extends.
-_DERIVED_TASKS = [
-    row
-    for row in LOCALIZATION_ANALYSIS
-    if len(row) > 3 and row[0] == "task" and row[2] not in _EXCLUDED_GROUPS
-]
-
-_RANK_INPUTS = [
-    "//test/localization_runtime:rank_%s" % row[1]
-    for row in _DERIVED_TASKS
-]
-
-_RANK_NAMES = ["rank_%s" % row[1] for row in _DERIVED_TASKS]
-
-_LABEL_INPUTS = [
-    "//test/study:manifest/localization/label_%s.tsv" % row[1]
-    for row in _DERIVED_TASKS
-]
-
-_LABEL_NAMES = ["label_%s" % row[1] for row in _DERIVED_TASKS]
-
-# The one JEV stage: it reranks each surviving task's frozen P+A ranking under the
-# frozen stable promotion, reduces P, P+A, P+A+J and P+A+J(structure) through the
-# canonical `Attune.Study.Metrics`, and emits the metric rows, the contrasts, the
-# evaluator-only diagnostics and the complete rerank record. `manual` like every
-# corpus-bound stage, so the ordinary `bazel test //...` gate never touches the
-# corpus.
-native_study_stage(
-    name = "jev_rerank_metrics",
-    srcs = STAGE_SRCS,
-    input_names = [
-        "mapped",
-        "decisions_a",
-        "decisions_s",
-    ] + _RANK_NAMES + _LABEL_NAMES,
-    inputs = [
-        "//test/study:manifest/localization/mapped.tsv",
-        ":decisions_A.tsv",
-        ":decisions_S.tsv",
-    ] + _RANK_INPUTS + _LABEL_INPUTS,
-    stage = "jev_rerank_metrics",
-    tags = ["manual"],
-)
-
-# The corpus-free rerank laws (`VAL-JEV-003`): they drive the exact production
-# promotion statement in `Attune.Study.Jev` with hand-built immutable rankings and
-# typed decisions, so the promotion rule is pinned without touching the corpus.
-# Pure, so unlike the stage it is not `manual` and the ordinary offline gate runs
-# it.
 native_flix_test(
     name = "jev_law",
     srcs = [
@@ -101,10 +17,4 @@ native_flix_test(
         "//src:Attune/Study/Jev.flix",
         "//src:Attune/Study/Metrics.flix",
     ],
-)
-
-test_suite(
-    name = "all",
-    tags = ["manual"],
-    tests = [":jev_law"],
 )

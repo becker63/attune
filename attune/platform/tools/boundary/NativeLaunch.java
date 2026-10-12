@@ -10,59 +10,21 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Mechanical launcher for the native Flix test targets.
+ * Launch declared Flix sources with the pinned compiler and an isolated environment.
  *
- * <p>Every first-party executable check is a native Flix {@code @Test}
- * declaration. This launcher only performs the unavoidable process and
- * filesystem interop: it prepares the metadata manifest the Flix evaluator
- * reads, then runs the pinned 0.76.1 compiler's authentic native test engine
- * over the explicit declared files with an allowlisted environment. It decides
- * no policy, classifies nothing and formats no verdict; a non-zero exit from
- * the engine is this process's failure, and an isolation failure is fatal with
- * no fallback.
+ * <pre>
+ * Bazel inputs -> resolve paths -> isolated compiler -> main, tests, or artifacts
+ * </pre>
  *
- * <p>Isolation has exactly two declared modes and the launcher never claims
- * one it did not create. In {@code unshare} (the default, and the ordinary
- * local gate) the inner step runs inside the pinned util-linux user/network
- * namespace, so the mechanical boundary record reports a distinct network
- * namespace and the Flix-owned isolation assertions can hold. In
- * {@code platform}, declared by the opt-in remote profile, the inner step runs
- * directly in the declared BuildBuddy Linux container: no namespace is created
- * here and no such claim is made, and the guest network denial comes from the
- * platform's declared {@code dockerNetwork=off} execution property. The
- * boundary record is still written, so the facts of whichever mode ran remain
- * inspectable.
+ * <p>Local actions use a user/network namespace. Remote actions use the declared
+ * BuildBuddy container with networking disabled. The boundary record reports
+ * which isolation actually ran; an isolation failure has no fallback.
  *
- * <p>Two declared-artifact modes extend the same route without a new engine. In
- * {@code produce} the launcher runs the pinned compiler's authentic native
- * Tester over the explicit declared sources and jars and materializes one
- * declared output tree: an immutable regular-file copy of each exported source
- * beside a mechanical {@code closure.tsv} naming the exact source/jar/binding
- * closure. In a consumer test the launcher walks each declared producer tree,
- * writes the measured listing the Flix law classifies, and appends the tree's
- * own Flix sources to the pinned Tester's file list, so the consumer really
- * compiles the producer's exported source. Both modes only resolve declared
- * locations, copy bytes and record measured metadata.
- *
- * <p>Two declared study-graph modes extend the same route without a new engine
- * or an authored entrypoint. In {@code stage} the launcher binds the declared
- * inputs and the exact output location, runs the pinned Tester in a child
- * process over the explicit declared stage sources, and materializes the
- * declared tree the stage law wrote into. In {@code copytree} it copies explicit
- * declared regular files into one declared directory, so a baseline/A/B/AB
- * variant is an immutable tree artifact. Both decide no policy: the stage law
- * owns the records, the launcher only resolves declared locations and copies
- * bytes, and a stage that writes nothing fails rather than emitting an empty
- * tree.
- *
- * <p>One test-only fault fixture extends the receipt route: {@code drainprobe}
- * drives the production bounded drain over deterministic faulty streams and
- * emits the production receipt records, so a native law can prove that a
- * post-start log I/O failure cannot become a clean measurement. It is a
- * declared action, not a production fault endpoint, and it decides no policy.
+ * <p>Tests and artifact stages share this launcher. Stages bind explicit inputs
+ * and outputs; source-tree actions copy declared files. Receipt fixtures use the
+ * bounded process runner. Flix owns interpretation, assertions, and verdicts.
  */
 public final class NativeLaunch {
     private NativeLaunch() {}
@@ -176,6 +138,7 @@ public final class NativeLaunch {
         command.add(work.toString());
         command.add(flixJar.toString());
         command.add(hostNetns());
+        if (mode.equals("run")) command.add("run");
         command.addAll(tests);
         return launch(command, work);
     }
@@ -215,52 +178,6 @@ public final class NativeLaunch {
         ProcessBuilder builder = process(command, work);
         builder.inheritIO();
         return builder.start().waitFor();
-    }
-
-    /// Launch the declared stage command, enforcing the declared out-of-process
-    /// deadline when the stage declares one. Without a declared deadline the
-    /// ordinary unbounded wait is used and nothing about the run changes.
-    private static int launchStage(List<String> command, Path work, Path out, String stage) throws Exception {
-        long seconds = 0;
-        try {
-            seconds = Long.parseLong(System.getProperty("attune.stage_deadline", "0").trim());
-        } catch (NumberFormatException ignored) {
-            seconds = 0;
-        }
-        return seconds > 0 ? launchBounded(command, work, seconds, out, stage) : launch(command, work);
-    }
-
-    /// Launch the declared stage command under a declared out-of-process
-    /// wall-clock deadline.
-    ///
-    /// <p>The deadline is enforced by killing the child process tree, which is
-    /// the only deadline mechanism that exists here: no file-based interrupt is
-    /// created and no in-process cancellation is claimed. The law never ran, so
-    /// the stage writes no scientific record; the launcher writes one mechanical
-    /// `deadline.tsv` record naming the observed fact, and the stage is then a
-    /// partial world the study law classifies UNKNOWN. A released worker's
-    /// elapsed work is retained in that record rather than assumed.
-    private static int launchBounded(List<String> command, Path work, long seconds, Path out, String stage)
-            throws Exception {
-        ProcessBuilder builder = process(command, work);
-        builder.inheritIO();
-        Process process = builder.start();
-        long started = System.nanoTime();
-        boolean finished = process.waitFor(seconds, TimeUnit.SECONDS);
-        long elapsedMillis = (System.nanoTime() - started) / 1_000_000L;
-        if (finished) {
-            return process.exitValue();
-        }
-        process.descendants().forEach(ProcessHandle::destroyForcibly);
-        process.destroyForcibly();
-        process.waitFor();
-        List<String> record = new ArrayList<>();
-        record.add("deadline\t" + stage + "\tdeadline-exceeded\tkilled\t"
-                + Long.toString(seconds) + "\t" + Long.toString(elapsedMillis));
-        Files.write(out.resolve("deadline.tsv"), record, StandardCharsets.UTF_8);
-        System.err.println("the declared stage exceeded its out-of-process deadline of " + seconds
-                + "s and its worker was killed; the world stays a partial UNKNOWN");
-        return 0;
     }
 
     /// The declared isolation mode this run uses.
@@ -505,23 +422,6 @@ public final class NativeLaunch {
             }
         }
 
-        // A declared whole-world source set: the declared manifest names every
-        // source byte of one exact world. The launcher rewrites it into one
-        // absolute-path manifest the stage law reads. It is filesystem mechanics
-        // only; the law owns which bytes are source and what they mean.
-        String worldManifest = System.getProperty("attune.world_manifest", "");
-        if (!worldManifest.isEmpty()) {
-            List<String> lines = new ArrayList<>();
-            for (String line : Files.readAllLines(Path.of(worldManifest), StandardCharsets.UTF_8)) {
-                if (!line.isBlank()) {
-                    lines.add(Path.of(line.trim()).toAbsolutePath().toString());
-                }
-            }
-            Path manifest = work.resolve("attune-world-sources.tsv");
-            Files.write(manifest, lines, StandardCharsets.UTF_8);
-            bindings.add("worldsources=" + manifest.toAbsolutePath());
-        }
-
         // A declared measurement stage runs its bounded argv plan through the
         // exact mechanical receipt boundary before the stage law executes, and
         // the receipt tree is bound beside the other declared inputs. The
@@ -573,7 +473,7 @@ public final class NativeLaunch {
         for (String source : tester) {
             command.add(Path.of(source).toAbsolutePath().toString());
         }
-        int status = launchStage(command, work, out, stage);
+        int status = launch(command, work);
         if (status != 0) {
             System.err.println("the pinned native Tester failed over the declared stage sources: exit " + status);
             return status;

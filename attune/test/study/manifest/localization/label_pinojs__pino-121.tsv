@@ -1,7 +1,0 @@
-label	pinojs__pino-121	w92
-provenance	pinojs/pino	5e5e543033f5a0596142e0c8af6693a393c28013	f26ddb570f6d6e39a474257e0ead7903f9cfe1876b05f6243b2f4836b9e1cd0b	reference-patch	51	1502
-entry	modified	README.md	other	source	regular	absent	ineligible
-entry	modified	pretty.js	js-ts	source	regular	present	eligible
-gold	pretty.js
-coverage	full	2	supported	1
-case	eligible-gold

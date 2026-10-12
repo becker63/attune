@@ -3,8 +3,7 @@ module(
     version = "0.1.0",
 )
 
-# The pinned Flix compiler is a declared, checksummed engineering dependency.
-# It is a private build tool, never a public project verb.
+# The checksummed compiler used by the demo, artifact stages, and native tests.
 http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
 
 http_jar(
@@ -17,11 +16,7 @@ bazel_dep(name = "rules_java", version = "9.9.0")
 bazel_dep(name = "rules_jvm_external", version = "7.1")
 bazel_dep(name = "platforms", version = "1.1.0")
 
-# The pinned native Grit closure: the Rust toolchain, the hermetic LLVM toolchain
-# (Rust cdylibs link against its real libunwind archive), rules_cc for that link
-# edge, and the crate universe generated from the frozen Grit lock. Every input
-# below is a pinned, non-secret engineering dependency of the inherited Grit
-# support; the one newly approved Rust extension lives in platform/support/grit/lib.rs.
+# Grit uses a pinned Rust toolchain and LLVM linker, including libunwind.
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_rust", version = "0.74.0")
 bazel_dep(name = "llvm", version = "0.8.21")
@@ -40,12 +35,8 @@ use_repo(rust, "rust_toolchains")
 
 register_toolchains("@rust_toolchains//:all")
 
-# One content-addressed materialization of the frozen Grit source. The Grit pin
-# `c80b3026471b229f41b279c3eb0c162dcdacfdb1` is unchanged; Attune's admitted
-# languages are extensions of that one closure (Java and Ruby simply stop being
-# stripped; Flix and Starlark are two additional pinned Tree-sitter grammars).
-# The Flix grammar revision is the SAME revision `platform/zed/extension.toml` pins for
-# the editor, so Grit and Zed cannot drift onto two Flix grammars.
+# One pinned Grit source tree, extended with the Flix and Starlark grammars.
+# The Flix grammar pin also matches the Zed editor assets.
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 
 gritql_repository = use_repo_rule("//platform/build:grit_repository.bzl", "gritql_repository")
@@ -75,11 +66,8 @@ crate.from_cargo(
 )
 use_repo(crate, "grit_crates")
 
-# The approved typed JVM seams: the LangChain4j 1.18.1 SDK path (with its
-# pinned Jackson 2.22.1) and the Arrow 19.0.0 Dataset/Parquet codec. These are
-# declared engineering dependencies, never a live provider, dataset or
-# credential. They are resolved by the ordinary package-provisioning step; the
-# test actions themselves make no network call.
+# SDK transport and Parquet interop. Tests use recorded transport;
+# dependency downloads are separate from isolated action execution.
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
     name = "attune_maven",
@@ -98,67 +86,35 @@ maven.install(
 )
 use_repo(maven, "attune_maven")
 
-# The narrow Node/TypeScript adapter closure (owner-authorized 2026-10-09). The
-# mission's implementation-language restriction is lifted ONLY for the bounded
-# DSH/Typert evidence substrate: compatible pinned Aspect rules_js/rules_ts and
-# rules_nodejs, the pinned Node 24.18.1 runtime the installed DSH 0.2.0-rc.2
-# package itself runs on, the pinned pnpm used to translate the DSH npm lock, and
-# the real Typert 0.2.0-rc.2 generator. None of this Bazelizes the upstream DSH
-# monorepo; it packages one narrow declared adapter. The whole workspace is never
-# `--config=remote`d wholesale for this closure: only the explicitly selected
-# adapter and smoke targets declare the Node toolchain and the npm packages.
+# One DSH evidence tool, an installable Cordis package, and real Typert generation.
 bazel_dep(name = "rules_nodejs", version = "6.7.6")
 bazel_dep(name = "aspect_rules_js", version = "2.9.3")
 bazel_dep(name = "aspect_rules_ts", version = "3.5.1")
 
-# The one pinned Node runtime of the adapter closure. It is the SAME Node minor
-# the installed pinned DSH package is launched with
-# (`/nix/store/...-nodejs-24.18.1`), so the hermetic Bazel Node and the observed
-# local DSH Node cannot drift onto two runtimes. `nodejs_toolchains` is the
-# rules_nodejs toolchain repo; the runtime toolchain must register before the
-# non-runtime one (rules_nodejs's own bzlmod ordering requirement).
+# Register runtime toolchains before the Node execution toolchains.
 nodejs = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
 nodejs.toolchain(node_version = "24.18.1")
 use_repo(nodejs, "nodejs_toolchains")
 
 register_toolchains("@nodejs_toolchains//:linux_amd64_runtime_toolchain")
+
 register_toolchains("@nodejs_toolchains//:linux_amd64_toolchain")
+
 register_toolchains("@nodejs_toolchains//:linux_arm64_runtime_toolchain")
+
 register_toolchains("@nodejs_toolchains//:linux_arm64_toolchain")
 
-# The single authoritative npm translation of the DSH 0.2.0-rc.2 dependency
-# graph. The committed `platform/dsh/package-lock.json` is the unchanged user
-# Nix package lock; `platform/dsh/pnpm-lock.yaml` is its ordinary `pnpm import`
-# translation (no hand edit), and this extension fetches exactly the packages
-# that lock names. No host `npm install` and no global package ever repairs a
-# missing dependency: an undeclared dependency fails the action.
+# The npm lock records the pinned DSH dependency graph. Its pnpm import is
+# Bazel's input; neither lock is hand-edited. Missing dependencies fail the action.
 dsh_npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 dsh_npm.npm_translate_lock(
     name = "dsh_npm",
     data = ["//platform/dsh:package.json"],
     pnpm_lock = "//platform/dsh:pnpm-lock.yaml",
-    # The two native-addon families in the DSH graph resolve their platform
-    # package by a bare `require` of the family name suffixed with the platform
-    # triple, from a loader that lives under `.aspect_rules_js/`, i.e. outside
-    # the package whose `optionalDependencies` declare it. A flat hoist of
-    # exactly those platform packages to `platform/dsh/node_modules` is what
-    # Node's ordinary resolution needs; nothing else is hoisted, so no other
-    # dependency resolution changes.
-    #
-    # `@deepseek-ai/cordis` is hoisted for the same ordinary-resolution reason:
-    # the narrow installable evidence-contract package is a Cordis plugin whose
-    # declared peer is `@deepseek-ai/cordis ~4.0.4`, so a consumer under
-    # `platform/dsh/` must resolve that exact pinned peer by its bare name. It is
-    # the peer the whole DSH graph already resolves to, so this adds no second
-    # copy and changes no other dependency's resolution.
+    # Bare imports need these pinned peers and platform addons at the package root.
     public_hoist_packages = {
         "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
-        # The supported durable session backends the local integration profile
-        # imports a native bundle through: the JSONL persistence backend is the
-        # one the pinned DSH itself writes, and the SQLite session-query backend
-        # is its supported derived index. Both are transitive members of the
-        # declared graph; the flat hoist is what the integration package's bare
-        # `import` needs, exactly as `dsh-tools` and `cordis` are hoisted above.
+        # Retain the upstream runtime's session peers without adding another copy.
         "@deepseek-ai/dsh-session-persistence-jsonl@0.2.0-rc.2": ["platform/dsh"],
         "@deepseek-ai/dsh-session-query-sqlite@0.2.0-rc.2": ["platform/dsh"],
         "@deepseek-ai/dsh-session@0.2.0-rc.2": ["platform/dsh"],
@@ -171,9 +127,7 @@ dsh_npm.npm_translate_lock(
 )
 use_repo(dsh_npm, "dsh_npm")
 
-# The declared isolation tool: pinned util-linux `unshare` and its runtime
-# closure, resolved from the Nix developer shell PATH (never a hardcoded
-# readiness cache path).
+# Resolve pinned user/network isolation tools from Nix.
 local_unshare = use_repo_rule("//platform/build:unshare_repository.bzl", "local_unshare")
 
 local_unshare(name = "unshare")
@@ -184,17 +138,8 @@ local_workspace = use_repo_rule("//platform/build:workspace_root.bzl", "local_wo
 
 local_workspace(name = "local_workspace")
 
-# Existing BuildBuddy integration. The toolchain supplies the remote platform
-# labels; the ordinary `bazel test //...` gate does not use them.
-#
-# The extension's built-in `UBUNTU22_04_IMAGE` constant resolves to the mutable
-# tag `gcr.io/flame-public/rbe-ubuntu22-04:latest`, so the declared execution
-# platform would carry a moving runtime identity and no execution record could
-# name the bytes that actually ran. The extension's supported `container_image`
-# attribute instead declares the registry-resolved immutable digest of that same
-# image (resolved from the tag with a read-only registry lookup on 2026-10-05),
-# on the same compatible `Arch=arm64`, `OSFamily=Linux`, `dockerNetwork=off`
-# platform. No tool, version, account or pool changes with it.
+# Opt-in remote execution uses an immutable container digest with networking off.
+# Default tests run locally.
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
 
 buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
@@ -202,526 +147,3 @@ buildbuddy.platform(
     container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
 )
 use_repo(buildbuddy, "buildbuddy_toolchain")
-
-# The one approved public corpus artifact (VAL-DATA-001): the main issue-based
-# `nebius/SWE-rebench-V2` release at one immutable revision and one immutable
-# path. The URL carries the revision and the path, and the provider's own
-# SHA-256 pins the exact bytes, so a mutated, substituted or different-revision
-# file fails the fetch rather than entering the study. The declared identity is
-# duplicated nowhere as truth: `Attune.Study`'s `CatalogPin` contract and its one
-# `catalogFindings` comparison own the pin, and the acquisition stage recomputes
-# the SHA-256 of the materialized bytes, so a drift between this URL and that
-# declaration fails the catalog law instead of passing quietly.
-#
-# The declaration is placed last on purpose: adding a `use_repo_rule` repo before
-# the `grit_crates` extension renumbers the anonymous repos and fails the pinned
-# `platform/support/grit/cargo-bazel-lock.json` resolution digest. Declaring it
-# last leaves that inherited lock untouched.
-#
-# This is a public-input acquisition, distinct from the credential-free,
-# network-denied scientific guests: the fetch happens on the client, and no
-# action that executes a reference obligation ever reaches the network. It is
-# requested only by the explicitly selected `manual` `//test/catalog` targets,
-# so the ordinary `bazel test //...` gate never acquires the corpus.
-http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
-
-http_file(
-    name = "swe_rebench_v2_catalog",
-    sha256 = "0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad",
-    urls = ["https://huggingface.co/datasets/nebius/SWE-rebench-V2/resolve/10483de0f50fe5da545942705a76c6150171af7f/data/train-00000-of-00001.parquet"],
-)
-
-# The approved clean-source acquisition of the selected panel's exact worlds: the
-# same declared world/archive/revision/digest identity record the localization
-# label stage verified, turned into real materialized source bytes. The manifest
-# is the admitted `Attune.Study` archive identity record
-# (`//test/study/manifest/catalog:archives.tsv`), so no repository, revision or
-# digest is restated here as truth. Each archive is fetched on the client and
-# verified against its declared SHA-256 before extraction, exactly like the
-# pinned catalog above, and no scientific action ever reaches the network.
-#
-# Declared last for the same reason as the catalog: a `use_repo_rule` repo
-# declared before the `grit_crates` extension renumbers the anonymous repos and
-# fails the pinned `cargo-bazel-lock.json` resolution digest.
-world_sources = use_repo_rule("//platform/build:world_archives.bzl", "attune_world_sources")
-
-world_sources(
-    name = "attune_worlds",
-    manifest = "//test/study:manifest/catalog/archives.tsv",
-)
-
-# The approved POST-HOC EXPLORATORY EMBEDDING runtime and model (owner 2026-10-07).
-# Both read the ONE declared identity record
-# `//platform/embedding:runtime-lock.tsv`: the pinned CodeRankEmbed revision's
-# model files and the digest-pinned Python/PyTorch inference wheels. Each artifact
-# is verified against its declared SHA-256 on the client before it is materialized
-# as a portable declared input, so a remote action can carry the exact runtime
-# bytes in the CAS and no inference ever runs on the host. Declared last for the
-# same anonymous-repo renumbering reason as the catalog and world archives above.
-embedding_runtime = use_repo_rule("//platform/build:embedding_runtime.bzl", "attune_embedding_runtime")
-
-embedding_runtime(
-    name = "attune_embedding_runtime",
-    lock = "//platform/embedding:runtime-lock.tsv",
-)
-
-embedding_model = use_repo_rule("//platform/build:embedding_runtime.bzl", "attune_embedding_model")
-
-embedding_model(
-    name = "attune_embedding_model",
-    lock = "//platform/embedding:runtime-lock.tsv",
-)
-
-# The approved hosted-Qwen (Q) continuation (owner 2026-10-07). Q's only route is
-# the hosted OpenRouter embeddings API reached through the pinned LangChain4j
-# 1.18.1 SDK, so its vectors are acquired on the host by the mission-local
-# acquisition helper — whose one authorized credential read never becomes a build
-# input — and are admitted here as declared inputs. The committed sanitized
-# manifest `//test/localization_qwen:fixture-manifest.tsv` carries identity only
-# (group, side, logical rows, unique inputs, truncated rows, unmeasured rows,
-# frozen cap, provider, resolved model, frozen recipe, digest), and every fixture
-# file is admitted
-# through a `file://` URL that must match its declared SHA-256. Declared last for
-# the same anonymous-repo renumbering reason as the catalog, world archives and
-# embedding runtime above.
-qwen_fixtures = use_repo_rule("//platform/build:qwen_fixtures.bzl", "attune_qwen_fixtures")
-
-qwen_fixtures(
-    name = "attune_qwen_fixtures",
-    manifest = "//test/localization_qwen:fixture-manifest.tsv",
-    root = "/home/becker/.cache/attune-qwen-fixtures",
-    token = "1",
-)
-
-# The ReviewBench paired study's hosted-Qwen (Q) assisted-context fixtures
-# (`VAL-REVIEW-002`, owner-authorized 2026-10-08). Same one route, same frozen
-# recipe and the same host-acquisition boundary as the localization Q branch: the
-# mission-local helper reads its one authorized credential entry internally and
-# materializes one immutable vector fixture file per declared group, and this
-# instance admits those files through the committed sanitized identity manifest
-# `//test/reviewbench_context:qwen-fixture-manifest.tsv` (identity only — group,
-# side, logical rows, unique inputs, truncated rows, unmeasured rows, frozen cap,
-# provider, resolved model, frozen recipe, digest) with a `file://` URL that must
-# match its declared SHA-256. A separate instance keeps the ReviewBench fixtures
-# distinct from the localization Q fixtures; a mutated or substituted fixture
-# fails the fetch instead of entering the study.
-reviewbench_qwen_fixtures = use_repo_rule("//platform/build:qwen_fixtures.bzl", "attune_qwen_fixtures")
-
-reviewbench_qwen_fixtures(
-    name = "reviewbench_qwen_fixtures",
-    manifest = "//test/reviewbench_context:qwen-fixture-manifest.tsv",
-    root = "/home/becker/.cache/attune-reviewbench-qwen",
-    token = "1",
-)
-
-# The ReviewBench JEV public-context observations (`VAL-REVIEW-002`, owner
-# decision 2026-10-08). The NATIVE Java OpenRouter Decisions boundary wrote its
-# sanitized observations beside its receipts OUTSIDE the mutable Bazel outputs;
-# this instance admits exactly that one sanitized file through the committed
-# identity record `//test/reviewbench_context:jev-observed-manifest.tsv` with a
-# `file://` URL that must match its declared SHA-256. No credential, no exact
-# payload and no raw provider body is admitted, and a mutated or substituted
-# manifest fails the fetch instead of entering the study.
-reviewbench_jev_observed = use_repo_rule("//platform/build:jev_observed.bzl", "attune_jev_observed")
-
-reviewbench_jev_observed(
-    name = "reviewbench_jev_observed",
-    manifest = "//test/reviewbench_context:jev-observed-manifest.tsv",
-    root = "/home/becker/.cache/attune-reviewbench-jev",
-    token = "1",
-)
-
-# The pinned Codex CLI of the standalone Sol scientific arm (owner-authorized
-# 2026-10-07, `library/sol-medium.md`). The arm's ChatGPT-plan SIWC route runs
-# the pinned Codex `0.160.1` app-server as a remote action, so its exact bytes
-# must be a declared, checksummed Bazel input rather than a host install. This
-# is the same public `openai/codex` release artifact the established smoke
-# (`invocation 097f5629-4658-426f-863e-8151069681f5`, remote PASS) ran: the
-# release tarball is pinned by SHA-256, and the single binary it carries
-# (`codex-aarch64-unknown-linux-musl`, SHA-256
-# `fbbaec80443919f86dd63648a0b62759cf6f1d0e09310602fde96885e0bceb3e`) is
-# byte-identical to the smoke's own copy. Declaring a new pinned tool repository
-# is additive: it edits no existing acquisition closure. Declared last for the
-# same anonymous-repo renumbering reason as the catalog, world archives,
-# embedding runtime and Qwen fixtures above.
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "codex_cli",
-    build_file_content = """package(default_visibility = ["//visibility:public"])
-
-exports_files(["codex-aarch64-unknown-linux-musl"])
-""",
-    sha256 = "f54dc5852042445bf41da3aa31156f3cb02f52c5a1a04074de73dc5598f7e1f7",
-    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/codex-aarch64-unknown-linux-musl.tar.gz"],
-)
-
-# The companion code-mode host of the same pinned release. The `codex`
-# app-server resolves its shell/read tool executor as a sibling file named
-# `codex-code-mode-host`, so without this binary every turn's tool path fails
-# closed and the model can never inspect a repository (the diagnosed defect of
-# the DISTINCT Sol inspected arm, `library/sol-inspected.md`). The asset is the
-# same public `openai/codex` release as `codex_cli` above, pinned by SHA-256; the
-# driver renames it to the exact sibling name the app-server looks for. Additive:
-# it edits no existing acquisition closure and no `.bazelrc`.
-http_archive(
-    name = "codex_code_mode_host",
-    build_file_content = """package(default_visibility = ["//visibility:public"])
-
-exports_files(["codex-code-mode-host-aarch64-unknown-linux-musl"])
-""",
-    sha256 = "e5e027e6689efda2e3570aa600179f0ebb18632803350e152ed6c9b97dcf9741",
-    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"],
-)
-
-# The bundled sandbox helper of the same pinned release. The code-mode host's
-# Linux sandbox launcher refuses to run a command without `bwrap`, and it looks
-# for the bundled copy at `codex-resources/bwrap` next to the Codex executable.
-# Without it the tool path is reachable but every command aborts, so a turn can
-# never read source (the second half of the diagnosed inspected-arm defect). The
-# asset is the same public `openai/codex` release, pinned by SHA-256; the driver
-# stages it under the exact relative path the launcher expects. Additive: no
-# existing acquisition closure and no `.bazelrc` edit.
-http_archive(
-    name = "codex_bwrap",
-    build_file_content = """package(default_visibility = ["//visibility:public"])
-
-exports_files(["bwrap-aarch64-unknown-linux-musl"])
-""",
-    sha256 = "5b2600ab05250bdf8b8b34f5dd8a8b543c941d2ad36a5213dfa93ad04d1a2bbd",
-    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/bwrap-aarch64-unknown-linux-musl.tar.gz"],
-)
-
-# The one approved additional corpus (`VAL-REVIEW-001`): the pinned ReviewBench
-# `corpus/manifest.json` at the exact commit
-# 66df3f322d0d85ea133ea9fa777f5d1a8c933c4e. The URL carries the commit and the
-# path, and the provider's own SHA-256 pins the exact bytes; the admission stage
-# recomputes both the SHA-256 and the git blob SHA-1 of the materialized bytes, so
-# a mutated, substituted or different-revision manifest fails its declared origin
-# comparison instead of entering the study. `Attune.Study.ReviewBench` owns the
-# declared contract; this URL is only the acquisition. This is a public-input
-# acquisition, distinct from the credential-free scientific guests: the fetch
-# happens on the client, and no action that reduces the study reaches the network.
-# It is requested only by the explicitly selected `manual` `//test/reviewbench`
-# targets, so the ordinary `bazel test //...` gate never acquires the corpus.
-# Declared last for the same anonymous-repo renumbering reason as the catalog,
-# world archives, embedding runtime, Qwen fixtures and Codex assets above.
-http_file(
-    name = "reviewbench_manifest",
-    sha256 = "e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/corpus/manifest.json"],
-)
-
-# The approved clean-source acquisition of the pinned ReviewBench cohort's exact
-# base and head worlds (`VAL-REVIEW-002`). The declared archive identity record
-# `//test/reviewbench:archives.tsv` names each world's mirror repository, exact
-# revision and exact archive digest; it is emitted by the real acquisition and
-# owned by `Attune.Study.ReviewBench`, so no repository, revision or digest is
-# restated here as truth. Each archive is fetched on the client and verified
-# against its declared SHA-256 before extraction, exactly like the pinned
-# localization worlds above, so a mutated or substituted archive fails the fetch
-# instead of entering the study, and both review arms read identical bytes. The
-# ordinary `bazel test //...` gate never fetches it: only the explicitly selected
-# `manual` `//test/reviewbench:reviewbench_measure` target declares it.
-# Declared last for the same anonymous-repo renumbering reason as the catalog,
-# world archives, embedding runtime, Qwen fixtures, Codex assets and manifest.
-world_sources(
-    name = "reviewbench_worlds",
-    manifest = "//test/reviewbench:archives.tsv",
-)
-
-# The pinned golden set of the admitted ReviewBench cohort's six candidate-bearing
-# tasks (`VAL-REVIEW-004`). Each file is the corpus's own per-task golden record
-# at the SAME commit the admission stage verified
-# (66df3f322d0d85ea133ea9fa777f5d1a8c933c4e); the URL carries the commit and the
-# path, and the provider's own SHA-256 pins the exact bytes, so a mutated or
-# substituted golden file fails the fetch instead of entering the judge.
-# `Attune.Study.ReviewBenchJudge` owns the declared judge protocol; these URLs are
-# only the acquisition. The golden set is requested ONLY by the explicitly
-# selected `manual` `//test/reviewbench_judge` judge targets, so the ordinary
-# `bazel test //...` gate never acquires it and no review, prediction or
-# assisted-context closure can reach it. Declared last for the same anonymous-repo
-# renumbering reason as the catalog, world archives, embedding runtime, Qwen
-# fixtures, Codex assets and manifest above.
-http_file(
-    name = "reviewbench_gold_agent_sh_agentsys_298",
-    sha256 = "1c5e5d68c26d5320dec8d21a152ff9d24cb8de6b05c12ac6bb69b31cc4ded54a",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/agent-sh_agentsys_298-a5224fae.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_brianc_node_postgres_3650",
-    sha256 = "dd94751733c1779a6006ee1cabef100097b12d9d7725f04bc767684b15c09c16",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/brianc_node-postgres_3650-b922f0dd.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_capawesome_team_cli_126",
-    sha256 = "73fcf6b6f506822db922c478d5972387c9be2c862c58cd3af9c60aff139fd19f",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/capawesome-team_cli_126-2d997db6.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_haoling_diary_notebook_blog_transformer_24",
-    sha256 = "db031ddf4726239e7b9382e134fcaec18196f08a82712cbced585a89458a7f87",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/haoling_diary-notebook-blog-transformer_24-876934a6.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_jenkinsci_gitea_plugin_141",
-    sha256 = "6fb59d7662665945f149b99a1c8db49af4a83dda3ebcf2bf4a5a597d0b6f7ca9",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/jenkinsci_gitea-plugin_141-2e021e56.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_rulecom_rule_io_sdk_40",
-    sha256 = "032d2af9b4fa817e06eebaa6bdd7f9c045cc4faf223c4b227ef967565293ef94",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rulecom_rule-io-sdk_40-550f7bc0.json"],
-)
-
-# The remaining admitted tasks' golden files are declared even though their two
-# frozen reviews produced no finding at all: the declared identity record stays
-# complete, so a future stage can verify that a task really carries no candidate
-# rather than merely failing to look. They are not requested by any target today.
-http_file(
-    name = "reviewbench_gold_heyitsaamir_teamscli_31",
-    sha256 = "a94ab357826a9009c7673b4b9ac614a7962f1b4a843cf2076a2c42ee96b9d67c",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/heyitsaamir_teamscli_31-ec0e9d9a.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_caasi_town_zero_6",
-    sha256 = "bd3403887d13dde65c0701c4294fa5246777e4389fc35b2e38a0ca722b857885",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/caasi_town-zero_6-f6ef91ce.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_EdV4H_usketch_534",
-    sha256 = "8815fb924d392e5d6813e8aa6da23254bf8a891dd9e385d5759e52c35785fed0",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/EdV4H_usketch_534-719aa834.json"],
-)
-
-http_file(
-    name = "reviewbench_gold_ls1intum_Artemis_12479",
-    sha256 = "902caadddebbea2d0f92e9ccbdf66dae50b2c8da37dbae5106f4761f5ef1d20f",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/ls1intum_Artemis_12479-237b3656.json"],
-)
-
-# The bounded development verification of the three exposed fixtures
-# (`VAL-SUB-018`). Their exact repository revisions are retained read-only in
-# the authorized `attune-reviewbench-worlds` cache; the committed identity record
-# `//test/study:fixtures/retained-worlds.tsv` names only the files a bounded
-# check actually reads, and each is admitted through a `file://` URL verified
-# against its declared SHA-256. Nothing is fetched from the network, no new
-# corpus is acquired, and a mutated or substituted retained file fails the
-# admission instead of entering the check. Declared last for the same
-# anonymous-repo renumbering reason as the acquisitions above.
-retained_worlds = use_repo_rule("//platform/build:retained_worlds.bzl", "attune_retained_worlds")
-
-retained_worlds(
-    name = "attune_retained_worlds",
-    manifest = "//test/study:fixtures/retained-worlds.tsv",
-    root = "/home/becker/.cache/attune-reviewbench-worlds",
-    # Token 2 admits the publication-contract and changed-command bytes of the
-    # same already-authorized `capawesome-team_cli-126` world (no new corpus).
-    token = "2",
-)
-
-# The COMPLETE authorized source trees of the same already-approved
-# `capawesome-team_cli_126` base/head world pair (VAL-SUB-010, full-source
-# escape). The committed identity record
-# `//test/study:fixtures/retained-world-trees.tsv` names every regular file of
-# the two retained trees one at a time, and each is admitted through a
-# `file://` URL verified against its declared SHA-256. Nothing is fetched from
-# the network, no new corpus and no new permission is acquired, and the whole
-# world is an ordinary declared input of the declared packet stage, so an
-# ordinary repository source beyond the changed neighborhood stays reachable.
-retained_world_trees = use_repo_rule("//platform/build:retained_worlds.bzl", "attune_retained_worlds")
-
-retained_world_trees(
-    name = "attune_retained_world_trees",
-    manifest = "//test/study:fixtures/retained-world-trees.tsv",
-    root = "/home/becker/.cache/attune-reviewbench-worlds",
-    token = "1",
-)
-
-# The approved clean-source acquisition of the frozen metadata-only 24-task
-# HOLDOUT's exact base and head worlds (`VAL-STUDY-004`). The declared archive
-# identity record `//test/reviewbench_pilot:holdout-archives.tsv` names each
-# holdout world's mirror repository, exact revision and exact archive digest; it
-# is emitted by the real acquisition and owned by `Attune.Study.ReviewPilot`, so
-# no repository, revision or digest is restated here as truth. The holdout tasks
-# are drawn from the remaining fast cohort and EXCLUDE every original24 task, so
-# no heldout world is a pilot world and the pilot's own ten tasks can never be
-# substituted. Each archive is fetched on the client and verified against its
-# declared SHA-256 before extraction, exactly like the pilot worlds above, so a
-# mutated or substituted archive fails the fetch instead of entering the study,
-# and both holdout arms read identical bytes. The ordinary `bazel test //...`
-# gate never fetches it: only the explicitly selected `manual`
-# `//platform/dsh:evidence_reviewbench_holdout_cohort` target declares it.
-# Declared last for the same anonymous-repo renumbering reason as the catalog,
-# world archives, embedding runtime, Qwen fixtures, Codex assets, manifest and
-# retained worlds above.
-world_sources(
-    name = "reviewbench_holdout_worlds",
-    manifest = "//test/reviewbench_pilot:holdout-archives.tsv",
-)
-
-
-# The pinned golden sets of the frozen metadata-only 24-task HOLDOUT's
-# structurally admitted tasks (`VAL-STUDY-004`). Each file is the corpus's own
-# per-task golden record at the SAME commit the holdout cohort admission
-# verified (66df3f322d0d85ea133ea9fa777f5d1a8c933c4e); the URL carries the commit
-# and the path, and the provider's own SHA-256 pins the exact bytes, so a
-# mutated or substituted golden file fails the fetch instead of entering the
-# heldout judge. The heldout prediction freeze (`holdout-predictions.tsv`) was
-# committed BEFORE any golden byte was acquired, so the scientific freeze order
-# (pair predictions before evaluator labels) holds. The golden set is requested
-# ONLY by the explicitly selected `manual` holdout reference/judge targets, so
-# the ordinary `bazel test //...` gate never acquires it and no review,
-# prediction or assisted-context closure can reach it. Declared last for the
-# same anonymous-repo renumbering reason as the acquisitions above.
-
-http_file(
-    name = "reviewbench_holdout_gold_swarmbase_swarmbase_161",
-    sha256 = "d196b81eeba2837fb76a540f412ba97af7b9ddc94bfe8cef3483a738244b37a7",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/swarmbase_swarmbase_161-46963834.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_capawesome_team_cli_127",
-    sha256 = "24ff83bc1b8d6d49bed22d8ed98dad7a8287611065131020ccf84d1ab6a31490",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/capawesome-team_cli_127-5c1cc1c9.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_konturio_disaster_ninja_fe_1082",
-    sha256 = "4bb8b575d04522069ce714d157b5da196323d09a8725a32c342f168b7d6d3fad",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/konturio_disaster-ninja-fe_1082-a54020e9.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_hughdidit_DAISy_Agency_309",
-    sha256 = "6bb8fafe53cbc78bee8b1ce55559785985caab7655f0cad12ce86adc3dd46e82",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/hughdidit_DAISy-Agency_309-ac6e2196.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_confluentinc_mcp_confluent_143",
-    sha256 = "f1438575db767191ef356f94fa4baec52a9da9e41602bc47c346d4a6c9bfb875",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/confluentinc_mcp-confluent_143-abcb5d9f.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_PierreJanineh_TechDebtMCP_135",
-    sha256 = "75c71c49222d6bb597701dcd0bceb5df734be1918769f792dcf694f18556d438",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/PierreJanineh_TechDebtMCP_135-16a54f0f.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_motif_ui_motifreact_34",
-    sha256 = "a014568d016ea692b310a63a1b81e41f4ddda66279b0e39ba8024aedcbe16eea",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/motif-ui_motifreact_34-cb636a17.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_Asjas_course_platform_946",
-    sha256 = "416c09c50c94a8cd220528ed7c5b13f391f4fae2edf7ad8eea3696e9dcad503d",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/Asjas_course-platform_946-ef3adc91.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_wiyco_review_insights_31",
-    sha256 = "4d622b622869e21c74182ab110ddb1954da183bf22b3fd06c897fee9a603d684",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/wiyco_review-insights_31-e9c5280f.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_pnp_cli_microsoft365_7191",
-    sha256 = "f76f48389c0051819bf6736a24c4d1b4c9a3cdae2828847f4bc3eae2a40f9412",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/pnp_cli-microsoft365_7191-a44ec571.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_taskless_skills_16",
-    sha256 = "3f69aaa62443bf5eec4b0e45c6975a2a5a30073ab45c8dd4df689c2900d3cc1b",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/taskless_skills_16-d7b6f3f5.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_supa_magic_spm_19",
-    sha256 = "7177f3798568ca717d8c1ddbf70ad30af13d8ca345068b35a56e2016bad0233a",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/supa-magic_spm_19-c60d2e03.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_NestDevLab_nestjs_yalc_123",
-    sha256 = "65a6652e5617778dbc03cbd4d80dab64ea11c18fa2ab8ef19566336a7b1a97eb",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/NestDevLab_nestjs-yalc_123-3ce6ba57.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_ComposioHQ_agent_orchestrator_1277",
-    sha256 = "323375fca0727ca581fc661079f5a924d9a1d45cfb1c76880001981f6ff86d8f",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/ComposioHQ_agent-orchestrator_1277-76652c7c.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_rcrsr_rill_53",
-    sha256 = "078d0dd38d01e6124479995513ef2d484065f8903aeb2ec1e3e70b46d0a28dc7",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rcrsr_rill_53-2ed44caf.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_rulecom_rule_io_sdk_36",
-    sha256 = "5d09221fe95ba9578815627aa01ff989bb8909b3e12fea8309bc8051802771df",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rulecom_rule-io-sdk_36-778a137b.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_iTwin_presentation_1288",
-    sha256 = "11f08ca9ddf89b07f36839a7de5ef5a756336d351c33ecb2a4b0ddb4bfa06545",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/iTwin_presentation_1288-31c0f13a.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_RobertAgterhuis_myAgentic_IT_Project_team_V2_331",
-    sha256 = "f6296862ae58147b3212e9cffcc429dd2c5abeb559b961c9065ab02ad6061fb0",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/RobertAgterhuis_myAgentic-IT-Project-team-V2_331-980b84fa.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_SolidOS_solid_panes_598",
-    sha256 = "d1beaa68139c12e55cc3c0f7cbce40c18ae2913eaaf1504e08e17d20c5c69045",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/SolidOS_solid-panes_598-38141b1f.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_fernando_msa_bacula_log_archiver_1",
-    sha256 = "5c102a7e2de4763b46eeafe3c180ca4a93666cd6bdd9040edf6268c3bb25f54b",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/fernando-msa_bacula-log-archiver_1-bc9e7308.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_axios_axios_10836",
-    sha256 = "69c00f55d58ff7cc444ea456e9144514ec20d3f04be275f0b56aba29a1d4c5b6",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/axios_axios_10836-9cd706cc.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_blamechris_chroxy_2266",
-    sha256 = "7e571205d15743c5ef333ff1d103eb1b6eff750fb123d4a948086b1f5069eb8b",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/blamechris_chroxy_2266-7febfc48.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_AY2526S2_CS2103T_W14_3_tp_152",
-    sha256 = "f8c1fcc76bc318b8f110cc46fd3869a2f201d2b6faf91e27f6429b5f540f70ef",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/AY2526S2-CS2103T-W14-3_tp_152-e0a9ce03.json"],
-)
-
-http_file(
-    name = "reviewbench_holdout_gold_scorbo2_ext_sn_statistics_19",
-    sha256 = "095d93ced1ef6f8dfc6cee699dbf57c624b2a89dcccd31bb37c39fa4d5005bd6",
-    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/scorbo2_ext-sn-statistics_19-8ef352bd.json"],
-)

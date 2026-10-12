@@ -32,11 +32,11 @@ import { BridgeRefusal, canonicalSurface, contractDigest, lowerWireContract } fr
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const PACKAGE = '@attune/evidence-contract'
-const CONTRACT = 'attune.evidence-substrate/1'
-const WIRE = readFileSync(join(HERE, 'contract.wire.v1.json'), 'utf8')
+const CONTRACT = 'attune.evidence-substrate/2'
+const WIRE = readFileSync(join(HERE, 'contract.wire.v2.json'), 'utf8')
 /// The frozen parity fixture: `#` lines are comments and are not part of the
 /// surface.
-const FROZEN_SURFACE = canonicalSurface(readFileSync(join(HERE, 'contract-surface.v1.txt'), 'utf8').split('\n').filter((line) => !line.trimStart().startsWith('#')))
+const FROZEN_SURFACE = canonicalSurface(readFileSync(join(HERE, 'contract-surface.v2.txt'), 'utf8').split('\n').filter((line) => !line.trimStart().startsWith('#')))
 const TMP = process.env.TEST_TMPDIR ?? tmpdir()
 
 let scratch = 0
@@ -137,7 +137,7 @@ test('the wire fixture, the generated declaration and the frozen surface agree',
   )
   assert.equal(artifacts.length, 1)
   assert.equal(artifacts[0].face, 'host')
-  assert.deepEqual([...artifacts[0].exports].sort(), ['AcquisitionObligation', 'EvidenceObservation', 'EvidenceRef', 'FindingCheckpoint', 'Hypothesis'])
+  assert.deepEqual([...artifacts[0].exports].sort(), ['EvidenceObservation', 'EvidenceRef'])
   assert.deepEqual(reflectedSurface(root), FROZEN_SURFACE)
   assert.equal(contractDigest(CONTRACT, lowered.surface), contractDigest(CONTRACT, FROZEN_SURFACE))
 })
@@ -175,40 +175,6 @@ test('the generated schemas accept the canonical contract documents and preserve
   assert.equal(generated.EvidenceObservation().safeParse({ outcome: 'NO-MATCH', ref: reference, provenance: 'world-1' }).success, true)
   assert.equal(generated.EvidenceObservation().safeParse({ outcome: 'MAYBE', ref: reference, provenance: 'world-1' }).success, false)
   assert.equal(generated.EvidenceRef().safeParse({ ...reference, delivery: 'maybe' }).success, false)
-  assert.equal(generated.Hypothesis().safeParse({
-    family: 'import-publication',
-    identity: 'h-1',
-    operation: 'op',
-    world: 'world-1',
-    violation: 'v',
-    supporting: [reference],
-    contradicting: [],
-    missingObligations: ['callers'],
-    status: 'Candidate',
-  }).success, true)
-  assert.equal(generated.Hypothesis().safeParse({
-    family: 'a-third-detector',
-    identity: 'h-1',
-    operation: 'op',
-    world: 'world-1',
-    violation: 'v',
-    supporting: [],
-    contradicting: [],
-    missingObligations: [],
-    status: 'Candidate',
-  }).success, false)
-  assert.equal(generated.FindingCheckpoint().safeParse({
-    task: 't', arm: 'R0_PLAIN', observation: 1, sequence: 1, commitId: 'commit-1', commitMillis: 1700000000000,
-    elapsedMillis: 10, cumulativeTokens: 20, world: 'world-1', contract: 'contract/1', claim: 'c',
-    severityOrUnknown: 'unknown', delivered: [reference], consequence: 'caller returns null',
-    contradiction: '', uncertainty: 'none observed', explored: [], unresolved: [], stopCause: 'committed',
-  }).success, true)
-  assert.equal(generated.FindingCheckpoint().safeParse({
-    task: 't', arm: 'R0_PLAIN', observation: 1, sequence: 1, commitId: 'commit-1', commitMillis: 1700000000000,
-    elapsedMillis: 10, cumulativeTokens: 20, world: 'world-1', claim: 'c',
-    severityOrUnknown: 'unknown', delivered: [reference], explored: [], unresolved: [], stopCause: 'committed',
-  }).success, false, 'a checkpoint that names no governing contract is not the contract')
-
   const js = readArtifact(root)
   assert.match(js, /z\.union\(\[z\.literal\('WITNESS'\), z\.literal\('NO-MATCH'\), z\.literal\('UNKNOWN'\), z\.literal\('FAILED'\)\]\)/)
   assert.match(js, /z\.lazy\(\(\) => EvidenceRef\$schema\(\)\)/, 'a $ref must survive as a schema reference')

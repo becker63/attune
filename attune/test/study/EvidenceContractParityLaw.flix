@@ -45,7 +45,7 @@ def surfaceLines(text: String): List[String] =
 @Test
 def theFrozenSurfaceIsExactlyTheDeclaredContractSurface(): Unit \ {Assert, IO} = {
     let bindings = readText("attune-bindings.tsv");
-    let path = boundPath("platform/dsh/typert/contract-surface.v1.txt", bindings);
+    let path = boundPath("platform/dsh/typert/contract-surface.v2.txt", bindings);
     Assert.assertEq(expected = false, String.isEmpty(path));
     let fixture = readText(path);
     Assert.assertEq(expected = false, String.isEmpty(fixture));
@@ -62,7 +62,7 @@ def theFrozenSurfaceIsExactlyTheDeclaredContractSurface(): Unit \ {Assert, IO} =
 @Test
 def theWireFixtureNamesTheSameContractVersion(): Unit \ {Assert, IO} = {
     let bindings = readText("attune-bindings.tsv");
-    let path = boundPath("platform/dsh/typert/contract.wire.v1.json", bindings);
+    let path = boundPath("platform/dsh/typert/contract.wire.v2.json", bindings);
     Assert.assertEq(expected = false, String.isEmpty(path));
     let wire = readText(path);
     Assert.assertEq(expected = true, String.contains(substr = contractVersion(), wire));
@@ -81,9 +81,6 @@ def theDeclaredSurfaceIsWellFormed(): Unit \ Assert = {
     let canonical = canonicalSurface(surface);
     Assert.assertEq(expected = List.length(surface), List.length(canonical));
     Assert.assertEq(expected = true, List.memberOf("EvidenceRef", canonical));
-    Assert.assertEq(expected = true, List.memberOf("AcquisitionObligation", canonical));
     Assert.assertEq(expected = true, List.memberOf("EvidenceObservation", canonical));
-    Assert.assertEq(expected = true, List.memberOf("FindingCheckpoint", canonical));
-    Assert.assertEq(expected = true, List.memberOf("Hypothesis", canonical));
-    Assert.assertEq(expected = 5, List.length(List.filter(line -> not String.contains(substr = ".", line), canonical)))
+    Assert.assertEq(expected = 2, List.length(List.filter(line -> not String.contains(substr = ".", line), canonical)))
 }

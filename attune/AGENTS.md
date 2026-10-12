@@ -18,22 +18,23 @@ nested layout: the launcher binds the README and license live for correspondence
   benchmark campaigns, or once-only dispatches. Frozen source, labels, rankings,
   decisions, and receipts remain immutable. Predictions never consume evaluator
   labels. An oracle is evaluator-only evidence, never a deployable arm.
-- `notes/mission.md` and `notes/design.md` retain the implementation and study
-  history. Their dated acquisition authorizations describe historical work,
-  not an instruction to acquire anything during maintenance.
+- `notes/design.md` explains current ownership. Full study implementations and
+  their acquisition history are preserved at `archive/complete-studies-2026-10-12`.
+  Historical acquisition authorization does not authorize new calls.
 
 ## Build and isolation
 
-Use the pinned Nix developer shell from this directory:
+Run the default offline checks from either repository root or this workspace:
 
 ```sh
-nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" \
-  --host_jvm_args=-Xmx3g test //...
+nix run .#test
 ```
 
+`nix run` runs the saved-answer walkthrough. Both commands use the pinned Nix
+shell and existing `$HOME/.cache/attune-v2-bootstrap-bazel` output base.
+
 One Bazel owner at a time. Never run `bazel clean` or clear shared caches. The
-3 GiB server heap avoids the recorded output-download memory failure. Ordinary
-`//...` excludes manual acquisition/dispatch targets and makes no provider calls.
+3 GiB server heap avoids the recorded output-download memory failure. The default suite makes no provider calls.
 Initial dependency/toolchain downloads are separate from test execution.
 
 `--config=remote` is opt-in BuildBuddy execution. Its declared arm64 Linux
@@ -43,9 +44,8 @@ namespace instead. Host-only fixtures are tagged `no-remote`; do not introduce
 local fallback or accept an isolation boundary the run did not create.
 
 Keep dependencies pinned in `MODULE.bazel`, its lock, and `maven_install.json`.
-Never resolve unpinned JVM coordinates at test time. Larger historical replay
-inputs have named external cache dependencies; absence means unavailable, not
-permission to reacquire them.
+Never resolve unpinned JVM coordinates at test time. Historical replay uses the archived workspace and its declared inputs; absence
+means unavailable, not permission to reacquire them.
 
 ## Owners and source policy
 
@@ -57,10 +57,10 @@ build rules handle mechanics; do not move policy or metrics into glue.
 - Authored sources belong under `src/`, `test/`, `platform/tools/`,
   `platform/build/`, and `notes/`. Register each source-bearing package's
   `policy_files` in `//:policy_sources`; globs do not cross package boundaries.
-- Native Flix `@Test` declarations over explicit source lists are the executable
-  entrypoint. Do not add application mains, custom test engines, registries,
-  fat JARs, shell actions, or Python semantic runners. Existing narrowly declared
-  inherited and inference support keeps its recorded provenance and boundaries.
+- `src/Main.flix` is the offline walkthrough. Other executable checks use native
+  Flix `@Test` declarations over explicit sources. Keep the pinned compiler and
+  shared isolation launcher; do not add a custom test engine, command registry,
+  fat JAR, shell action, or Python semantic runner. Bazel owns scheduling.
 - Every public Flix module carries a `///` comment. Production code never depends
   on test-only semantics or substitutes raw HTTP for the approved SDK boundary.
 - The live `workspace_audit_test` runs uncached and reports unowned files.

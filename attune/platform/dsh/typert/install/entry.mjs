@@ -10,17 +10,17 @@
 //
 // The `apply` body is a real load assertion rather than a no-op: a load only
 // succeeds when the generated declaration actually resolved and exposes each of
-// the five declared roots. A missing or drifted artifact therefore fails the
+// the two declared roots. A missing or drifted artifact therefore fails the
 // load instead of silently presenting an empty contract.
 import * as contract from './typert.host.js'
 import { CONTRACT, DIGEST } from './contract.digest.js'
 
-const ROOTS = ['EvidenceRef', 'AcquisitionObligation', 'EvidenceObservation', 'FindingCheckpoint', 'Hypothesis']
+const ROOTS = ['EvidenceRef', 'EvidenceObservation']
 
 export const name = '@attune/evidence-contract'
 export const inject = []
 
-/// The generated factories of the five declared contract roots, re-exported so a
+/// The generated factories of the two declared contract roots, re-exported so a
 /// consumer that loads the plugin can validate canonical documents without a
 /// second schema compiler.
 export const factories = contract

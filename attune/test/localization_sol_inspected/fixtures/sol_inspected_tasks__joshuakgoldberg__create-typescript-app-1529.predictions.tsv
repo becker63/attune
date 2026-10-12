@@ -1,5 +1,0 @@
-prediction	joshuakgoldberg__create-typescript-app-1529	1	src/steps/writing/creation/rootFiles.ts
-prediction	joshuakgoldberg__create-typescript-app-1529	2	src/steps/writing/creation/writePackageJson.ts
-prediction	joshuakgoldberg__create-typescript-app-1529	3	src/steps/writing/creation/writePackageJson.test.ts
-prediction	joshuakgoldberg__create-typescript-app-1529	4	src/steps/finalizeDependencies.ts
-prediction	joshuakgoldberg__create-typescript-app-1529	5	src/steps/finalizeDependencies.test.ts

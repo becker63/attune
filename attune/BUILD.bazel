@@ -1,3 +1,5 @@
+load("//platform/build:native.bzl", "native_flix_binary")
+
 package(default_visibility = ["//visibility:public"])
 
 # The pinned Flix compiler as a private Bazel build tool. It is never a public
@@ -39,46 +41,25 @@ filegroup(
         "//notes:policy_files",
         "//platform/build:policy_files",
         "//platform/dsh:policy_files",
-        "//platform/dsh/import:policy_files",
         "//platform/dsh/tool:policy_files",
-        "//platform/embedding:policy_files",
         "//platform/support/grit:policy_files",
         "//platform/tools:policy_files",
         "//platform/tools/boundary:policy_files",
-        "//platform/tools/embedding:policy_files",
         "//platform/tools/grit:policy_files",
         "//platform/tools/inference:policy_files",
         "//platform/tools/parquet:policy_files",
-        "//platform/tools/reviewbench:policy_files",
-        "//platform/tools/sol:policy_files",
         "//src:policy_files",
         "//src/grit:policy_files",
         "//test:policy_files",
-        "//test/catalog:policy_files",
         "//test/dag:policy_files",
         "//test/docs:policy_files",
-        "//test/embedding:policy_files",
         "//test/grit:policy_files",
-        "//test/history:policy_files",
-        "//test/localization:policy_files",
         "//test/localization_embedding:policy_files",
-        "//test/localization_ensembles:policy_files",
         "//test/localization_jev:policy_files",
         "//test/localization_qwen:policy_files",
-        "//test/localization_qwen_jev:policy_files",
-        "//test/localization_replicated:policy_files",
         "//test/localization_runtime:policy_files",
-        "//test/localization_sol:policy_files",
-        "//test/localization_sol_inspected:policy_files",
-        "//test/localization_strict:policy_files",
         "//test/policy:policy_files",
         "//test/receipt:policy_files",
-        "//test/reviewbench:policy_files",
-        "//test/reviewbench_context:policy_files",
-        "//test/reviewbench_economics:policy_files",
-        "//test/reviewbench_judge:policy_files",
-        "//test/reviewbench_pilot:policy_files",
-        "//test/reviewbench_review:policy_files",
         "//test/seam:policy_files",
         "//test/spine:policy_files",
         "//test/study:policy_files",
@@ -114,3 +95,17 @@ test_suite(
 # checkout root's README.md and LICENSE stay outside this nested workspace and
 # are maintained separately.
 exports_files(["AGENTS.md"])
+
+# The default, provider-free walkthrough. The Flix main owns the explanation.
+native_flix_binary(
+    name = "demo",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Main.flix",
+    ],
+)

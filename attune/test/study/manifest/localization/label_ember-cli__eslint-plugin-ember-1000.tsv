@@ -1,8 +1,0 @@
-label	ember-cli__eslint-plugin-ember-1000	w61
-provenance	ember-cli/eslint-plugin-ember	fcdb389919d704177bdf78bbf6ca2f21b30e516b	3b118ea7cf6a3bf8f06b24b838a4d39c5f9c0e98e1e78b204c9eb316a1ec4a7b	reference-patch	141	6861
-entry	modified	docs/rules/no-get-with-default.md	other	source	regular	absent	ineligible
-entry	modified	docs/rules/no-get.md	other	source	regular	absent	ineligible
-entry	modified	lib/rules/no-get-with-default.js	js-ts	source	regular	present	eligible
-gold	lib/rules/no-get-with-default.js
-coverage	full	3	supported	1
-case	eligible-gold

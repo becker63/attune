@@ -1,3 +1,0 @@
-prediction	elastic__synthetics-252	1	src/reporters/json.ts
-prediction	elastic__synthetics-252	2	__tests__/reporters/json.test.ts
-prediction	elastic__synthetics-252	3	__tests__/reporters/__snapshots__/json.test.ts.snap

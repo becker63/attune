@@ -1,3 +1,0 @@
-prediction	fhir__sushi-1006	1	src/ig/IGExporter.ts
-prediction	fhir__sushi-1006	2	src/import/YAMLConfiguration.ts
-prediction	fhir__sushi-1006	3	test/ig/IGExporter.IG.test.ts

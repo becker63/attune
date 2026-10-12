@@ -127,6 +127,19 @@
                 --credential_helper=remote.buildbuddy.io=${buildbuddyCredential}/bin/attune-buildbuddy-credential
           '';
 
+          # Both public commands use the existing environment and Bazel cache.
+          command = name: action: pkgs.writeShellScript "attune-${name}" ''
+            set -eu
+            if [ -f "$PWD/attune/MODULE.bazel" ]; then cd attune; fi
+            if [ ! -f "$PWD/MODULE.bazel" ]; then
+              echo "Run this command from the Attune checkout or its attune/ workspace." >&2
+              exit 1
+            fi
+            exec ${bazel}/bin/bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" ${action} "$@"
+          '';
+          demo = command "demo" "run //:demo";
+          test = command "test" "test //...";
+
           # Smallest deterministic law for the credential helper: a Factory
           # Computer Secret wins, the ignored checkout-root .env stays a working
           # fallback, and malformed keys are still rejected. Dummy values only;
@@ -173,9 +186,13 @@
               pkgs.util-linux
             ];
           };
-          inherit credentialHelperCheck;
+          inherit credentialHelperCheck demo test;
         };
     in {
+      apps = forAllSystems (system: {
+        default = { type = "app"; program = "${(perSystem system).demo}"; };
+        test = { type = "app"; program = "${(perSystem system).test}"; };
+      });
       devShells = forAllSystems (system: { default = (perSystem system).devShell; });
       checks = forAllSystems (system: { credential-helper = (perSystem system).credentialHelperCheck; });
     };

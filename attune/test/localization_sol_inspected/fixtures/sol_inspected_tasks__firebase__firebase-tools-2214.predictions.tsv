@@ -1,4 +1,0 @@
-prediction	firebase__firebase-tools-2214	1	src/emulator/functionsEmulator.ts
-prediction	firebase__firebase-tools-2214	2	src/emulator/functionsEmulatorRuntime.ts
-prediction	firebase__firebase-tools-2214	3	src/emulator/functionsEmulatorShared.ts
-prediction	firebase__firebase-tools-2214	4	src/test/emulators/functionsEmulatorRuntime.spec.ts

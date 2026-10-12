@@ -1,7 +1,0 @@
-prediction	joshuakgoldberg__create-typescript-app-1544	1	.prettierrc.json
-prediction	joshuakgoldberg__create-typescript-app-1544	2	src/steps/writing/creation/rootFiles.ts
-prediction	joshuakgoldberg__create-typescript-app-1544	3	src/steps/finalizeDependencies.ts
-prediction	joshuakgoldberg__create-typescript-app-1544	4	package.json
-prediction	joshuakgoldberg__create-typescript-app-1544	5	pnpm-lock.yaml
-prediction	joshuakgoldberg__create-typescript-app-1544	6	src/steps/finalizeDependencies.test.ts
-prediction	joshuakgoldberg__create-typescript-app-1544	7	docs/Tooling.md

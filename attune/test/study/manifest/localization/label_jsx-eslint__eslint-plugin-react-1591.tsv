@@ -1,7 +1,0 @@
-label	jsx-eslint__eslint-plugin-react-1591	w42
-provenance	jsx-eslint/eslint-plugin-react	2575bba0ae30b1b0b4013539be3b0dc4eb8114eb	0e17434a9b22408c967d46c4c5e84d67ebbb53f9d24c3fc2ab5f411712370379	reference-patch	85	3036
-entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
-entry	modified	lib/rules/jsx-key.js	js-ts	source	regular	present	eligible
-gold	lib/rules/jsx-key.js
-coverage	full	2	supported	1
-case	eligible-gold

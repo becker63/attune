@@ -32,8 +32,8 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const A = resolve(HERE, '..', 'typert_package_a')
 const B = resolve(HERE, '..', 'typert_package_b')
 const TMP = process.env.TEST_TMPDIR ?? tmpdir()
-const CONTRACT = 'attune.evidence-substrate/1'
-const FROZEN_SURFACE = readFileSync(join(HERE, 'contract-surface.v1.txt'), 'utf8')
+const CONTRACT = 'attune.evidence-substrate/2'
+const FROZEN_SURFACE = readFileSync(join(HERE, 'contract-surface.v2.txt'), 'utf8')
   .split('\n')
   .filter((line) => !line.trimStart().startsWith('#'))
   .map((line) => line.trim())
@@ -167,28 +167,8 @@ test('the built package loads through the real Cordis Context', async () => {
   }
   assert.equal(module.factories.EvidenceRef().safeParse(reference).success, true)
   assert.equal(module.factories.EvidenceRef().safeParse({ ...reference, delivery: 'maybe' }).success, false)
-  assert.equal(module.factories.Hypothesis().safeParse({
-    family: 'import-publication',
-    identity: 'h-1',
-    operation: 'op',
-    world: 'world-1',
-    violation: 'v',
-    supporting: [],
-    contradicting: [],
-    missingObligations: [],
-    status: 'Candidate',
-  }).success, true)
-  assert.equal(module.factories.Hypothesis().safeParse({
-    family: 'a-third-detector',
-    identity: 'h-1',
-    operation: 'op',
-    world: 'world-1',
-    violation: 'v',
-    supporting: [],
-    contradicting: [],
-    missingObligations: [],
-    status: 'Candidate',
-  }).success, false)
+  assert.equal(module.factories.EvidenceObservation().safeParse({ outcome: 'UNKNOWN', ref: reference, provenance: 'fixture' }).success, true)
+  assert.equal(module.factories.EvidenceObservation().safeParse({ outcome: 'MAYBE', ref: reference, provenance: 'fixture' }).success, false)
   ctx.fiber.dispose()
 })
 

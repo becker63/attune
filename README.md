@@ -99,8 +99,10 @@ issue  -> vector ─────────────────────
 
 An effect declaration alone does not cache or parallelize a program. Exact
 identity, declared dependencies, and tested boundaries make those choices safe.
-The [compiled Flix handoff example](https://atlas-live-five.vercel.app/#effects)
-is a teaching fixture; production acquisition uses a narrow Java SDK boundary.
+Start with [Effects.flix](attune/src/Attune/Effects.flix): its file-finding function
+asks for vectors, while a handler supplies exact saved answers. The default
+walkthrough uses authored vectors; the reported measurements come from the
+archived studies. Provider SDK calls remain a separate boundary.
 
 **Measured scheduling result, historical AttuneFlix:** for 61 completed JS/TS
 SWE-Explore cases, 4,301.12 seconds of sequential evaluation shard work became
@@ -444,25 +446,31 @@ None can silently stand in for the others.
 
 ## Implementation
 
+Read the code in this order. Each file introduces one part of the calculation:
+
+| Start here | The idea |
+| --- | --- |
+| [Main.flix](attune/src/Main.flix) | Run an offline example: an issue becomes a ranked list of files. |
+| [Effects.flix](attune/src/Attune/Effects.flix) | Ask for work; let a handler supply the answer. |
+| [Attune.flix](attune/src/Attune.flix) | Files and symbols have different types. Reuse needs the exact same world and input. |
+| [Repository.flix](attune/src/Attune/Repository.flix) | Turn extracted observations into relationships we can support. |
+| [Theory.flix](attune/src/Attune/Theory.flix) | Ask several related questions together using bounded Datalog. |
+
 ```text
-source -> Grit observations -> admitted repository facts
-                                      |
-                        typed routes + bounded Datalog
-                                      |
-                           studies -> ASCII evidence
+Flix:   request -> handler -> answer -> continue the calculation
+Bazel:  inputs  -> independent actions -> reusable artifacts
 ```
 
-**Grit** extracts definitions, imports, and calls. **Repository** conservatively
-admits resolvable evidence and records coverage. A **repository world** identifies
-its source origin, exact content, and extraction/resolution/admission semantics;
-a changed source or semantic recipe cannot borrow another world's answers.
+An effect signature says **what a function may ask for**. A handler says
+**how to answer**. The same ranking function can use saved inputs without
+contacting a provider. A missing answer stays an error.
 
-**Flix** owns identity, relation application, Theory, study policies, and metrics.
-Narrow Java/native interfaces handle process launch, filesystem access, Grit, and
-columnar data. **Bazel** declares the computation graph: source facts and Theory
-shards can be shared across tasks, while prediction inputs remain separate from
-evaluator labels. **Nix** pins the developer environment. **BuildBuddy** supplies
-optional remote caching and execution.
+**Grit** extracts source observations. **Flix** owns their meaning and the
+calculations. **Bazel** owns dependencies and scheduling; **BuildBuddy** supplies
+optional remote execution and caching. **Nix** pins the tools.
+
+A repository world includes source origin, content, and the analysis recipe.
+Changing any of them changes which saved structural answers remain valid.
 
 ### Agent tools that keep their contracts
 
@@ -485,28 +493,30 @@ for a live coding agent.
 
 ## Reproduce and inspect
 
-The active workspace remains under `attune/` so the declared source and isolation
-boundaries stay intact. From a Linux checkout with Nix installed:
+From a Linux checkout with Nix installed:
 
 ```sh
-cd attune
-nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" \
-  --host_jvm_args=-Xmx3g test //...
+nix run          # offline walkthrough
+nix run .#test   # retained laws, fixtures, and documentation checks
 ```
 
-This is the provider-free test gate. Initial setup downloads pinned toolchains
-and dependencies; tests run without model credentials or corpus acquisition.
-Manual acquisition and live dispatch targets are excluded from `//...`.
-The public snapshot passed all 79 targets. The original developer checkout
-still fails `workspace_audit_test` on 87 findings in a preserved user directory.
-Use one Bazel owner at a time; never clear shared caches.
+The walkthrough uses small authored vectors, not model output. Initial setup
+downloads pinned tools; neither command acquires a corpus or calls a provider.
+The Bazel workspace remains in `attune/`; both commands work there too.
 
-Opt-in BuildBuddy check, with `BUILDBUDDY_API_KEY` supplied privately:
+For an opt-in BuildBuddy check, supply `BUILDBUDDY_API_KEY` privately:
 
 ```sh
-nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" \
-  --host_jvm_args=-Xmx3g test //test/dag:declared_artifact_consumer_test --config=remote
+nix run .#test -- --config=remote
 ```
+
+Use one Bazel owner at a time. The commands select the existing output base and
+memory limit; no cache clearing or extra setup flags are needed. The original
+checkout still has a preserved user directory that fails `workspace_audit_test`.
+
+The complete campaign implementation is preserved at
+[archive/complete-studies-2026-10-12](https://github.com/becker63/attune/tree/archive/complete-studies-2026-10-12).
+See the evidence guide for its frozen-input replay requirements.
 
 The independent semantic tests, renderer goldens, and
 [README correspondence test](attune/test/docs/ReadmeCorrespondence.flix) remain
@@ -524,11 +534,11 @@ then compares all six marked examples byte for byte; it also checks local links.
 ```text
 README.md                 explanation and checked examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
-evidence/                 frozen tables, timing distributions, reading guide
+evidence/                 frozen tables and their reading guide
 attune/src/               identity, Repository, Theory, Study, View/ASCII
-attune/test/              laws, fixtures, frozen receipts, replay stages
+attune/test/              laws and small authored fixtures
 attune/platform/          pinned build rules and mechanical interfaces
-attune/notes/design.md    ownership, provenance, cognitive-budget reviews
+attune/notes/design.md    ownership, provenance, and source accounting
 ```
 
 Start with [core identity and relations](attune/src/Attune.flix),

@@ -69,7 +69,7 @@ const ALLOWED = { world: 'world-evidence-1', revision: 'rev-1', path: 'source/sh
 
 test('the tool parameters are projected from the frozen generated contract', () => {
   const { contract, parameters } = defineToolParametersFromWire(loadWireContract({}), PARAMETER_MEMBERS)
-  assert.equal(contract, 'attune.evidence-substrate/1')
+  assert.equal(contract, 'attune.evidence-substrate/2')
   assert.deepEqual(Object.keys(parameters).sort(), ['endLine', 'path', 'revision', 'startLine', 'world'])
   assert.deepEqual(parameters.world, { type: 'string', required: true })
   assert.deepEqual(parameters.startLine, { type: 'number', required: true })
@@ -77,8 +77,8 @@ test('the tool parameters are projected from the frozen generated contract', () 
 
 test('the projection bridge refuses an unsupported construct instead of widening it', () => {
   assert.throws(
-    () => defineToolParametersFromWire(loadWireContract({}), ['FindingCheckpoint.delivered']),
-    (error) => error instanceof BridgeRefusal && /array/.test(error.message),
+    () => defineToolParametersFromWire(loadWireContract({}), ['EvidenceObservation.ref']),
+    (error) => error instanceof BridgeRefusal && /the type EvidenceRef is not in the supported defineTool subset/.test(error.message),
   )
   assert.throws(
     () => defineToolParametersFromWire(loadWireContract({}), ['EvidenceRef.notAMember']),

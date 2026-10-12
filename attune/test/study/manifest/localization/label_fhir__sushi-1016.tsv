@@ -1,8 +1,0 @@
-label	fhir__sushi-1016	w11
-provenance	FHIR/sushi	d8f56185677f9748d7a759c624bdf3d2192dd3c9	c8c72780adb3d65c80193daaf28030f732ebcba23c6d3b797f989beb5727f8a9	reference-patch	64	2557
-entry	modified	src/export/Package.ts	js-ts	source	regular	present	eligible
-entry	modified	src/import/loadConfigurationFromIgResource.ts	js-ts	source	regular	present	eligible
-gold	src/export/Package.ts
-gold	src/import/loadConfigurationFromIgResource.ts
-coverage	full	2	supported	2
-case	eligible-gold

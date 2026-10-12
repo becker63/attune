@@ -1,9 +1,0 @@
-tool	commandExecution	failed	41	5138
-tool	commandExecution	completed	1458	9595
-tool	commandExecution	completed	13055	13917
-tool	commandExecution	completed	7793	17100
-read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	5138
-read	listFiles		1458	71c3976e6039ecc3237cc8223f92f5d3b016897d450cacb3f518898c20173cb7	0	completed	9595
-read	search	.	1458	71c3976e6039ecc3237cc8223f92f5d3b016897d450cacb3f518898c20173cb7	0	completed	9595
-read	unknown		13055	657820cce0f6222a24ff44ea2f5ba7b0566601e66b3068a4876295f672ec9272	0	completed	13917
-read	unknown		7793	365ceb4860d5442eda63bff643f292a2a5588c2109809249562db3e27f37be02	0	completed	17100

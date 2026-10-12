@@ -1,5 +1,0 @@
-scope	kind	name	inputDigest	resultDigest	status	provenance	deadlineMillis	permissions
-native	evidence	attune_evidence_operation	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	completed	attune.evidence-operation/1	300000	read-only
-native	refusal	attune_evidence_operation	-	-	refused	attune.evidence-operation/1	300000	read-only
-ptc	evidence	attune_evidence_operation	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe	completed	attune.evidence-operation/1	300000	read-only
-ptc	refusal	attune_evidence_operation	-	-	refused	attune.evidence-operation/1	300000	read-only

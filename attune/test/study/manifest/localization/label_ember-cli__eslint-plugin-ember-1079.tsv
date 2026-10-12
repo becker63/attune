@@ -1,9 +1,0 @@
-label	ember-cli__eslint-plugin-ember-1079	w64
-provenance	ember-cli/eslint-plugin-ember	c879157460fad4353f826c924f2e41761427337e	94c9f88607b413eff41cbfc3c4bb2534a09c3c7716f0ba7a86e7cab1fa3b6e6b	reference-patch	188	7041
-entry	modified	README.md	other	source	regular	absent	ineligible
-entry	new	docs/rules/no-html-safe.md	other	source	regular	absent	ineligible
-entry	modified	lib/index.js	js-ts	source	regular	present	eligible
-entry	new	lib/rules/no-html-safe.js	js-ts	source	regular	absent	ineligible
-gold	lib/index.js
-coverage	full	4	supported	1
-case	eligible-gold

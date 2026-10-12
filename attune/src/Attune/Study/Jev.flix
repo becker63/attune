@@ -1,24 +1,11 @@
+/// Move relevant files earlier without changing which files are candidates.
 ///
-/// The post-hoc exploratory JEV rerank semantics (`VAL-JEV-003`).
+///     base ranking -> Relevant files -> all remaining files
+///                     (base order)     (base order)
 ///
-/// This is the one semantic statement the live JEV extension adds: a stable,
-/// promotion-only rerank of an already-frozen localization ranking under typed
-/// relevance decisions. It is deliberately downstream-only and owns no metric:
-/// the reduction of every P+A / P+A+J / P+A+J(structure) comparison stays in
-/// `Attune.Study.Metrics`, which this module reuses rather than reimplements.
-///
-/// The rule is fixed before any provider outcome and carries no confidence
-/// threshold: a `Relevant` decision promotes its candidate before every
-/// non-`Relevant` candidate, the order inside both partitions stays the original
-/// base (P+A) order, and `Unknown` and `Failed` receive no promotion and no
-/// negative penalty. No candidate is deleted, invented or re-scored, so the
-/// promoted ranking always carries the identical complete base candidate
-/// population.
-///
-/// Promotion is keyed on `(Relevant ? 0 : 1, original base rank)`. The original
-/// base rank is unique inside a ranking, so the key is a total order and the
-/// sort is stable by construction rather than by relying on the sorter.
-///
+/// Saved typed judgments drive this step. Unknown and failed judgments remain
+/// distinct and receive no promotion or penalty. No file is invented or removed.
+/// Metrics are computed separately by Study.Metrics.
 pub mod Attune.Study.Jev {
 
     use Attune.Study.Metrics

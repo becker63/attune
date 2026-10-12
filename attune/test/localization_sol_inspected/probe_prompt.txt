@@ -1,7 +1,0 @@
-This is a mechanical tool-availability probe, not a localization task.
-
-Using the shell/command tool that is available to you in the current working directory, run exactly this command and then report its raw output verbatim:
-
-pwd; ls -la; cat src/format.js
-
-If you have no tool that can run a shell command, do not guess and do not invent file contents: reply with the single word NO_TOOLS and nothing else.

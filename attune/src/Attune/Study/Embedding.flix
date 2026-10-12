@@ -1,35 +1,12 @@
+/// Shared vector comparison and admission of recorded embedding rows.
 ///
-/// The Study-owned embedding retrieval submodule (`VAL-EMBED-003`, `VAL-EMBED-004`).
+///     exact request -> recorded vector -> similarity -> ranking -> metrics
 ///
-/// This module owns the one scientific statement of the post-hoc exploratory
-/// embedding branch: how a declared embedding fixture row becomes a typed
-/// prediction input, how the frozen similarity between a task query and a
-/// candidate code file is computed, how the complete E ranking orders the
-/// candidate population, and how the A/E overlap and gold decomposition are
-/// counted. It is deliberately downstream-only: no extraction, Theory, variant,
-/// selection or ranking stage imports it, so the frozen deterministic prediction
-/// graph is unaffected by its existence.
-///
-/// The row vocabulary is the declared fixture record the embedding producer
-/// already emits: the logical identity `(model revision, recipe, exact input
-/// bytes)` plus the vector payload. The vector is **data, never identity**: the
-/// module admits a row through the existing `Schema.Embedding` boundary and never
-/// re-derives the model recipe, so the ranking consumer cannot see the model.
-///
-/// The frozen similarity is cosine on the two unnormalized official vectors,
-/// computed by normalizing each side once at this one declared point. Cosine is
-/// explicitly user-allowed and parallel-engine parity is not required, so the
-/// value is a genuine measured similarity rather than a claimed reproduction of
-/// another engine. The order is similarity descending, then path ascending; the
-/// second key is the frozen tie rule, so no tie is silently broken and no
-/// candidate is dropped.
-///
-/// The canonical retrieval metrics ignore an arm's actual scores, so the E
-/// ranking carries the original rank in the canonical Int32 score column and
-/// keeps the exact unquantized similarity in a sidecar. That is what lets the one
-/// canonical `Attune.Study.Metrics` path score P, P+A and E without a second
-/// reducer and without quantizing the order.
-///
+/// Cosine compares vector direction. Files sort by similarity, then by path to
+/// break ties reproducibly. Scores stay unrounded until presentation.
+/// Request identity includes model revision, recipe, and exact input; the vector
+/// is a value, never its own cache key. The 768-wide row recipe belongs to the
+/// historical CodeRankEmbed arm; Qwen reuses the comparison with its own recipe.
 pub mod Attune.Study.Embedding {
 
     use Attune.Study

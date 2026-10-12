@@ -102,12 +102,17 @@ were not measured for this ReviewBench study.
 
 [SHA256.json](SHA256.json) records exact bytes for the 12 committed TSV files.
 Their original hashes remain unchanged.
-The canonical reducers, semantic laws, and fixtures live in `../attune/`.
+Current laws and small fixtures live in `../attune/`. Campaign reducers,
+original populations, and full replay rules are preserved in the
+[complete study snapshot](https://github.com/becker63/attune/tree/c0ed1329b2008cc2af69cf2b81fbf07a2b4b568f/).
+The source cleanup did not rewrite the frozen tables.
 
-Re-materialize ReviewBench publication from its pinned cached inputs:
+To re-materialize ReviewBench publication, use a separate checkout of that exact
+snapshot with its pinned cached inputs:
 
 ```sh
-cd attune
+git worktree add --detach ../attune-studies c0ed1329b2008cc2af69cf2b81fbf07a2b4b568f
+cd ../attune-studies/attune
 nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" \
   --host_jvm_args=-Xmx3g build //test/reviewbench_pilot:reviewbench_publication --nofetch
 ```
@@ -115,7 +120,7 @@ nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-baze
 `--nofetch` fails if an input is absent. This target uses frozen evidence and
 makes no provider calls. The localization producer additionally depends on
 retained source archives and external embedding fixtures declared in
-`MODULE.bazel`; they are not bundled in this public release. The committed
+[the archived MODULE.bazel](https://github.com/becker63/attune/blob/c0ed1329b2008cc2af69cf2b81fbf07a2b4b568f/attune/MODULE.bazel); they are not bundled in this public release. The committed
 summaries and ordinary law tests remain inspectable without acquiring them.
 
 Credentials, raw provider sessions, private corpus archives, personal research

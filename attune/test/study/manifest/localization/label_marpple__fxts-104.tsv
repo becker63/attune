@@ -1,7 +1,0 @@
-label	marpple__fxts-104	w59
-provenance	marpple/FxTS	7b099745fd3038f9155d74b8b76c3a7561073a9e	8067ad28ca5d15f6ae2495ded2b290950b6e90742fe14319bdda4440cced77e7	reference-patch	228	6120
-entry	modified	src/Lazy/index.ts	js-ts	source	regular	present	eligible
-entry	new	src/Lazy/scan.ts	js-ts	source	regular	absent	ineligible
-gold	src/Lazy/index.ts
-coverage	full	2	supported	1
-case	eligible-gold

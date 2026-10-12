@@ -23,7 +23,7 @@ import { canonicalSurface, contractDigest } from './bridge.mjs'
 /// The declared contributor package the generator analyzes.
 const PACKAGE = '@attune/evidence-contract'
 /// The contract version the emitted identity carries.
-const CONTRACT = 'attune.evidence-substrate/1'
+const CONTRACT = 'attune.evidence-substrate/2'
 
 function parseArgs(argv) {
   const args = {}

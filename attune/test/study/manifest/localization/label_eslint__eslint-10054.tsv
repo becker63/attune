@@ -1,7 +1,0 @@
-label	eslint__eslint-10054	w5
-provenance	eslint/eslint	22ff6f3ab122f61c10fa51f9b1082f2e6f302938	2b6991d784ea1c6acb98f4375afd4c96434f32a8cd31f537483fc9279458b428	reference-patch	188	9401
-entry	modified	README.md	other	source	regular	absent	ineligible
-entry	modified	lib/rules/indent.js	js-ts	source	regular	present	eligible
-gold	lib/rules/indent.js
-coverage	full	2	supported	1
-case	eligible-gold
