@@ -46,7 +46,6 @@ filegroup(
         "//platform/tools:policy_files",
         "//platform/tools/boundary:policy_files",
         "//platform/tools/grit:policy_files",
-        "//platform/tools/inference:policy_files",
         "//platform/tools/parquet:policy_files",
         "//src:policy_files",
         "//src/grit:policy_files",
@@ -64,7 +63,6 @@ filegroup(
         "//test/spine:policy_files",
         "//test/study:policy_files",
         "//test/theory:policy_files",
-        "//test/view:policy_files",
     ],
 )
 

@@ -637,16 +637,8 @@ pub mod Attune.Policy {
 
     // --------------------------------------------------- cognitive ownership
     //
-    // The owner-approved accounting classifies authored implementation by
-    // responsibility, not language or placement. The meaning-bearing core
-    // (identity, admission, coverage, theory, task, ranking, verdict, metrics,
-    // semantic Grit/Starlark/View) is cognitive; pure JVM/FFM/serialization/
-    // filesystem/process/runfiles/action plumbing and the generic ASCII writer
-    // are mechanical. A component is named, so a `.flix` under `src/Attune` is
-    // cognitive while the one generic writer beside it is mechanical. Genuine
-    // tests/fixtures and inherited/generated support are reported separately
-    // with honest origins; authored algorithms under tests stay in the authored
-    // population rather than becoming an exemption.
+    // Count by responsibility: meaning, mechanics, fixtures, and inherited code.
+    // Authored adapters still count when they live under test/.
 
     /// The authored cognitive-ownership class of one component.
     pub enum Ownership with Eq, ToString {
@@ -664,16 +656,6 @@ pub mod Attune.Policy {
     /// other build rules only construct the declared graph.
     pub def isGritClosureRule(path: String): Bool = path == "platform/build/grit_repository.bzl"
 
-    /// The semantic View projection and the documentation correspondence seam
-    /// are policy-bearing presentation: cognitive, reported as a presentation
-    /// subset and never added a second time.
-    pub def isPresentationCognitive(path: String): Bool =
-        path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix"
-
-    /// The generic bounded ASCII writer owns no identity or truth: it is
-    /// mechanical presentation.
-    pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
-
     /// These retained adapters materialize declared fixture records. Their I/O
     /// and serialization remain authored support even though tests exercise them.
     pub def isStudyAdapter(path: String): Bool =
@@ -689,7 +671,6 @@ pub mod Attune.Policy {
         if (isExcludedPath(path) or isReferencePath(path) or isSecretPath(path)) Ownership.Metadata
         else if (isBuildFile(path)) Ownership.Declarative
         else if (isRootMetadata(path) or hasPrefix("notes/", path)) Ownership.Metadata
-        else if (isPresentationMechanical(path)) Ownership.Mechanical
         // A maintained Grit frontend changes what the engine means, so it stays
         // cognitive under any path rather than an inherited or fixture exemption.
         else if (hasSuffix(".grit", path)) Ownership.Cognitive
@@ -705,9 +686,9 @@ pub mod Attune.Policy {
     /// and memo) plus the canonical generic coverage/evidence/support values;
     /// `theory` is the sixth semantic owner.
     pub def componentNames(): List[String] =
-        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
+        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "docs"
             :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
-            :: "build-rules" :: "inference"
+            :: "build-rules"
             :: "dsh-adapter"
             :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
@@ -718,18 +699,16 @@ pub mod Attune.Policy {
         else if (hasSuffix(".grit", path)) "frontends"
         else if (isStudyAdapter(path)) "build-rules"
         else if (path == "src/Main.flix" or path == "src/Attune/Effects.flix") "workflow"
-        else if (path == "src/Attune/AsciiTree.flix") "ascii"
         else if (path == "src/Attune.flix" or path == "src/Attune/Coverage.flix") "core"
         else if (hasPrefix("src/Attune/Repository", path)) "repository"
         else if (path == "src/Attune/Theory.flix") "theory"
         else if (hasPrefix("src/Attune/Study", path)) "study"
         else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
-        else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
+        else if (path == "src/Attune/Docs.flix") "docs"
         else if (hasPrefix("src/grit/", path)) "frontends"
         else if (hasPrefix("platform/tools/parquet/", path)) "parquet"
         else if (hasPrefix("platform/tools/boundary/", path)) "boundary"
         else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
-        else if (hasPrefix("platform/tools/inference/", path)) "inference"
         else if (hasPrefix("platform/dsh/", path)) "dsh-adapter"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
@@ -752,38 +731,29 @@ pub mod Attune.Policy {
         let (_, _, counts, _, readable) = c;
         if (not readable) t else (files + 1, addCounts(all, counts))
 
-    /// Authored code by ownership class, plus the two presentation subsets.
-    /// Presentation is a labelled subset of A/B, never a second addition.
-    pub type alias Accounting = (Int32, Int32, Int32, Int32, Int32, Int32)
+    /// Cognitive, mechanical, fixture, and inherited code, counted once each.
+    pub type alias Accounting = (Int32, Int32, Int32, Int32)
 
     pub def accountingOf(cs: List[Classified]): Accounting =
-        List.foldLeft(addAccounting, (0, 0, 0, 0, 0, 0), cs)
+        List.foldLeft(addAccounting, (0, 0, 0, 0), cs)
 
     def addAccounting(a: Accounting, c: Classified): Accounting =
-        let (cog, mech, tst, sup, pCog, pMech) = a;
+        let (cog, mech, tst, sup) = a;
         let (e, _, counts, _, readable) = c;
-        if (not readable) a
-        else {
-            let path = entryPath(e);
-            let code = codeOf(counts);
-            let pC = if (isPresentationCognitive(path)) pCog + code else pCog;
-            let pM = if (isPresentationMechanical(path)) pMech + code else pMech;
-            match ownershipOf(path) {
-                case Ownership.Cognitive => (cog + code, mech, tst, sup, pC, pM)
-                case Ownership.Mechanical => (cog, mech + code, tst, sup, pC, pM)
-                case Ownership.Fixture => (cog, mech, tst + code, sup, pC, pM)
-                case Ownership.Support => (cog, mech, tst, sup + code, pC, pM)
-                case _ => (cog, mech, tst, sup, pC, pM)
-            }
+        let code = codeOf(counts);
+        if (not readable) a else match ownershipOf(entryPath(e)) {
+            case Ownership.Cognitive  => (cog + code, mech, tst, sup)
+            case Ownership.Mechanical => (cog, mech + code, tst, sup)
+            case Ownership.Fixture    => (cog, mech, tst + code, sup)
+            case Ownership.Support    => (cog, mech, tst, sup + code)
+            case _                    => a
         }
 
-    pub def cognitiveOf(a: Accounting): Int32 = match a { case (c, _, _, _, _, _) => c }
-    pub def mechanicalOf(a: Accounting): Int32 = match a { case (_, m, _, _, _, _) => m }
+    pub def cognitiveOf(a: Accounting): Int32 = match a { case (c, _, _, _) => c }
+    pub def mechanicalOf(a: Accounting): Int32 = match a { case (_, m, _, _) => m }
     pub def authoredOf(a: Accounting): Int32 = cognitiveOf(a) + mechanicalOf(a)
-    pub def fixturesOf(a: Accounting): Int32 = match a { case (_, _, f, _, _, _) => f }
-    pub def supportOf(a: Accounting): Int32 = match a { case (_, _, _, s, _, _) => s }
-    pub def presentationCognitiveOf(a: Accounting): Int32 = match a { case (_, _, _, _, pc, _) => pc }
-    pub def presentationMechanicalOf(a: Accounting): Int32 = match a { case (_, _, _, _, _, pm) => pm }
+    pub def fixturesOf(a: Accounting): Int32 = match a { case (_, _, f, _) => f }
+    pub def supportOf(a: Accounting): Int32 = match a { case (_, _, _, s) => s }
 
     /// Owner-approved engineering-policy thresholds, not empirical capacity
     /// limits: cognitive core preferred 1500-2000, review at 2000, around 2500
@@ -847,9 +817,6 @@ pub mod Attune.Policy {
         "attune-policy-class cognitive=" + "${cognitiveOf(a)}" + " mechanical=" + "${mechanicalOf(a)}"
             + " authored=" + "${authoredOf(a)}" + " test=" + "${fixturesOf(a)}" + " support=" + "${supportOf(a)}"
 
-    def presentationLine(a: Accounting): String =
-        "attune-policy-presentation cognitive=" + "${presentationCognitiveOf(a)}" + " mechanical=" + "${presentationMechanicalOf(a)}" + " (subsets of the class totals, not added again)"
-
     def reviewLine(note: String): String = "attune-policy-review " + note
 
     /// Per-component code totals over the current classification. The component
@@ -866,13 +833,13 @@ pub mod Attune.Policy {
         if (readable and componentOf(entryPath(e)) == name) acc + codeOf(counts) else acc
 
     /// The whole report as text: findings, the raw totals, the ownership
-    /// classes, the presentation subsets, the review notes and the verdict.
+    /// classes, the review notes and the verdict.
     /// Formatting lives here; the mechanical test only prints it.
     pub def renderReport(findings: List[Finding], cs: List[Classified]): String =
         let t = totalsOf(cs);
         let a = accountingOf(cs);
         List.join("\n", List.map(findingLine, findings)
-            ::: (totalsLine(t) :: accountingLine(a) :: presentationLine(a)
+            ::: (totalsLine(t) :: accountingLine(a)
                 :: List.map(reviewLine, reviewNotes(a))
                 ::: ("attune-policy-verdict: " + verdictName(findings)) :: Nil))
 }

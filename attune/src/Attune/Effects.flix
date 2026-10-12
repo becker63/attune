@@ -3,7 +3,7 @@
 ///     locate files -> request a vector -> handler -> continue ranking
 ///                                          |
 ///                                          +-- saved answer (this module)
-///                                          +-- provider adapter (at the edge)
+///                                          +-- provider adapter (historical studies)
 ///
 /// Flix checks which requests a function may make. Bazel schedules actions.
 /// Neither an effect declaration nor a handler makes a cache key correct:

@@ -12,27 +12,11 @@ _UNSHARE = "@unshare//:bin/unshare"
 _CLOSURE = "@unshare//:closure"
 _FLIX = "@flix_compiler//jar"
 
-# The one declared locale boundary for every action that runs the mechanical
-# launcher. A JVM derives `sun.jnu.encoding` from the process locale, and the
-# C/POSIX locale maps to `ANSI_X3.4-1968`, where `Path.of` rejects any path that
-# is not representable in ASCII. The pinned corpus carries arbitrary valid
-# UTF-8 source paths, so the boundary names the one locale that is UTF-8 while
-# staying byte-transparent: `C.UTF-8` is provided by glibc itself from 2.35 on,
-# needs no generated locale archive, and changes no collation or classification
-# rule relative to `C`. The same locale is set for the launcher's inner step in
-# `NativeLaunch`, so the parent and the child resolve declared paths under the
-# identical encoding. Nothing about the filenames or the source bytes is
-# normalized, renamed or excluded: only the boundary is named.
+# Java must accept UTF-8 paths here and in NativeLaunch's child process.
 _LOCALE_ENV = {"LANG": "C.UTF-8"}
 
-# The declared isolation condition. Left unset, the native actions run inside
-# the pinned util-linux user/network namespace and carry its binary and library
-# closure as declared inputs. The opt-in `--config=remote` profile sets it, so
-# a remotely executed native action instead relies on the declared execution
-# platform's own container and its `dockerNetwork=off` property: the action
-# then declares neither the host Nix `unshare` binary nor its closure, because
-# that binary is a Nix-store ELF that cannot execute in the provider image, and
-# claiming the local namespace would be false there.
+# Local: pinned user/network namespace. Remote: network-disabled container.
+# Remote actions must never receive the host-only Nix binary or its closure.
 _PLATFORM_ISOLATION = "//platform/build:platform_native_isolation"
 
 def attune_isolation_data(host_isolation):
@@ -85,16 +69,6 @@ def native_flix_binary(name, srcs):
         ] + attune_isolation_flags(False),
     )
 
-def native_flix_test(name, srcs, size = "small", tags = [], data = [], host_isolation = False):
-    """Run explicit declared Flix `@Test` declarations under the declared isolation mode.
-
-    `host_isolation` pins a target to the host `unshare` boundary in every
-    configuration, for the one fixture family whose assertions are about that
-    local boundary. Such a target must also be tagged `no-remote`, and it can
-    never be the evidence for a remote native run.
-    """
-    _native_test(name, srcs, ["-Dattune.mode=native"], [], size, tags, data, host_isolation)
-
 def _java_jar_manifest_impl(ctx):
     jars = depset(transitive = [
         dependency[JavaInfo].transitive_runtime_jars
@@ -113,41 +87,42 @@ java_jar_manifest = rule(
     attrs = {"deps": attr.label_list(providers = [JavaInfo])},
 )
 
-def native_flix_java_test(name, srcs, java_deps, declared_files = [], native_libs = [], size = "small", tags = [], data = [], checkout_files = [], workspace_root = None):
-    """Run native Flix `@Test` declarations against explicit prepared JVM jars.
+def native_flix_test(
+        name,
+        srcs,
+        java_deps = [],
+        declared_files = [],
+        native_libs = [],
+        produced = [],
+        size = "small",
+        tags = [],
+        data = [],
+        host_isolation = False,
+        checkout_files = [],
+        workspace_root = None):
+    """Compile explicit Flix sources and run their native @Test declarations.
 
-    The declared Flix sources are compiled and executed by the pinned compiler's
-    authentic native test engine with the dependency jars passed explicitly as
-    the compiler's class path. No `flix.toml` project is synthesized and no
-    dependency resolver runs; this is the explicit source/dependency route.
-
-    `declared_files` names the data files the fixture may read, by their
-    workspace-relative paths, and `native_libs` the prepared shared libraries it
-    may load. Both are declared inputs: the launcher resolves them and binds the
-    names on JVM properties, so no fixture reaches for a path of its own.
-
-    `checkout_files` names documents that live at the checkout root *outside*
-    this nested workspace (the maintained `README.md` and `LICENSE`). The
-    launcher derives the checkout root from the recorded `workspace_root` file
-    and binds each name to that real path, so a live document check reads the
-    actual checked-in bytes. The target that uses it is local and uncached.
+    Optional jars, libraries, fixtures, and produced trees are declared inputs.
+    Live checkout documents require local, uncached execution. Host-isolation
+    fixtures must be tagged no-remote; ordinary tests use the selected platform.
     """
-    manifest = name + "_jars"
-    java_jar_manifest(name = manifest, deps = java_deps)
-    flags = [
-        "-Dattune.mode=java",
-        "-Dattune.jars=$(rlocationpath :%s)" % manifest,
-    ]
-    extra_data = [":" + manifest]
+    flags = ["-Dattune.mode=native"]
+    extra_data = list(produced)
+    if java_deps or native_libs or declared_files or checkout_files:
+        manifest = name + "_jars"
+        java_jar_manifest(name = manifest, deps = java_deps)
+        flags = ["-Dattune.mode=java", "-Dattune.jars=$(rlocationpath :%s)" % manifest]
+        extra_data.append(":" + manifest)
+    if produced:
+        flags.append("-Dattune.produced=" + _rlocation(produced))
+    if host_isolation and "no-remote" not in tags:
+        fail("host isolation requires the no-remote tag")
     if declared_files:
         files_manifest = name + "_declared"
         declared_manifest(name = files_manifest, srcs = declared_files)
         flags.append("-Dattune.fixtures=$(rlocationpath :%s)" % files_manifest)
         extra_data.append(":" + files_manifest)
 
-        # The declared files themselves are data too: the launcher resolves each
-        # one inside the runfiles tree, so the fixture reads exactly the bytes
-        # the build declared rather than a path of its own.
         extra_data.extend(declared_files)
     if native_libs:
         flags.append("-Dattune.libs=" + _rlocation(native_libs))
@@ -158,6 +133,7 @@ def native_flix_java_test(name, srcs, java_deps, declared_files = [], native_lib
         flags.append("-Dattune.workspace_root=$(rlocationpath %s)" % workspace_root)
         flags.append("-Dattune.checkout_files=" + ",".join(checkout_files))
         extra_data.append(workspace_root)
+        tags = tags + ["local", "external"]
     _native_test(
         name,
         srcs,
@@ -166,6 +142,7 @@ def native_flix_java_test(name, srcs, java_deps, declared_files = [], native_lib
         size,
         tags,
         data,
+        host_isolation,
     )
 
 def native_flix_reject_test(name, srcs, expected, size = "small", tags = []):
@@ -247,44 +224,47 @@ def native_flix_audit_test(name, srcs, workspace_root, skip = [], size = "small"
         data,
     )
 
-def _native_producer_impl(ctx):
-    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+def _runtime_jars(dependencies):
+    return depset(transitive = [dep[JavaInfo].transitive_runtime_jars for dep in dependencies]).to_list()
+
+_LAUNCHER = attr.label(default = "//platform/tools/boundary:native_launch", providers = [JavaInfo])
+_JAVA_TOOLCHAINS = ["@bazel_tools//tools/jdk:runtime_toolchain_type"]
+
+def _java_action(ctx, mode, inputs, properties, mnemonic):
+    """Launch one JVM action with declared inputs and one output directory."""
+    runtime = ctx.toolchains[_JAVA_TOOLCHAINS[0]].java_runtime
+    classpath = _runtime_jars([ctx.attr._launcher])
     out = ctx.actions.declare_directory(ctx.label.name)
-    classpath = depset(transitive = [
-        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
-    ]).to_list()
-    jars = depset(transitive = [
-        dependency[JavaInfo].transitive_runtime_jars
-        for dependency in ctx.attr.java_deps
-    ]).to_list()
-    sources = [source.path for source in ctx.files.srcs]
-    export = [source.path for source in ctx.files.export]
-    bindings = [binding.path for binding in ctx.files.declared_files]
     args = ctx.actions.args()
     args.add("-cp")
     args.add_joined(classpath, join_with = ":")
-    args.add("-Dattune.mode=produce")
+    args.add("-Dattune.mode=" + mode)
     args.add("-Dattune.outputs=" + out.path)
-    args.add("-Dattune.tests=" + ",".join(sources))
-    args.add("-Dattune.export=" + ",".join(export))
-    if jars:
-        args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
-    if bindings:
-        args.add("-Dattune.bindings=" + ",".join(bindings))
+    for key, value in properties.items():
+        args.add("-Dattune." + key + "=" + value)
     args.add("attune.tools.boundary.NativeLaunch")
     ctx.actions.run(
         executable = runtime.java_executable_exec_path,
         arguments = [args],
-        inputs = depset(
-            ctx.files.srcs + ctx.files.export + ctx.files.declared_files + jars + classpath,
-            transitive = [runtime.files],
-        ),
+        inputs = depset(inputs + classpath, transitive = [runtime.files]),
         outputs = [out],
         env = _LOCALE_ENV,
-        mnemonic = "AttuneNativeProducer",
-        progress_message = "Materializing declared native tree %{label}",
+        mnemonic = mnemonic,
+        progress_message = "Running %{label}",
     )
     return [DefaultInfo(files = depset([out]))]
+
+def _paths(files):
+    return ",".join([file.path for file in files])
+
+def _native_producer_impl(ctx):
+    jars = _runtime_jars(ctx.attr.java_deps)
+    return _java_action(ctx, "produce", ctx.files.srcs + ctx.files.export + ctx.files.declared_files + jars, {
+        "tests": _paths(ctx.files.srcs),
+        "export": _paths(ctx.files.export),
+        "bindings": _paths(ctx.files.declared_files),
+        "jars": _paths(jars),
+    }, "AttuneNativeProducer")
 
 _native_flix_producer = rule(
     implementation = _native_producer_impl,
@@ -294,38 +274,16 @@ _native_flix_producer = rule(
         "export": attr.label_list(allow_files = True),
         "declared_files": attr.label_list(allow_files = True),
         "java_deps": attr.label_list(providers = [JavaInfo]),
-        "_launcher": attr.label(
-            default = "//platform/tools/boundary:native_launch",
-            providers = [JavaInfo],
-        ),
+        "_launcher": _LAUNCHER,
     },
-    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+    toolchains = _JAVA_TOOLCHAINS,
 )
 
 def native_flix_producer(name, srcs, export = [], declared_files = [], java_deps = [], **kwargs):
-    """Run the pinned native Tester and emit a declared immutable source tree.
+    """Test explicit sources, then export accepted files and their closure listing.
 
-    The action compiles and executes the explicit declared Flix `@Test` sources
-    with the pinned compiler's authentic native test engine over the explicit
-    declared dependency jars, then materializes one declared tree artifact: an
-    immutable regular-file copy of each exported source under `sources/` beside a
-    mechanical `closure.tsv` naming the exact source, jar and binding closure.
-    The `export` files are the sources the tree carries (defaulting to `srcs`);
-    `srcs` also covers any producer law that must run but must not be exported.
-
-    A non-zero Tester verdict fails the action, so a downstream consumer can only
-    depend on a tree the pinned engine actually accepted. This is a build action,
-    not an authored application main: the compiler's own engine decides the
-    verdict, and the mechanical launcher only resolves declared paths and copies
-    bytes.
-
-    Args:
-      name: the producer target name, which also names its declared tree output.
-      srcs: the explicit declared Flix sources the pinned Tester compiles.
-      export: the sources the emitted tree carries (defaults to `srcs`).
-      declared_files: the declared data bindings named in the closure.
-      java_deps: the explicit dependency jar closure passed to the Tester.
-      **kwargs: forwarded to the underlying rule.
+    A failed assertion fails the action. Consumers receive only accepted trees.
+    Export defaults to srcs; producer-only laws can be omitted from the export.
     """
     _native_flix_producer(
         name = name,
@@ -337,195 +295,60 @@ def native_flix_producer(name, srcs, export = [], declared_files = [], java_deps
     )
 
 def _native_receipt_impl(ctx):
-    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
-    out = ctx.actions.declare_directory(ctx.label.name)
-    classpath = depset(transitive = [
-        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
-    ]).to_list()
-    args = ctx.actions.args()
-    args.add("-cp")
-    args.add_joined(classpath, join_with = ":")
-    args.add("-Dattune.mode=receipt")
-    args.add("-Dattune.outputs=" + out.path)
-    args.add("-Dattune.plan=" + ctx.file.plan.path)
-
-    # The scoped freshness token is a declared measurement identity only: it is
-    # read from `--define=attune_measurement_freshness=...` and changes this
-    # action's key, so a fresh remote run is not served from cache. No world or
-    # prediction action reads it, so deterministic scientific artifacts stay
-    # cacheable and are never invalidated by a fresh measurement.
+    # Only measurement actions read freshness. Reuse of predictions is unaffected.
+    properties = {"plan": ctx.file.plan.path}
     freshness = ctx.var.get("attune_measurement_freshness", "")
     if freshness:
-        args.add("-Dattune.freshness=" + freshness)
-    args.add("attune.tools.boundary.NativeLaunch")
-    ctx.actions.run(
-        executable = runtime.java_executable_exec_path,
-        arguments = [args],
-        inputs = depset([ctx.file.plan] + classpath, transitive = [runtime.files]),
-        outputs = [out],
-        env = _LOCALE_ENV,
-        mnemonic = "AttuneProcessReceipt",
-        progress_message = "Recording bounded process receipts %{label}",
-    )
-    return [DefaultInfo(files = depset([out]))]
+        properties["freshness"] = freshness
+    return _java_action(ctx, "receipt", [ctx.file.plan], properties, "AttuneProcessReceipt")
 
-_native_process_receipt = rule(
+native_process_receipt = rule(
     implementation = _native_receipt_impl,
     doc = "Execute one declared bounded argv plan and emit the raw receipt tree.",
     attrs = {
         "plan": attr.label(allow_single_file = True, mandatory = True),
-        "_launcher": attr.label(
-            default = "//platform/tools/boundary:native_launch",
-            providers = [JavaInfo],
-        ),
+        "_launcher": _LAUNCHER,
     },
-    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+    toolchains = _JAVA_TOOLCHAINS,
 )
 
-def native_process_receipt(name, plan, **kwargs):
-    """Execute one declared bounded argv plan and emit its receipt tree.
-
-    The action runs the existing mechanical launcher in `receipt` mode over the
-    declared plan file: it executes each declared command with concurrent bounded
-    log draining, a finite declared timeout and process-tree cleanup, then emits
-    one declared tree holding `receipts.tsv` and the bounded per-stream log files.
-    A measured nonzero child exit is ordinary receipt data, so the action succeeds
-    whenever the receipt was written; it fails only when no receipt could be
-    produced. The plan and the interpretation are Flix/Study concerns, not this
-    mechanical action's.
-
-    Args:
-      name: the producer target name, which also names its declared tree output.
-      plan: the declared bounded argv plan, one tab-separated record per command.
-      **kwargs: forwarded to the underlying rule.
-    """
-    _native_process_receipt(name = name, plan = plan, **kwargs)
-
 def _native_drain_probe_impl(ctx):
-    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
-    out = ctx.actions.declare_directory(ctx.label.name)
-    classpath = depset(transitive = [
-        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
-    ]).to_list()
-    args = ctx.actions.args()
-    args.add("-cp")
-    args.add_joined(classpath, join_with = ":")
-    args.add("-Dattune.mode=drainprobe")
-    args.add("-Dattune.outputs=" + out.path)
-    args.add("attune.tools.boundary.NativeLaunch")
-    ctx.actions.run(
-        executable = runtime.java_executable_exec_path,
-        arguments = [args],
-        inputs = depset(classpath, transitive = [runtime.files]),
-        outputs = [out],
-        env = _LOCALE_ENV,
-        mnemonic = "AttuneDrainProbe",
-        progress_message = "Recording bounded drain fault fixture %{label}",
-    )
-    return [DefaultInfo(files = depset([out]))]
+    return _java_action(ctx, "drainprobe", [], {}, "AttuneDrainProbe")
 
-_native_drain_probe = rule(
+native_drain_probe = rule(
     implementation = _native_drain_probe_impl,
     doc = "Emit the test-only bounded-drain fault fixture over deterministic faulty streams.",
     attrs = {
-        "_launcher": attr.label(
-            default = "//platform/tools/boundary:native_launch",
-            providers = [JavaInfo],
-        ),
+        "_launcher": _LAUNCHER,
     },
-    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+    toolchains = _JAVA_TOOLCHAINS,
 )
 
-def native_drain_probe(name, **kwargs):
-    """Emit the test-only bounded-drain fault fixture tree.
-
-    The action runs the existing mechanical launcher in `drainprobe` mode: it
-    drives the *production* bounded drain over a stream that fails after a
-    bounded prefix and over a log store that cannot be opened, beside an
-    ordinary clean drain, and emits one declared tree holding the production
-    receipt records for those cases. It is a declared fault fixture for the
-    native laws, not a production fault endpoint or a new entrypoint: the
-    launcher decides no policy and the Flix consumer owns the interpretation.
-
-    Args:
-      name: the producer target name, which also names its declared tree output.
-      **kwargs: forwarded to the underlying rule.
-    """
-    _native_drain_probe(name = name, **kwargs)
-
 def _native_study_stage_impl(ctx):
-    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
-    out = ctx.actions.declare_directory(ctx.label.name)
-    classpath = depset(transitive = [
-        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
-    ]).to_list()
-    sources = [source.path for source in ctx.files.srcs]
     inputs = ctx.files.inputs
     if len(inputs) != len(ctx.attr.input_names):
-        fail("native_study_stage %s: %d declared inputs but %d names" % (
-            ctx.label.name,
-            len(inputs),
-            len(ctx.attr.input_names),
-        ))
-    specs = [ctx.attr.input_names[index] + "=" + inputs[index].path for index in range(len(inputs))]
-    jars = depset(transitive = [
-        dependency[JavaInfo].transitive_runtime_jars
-        for dependency in ctx.attr.java_deps
-    ]).to_list()
-
-    # The declared isolation flags match the native test route: an ordinary
-    # action runs inside the pinned `unshare` namespace, while the opt-in remote
-    # profile runs directly in the provider container and declares neither the
-    # Nix-store binary nor its closure.
-    declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath) + jars
-    declared_inputs.extend(ctx.files.native_libs)
-    args = ctx.actions.args()
-    if jars:
-        args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
-    if ctx.attr.native_libs:
-        # A stage law that drives the pinned native Grit engine names the prepared
-        # shared library here, exactly as the native Java test route does. The
-        # launcher only makes the declared paths absolute and forwards them; it
-        # loads nothing and decides nothing.
-        args.add("-Dattune.libs=" + ",".join([library.path for library in ctx.files.native_libs]))
+        fail("%s: each stage input needs exactly one name" % ctx.label.name)
+    jars = _runtime_jars(ctx.attr.java_deps)
+    declared = ctx.files.srcs + inputs + jars + ctx.files.native_libs
+    properties = {
+        "stage": ctx.attr.stage,
+        "label": ctx.label.name,
+        "tests": _paths(ctx.files.srcs),
+        "inputs": ",".join([name + "=" + file.path for name, file in zip(ctx.attr.input_names, inputs)]),
+        "jars": _paths(jars),
+        "libs": _paths(ctx.files.native_libs),
+        "isolation": ctx.attr.isolation,
+    }
     if ctx.file.receipt_plan:
-        # A declared measurement stage: the launcher executes this bounded argv
-        # plan through the mechanical receipt boundary before the stage law runs,
-        # so the law reduces real receipts rather than a fabricated record. The
-        # scoped freshness token is a measurement identity only; without it the
-        # stage stays cacheable.
-        args.add("-Dattune.plan=" + ctx.file.receipt_plan.path)
-        declared_inputs.append(ctx.file.receipt_plan)
+        declared.append(ctx.file.receipt_plan)
+        properties["plan"] = ctx.file.receipt_plan.path
         freshness = ctx.var.get("attune_measurement_freshness", "")
         if freshness:
-            args.add("-Dattune.freshness=" + freshness)
+            properties["freshness"] = freshness
     if ctx.attr.isolation == "unshare":
-        args.add("-Dattune.isolation=unshare")
-        args.add("-Dattune.unshare=" + ctx.file.unshare_binary.path)
-        declared_inputs.append(ctx.file.unshare_binary)
-        declared_inputs.extend(ctx.files.unshare_closure)
-    else:
-        args.add("-Dattune.isolation=platform")
-    args.add("-cp")
-    args.add_joined(classpath, join_with = ":")
-    args.add("-Dattune.mode=stage")
-    args.add("-Dattune.stage=" + ctx.attr.stage)
-    args.add("-Dattune.label=" + ctx.label.name)
-    args.add("-Dattune.outputs=" + out.path)
-    args.add("-Dattune.tests=" + ",".join(sources))
-    if specs:
-        args.add("-Dattune.inputs=" + ",".join(specs))
-    args.add("attune.tools.boundary.NativeLaunch")
-    ctx.actions.run(
-        executable = runtime.java_executable_exec_path,
-        arguments = [args],
-        inputs = depset(declared_inputs, transitive = [runtime.files]),
-        outputs = [out],
-        env = _LOCALE_ENV,
-        mnemonic = "AttuneStudyStage",
-        progress_message = "Materializing declared study stage %{label}",
-    )
-    return [DefaultInfo(files = depset([out]))]
+        declared += [ctx.file.unshare_binary] + ctx.files.unshare_closure
+        properties["unshare"] = ctx.file.unshare_binary.path
+    return _java_action(ctx, "stage", declared, properties, "AttuneStudyStage")
 
 _native_study_stage = rule(
     implementation = _native_study_stage_impl,
@@ -541,12 +364,9 @@ _native_study_stage = rule(
         "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
         "unshare_binary": attr.label(allow_single_file = True),
         "unshare_closure": attr.label(allow_files = True),
-        "_launcher": attr.label(
-            default = "//platform/tools/boundary:native_launch",
-            providers = [JavaInfo],
-        ),
+        "_launcher": _LAUNCHER,
     },
-    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+    toolchains = _JAVA_TOOLCHAINS,
 )
 
 def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], host_isolation = False, **kwargs):
@@ -599,57 +419,17 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
     )
 
 def _attune_source_tree_impl(ctx):
-    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
-    out = ctx.actions.declare_directory(ctx.label.name)
-    classpath = depset(transitive = [
-        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
-    ]).to_list()
-    sources = [source.path for source in ctx.files.srcs]
-    args = ctx.actions.args()
-    args.add("-cp")
-    args.add_joined(classpath, join_with = ":")
-    args.add("-Dattune.mode=copytree")
-    args.add("-Dattune.outputs=" + out.path)
-    args.add("-Dattune.sources=" + ",".join(sources))
-    args.add("attune.tools.boundary.NativeLaunch")
-    ctx.actions.run(
-        executable = runtime.java_executable_exec_path,
-        arguments = [args],
-        inputs = depset(ctx.files.srcs + classpath, transitive = [runtime.files]),
-        outputs = [out],
-        env = _LOCALE_ENV,
-        mnemonic = "AttuneSourceTree",
-        progress_message = "Materializing immutable source tree %{label}",
-    )
-    return [DefaultInfo(files = depset([out]))]
+    return _java_action(ctx, "copytree", ctx.files.srcs, {"sources": _paths(ctx.files.srcs)}, "AttuneSourceTree")
 
-_attune_source_tree = rule(
+attune_source_tree = rule(
     implementation = _attune_source_tree_impl,
     doc = "Copy explicit declared regular files into one declared immutable tree.",
     attrs = {
         "srcs": attr.label_list(allow_files = True),
-        "_launcher": attr.label(
-            default = "//platform/tools/boundary:native_launch",
-            providers = [JavaInfo],
-        ),
+        "_launcher": _LAUNCHER,
     },
-    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+    toolchains = _JAVA_TOOLCHAINS,
 )
-
-def attune_source_tree(name, srcs, **kwargs):
-    """Declare one immutable regular-file source tree.
-
-    The action copies each explicit declared regular file into one declared
-    output directory and records the mechanical listing. A baseline/A/B/AB
-    variant is therefore an immutable tree artifact, not a mutable shared
-    worktree; the rule decides nothing about the content.
-
-    Args:
-      name: the tree target name, which also names its declared tree output.
-      srcs: the explicit declared regular files the tree carries.
-      **kwargs: forwarded to the underlying rule.
-    """
-    _attune_source_tree(name = name, srcs = srcs, **kwargs)
 
 def _attune_declared_record_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".tsv")
@@ -658,93 +438,9 @@ def _attune_declared_record_impl(ctx):
 
 attune_declared_record_file = rule(
     implementation = _attune_declared_record_impl,
-    doc = """Materialize one declared record from the admitted manifest's authority.
-
-    The admitted manifest is the single declared authority for the small records
-    the study graph derives from it: one task's anchor token and one declared
-    theory shard's world, index and candidate count. This rule writes exactly
-    those declared cells as the declared stage input the consumer reads, so no
-    second hand-authored record can drift from the manifest and the consumer
-    never parses a path or target name to recover a declared value.
-    """,
+    doc = "Write one declared TSV record without inferring fields from target names.",
     attrs = {
         "kind": attr.string(mandatory = True),
         "fields": attr.string_list(mandatory = True),
     },
 )
-
-def native_flix_anchor_file(name, token):
-    """Emit one task's declared anchor record.
-
-    The admitted gold-free manifest is the single declared authority for each
-    task's anchor token; this helper writes that one token as the declared stage
-    input the cheap join consumes, so no second hand-authored anchor file can
-    drift from the manifest.
-
-    Args:
-      name: the target name.
-      token: the anchor token the manifest declared for this task.
-    """
-    attune_declared_record_file(name = name, kind = "anchor", fields = [token])
-
-def native_flix_shard_file(name, world, index, count):
-    """Emit one declared shard record from the admitted manifest's authority.
-
-    The admitted manifest's own `shard` row is the single declared authority for
-    a declared per-index theory node: the world it belongs to, the node's own
-    index and the candidate count declared for that slice. The index is declared
-    data, not a guess parsed out of the target's own name.
-
-    Args:
-      name: the target name.
-      world: the world the declared shard row belongs to.
-      index: the declared shard index this node materializes.
-      count: the candidate count the manifest declared for that slice.
-    """
-    attune_declared_record_file(name = name, kind = "shard", fields = [world, index, count])
-
-def native_flix_consumer_test(name, srcs, produced, java_deps = [], declared_files = [], native_libs = [], size = "small", tags = [], data = []):
-    """Run native `@Test` laws over the declared trees a producer emitted.
-
-    Each `produced` tree is a declared input, not an undeclared test output: the
-    launcher walks it and writes the measured listing, records the declared
-    `name=path` bindings, and appends the tree's own Flix sources to the pinned
-    Tester's file list. The consumer therefore compiles the producer's exported
-    source and asserts the tree's contract over the actual declared bytes.
-
-    When `java_deps` is given the consumer compiles through the same explicit
-    JVM class path route the producer did, so a consumer whose laws import a
-    source owner that reaches a prepared Java seam (the pinned Grit engine) still
-    resolves it; without `java_deps` the consumer stays on the pure native route.
-
-    Args:
-      name: the consumer test target name.
-      srcs: the consumer's own explicit declared Flix law sources.
-      produced: the producer targets whose declared trees this test consumes.
-      java_deps: the explicit dependency jars the consumer compiles against.
-      declared_files: the declared sources the laws compare the trees against.
-      native_libs: the prepared shared libraries the consumer may load.
-      size: the Bazel test size.
-      tags: the Bazel test tags.
-      data: additional declared test data.
-    """
-    flags = ["-Dattune.produced=" + _rlocation(produced)]
-    extra_data = list(produced)
-    if java_deps:
-        manifest = name + "_jars"
-        java_jar_manifest(name = manifest, deps = java_deps)
-        flags.append("-Dattune.mode=java")
-        flags.append("-Dattune.jars=$(rlocationpath :%s)" % manifest)
-        extra_data.append(":" + manifest)
-    else:
-        flags.append("-Dattune.mode=native")
-    if native_libs:
-        flags.append("-Dattune.libs=" + _rlocation(native_libs))
-        extra_data.extend(native_libs)
-    if declared_files:
-        files_manifest = name + "_declared"
-        declared_manifest(name = files_manifest, srcs = declared_files)
-        flags.append("-Dattune.fixtures=$(rlocationpath :%s)" % files_manifest)
-        extra_data.append(":" + files_manifest)
-        extra_data.extend(declared_files)
-    _native_test(name, srcs, flags, extra_data, size, tags, data)

@@ -18,6 +18,7 @@ from a host package.
 def _typert_package_impl(ctx):
     out = ctx.actions.declare_directory(ctx.label.name)
     args = ctx.actions.args()
+
     # The declared contributor fixture directory and the authored packaging
     # inputs. Both are execroot-relative declared inputs, so the action reads
     # exactly the bytes the build declared.
