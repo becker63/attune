@@ -9,9 +9,10 @@ That exact old commit is retained on `archive/effect-joern-2026-10-12`.
 The active workspace remains nested under `attune/`. The separate frozen
 AttuneFlix checkout, agent tooling, credentials, personal Repomix bundles,
 untracked research work, and machine caches are excluded. All six README
-marker payloads are byte-identical to the development snapshot. Root report
-bytes and the semantic implementation are preserved; maintenance changes are
-prose, operating guidance, and the developer-shell description.
+marker payloads are byte-identical to the development snapshot. The original full report is preserved byte for byte at
+`reports/localization-history.md`; `LOCALIZATION_REPORT.md` is now its concise
+corrected summary. Semantic implementation and the 12 original evidence tables
+remain unchanged; maintenance changes concern explanation and presentation.
 
 Earlier Flix development commit IDs and mission-library paths in the report
 refer to the local development archive, not the destination's Effect/Joern
@@ -142,3 +143,27 @@ micro row keeps 24 contributing tasks.
 //test/view:route_view_test
 //test/view:semantic_view_test
 ```
+
+## Launch-material revision
+
+The README now leads with the five measured wait distributions, effects, exact
+reuse/scheduling, and localization results. The six checked snippet families
+remain unchanged. `evidence/timing/` exports the existing 707-observation figure
+and copies its exact frozen JSON; it introduces no measurement.
+
+The former 470,155-byte report is archived unchanged (SHA256
+`f4523df64cdfff11e1f6c90771c6ce211e9ca6b0dad7bd4d0c9453068840130c`).
+The primary report is approximately 1,950 words; the expanded evidence guide
+explains questions, populations, results, formats, and reproduction limits.
+
+Focused public-workspace verification passed:
+
+```text
+//test/docs:readme_correspondence_test
+//test/policy:declared_source_policy_test
+//test/policy:workspace_audit_test
+```
+
+The prior complete 79-target public gate remains the source for unchanged core,
+Grit, Theory, renderer, and isolation checks listed above. No new inference or
+benchmark campaign ran during this revision.

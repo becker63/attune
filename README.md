@@ -11,8 +11,101 @@ deterministic processing, reusing exact results, and scheduling independent
 work. Typed queries and tests make those boundaries checkable.
 
 [Explore the website](https://atlas-live-five.vercel.app/) ·
-[Read the measured results](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md#reviewbench-measured-study-gated-pilot-heldout-confirmation-corrected-quality-and-provider-free-publication-generation-19-2026-10-10) ·
+[Read the measured results](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
 [About the author](https://becker63.digital/)
+
+## Five kinds of wait
+
+A provider request, a source-reading process, and a prepared judgment are different
+jobs. Their timing boundaries tell us where reuse and scheduling might help.
+
+![Five measured wait distributions: 707 retained operations on a logarithmic time scale](https://raw.githubusercontent.com/becker63/attune/main/evidence/timing/five-waits.svg)
+
+| Measured job | Observations | Median | What the timer includes |
+| --- | ---: | ---: | --- |
+| File embeddings | 351 | 2.43 s | Synchronous provider SDK request |
+| Source extraction | 90 | 93.77 s | Whole remote extraction process |
+| Theory preparation | 90 | 20.61 s | Whole remote Theory process |
+| Jev judgment | 88 | 0.37 s | Request over an already prepared shortlist |
+| Sol inspection | 88 | 28.94 s | Whole repository-inspection turn |
+
+**Read the plot:** boxes contain the middle half; the line is the median;
+the diamond is the mean. Each dot is an observation. The horizontal scale is
+logarithmic: the same distance means ten times longer. Extraction's mean was
+344.58 seconds, and its longest process took 42.5 minutes.
+
+These are separate retained measurements, not a concurrent schedule or a
+controlled Jev-versus-Sol speedup. The model-turn populations include three issues
+outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#runtime)
+or inspect [all observations and source hashes](https://github.com/becker63/attune/blob/main/evidence/timing/wait-classes.json).
+
+### Make expensive work explicit
+
+An **effect** is a request for outside work: read a file, launch a process, ask a
+provider. Separating that request from the calculation lets us decide how to
+perform it and which saved answers remain valid.
+
+```text
+source -> facts   -> structural questions ─┐
+       -> vectors -> candidate retrieval ──┼-> prepared judgment -> evaluation
+issue  -> vector ─────────────────────────┘
+```
+
+- **Keep unaffected work.** Another issue can reuse exact file vectors and
+  source facts while supplying its own question and judgment.
+- **Schedule independent work.** Bazel declares dependencies; BuildBuddy can
+  execute independent actions remotely rather than waiting for each in turn.
+- **Replay exact inputs.** Retained answers let us change deterministic processing
+  without buying the same provider response again.
+
+An effect declaration alone does not cache or parallelize a program. Exact
+identity, declared dependencies, and tested boundaries make those choices safe.
+The [compiled Flix handoff example](https://atlas-live-five.vercel.app/#effects)
+is a teaching fixture; production acquisition uses a narrow Java SDK boundary.
+
+**Measured scheduling result, historical AttuneFlix:** for 61 completed JS/TS
+SWE-Explore cases, 4,301.12 seconds of sequential evaluation shard work became
+51.70 seconds of cold remote wall time; the unchanged warm graph took 0.153
+seconds. Outputs were preserved at the frozen numeric tolerance. Exact replay
+made no new provider calls. This is an offline evaluation result, not a live
+coding-agent speedup or a timing of the current Flix implementation.
+[Sealed report and usage](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
+
+## Finding the files: the localization study
+
+Given an issue, can retrieval plus structural post-processing find the existing
+files its reference fix changes? The retained SWE-rebench-V2 JS/TS comparison
+scored **85 eligible tasks in 22 repository groups**:
+
+| Condition | First file correct (Hit@1) | A required file in top 10 (Hit@10) |
+| --- | ---: | ---: |
+| Lexical/path prior | 11.8% | 35.3% |
+| Prior + issue-to-code anchors | 18.8% | 41.2% |
+| Prior + anchors + facts + Theory scoring | 12.9% | 41.2% |
+| Hosted Qwen retrieval | 41.2% | 85.9% |
+| Qwen + Jev reranking | 57.6% | 90.6% |
+| Qwen + structural context + Jev | 61.2% | 91.8% |
+
+Atlas supplies structural context **after retrieval**; it does not replace the
+retriever. The results are mixed: richer deterministic scoring hurt top-one
+accuracy, while structural context in the hosted reranking prompt helped on this
+population. Finding any required file is easier than finding the complete fix:
+the last condition recovered **all required files in the top 10 on 55.3% of tasks**.
+
+This was exploratory. Eight of the original 96 tasks were excluded because two
+groups did not finish within the runtime cap; three of the remaining 88 had no
+eligible gold. The final split has only 15 eligible tasks in four groups.
+The inspected Sol arm reached 60/85 top-one hits under a different answer protocol,
+with 20/88 read-floor failures retained as misses.
+
+Historical Qwen acquisition reported $0.1409903; the two Qwen/Jev conditions
+reported $0.015136548 and $0.023915388 for judgment, excluding other arms and
+compute. Warm embedding replay made zero provider requests; its receipt left
+cost and local wall time unavailable.
+
+[Watch successes and regressions](https://atlas-live-five.vercel.app/#localization) ·
+[Read the concise study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
+[Inspect the frozen tables](https://github.com/becker63/attune/tree/main/evidence)
 
 ## Start with three files
 
@@ -123,12 +216,16 @@ easier to execute, inspect, and reuse. Bounded queries make the work enumerable.
 Repeated states are opportunities to avoid computation; how often that saves
 useful work remains a workload-specific measurement.
 
+### Relationships that hold together
+
 Routes follow a sequence. **Theory** asks whether several relationships hold at
 once: for example, whether two distinct files import the same file. It admits
 canonical conjunctive descriptors with one to three positive relations, at most
 four typed roles, two outputs, and one inequality. Renaming roles or reordering
 conjuncts preserves candidate identity; reversing an edge does not. Candidate
 reuse follows that canonical identity, rather than arbitrary logical equivalence.
+
+### Repetition is a hypothesis to measure
 
 Native Flix Datalog evaluates the admitted descriptors over shared repository
 facts. This is the current mechanism. The older
@@ -230,52 +327,26 @@ Bazel reuses unchanged action outputs; BuildBuddy can cache or execute those
 actions remotely. Faster offline replay is not evidence of an equivalent speedup
 for a live coding agent.
 
-## What execution and experiments showed
+## Other experiments: useful limits
 
-The [full report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md)
-retains the frozen populations, corrections, costs, and unsuccessful experiments.
-The latest ReviewBench synthesis is generation 19, followed by the committed
-recall-denominator correction; earlier sections retain provisional figures.
+| Study | What was tested | What the retained evidence supports |
+| --- | --- | --- |
+| Coordination | Witness-bearing policies; independent and joint execution | Implemented and fixture-tested. No completed result for the original 32-pair real panel. |
+| ReviewBench | Plain source access versus packet-assisted review; 10-task pilot, 24-task holdout | Corrected inclusive valid findings: 18 versus 17. Known recall: 36.2% versus 27.7%, over 224 positive references. No demonstrated efficiency improvement. |
 
-- **Scheduling and replay (historical AttuneFlix):** across 61 completed JS/TS
-  SWE-Explore cases, 4,301.12 seconds of sequential evaluation shard work became
-  51.70 seconds of cold remote wall time (83.2x relative to that summed baseline).
-  The unchanged warm graph took 0.153 seconds. Predictions and evaluation
-  outputs were preserved, with the frozen numeric tolerance. The retained JEV
-  acquisition cost $0.581381; exact replay made no new provider calls. Embedding
-  acquisition cost was unavailable. These are offline evaluation/replay
-  measurements, not live-agent speedups or current-release timings. See the
-  [sealed report and usage record](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
-- **Localization:** the runtime-capped SWE-rebench-V2 JS/TS cohort has 88 tasks,
-  85 eligible for scoring, in 22 repository groups. Eight tasks from two
-  unfinished groups were excluded from the original 96-task panel. Adding
-  anchors to the lexical prior raised Hit@1 from 11.8% to 18.8%; adding the
-  richer Theory scoring reduced it to 12.9%. Post-hoc hosted-Qwen plus
-  structure-informed JEV reranking reached 61.2%, versus 57.6% without that
-  structural prompt. The final split has only 15 eligible tasks in four groups.
-  These exploratory results do not establish generalization. The inspected
-  Sol arm reached 60/85 Hit@1, with 20/88 read-floor failures retained as misses.
-- **Coordination:** witness-bearing policies and independent/joint execution
-  are implemented and fixture-tested. The original 32-pair panel is preserved;
-  this publication makes no completed real-panel coordination result claim.
-  Historical corrected-v2 evidence and current fixtures stay separately labelled.
-- **ReviewBench:** a 10-task paired pilot preceded a 24-task heldout comparison
-  of plain source access with the packet-assisted condition. Corrected,
-  checkpoint-inclusive valid findings were 18 versus 17; known recall was
-  36.2% versus 27.7% over the full 224-positive-reference population. All three
-  packet calls across pilot and holdout were refused, with zero accepted.
-  The proposed efficiency improvement was not demonstrated. Final delivery,
-  checkpoint recovery, unresolved judgments, and mixed-version pilot attempts
-  are reported separately.
+All three ReviewBench packet calls across pilot and holdout were refused; zero
+were accepted. Final findings, checkpoint recovery, unresolved judgments, and
+mixed-version pilot attempts remain separate. Holdout review used 6,567,947
+provider-total tokens; evaluation used another 276,637. Dollar cost is unknown
+for plan-billed work.
 
-The deterministic localization arms made no provider calls. Historical Qwen
-acquisition reported $0.1409903; its paired JEV reranks reported $0.015136548 and
-$0.023915388, excluding other arms and compute. ReviewBench holdout review used
-6,567,947 provider-total tokens, with 276,637 evaluator tokens reported separately;
-no dollar estimate is invented for plan-billed work. [Frozen public tables](https://github.com/becker63/attune/tree/main/evidence)
-can be inspected without model access. Exact frozen-fixture replay requires no
-new paid inference. Some larger retained localization inputs and
-corpus archives remain external; the report names those availability limits.
+The [short report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md)
+explains populations, costs, and corrections. The
+[unchanged chronological archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md)
+retains the longer research sequence, including superseded provisional figures.
+The [evidence guide](https://github.com/becker63/attune/tree/main/evidence)
+explains the committed tables and provider-free replay. Larger retained source
+archives and some embedding inputs remain external.
 
 <details>
 <summary>Checked application fixtures and their provenance</summary>
@@ -356,7 +427,9 @@ then compares all six marked examples byte for byte; it also checks local links.
 
 ```text
 README.md                 explanation and checked examples
-LOCALIZATION_REPORT.md    frozen results, corrections, and limitations
+LOCALIZATION_REPORT.md    concise results, corrections, and limitations
+reports/                  unchanged chronological research archive
+evidence/                 frozen tables, timing distributions, reading guide
 attune/src/               identity, Repository, Theory, Study, View/ASCII
 attune/test/              laws, fixtures, frozen receipts, replay stages
 attune/platform/          pinned build rules and mechanical interfaces

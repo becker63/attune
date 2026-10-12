@@ -10,5 +10,7 @@
   "reviewbench/publication-quality.tsv": "a9f4d3811d051f2ac506f1bbac7f8f1e1767b2606fcbbcb0c6e7188a3b763af5",
   "reviewbench/publication-replay.tsv": "a1dd10b3f02186a74a1d0bb63e49e50c3fd12dcae6b6b8656916723c03013f42",
   "reviewbench/publication-severity-metrics.tsv": "3fc8856bb7ccd941d36db49ab7cdac54b9aed914338d4624460166d3ce9f6d53",
-  "reviewbench/publication-task-table.tsv": "e46abc148662fa6c57cb9b7a1c16cb1123069b060f088d5b9eeb35002aa23ba2"
+  "reviewbench/publication-task-table.tsv": "e46abc148662fa6c57cb9b7a1c16cb1123069b060f088d5b9eeb35002aa23ba2",
+  "timing/five-waits.svg": "2e6d17cf764557c0392dae2400b72914ebee124b29bdfa1679c522768c2e8943",
+  "timing/wait-classes.json": "202723db21bac441b13da57822601796917adf97f4f4c48a204e13785bbdad80"
 }
