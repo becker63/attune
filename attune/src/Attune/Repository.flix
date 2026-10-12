@@ -13,7 +13,7 @@
 /// the admitted forward edges.
 pub mod Attune.Repository {
 
-    import attune.grit.AttuneGrit
+    import attune.grit.AttuneGritNative
 
     use Attune.Coverage
     use Attune.Coverage.{Outcome, WorldFacts}
@@ -152,8 +152,10 @@ pub mod Attune.Repository {
     /// go through it, rather than re-implementing the packaged program lookup.
     pub def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
         let languageName = Grit.name(language);
-        let programText = AttuneGrit.program(languageName, Grit.programName(program));
-        Grit.facts(id, source, AttuneGrit.evaluate(languageName, programText, id, source))
+        forM (
+            programText <- Grit.program(language, program);
+            facts <- Grit.facts(id, source, AttuneGritNative.evaluate(languageName, programText, id, source))
+        ) yield facts
     }
 
     /// Extract definitions, then imports, then calls. `forM` stops at the first

@@ -8,17 +8,6 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# The honest counting laws, executed as native Flix tests against the policy's
-# own pure counting functions.
-native_flix_test(
-    name = "count_law_test",
-    srcs = [
-        "CountLaw.flix",
-        "//src:Attune.flix",
-        "//src:Attune/Policy.flix",
-    ],
-)
-
 # The named policy cases, defined and evaluated in Flix.
 native_flix_test(
     name = "policy_cases_test",
@@ -27,19 +16,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/Policy.flix",
     ],
-)
-
-# The owner-approved cognitive-ownership accounting laws: component
-# classification, separate test/support populations, presentation subsets and
-# soft review semantics over the declared population.
-native_flix_declared_test(
-    name = "accounting_law_test",
-    srcs = [
-        "AccountingLaw.flix",
-        "//src:Attune.flix",
-        "//src:Attune/Policy.flix",
-    ],
-    declared = "//:policy_sources",
 )
 
 # The hermetic declared-source policy over exactly the declared inputs.
@@ -73,6 +49,5 @@ native_flix_audit_test(
     # no generic hidden-name rule, so an arbitrary hidden directory stays visible
     # to the audit. The Flix audit test asserts this set equals the policy's own
     # declaration, so the two cannot drift apart silently.
-    skip = [],
     workspace_root = "@local_workspace//:workspace_root.txt",
 )

@@ -6,8 +6,6 @@
     "dev.langchain4j:langchain4j-http-client": -377434017,
     "dev.langchain4j:langchain4j-http-client-jdk": 1361040443,
     "dev.langchain4j:langchain4j-open-ai": 1327604196,
-    "org.apache.arrow:arrow-dataset": -1252091749,
-    "org.apache.arrow:arrow-memory-unsafe": 384575957,
     "org.slf4j:slf4j-nop": -1110392425,
     "repositories": -1949687017
   },
@@ -15,20 +13,11 @@
     "com.fasterxml.jackson.core:jackson-annotations": -1012223496,
     "com.fasterxml.jackson.core:jackson-core": 789964708,
     "com.fasterxml.jackson.core:jackson-databind": 1075068690,
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": -1413277218,
-    "com.google.flatbuffers:flatbuffers-java": -566291013,
     "com.knuddels:jtokkit": -1179071928,
-    "commons-codec:commons-codec": 58403102,
     "dev.langchain4j:langchain4j-core": 1389951011,
     "dev.langchain4j:langchain4j-http-client": 1218227901,
     "dev.langchain4j:langchain4j-http-client-jdk": 1388689924,
     "dev.langchain4j:langchain4j-open-ai": -603648652,
-    "org.apache.arrow:arrow-c-data": 1471952590,
-    "org.apache.arrow:arrow-dataset": -1424635958,
-    "org.apache.arrow:arrow-format": -1403751511,
-    "org.apache.arrow:arrow-memory-core": -158392942,
-    "org.apache.arrow:arrow-memory-unsafe": 1441414189,
-    "org.apache.arrow:arrow-vector": -1750624985,
     "org.jspecify:jspecify": 117231129,
     "org.slf4j:slf4j-api": 500377983,
     "org.slf4j:slf4j-nop": 1026103713
@@ -52,29 +41,11 @@
       },
       "version": "2.22.1"
     },
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": {
-      "shasums": {
-        "jar": "b350169a3b2cc53d781541fe1bfbc0f00c978d185884da79b8330be8fb7aefeb"
-      },
-      "version": "2.21.0"
-    },
-    "com.google.flatbuffers:flatbuffers-java": {
-      "shasums": {
-        "jar": "587bd6c31cda747587493a113bec8602d3a0b0ca579b2b1b838ef71b19e6525d"
-      },
-      "version": "25.2.10"
-    },
     "com.knuddels:jtokkit": {
       "shasums": {
         "jar": "1501ce0259ab897c6746ccfafa1d208acd404fb17e1ac62e157172f2678b1183"
       },
       "version": "1.1.0"
-    },
-    "commons-codec:commons-codec": {
-      "shasums": {
-        "jar": "4da851cb6abfb98bfe9eb77c5e5fc47f5414fa28b94e21b7fd9a646705dc167f"
-      },
-      "version": "1.21.0"
     },
     "dev.langchain4j:langchain4j-core": {
       "shasums": {
@@ -100,42 +71,6 @@
       },
       "version": "1.18.1"
     },
-    "org.apache.arrow:arrow-c-data": {
-      "shasums": {
-        "jar": "a5f0feb39b1a17a875a3481e050318bada45c59d25a70c576be2bc093de8c4be"
-      },
-      "version": "19.0.0"
-    },
-    "org.apache.arrow:arrow-dataset": {
-      "shasums": {
-        "jar": "ffad2478fc034a82021f4aeaddb52f9ca69812574174b0bd9aa623e0b4f46a0f"
-      },
-      "version": "19.0.0"
-    },
-    "org.apache.arrow:arrow-format": {
-      "shasums": {
-        "jar": "e805ea51ba8b517ec6c18a96ea83bef5cda5172a2b74419d4b48fb3584ce4504"
-      },
-      "version": "19.0.0"
-    },
-    "org.apache.arrow:arrow-memory-core": {
-      "shasums": {
-        "jar": "0d3646cc2fa9ae94e95dc8b3e0ed5a51e1df15b59dc548f359e941023471884d"
-      },
-      "version": "19.0.0"
-    },
-    "org.apache.arrow:arrow-memory-unsafe": {
-      "shasums": {
-        "jar": "6103ddbc72a8cc0cdfd940ddf3cac6ee45392672a452f81cb84f8b23304b3cc7"
-      },
-      "version": "19.0.0"
-    },
-    "org.apache.arrow:arrow-vector": {
-      "shasums": {
-        "jar": "113e70317945e780050f13d17027d862d4c5d1cebe06c9fd8a5e922945bb2f8c"
-      },
-      "version": "19.0.0"
-    },
     "org.jspecify:jspecify": {
       "shasums": {
         "jar": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
@@ -160,11 +95,6 @@
       "com.fasterxml.jackson.core:jackson-annotations",
       "com.fasterxml.jackson.core:jackson-core"
     ],
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": [
-      "com.fasterxml.jackson.core:jackson-annotations",
-      "com.fasterxml.jackson.core:jackson-core",
-      "com.fasterxml.jackson.core:jackson-databind"
-    ],
     "dev.langchain4j:langchain4j-core": [
       "com.fasterxml.jackson.core:jackson-annotations",
       "com.fasterxml.jackson.core:jackson-core",
@@ -188,36 +118,6 @@
       "dev.langchain4j:langchain4j-core",
       "dev.langchain4j:langchain4j-http-client",
       "dev.langchain4j:langchain4j-http-client-jdk"
-    ],
-    "org.apache.arrow:arrow-c-data": [
-      "org.apache.arrow:arrow-memory-core",
-      "org.apache.arrow:arrow-vector",
-      "org.slf4j:slf4j-api"
-    ],
-    "org.apache.arrow:arrow-dataset": [
-      "org.apache.arrow:arrow-c-data",
-      "org.apache.arrow:arrow-memory-core",
-      "org.apache.arrow:arrow-vector"
-    ],
-    "org.apache.arrow:arrow-format": [
-      "com.google.flatbuffers:flatbuffers-java"
-    ],
-    "org.apache.arrow:arrow-memory-core": [
-      "org.slf4j:slf4j-api"
-    ],
-    "org.apache.arrow:arrow-memory-unsafe": [
-      "org.apache.arrow:arrow-memory-core"
-    ],
-    "org.apache.arrow:arrow-vector": [
-      "com.fasterxml.jackson.core:jackson-annotations",
-      "com.fasterxml.jackson.core:jackson-core",
-      "com.fasterxml.jackson.core:jackson-databind",
-      "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
-      "com.google.flatbuffers:flatbuffers-java",
-      "commons-codec:commons-codec",
-      "org.apache.arrow:arrow-format",
-      "org.apache.arrow:arrow-memory-core",
-      "org.slf4j:slf4j-api"
     ],
     "org.slf4j:slf4j-nop": [
       "org.slf4j:slf4j-api"
@@ -268,30 +168,9 @@
       "com.fasterxml.jackson.databind.util",
       "com.fasterxml.jackson.databind.util.internal"
     ],
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": [
-      "com.fasterxml.jackson.datatype.jsr310",
-      "com.fasterxml.jackson.datatype.jsr310.deser",
-      "com.fasterxml.jackson.datatype.jsr310.deser.key",
-      "com.fasterxml.jackson.datatype.jsr310.ser",
-      "com.fasterxml.jackson.datatype.jsr310.ser.key",
-      "com.fasterxml.jackson.datatype.jsr310.util"
-    ],
-    "com.google.flatbuffers:flatbuffers-java": [
-      "com.google.flatbuffers",
-      "com.google.flatbuffers.reflection"
-    ],
     "com.knuddels:jtokkit": [
       "com.knuddels.jtokkit",
       "com.knuddels.jtokkit.api"
-    ],
-    "commons-codec:commons-codec": [
-      "org.apache.commons.codec",
-      "org.apache.commons.codec.binary",
-      "org.apache.commons.codec.cli",
-      "org.apache.commons.codec.digest",
-      "org.apache.commons.codec.language",
-      "org.apache.commons.codec.language.bm",
-      "org.apache.commons.codec.net"
     ],
     "dev.langchain4j:langchain4j-core": [
       "dev.langchain4j",
@@ -391,52 +270,6 @@
       "dev.langchain4j.model.openai.internal.spi",
       "dev.langchain4j.model.openai.spi"
     ],
-    "org.apache.arrow:arrow-c-data": [
-      "org.apache.arrow.c",
-      "org.apache.arrow.c.jni"
-    ],
-    "org.apache.arrow:arrow-dataset": [
-      "org.apache.arrow.dataset.file",
-      "org.apache.arrow.dataset.jni",
-      "org.apache.arrow.dataset.scanner",
-      "org.apache.arrow.dataset.scanner.csv",
-      "org.apache.arrow.dataset.source",
-      "org.apache.arrow.dataset.substrait",
-      "org.apache.arrow.dataset.utils"
-    ],
-    "org.apache.arrow:arrow-format": [
-      "org.apache.arrow.flatbuf"
-    ],
-    "org.apache.arrow:arrow-memory-core": [
-      "org.apache.arrow.memory",
-      "org.apache.arrow.memory.rounding",
-      "org.apache.arrow.memory.util",
-      "org.apache.arrow.memory.util.hash",
-      "org.apache.arrow.util"
-    ],
-    "org.apache.arrow:arrow-memory-unsafe": [
-      "org.apache.arrow.memory.unsafe"
-    ],
-    "org.apache.arrow:arrow-vector": [
-      "org.apache.arrow.vector",
-      "org.apache.arrow.vector.compare",
-      "org.apache.arrow.vector.compare.util",
-      "org.apache.arrow.vector.complex",
-      "org.apache.arrow.vector.complex.impl",
-      "org.apache.arrow.vector.complex.reader",
-      "org.apache.arrow.vector.complex.writer",
-      "org.apache.arrow.vector.compression",
-      "org.apache.arrow.vector.dictionary",
-      "org.apache.arrow.vector.extension",
-      "org.apache.arrow.vector.holders",
-      "org.apache.arrow.vector.ipc",
-      "org.apache.arrow.vector.ipc.message",
-      "org.apache.arrow.vector.table",
-      "org.apache.arrow.vector.types",
-      "org.apache.arrow.vector.types.pojo",
-      "org.apache.arrow.vector.util",
-      "org.apache.arrow.vector.validate"
-    ],
     "org.jspecify:jspecify": [
       "org.jspecify.annotations"
     ],
@@ -455,20 +288,11 @@
       "com.fasterxml.jackson.core:jackson-annotations",
       "com.fasterxml.jackson.core:jackson-core",
       "com.fasterxml.jackson.core:jackson-databind",
-      "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
-      "com.google.flatbuffers:flatbuffers-java",
       "com.knuddels:jtokkit",
-      "commons-codec:commons-codec",
       "dev.langchain4j:langchain4j-core",
       "dev.langchain4j:langchain4j-http-client",
       "dev.langchain4j:langchain4j-http-client-jdk",
       "dev.langchain4j:langchain4j-open-ai",
-      "org.apache.arrow:arrow-c-data",
-      "org.apache.arrow:arrow-dataset",
-      "org.apache.arrow:arrow-format",
-      "org.apache.arrow:arrow-memory-core",
-      "org.apache.arrow:arrow-memory-unsafe",
-      "org.apache.arrow:arrow-vector",
       "org.jspecify:jspecify",
       "org.slf4j:slf4j-api",
       "org.slf4j:slf4j-nop"
@@ -483,11 +307,6 @@
     "com.fasterxml.jackson.core:jackson-databind": {
       "com.fasterxml.jackson.core.ObjectCodec": [
         "com.fasterxml.jackson.databind.ObjectMapper"
-      ]
-    },
-    "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": {
-      "com.fasterxml.jackson.databind.Module": [
-        "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule"
       ]
     },
     "dev.langchain4j:langchain4j-http-client-jdk": {

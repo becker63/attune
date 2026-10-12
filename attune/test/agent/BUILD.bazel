@@ -2,11 +2,32 @@ load("//platform/build:native.bzl", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
-filegroup(name = "policy_files", srcs = glob(["**"]))
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
 
 native_flix_test(
     name = "agent_test",
-    srcs = ["AgentTest.flix", "//src:Attune.flix", "//src:Attune/Agent.flix"],
+    srcs = [
+        "AgentTest.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Agent.flix",
+    ],
+    java_deps = [
+        "@attune_maven//:dev_langchain4j_langchain4j_core",
+        "@attune_maven//:org_slf4j_slf4j_nop",
+    ],
+)
+
+native_flix_test(
+    name = "embedding_sdk_test",
+    srcs = [
+        "EmbeddingTest.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Jvm.flix",
+    ],
     java_deps = [
         "@attune_maven//:dev_langchain4j_langchain4j_core",
         "@attune_maven//:org_slf4j_slf4j_nop",

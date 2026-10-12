@@ -275,17 +275,13 @@ useful work remains a workload-specific measurement.
 #### Relationships that hold together
 
 Routes follow a sequence. **Theory** asks whether several relationships hold at
-once: for example, whether two distinct files import the same file. The questions have fixed limits, so Attune can enumerate and check them.
+once: for example, whether two different files import the same dependency.
+These questions are ordinary Flix functions and native Datalog rules. A route
+panel is limited to 64 questions of eight steps each.
 
-<details>
-<summary>The exact bounds and reuse rule</summary>
-
-Theory admits one to three positive relations, at most four typed roles, two
-outputs, and one inequality. It gives equivalent spellings one candidate identity:
-renaming roles or reordering conjuncts preserves it; reversing an edge does not.
-This is bounded canonicalization, not a test of arbitrary logical equivalence.
-
-</details>
+The larger descriptor language, canonicalization, and campaign search now live
+in the historical archive. The small library keeps exact answers and explicit
+bounds without requiring a second query language.
 
 #### Repetition is a hypothesis to measure
 
@@ -302,34 +298,24 @@ Original papers:
 
 ### A question you can read and run
 
-Which two files import the same dependency? This is the complete Flix question:
+Which two files import the same dependency? The rule in
+[Theory.flix](attune/src/Attune/Theory.flix) reads:
 
-<!-- attune:snippet=shared-imports -->
-```flix
-def sharedImports(imports: List[(String, String)]): List[(String, String, String)] = {
-    let facts = inject imports into Imports/2;
-    let rules = #{
-        Shared(first, second, dependency) :-
-            Imports(first, dependency),
-            Imports(second, dependency),
-            if (first != second).
-    };
-    query facts, rules select (first, second, dependency)
-        from Shared(first, second, dependency)
-        |> Vector.toList |> List.sort
-}
-```
-<!-- attune:end=shared-imports -->
+~~~flix
+Shared(first, second, dependency) :-
+    Imports(first, dependency),
+    Imports(second, dependency),
+    if (first != second).
+~~~
 
-Read `:-` as **“if”**: a pair shares a dependency if both files import it and
-are different files. `inject` supplies the observed imports; `query` asks for
-answers. On the Ruby shop above, it finds `checkout.rb` and `receipt.rb` sharing
-`pricing.rb`. One importer alone produces no pair.
+Read the rule as “two different files share a dependency if both import it.”
+Flix checks that these positions contain files. The surrounding function
+supplies the observed imports and returns sorted, exact answers.
 
-The [test](attune/test/docs/ReadmeCorrespondence.flix) runs this exact function
-after extracting the shop's source. It checks the answers separately from the
-README copy. [Theory](attune/src/Attune/Theory.flix) applies the same idea to a
-bounded collection of questions.
+The [semantic tests](attune/test/theory/TheoryLaw.flix) check joins, relation
+direction, foreign-world rejection, and repeatable answers. The
+[extraction tests](attune/test/grit/GritSeamTest.flix) run the same query on
+the real Ruby shop.
 
 A complete no-match, an unknown result, and a failure remain different outcomes.
 A prediction, an observation, a historical replay, and an authored fixture also
@@ -345,7 +331,7 @@ Read the code in this order. Each file introduces one part of the calculation:
 | [Effects.flix](attune/src/Attune/Effects.flix) | Ask for work; let a handler supply the answer. |
 | [Attune.flix](attune/src/Attune.flix) | Files and symbols have different types. Reuse needs the exact same world and input. |
 | [Repository.flix](attune/src/Attune/Repository.flix) | Turn extracted observations into relationships we can support. |
-| [Theory.flix](attune/src/Attune/Theory.flix) | Ask several related questions together using bounded Datalog. |
+| [Theory.flix](attune/src/Attune/Theory.flix) | Follow relationships or join facts with native Datalog. |
 
 ```text
 Flix:   request -> handler -> answer -> continue the calculation
@@ -355,6 +341,18 @@ Bazel:  inputs  -> independent actions -> reusable artifacts
 An effect signature says **what a function may ask for**. A handler says
 **how to answer**. The same ranking function can use saved inputs without
 contacting a provider. A missing answer stays an error.
+
+The [Bazel example](attune/example/BUILD.bazel) makes the boundary concrete:
+
+```text
+issue + two files -> three request artifacts -> three answer artifacts -> ranking
+```
+
+Each answer carries the exact request it satisfies. Bazel schedules the independent
+branches; a final Flix action resumes the calculation using those answers.
+The graph is declared in advance. New agent requests require another scheduling
+round; an effect handler does not automatically create an action.
+
 
 **Grit** extracts source observations. **Flix** owns their meaning and the
 calculations. **Bazel** owns dependencies and scheduling; **BuildBuddy** supplies
@@ -387,7 +385,7 @@ From a Linux checkout with Nix installed:
 
 ```sh
 nix run          # offline walkthrough
-nix run .#test   # retained laws, fixtures, and documentation checks
+nix run .#test   # semantic laws, fixtures, and source checks
 ```
 
 The walkthrough uses small authored vectors, not model output. Initial setup
@@ -408,11 +406,9 @@ The complete campaign implementation is preserved at
 [archive/complete-studies-2026-10-12](https://github.com/becker63/attune/tree/archive/complete-studies-2026-10-12).
 See the evidence guide for its frozen-input replay requirements.
 
-Semantic laws check extraction, query answers, reuse, and failure handling.
-The [README correspondence test](attune/test/docs/ReadmeCorrespondence.flix)
-checks that the displayed program is the function those tests run, and that
-local links resolve. The former renderer and its six output examples remain in
-[Git history](https://github.com/becker63/attune/tree/70ba0dc5601f72ea48cc01d90f4b9ad17fa4818c).
+Semantic laws check extraction, query answers, reuse, effect replay, and tool
+permissions. The ASCII renderer and documentation-correspondence machinery
+remain in Git history; the library returns ordinary values.
 
 ## Documentation and source
 
@@ -423,11 +419,12 @@ local links resolve. The former renderer and its six output examples remain in
 | [Historical archive](https://github.com/becker63/attune/blob/e9731b823ff2ea706b1330ea48dc70f2befef311/LOCALIZATION_REPORT.md) | The full, unchanged research chronology and provisional generations. |
 
 ```text
-README.md                 explanation and checked examples
+README.md                 explanation and small examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
 evidence/                 frozen tables and their reading guide
 web/                      website, graphics, and independent deployment
 attune/src/               identity, effects, Repository, Theory, Study
+attune/example/           the complete request -> action -> answer example
 attune/test/              laws and small authored fixtures
 attune/platform/          pinned build rules and mechanical interfaces
 attune/notes/design.md    ownership, provenance, and source accounting

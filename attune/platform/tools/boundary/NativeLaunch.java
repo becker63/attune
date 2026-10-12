@@ -1,608 +1,135 @@
 package attune.tools.boundary;
 
+import com.google.devtools.build.runfiles.Runfiles;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
- * Launch declared Flix sources with the pinned compiler and an isolated environment.
- *
- * <pre>
- * Bazel inputs -> resolve paths -> isolated compiler -> main, tests, or artifacts
- * </pre>
- *
- * <p>Local actions use a user/network namespace. Remote actions use the declared
- * BuildBuddy container with networking disabled. The boundary record reports
- * which isolation actually ran; an isolation failure has no fallback.
- *
- * <p>Tests and artifact stages share this launcher. Stages bind explicit inputs
- * and outputs; source-tree actions copy declared files. Receipt fixtures use the
- * bounded process runner. Flix owns interpretation, assertions, and verdicts.
+ * One isolated JVM for each declared Flix program or test.
+ * Inputs are resolved before entering the boundary; Flix owns their meaning.
  */
 public final class NativeLaunch {
     private NativeLaunch() {}
 
     public static void main(String[] args) throws Exception {
-        System.exit(run());
+        if (args.length > 0 && args[0].equals("inner")) {
+            System.exit(NativeTester.run(paths("attune.jars"), paths("attune.tests"),
+                    property("attune.mode").equals("run"), property("attune.expect").replace("_", " ")));
+        }
+        System.exit(launch());
     }
 
-    static int run() throws Exception {
-        String mode = System.getProperty("attune.mode", "native");
-        if (mode.equals("produce")) {
-            return produce();
+    private static int launch() throws Exception {
+        String mode = property("attune.mode");
+        String isolation = require("attune.isolation");
+        if (!Set.of("unshare", "platform").contains(isolation)) {
+            throw new IllegalArgumentException("unknown isolation: " + isolation);
         }
-        if (mode.equals("stage")) {
-            return stage();
+        Path work = Files.createTempDirectory(
+                Path.of(System.getenv().getOrDefault("TEST_TMPDIR", System.getProperty("java.io.tmpdir"))),
+                "attune-");
+        List<Path> sources = resolveAll(property("attune.tests"));
+        List<Path> jars = new ArrayList<>();
+        if (!property("attune.jars").isEmpty()) {
+            for (String jar : Files.readAllLines(resolve(property("attune.jars")))) {
+                if (!jar.isBlank()) jars.add(resolve(jar));
+            }
         }
-        if (mode.equals("copytree")) {
-            return copyTree();
-        }
-        if (mode.equals("receipt")) {
-            return receipts();
-        }
-        if (mode.equals("drainprobe")) {
-            return drainProbe();
-        }
-        String isolation = isolation();
-        Path flixJar = Runfiles.resolve(require("attune.flix"));
-        Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
-        List<String> tests = new ArrayList<>();
-        for (String location : splitList(System.getProperty("attune.tests", ""))) {
-            tests.add(Runfiles.resolve(location).toString());
-        }
-        Path work = workDir();
-        Path java = Path.of(System.getProperty("java.home"), "bin", "java");
-
-        if (mode.equals("check")) {
-            return check(isolation, unshare, java, flixJar, tests, System.getProperty("attune.expect", ""), work);
-        }
-
         if (mode.equals("declared")) {
-            Path source = Runfiles.resolve(require("attune.manifest"));
-            List<String> relative = new ArrayList<>();
-            for (String line : Files.readAllLines(source, StandardCharsets.UTF_8)) {
-                if (!line.isBlank()) {
-                    relative.add(line);
-                }
-            }
-            Manifest.declared(work.resolve("attune-manifest.tsv"), relative);
+            Manifest.declared(work.resolve("attune-manifest.tsv"),
+                    Files.readAllLines(resolve(require("attune.manifest"))));
         } else if (mode.equals("audit")) {
-            Path rootFile = Runfiles.resolve(require("attune.root"));
-            Path root = Path.of(Files.readString(rootFile, StandardCharsets.UTF_8).trim());
-            Manifest.audit(
-                    work.resolve("attune-manifest.tsv"),
-                    root,
-                    new LinkedHashSet<>(splitList(System.getProperty("attune.skip", ""))));
+            Path root = Path.of(Files.readString(resolve(require("attune.root"))).trim());
+            Manifest.audit(work.resolve("attune-manifest.tsv"), root);
         }
 
-        List<String> bindings = declaredBindings();
-        List<Path> produced = producedTrees();
-        if (!produced.isEmpty()) {
-            Manifest.produced(work.resolve("attune-produced.tsv"), produced);
-            bindings.add("produced_manifest=" + work.resolve("attune-produced.tsv"));
-            for (int index = 0; index < produced.size(); index++) {
-                bindings.add("produced" + index + "=" + produced.get(index));
-            }
-            for (Path tree : produced) {
-                tests.addAll(flixSources(tree));
+        List<String> bindings = new ArrayList<>();
+        if (!property("attune.fixtures").isEmpty()) {
+            for (String line : Files.readAllLines(resolve(property("attune.fixtures")))) {
+                if (line.isBlank()) continue;
+                String[] fields = line.split("\t", -1);
+                String location = fields.length == 1 ? fields[0] : fields[1];
+                bindings.add(fields[0] + "\t" + resolve(location));
             }
         }
-        if (!bindings.isEmpty()) {
-            writeBindings(work.resolve("attune-bindings.tsv"), bindings);
-        }
-        String fixtures = bindings.isEmpty() ? "" : "-Dattune.fixtures=" + String.join(",", bindings);
-
-        if (mode.equals("java")) {
-            List<String> jars = jarPaths();
-            List<String> command = new ArrayList<>();
-            command.addAll(namespace(isolation, unshare));
-            command.add(java.toString());
-            command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
-            command.add("--enable-native-access=ALL-UNNAMED");
-            List<String> libs = new ArrayList<>();
-            for (String location : splitList(System.getProperty("attune.libs", ""))) {
-                libs.add(Runfiles.resolve(location).toString());
-            }
-            if (!libs.isEmpty()) {
-                command.add("-Dattune.libs=" + String.join(",", libs));
-            }
-            if (!fixtures.isEmpty()) {
-                command.add(fixtures);
-            }
-            command.add("-cp");
-            command.add(innerClasspath(jars));
-            command.add("attune.tools.boundary.NativeInner");
-            command.add(work.toString());
-            command.add(flixJar.toString());
-            command.add(hostNetns());
-            command.add("java");
-            command.add(Integer.toString(jars.size()));
-            command.addAll(jars);
-            command.addAll(tests);
-            return launch(command, work);
-        }
+        Files.write(work.resolve("attune-bindings.tsv"), bindings);
 
         List<String> command = new ArrayList<>();
-        command.addAll(namespace(isolation, unshare));
-        command.add(java.toString());
-        command.add("-cp");
-        command.add(innerClasspath(List.of()));
-        command.add("attune.tools.boundary.NativeInner");
-        command.add(work.toString());
-        command.add(flixJar.toString());
-        command.add(hostNetns());
-        if (mode.equals("run")) command.add("run");
-        command.addAll(tests);
-        return launch(command, work);
-    }
-
-    /** Compile-only negative: the pinned compiler must reject with the diagnostic. */
-    private static int check(String isolation, Path unshare, Path java, Path flixJar, List<String> files,
-            String expected, Path work) throws Exception {
-        String diagnostic = expected.replace("_", " ");
-        List<String> command = new ArrayList<>();
-        command.addAll(namespace(isolation, unshare));
-        command.add(java.toString());
-        command.add("-jar");
-        command.add(flixJar.toString());
-        command.add("check");
-        command.addAll(files);
-
-        ProcessBuilder builder = process(command, work);
-        builder.redirectErrorStream(true);
-        Process process = builder.start();
-        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        int exit = process.waitFor();
-        System.out.print(output);
-        if (exit == 0) {
-            System.err.println("expected the pinned compiler to reject the fixture, but it accepted it");
-            return 1;
-        }
-        if (!output.contains(diagnostic)) {
-            System.err.println("the pinned compiler rejected the fixture, but the diagnostic did not contain: "
-                    + diagnostic);
-            return 1;
-        }
-        System.out.println("pinned compiler rejection verified: exit " + exit);
-        return 0;
-    }
-
-    private static int launch(List<String> command, Path work) throws Exception {
-        ProcessBuilder builder = process(command, work);
-        builder.inheritIO();
-        return builder.start().waitFor();
-    }
-
-    /// The declared isolation mode this run uses.
-    ///
-    /// `unshare` is the default and the ordinary local gate: the inner step
-    /// runs inside the pinned util-linux user/network namespace and the
-    /// mechanical boundary record can therefore report a distinct network
-    /// namespace. `platform` is declared by the opt-in remote profile
-    /// (`--define=attune_native_isolation=platform`, wired in `.bazelrc`),
-    /// where the action runs directly in the declared BuildBuddy container and
-    /// creates no namespace here; the guest network denial is the platform's
-    /// declared `dockerNetwork=off` property. An unknown value is refused
-    /// rather than silently treated as isolated.
-    private static String isolation() {
-        String isolation = System.getProperty("attune.isolation", "unshare");
-        if (!isolation.equals("unshare") && !isolation.equals("platform")) {
-            throw new IllegalStateException("unknown attune.isolation: " + isolation);
-        }
-        return isolation;
-    }
-
-    /// The declared isolation prefix for the inner step, empty in the mode where
-    /// the declared platform itself supplies the boundary.
-    private static List<String> namespace(String isolation, Path unshare) {
         if (isolation.equals("unshare")) {
-            return List.of(unshare.toString(), "--user", "--map-root-user", "--net", "--");
+            command.addAll(List.of(resolve(require("attune.unshare")).toString(),
+                    "--user", "--map-root-user", "--net", "--"));
         }
-        return List.of();
-    }
-
-    /// The one declared locale boundary for the inner step.
-    ///
-    /// A JVM derives `sun.jnu.encoding` from the process locale, and on Linux
-    /// the C/POSIX locale maps to `ANSI_X3.4-1968`, where `Path.of` rejects any
-    /// path that is not representable in ASCII. The pinned corpus contains
-    /// arbitrary valid UTF-8 source paths, so the boundary names the one locale
-    /// that is UTF-8 while staying byte-transparent: `C.UTF-8` is provided by
-    /// glibc itself from 2.35 on, needs no generated locale archive, and changes
-    /// no collation or classification rule relative to `C`. The launcher's own
-    /// JVM takes the same locale from its action environment, so the parent
-    /// resolves the declared manifest and the child reads the declared bytes
-    /// under the identical encoding. Neither the filenames nor the source bytes
-    /// are normalized, renamed or excluded: only the boundary is named.
-    private static final String LOCALE = "C.UTF-8";
-
-    private static ProcessBuilder process(List<String> command, Path work) {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.directory(work.toFile());
-        Map<String, String> environment = builder.environment();
-        environment.clear();
-        environment.put("HOME", work.toString());
-        environment.put("PATH", "/usr/bin:/bin");
-        environment.put("LANG", LOCALE);
-        return builder;
-    }
-
-    /// The declared encoding record of the launcher's own JVM, bound beside the
-    /// other declared inputs so a stage law can assert the encoding boundary it
-    /// actually ran under rather than assuming it. It is a measurement of the
-    /// process, not a policy: the law owns the assertion.
-    private static void writeEncodings(Path work, List<String> bindings) throws IOException {
-        List<String> rows = new ArrayList<>();
-        rows.add("lang\t" + System.getenv("LANG"));
-        rows.add("sun.jnu.encoding\t" + System.getProperty("sun.jnu.encoding"));
-        rows.add("file.encoding\t" + System.getProperty("file.encoding"));
-        rows.add("native.encoding\t" + System.getProperty("native.encoding"));
-        Path record = work.resolve("attune-encodings.tsv");
-        Files.write(record, rows, StandardCharsets.UTF_8);
-        bindings.add("encodings=" + record.toAbsolutePath());
-    }
-
-    /// The outer classpath, made absolute so the in-namespace step can resolve it
-    /// after the working directory changes, plus any prepared dependency jars.
-    private static String innerClasspath(List<String> extra) {
-        List<String> parts = new ArrayList<>();
-        for (String entry : System.getProperty("java.class.path", "").split(File.pathSeparator)) {
-            if (!entry.isBlank()) {
-                parts.add(Path.of(entry).toAbsolutePath().toString());
-            }
-        }
-        parts.addAll(extra);
-        return String.join(File.pathSeparator, parts);
-    }
-
-    /// The declared fixture manifest, resolved to `name=absolute path` bindings.
-    private static List<String> fixtureBindings(String manifest) throws IOException {
-        List<String> bindings = new ArrayList<>();
-        for (String line : Files.readAllLines(Runfiles.resolve(manifest), StandardCharsets.UTF_8)) {
-            if (!line.isBlank()) {
-                String name = line.trim();
-                bindings.add(name + "=" + Runfiles.resolve(name));
-            }
-        }
-        return bindings;
-    }
-
-    /// The documents that live at the checkout root, outside this nested
-    /// workspace, bound as `name=absolute path`. The checkout root is the
-    /// parent of the recorded Bazel workspace root; the names are the exact
-    /// relative documents the caller declared, and this method decides nothing
-    /// about their content.
-    private static List<String> checkoutBindings(String names) throws IOException {
-        Path workspace = Path.of(Files.readString(
-                Runfiles.resolve(require("attune.workspace_root")), StandardCharsets.UTF_8).trim());
-        Path checkout = workspace.getParent();
-        List<String> bindings = new ArrayList<>();
-        for (String name : splitList(names)) {
-            bindings.add(name + "=" + checkout.resolve(name));
-        }
-        return bindings;
-    }
-
-    /// Every declared `name=absolute path` binding this run prepared: the
-    /// declared fixture population and the live checkout documents. The produced
-    /// tree roots are added by `run` after this, because their names are derived
-    /// from the resolved trees rather than from a declared manifest.
-    private static List<String> declaredBindings() throws IOException {
-        List<String> bindings = new ArrayList<>();
-        String declared = System.getProperty("attune.fixtures", "");
-        String checkout = System.getProperty("attune.checkout_files", "");
-        if (!declared.isEmpty()) {
-            bindings.addAll(fixtureBindings(declared));
-        }
-        if (!checkout.isEmpty()) {
-            bindings.addAll(checkoutBindings(checkout));
-        }
-        return bindings;
-    }
-
-    /// The produced declared trees named on `attune.produced`, resolved from the
-    /// runfiles tree. This decides nothing about their content: it resolves the
-    /// declared location the caller named and nothing else.
-    private static List<Path> producedTrees() {
-        List<Path> trees = new ArrayList<>();
-        for (String location : splitList(System.getProperty("attune.produced", ""))) {
-            trees.add(Runfiles.resolve(location));
-        }
-        return trees;
-    }
-
-    /// Write the prepared `name<TAB>path` table a Flix law reads to resolve a
-    /// declared name onto its real prepared path. Formatting only; the law owns
-    /// what the table means.
-    private static void writeBindings(Path output, List<String> bindings) throws IOException {
-        List<String> lines = new ArrayList<>();
-        for (String binding : bindings) {
-            int separator = binding.indexOf('=');
-            if (separator > 0) {
-                lines.add(binding.substring(0, separator) + "\t" + binding.substring(separator + 1));
-            }
-        }
-        Files.write(output, lines, StandardCharsets.UTF_8);
-    }
-
-    /// The declared Flix sources inside a produced tree, resolved to absolute
-    /// paths and sorted. The consumer compiles them through the pinned Tester,
-    /// so the exported artifact is really consumed rather than only named.
-    private static List<String> flixSources(Path tree) throws IOException {
-        List<String> sources = new ArrayList<>();
-        try (java.util.stream.Stream<Path> stream = Files.walk(tree.toRealPath())) {
-            stream.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(".flix"))
-                    .sorted()
-                    .forEach(path -> sources.add(path.toAbsolutePath().toString()));
-        }
-        return sources;
-    }
-
-    /// The producer action: run the pinned compiler's authentic native Tester
-    /// over the explicit declared sources and dependency jars, then materialize
-    /// the declared output tree. The tree holds one immutable regular-file copy
-    /// of each exported source under `sources/` and a mechanical `closure.tsv`
-    /// naming the exact source, jar and binding closure. This is compiler launch
-    /// and filesystem mechanics: it decides no policy and classifies nothing,
-    /// and a non-zero Tester verdict fails the action rather than being recorded.
-    private static int produce() throws Exception {
-        Path out = Path.of(require("attune.outputs"));
-        List<String> tester = splitList(System.getProperty("attune.tests", ""));
-        List<String> jars = splitList(System.getProperty("attune.jars", ""));
-        List<String> export = splitList(System.getProperty("attune.export", ""));
-        List<String> bindings = splitList(System.getProperty("attune.bindings", ""));
-        int status = NativeTester.run(absolutes(jars), absolutes(tester));
-        if (status != 0) {
-            System.err.println("the pinned native Tester failed over the declared sources: exit " + status);
-            return status;
-        }
-        Path sources = out.resolve("sources");
-        Files.createDirectories(sources);
-        List<String> closure = new ArrayList<>();
-        for (String source : export) {
-            Path input = Path.of(source);
-            String name = input.getFileName().toString();
-            Path artifact = sources.resolve(name);
-            Files.copy(input, artifact, StandardCopyOption.REPLACE_EXISTING);
-            closure.add("source\t" + source + "\t" + "sources/" + name + "\t" + Files.size(artifact));
-        }
-        for (String jar : jars) {
-            closure.add("jar\t" + Path.of(jar).getFileName().toString() + "\t" + Files.size(Path.of(jar)));
-        }
-        for (String binding : bindings) {
-            closure.add("binding\t" + Path.of(binding).getFileName().toString() + "\t" + Files.size(Path.of(binding)));
-        }
-        Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
-        return 0;
-    }
-
-    /// The declared study-stage action: run the pinned compiler's authentic
-    /// native Tester over the explicit declared stage sources with the declared
-    /// input bindings, then materialize the declared output tree the stage law
-    /// wrote into. It decides no policy: it creates the output directory, binds
-    /// the declared inputs and the exact output location on
-    /// `attune-bindings.tsv`, runs the engine in a child process whose working
-    /// directory is that binding table's home, and records the mechanical
-    /// closure. It fails only when the engine failed or the stage law wrote no
-    /// regular file, so an empty tree can never masquerade as a materialized
-    /// stage.
-    private static int stage() throws Exception {
-        Path out = Path.of(require("attune.outputs"));
-        String stage = System.getProperty("attune.stage", "");
-        List<String> tester = splitList(System.getProperty("attune.tests", ""));
-        List<String> inputs = splitList(System.getProperty("attune.inputs", ""));
-        List<String> jars = splitList(System.getProperty("attune.jars", ""));
-        Files.createDirectories(out);
-        Path work = workDir();
-        List<String> bindings = new ArrayList<>();
-        bindings.add("outputs=" + out.toAbsolutePath());
-        bindings.add("stage=" + stage);
-        bindings.add("label=" + System.getProperty("attune.label", ""));
-        // The launcher's own working directory is the action's execroot, and a
-        // declared `name<TAB>path` table can carry execroot-relative action paths
-        // (a path manifest of a whole declared population). Binding the exact
-        // directory here lets a stage law resolve such a declared relative path
-        // against the same root the launcher resolved its absolute bindings
-        // against. It is the launcher's own location, decided nowhere else.
-        bindings.add("execroot=" + Path.of("").toAbsolutePath());
-        writeEncodings(work, bindings);
-        for (String spec : inputs) {
-            int separator = spec.indexOf('=');
-            if (separator > 0) {
-                bindings.add(spec.substring(0, separator) + "="
-                        + Path.of(spec.substring(separator + 1)).toAbsolutePath());
-            }
-        }
-
-        // A declared measurement stage runs its bounded argv plan through the
-        // exact mechanical receipt boundary before the stage law executes, and
-        // the receipt tree is bound beside the other declared inputs. The
-        // boundary decides no policy: the law reduces the real raw receipts. A
-        // measured nonzero child exit is receipt data, so the stage still runs.
-        String plan = System.getProperty("attune.plan", "");
-        if (!plan.isEmpty()) {
-            Path receipts = out.resolve("receipts");
-            Files.createDirectories(receipts);
-            String freshness = System.getProperty("attune.freshness", "-");
-            int status = ProcessReceipts.run(Path.of(plan), receipts, freshness.isEmpty() ? "-" : freshness, work);
-            if (status != 0) {
-                System.err.println("the mechanical receipt boundary could not record the declared plan; status " + status);
-                return status;
-            }
-            bindings.add("receipts=" + receipts.toAbsolutePath());
-        }
-        writeBindings(work.resolve("attune-bindings.tsv"), bindings);
-
-        String isolation = isolation();
-        Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
-        Path java = Path.of(System.getProperty("java.home"), "bin", "java");
-        List<String> libs = new ArrayList<>();
-        for (String location : splitList(System.getProperty("attune.libs", ""))) {
-            libs.add(Path.of(location).toAbsolutePath().toString());
-        }
-        List<String> command = new ArrayList<>();
-        command.addAll(namespace(isolation, unshare));
-        command.add(java.toString());
-        command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
+        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
         command.add("--enable-native-access=ALL-UNNAMED");
-        if (!libs.isEmpty()) {
-            // A stage law that drives the pinned native engine names the prepared
-            // shared library on this property, exactly as the native Java test
-            // route does. The launcher only forwards the declared paths.
-            command.add("-Dattune.libs=" + String.join(",", libs));
+        command.add("-Dattune.mode=" + mode);
+        command.add("-Dattune.tests=" + joined(sources));
+        command.add("-Dattune.jars=" + joined(jars));
+        command.add("-Dattune.expect=" + property("attune.expect"));
+        command.add("-Dattune.hostNetns=" + Files.readSymbolicLink(Path.of("/proc/self/ns/net")));
+        command.add("-Dattune.libs=" + joined(resolveAll(property("attune.libs"))));
+        command.add("-Dattune.fixtures=" + String.join(",",
+                bindings.stream().map(line -> line.replaceFirst("\t", "=")).toList()));
+        if (!property("attune.output").isEmpty()) {
+            command.add("-Dattune.output=" + Path.of(property("attune.output")).toAbsolutePath());
         }
-        command.add("-cp");
-        command.add(innerClasspath(jars));
-        command.add("attune.tools.boundary.NativeInner");
-        command.add(work.toString());
-        command.add("-");
-        command.add(hostNetns());
-        command.add("java");
-        command.add(Integer.toString(jars.size()));
-        for (String jar : jars) {
-            command.add(Path.of(jar).toAbsolutePath().toString());
+        List<String> classpath = new ArrayList<>();
+        for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
+            classpath.add(Path.of(entry).toAbsolutePath().toString());
         }
-        for (String source : tester) {
-            command.add(Path.of(source).toAbsolutePath().toString());
-        }
-        int status = launch(command, work);
-        if (status != 0) {
-            System.err.println("the pinned native Tester failed over the declared stage sources: exit " + status);
-            return status;
-        }
-        if (!hasRegularFile(out)) {
-            System.err.println("the declared stage wrote no output artifact: " + stage);
-            return 1;
-        }
-        List<String> closure = new ArrayList<>();
-        closure.add("stage\t" + stage);
-        for (String spec : inputs) {
-            int separator = spec.indexOf('=');
-            if (separator > 0) {
-                closure.add("input\t" + spec.substring(0, separator) + "\t"
-                        + Path.of(spec.substring(separator + 1)).getFileName());
-            }
-        }
-        Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
-        return 0;
+        command.addAll(List.of("-cp", String.join(File.pathSeparator, classpath),
+                NativeLaunch.class.getName(), "inner"));
+
+        ProcessBuilder process = new ProcessBuilder(command).directory(work.toFile()).inheritIO();
+        process.environment().clear();
+        process.environment().putAll(java.util.Map.of("HOME", work.toString(),
+                "PATH", "/usr/bin:/bin", "LANG", "C.UTF-8"));
+        return process.start().waitFor();
     }
 
-    /// The declared immutable-source-tree action: copy each explicit declared
-    /// regular file into one declared output directory and record the mechanical
-    /// listing. It decides nothing about the content: it is a byte copy, so a
-    /// baseline/A/B/AB variant is an immutable tree artifact rather than a
-    /// mutable shared worktree.
-    private static int copyTree() throws Exception {
-        Path out = Path.of(require("attune.outputs"));
-        List<String> sources = splitList(System.getProperty("attune.sources", ""));
-        Files.createDirectories(out);
-        List<String> records = new ArrayList<>();
-        for (String source : sources) {
-            Path input = Path.of(source);
-            Path artifact = out.resolve(input.getFileName().toString());
-            Files.copy(input, artifact, StandardCopyOption.REPLACE_EXISTING);
-            records.add(input.getFileName() + "\t" + Files.size(artifact));
+    static Path resolve(String name) throws IOException {
+        Path direct = Path.of(name);
+        if (Files.exists(direct)) return direct.toAbsolutePath();
+        String location = name.startsWith("../") ? name.substring(3) : name;
+        Runfiles runfiles = Runfiles.create();
+        String resolved = runfiles.rlocation(location);
+        if (resolved == null || !Files.exists(Path.of(resolved))) {
+            resolved = runfiles.rlocation("_main/" + location);
         }
-        Files.write(out.resolve("tree.tsv"), records, StandardCharsets.UTF_8);
-        return 0;
-    }
-
-    /// True when the directory tree holds at least one regular file.
-    private static boolean hasRegularFile(Path dir) throws IOException {
-        try (java.util.stream.Stream<Path> stream = Files.walk(dir)) {
-            return stream.anyMatch(Files::isRegularFile);
+        if (resolved == null || !Files.exists(Path.of(resolved))) {
+            throw new IOException("Missing declared input: " + name);
         }
+        return Path.of(resolved).toAbsolutePath();
     }
 
-    /// The declared receipt action: run one bounded declared argv plan through
-    /// the mechanical measurement boundary and materialize the declared receipt
-    /// tree. The plan is a declared input authored on the Flix/Study side; this
-    /// mode decides nothing about which commands to run or what their exits mean.
-    /// A measured nonzero child exit is receipt data, so the action succeeds
-    /// whenever the receipt was written and fails only on an infrastructure
-    /// error that prevented one. The declared freshness identity is recorded
-    /// verbatim; it separates a fresh measurement from a replay without touching
-    /// any deterministic world or prediction artifact.
-    private static int receipts() throws Exception {
-        Path plan = Path.of(require("attune.plan"));
-        Path out = Path.of(require("attune.outputs"));
-        String freshness = System.getProperty("attune.freshness", "-");
-        if (freshness.isEmpty()) {
-            freshness = "-";
+    private static List<Path> resolveAll(String value) throws IOException {
+        List<Path> result = new ArrayList<>();
+        for (String entry : value.split(",")) {
+            if (!entry.isBlank()) result.add(resolve(entry));
         }
-        return ProcessReceipts.run(plan, out, freshness, workDir());
+        return result;
     }
 
-    /// The test-only drain-probe action: drive the production bounded drain over
-    /// the deterministic faulty streams the fixture declares and materialize the
-    /// production receipt records. It is a fault fixture, not a production
-    /// endpoint: it decides no policy and classifies nothing, and the native law
-    /// that consumes the tree owns the interpretation.
-    private static int drainProbe() throws Exception {
-        Path out = Path.of(require("attune.outputs"));
-        DrainProbe.write(out);
-        return 0;
+    private static List<Path> paths(String key) {
+        return Arrays.stream(property(key).split(",")).filter(s -> !s.isEmpty()).map(Path::of).toList();
     }
 
-    private static List<Path> absolutes(List<String> paths) {
-        List<Path> absolute = new ArrayList<>();
-        for (String path : paths) {
-            absolute.add(Path.of(path).toAbsolutePath());
-        }
-        return absolute;
+    private static String joined(List<Path> paths) {
+        return String.join(",", paths.stream().map(Path::toString).toList());
     }
 
-    /// The prepared dependency jars named by the declared jar manifest.
-    private static List<String> jarPaths() throws IOException {
-        Path manifest = Runfiles.resolve(require("attune.jars"));
-        List<String> jars = new ArrayList<>();
-        for (String line : Files.readAllLines(manifest, StandardCharsets.UTF_8)) {
-            if (!line.isBlank()) {
-                jars.add(Runfiles.resolve(line.trim()).toString());
-            }
-        }
-        return jars;
-    }
-
-    private static Path workDir() throws IOException {
-        String testTmp = System.getenv("TEST_TMPDIR");
-        Path base = (testTmp == null || testTmp.isEmpty())
-                ? Files.createTempDirectory("attune-native-")
-                : Files.createDirectories(Path.of(testTmp).resolve("attune-native"));
-        return base;
-    }
-
-    private static String hostNetns() {
-        try {
-            return Files.readSymbolicLink(Path.of("/proc/self/ns/net")).toString();
-        } catch (IOException exception) {
-            return "unavailable";
-        }
-    }
-
-    private static List<String> splitList(String value) {
-        List<String> items = new ArrayList<>();
-        for (String piece : value.split(",")) {
-            if (!piece.isBlank()) {
-                items.add(piece.trim());
-            }
-        }
-        return items;
+    private static String property(String key) {
+        return System.getProperty(key, "");
     }
 
     private static String require(String key) {
-        String value = System.getProperty(key);
-        if (value == null || value.isEmpty()) {
-            throw new IllegalStateException("missing system property " + key);
-        }
+        String value = property(key);
+        if (value.isEmpty()) throw new IllegalArgumentException("Missing " + key);
         return value;
     }
 }

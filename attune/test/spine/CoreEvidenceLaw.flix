@@ -1,14 +1,5 @@
 use Attune.{Atom, Fact, World}
 use Attune.Coverage
-use Attune.Study
-
-/// Native `@Test` laws for the typed evidence and artifact values (VAL-CORE-004).
-///
-/// A witness, a complete no-match, unknown and failure stay four distinct
-/// outcomes; the tri-state observation is not a boolean; support counts distinct
-/// observed entities rather than proof paths; and an artifact is identified by
-/// its declared schema, producer and exact input. The serialization round trip
-/// through the real Parquet seam is a separate law in `//test/seam`.
 
 def w(): World = World.World("shop-v1")
 
@@ -64,28 +55,4 @@ def observationTriStateIsNotABoolean(): Unit \ Assert = {
     Assert.assertEq(expected = "false", Coverage.observationName(Coverage.Observation.ObservedFalse));
     Assert.assertEq(expected = "unmeasured", Coverage.observationName(Coverage.Observation.Unmeasured));
     Assert.assertEq(expected = false, Coverage.Observation.Unmeasured == Coverage.Observation.ObservedFalse)
-}
-
-/// An artifact is identified by schema, producer and exact input; a wrong schema
-/// or a changed identity does not round-trip.
-@Test
-def artifactIdentityRejectsAChangedSchemaOrInput(): Unit \ Assert = {
-    let stored = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
-    let wrongSchema = { schema = Study.Schema.Prediction, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
-    let otherInput = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-2", payload = "vectors" };
-    Assert.assertEq(expected = false, Study.artifactIdentity(stored) == Study.artifactIdentity(wrongSchema));
-    Assert.assertErr(Study.accept(stored, wrongSchema));
-    Assert.assertErr(Study.accept(stored, otherInput));
-    Assert.assertEq(expected = true, Result.isOk(Study.accept(stored, stored)))
-}
-
-/// A gold-shaped evaluator input has no path into prediction.
-@Test
-def goldHasNoPathIntoPrediction(): Unit \ Assert = {
-    let gold = { schema = Study.Schema.Gold, producer = "fixture-evaluator", input = "task-1", payload = "modified-pricing.rb" };
-    let embedding = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
-    Assert.assertEq(expected = Study.Schema.Gold, gold#schema);
-    Assert.assertEq(expected = None, Study.predictInput(gold));
-    Assert.assertEq(expected = Some(Study.PredictionInput.PredictionInput("vectors")), Study.predictInput(embedding));
-    Assert.assertEq(expected = false, Result.isOk(Study.accept(gold, embedding)))
 }

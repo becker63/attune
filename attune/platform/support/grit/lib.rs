@@ -364,9 +364,15 @@ language js(typescript)
     /// text the pattern must match, so the expected range is derived from the
     /// fixture instead of asserted as a magic offset.
     fn assert_seam(language: &str, declaration: &str, path: &str, source: &str, call: &str) {
+        // Ruby's upstream grammar names the bare method as call_variable.
+        let pattern = if language == "ruby" {
+            "call(call_variable = identifier() as $callee)"
+        } else {
+            "`$callee($...)`"
+        };
         let program = format!(
             "engine marzano(0.1)\nlanguage {declaration}\n\n\
-             `$callee($...)` where {{ log(message=\"call\", variable=$callee) }}\n"
+             {pattern} where {{ log(message=\"call\", variable=$callee) }}\n"
         );
         let (status, bytes) = through_abi(
             language.as_bytes(),

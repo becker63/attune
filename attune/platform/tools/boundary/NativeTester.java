@@ -23,13 +23,8 @@ import scala.jdk.javaapi.CollectionConverters;
 public final class NativeTester {
     private NativeTester() {}
 
-    /** Runs the pinned native test engine over the explicit files and jars. */
-    public static int run(List<Path> jars, List<Path> files) {
-        return run(jars, files, false);
-    }
-
-    /** Compile an explicit source closure, then invoke either main or native tests. */
-    public static int run(List<Path> jars, List<Path> files, boolean application) {
+    /** Compile explicit sources, then run main, native tests, or expect rejection. */
+    public static int run(List<Path> jars, List<Path> files, boolean application, String expected) {
         Flix flix = new Flix(empty(), CollectionConverters.asScala(jars).toList());
         flix.setOptions(Options.Default());
         for (Path file : files) {
@@ -37,8 +32,17 @@ public final class NativeTester {
         }
         Result<CompilationResult, scala.collection.immutable.List<CompilationMessage>> compiled = flix.compile();
         if (compiled instanceof Result.Err<CompilationResult, scala.collection.immutable.List<CompilationMessage>> failure) {
-            System.err.println(CompilationMessage.formatAll(failure.e(), Formatter.getDefault(), scala.Option.empty()));
+            String diagnostic = CompilationMessage.formatAll(failure.e(), Formatter.getDefault(), scala.Option.empty());
+            if (!expected.isEmpty() && diagnostic.contains(expected)) {
+                System.out.println("Compiler rejection verified: " + expected);
+                return 0;
+            }
+            System.err.println(diagnostic);
             return 2;
+        }
+        if (!expected.isEmpty()) {
+            System.err.println("Expected compiler rejection, but the program compiled.");
+            return 1;
         }
         CompilationResult result = ((Result.Ok<CompilationResult, ?>) compiled).t();
         LoadedProgram program = JvmLoader.load(result);

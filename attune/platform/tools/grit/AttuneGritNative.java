@@ -10,7 +10,7 @@ import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 
 /**
- * The package-private ownership adapter over the pinned Grit C ABI.
+ * The ownership adapter over the pinned Grit C ABI.
  *
  * <p>The header {@code attune_grit.h} declares exactly two functions. This
  * class binds them with the Java FFM API directly rather than generating
@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
  * filesystem action this class performs; it opens no source file and decides
  * nothing.
  */
-final class AttuneGritNative {
+public final class AttuneGritNative {
     private static final int ABI_OK = 0;
     private static final int ABI_HOST_ERROR = 1;
     private static final String LIBRARY_NAME = "libattune_grit_abi.so";
@@ -78,7 +78,7 @@ final class AttuneGritNative {
     }
 
     /** Runs one fixed Grit program over one in-memory source and returns the envelope. */
-    static String evaluate(String language, String program, String path, String source) {
+    public static String evaluate(String language, String program, String path, String source) {
         try (Arena arena = Arena.ofConfined()) {
             Input lang = input(arena, language);
             Input grit = input(arena, program);

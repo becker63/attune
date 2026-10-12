@@ -1,6 +1,0 @@
-ok	src-fixture	ok	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:case_ok; exit 0
-nonzero	src-fixture	nonzero	runtime-fixture	-	5000	4096	/bin/sh	-c	exit 7
-timeout	src-fixture	timeout	runtime-fixture	-	400	4096	/bin/sh	-c	while :; do :; done
-missing	src-fixture	missing	runtime-fixture	-	5000	4096	/nonexistent/attune-fault-tool
-runtime	src-fixture	runtime	runtime-fixture	/no/such/attune-cwd	5000	4096	/bin/sh	-c	exit 0
-truncated	src-fixture	truncated	runtime-fixture	-	5000	512	/bin/sh	-c	i=0; while [ $i -lt 20000 ]; do echo out-0123456789-abcdefghij-0123456789; echo err-0123456789-abcdefghij-0123456789 >&2; i=$((i+1)); done

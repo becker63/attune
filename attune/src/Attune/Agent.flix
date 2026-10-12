@@ -54,9 +54,10 @@ pub mod Attune.Agent {
     pub def withSavedReplies(program: Unit -> a \ ef, saved: List[(Model, ChatRequest, ChatResponse)]): a \ (ef - Conversation) + IO =
         run { program() } with handler Conversation {
             def reply(model, request, continueWith) =
-                match List.find(match (identity, before, _) -> (identity#endpoint, identity#name) == (model#endpoint, model#name) and before.equals(request), saved) {
-                    case Some((_, _, answer)) => continueWith(Ok(answer))
-                    case None => continueWith(Err(Failure.MissingReply))
+                match List.filter(match (identity, before, _) -> (identity#endpoint, identity#name) == (model#endpoint, model#name) and before.equals(request), saved) {
+                    case (_, _, answer) :: Nil => continueWith(Ok(answer))
+                    case Nil => continueWith(Err(Failure.MissingReply))
+                    case _ => continueWith(Err(Failure.InvalidReply))
                 }
         }
 
@@ -99,10 +100,19 @@ pub mod Attune.Agent {
             if (answer.hasToolExecutionRequests()) {
                 let calls = answer.toolExecutionRequests();
                 if (calls.size() > left) Err(Failure.LimitReached)
-                else forM (
-                    replies <- Result.traverse(index -> execute(calls.get(index), regions), List.range(0, calls.size()));
-                    result <- continueConversation(model, history ::: replies, regions, left - calls.size())
-                ) yield result
+                else {
+                    let batch = List.map(index -> calls.get(index), List.range(0, calls.size()));
+                    if (List.exists(call -> Objects.isNull(call), batch)) Err(Failure.InvalidReply)
+                    else {
+                        let ids = List.map(call -> call.id(), batch);
+                        if (List.exists(id -> Objects.isNull(id) or String.isEmpty(id), ids) or
+                            List.length(List.distinct(ids)) != List.length(ids)) Err(Failure.InvalidReply)
+                        else forM (
+                            replies <- Result.traverse(call -> execute(call, regions), batch);
+                            result <- continueConversation(model, history ::: replies, regions, left - calls.size())
+                        ) yield result
+                    }
+                }
             } else if (Objects.isNull(answer.text()) or String.isEmpty(answer.text())) Err(Failure.InvalidReply)
             else Ok(history)
         }

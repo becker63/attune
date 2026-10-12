@@ -2,10 +2,9 @@
 mod EffectsReading {
     use Attune.Effects
     use Attune.Effects.{Request, Embedding, withSavedAnswers}
-    use Attune.Study.Qwen
 
     def fixtureRequest(): Request =
-        Request.Request(Qwen.modelIdentity(), Qwen.recipeIdentity(), "styles disappear")
+        Request.Request(Effects.modelIdentity(), Effects.recipeIdentity(), "styles disappear")
 
     def fixtureVector(): List[Float64] = List#{1.0f64, 2.0f64}
 
@@ -30,9 +29,9 @@ mod EffectsReading {
     @Test
     def changedIdentityDoesNotReuseAnAnswer(): Unit \ Assert = {
         let changed = List#{
-            Request.Request("another-provider-or-model", Qwen.recipeIdentity(), "styles disappear"),
-            Request.Request(Qwen.modelIdentity(), "another-recipe", "styles disappear"),
-            Request.Request(Qwen.modelIdentity(), Qwen.recipeIdentity(), "another issue")
+            Request.Request("another-provider-or-model", Effects.recipeIdentity(), "styles disappear"),
+            Request.Request(Effects.modelIdentity(), "another-recipe", "styles disappear"),
+            Request.Request(Effects.modelIdentity(), Effects.recipeIdentity(), "another issue")
         };
         let answers = withSavedAnswers(() -> List.map(Embedding.vectorFor, changed), fixtureAnswers());
         Assert.assertEq(expected = true, List.forAll(Result.isErr, answers))
@@ -46,7 +45,7 @@ mod EffectsReading {
     }
 
     def answer(text: String, vector: List[Float64]): (Request, List[Float64]) =
-        (Request.Request(Qwen.modelIdentity(), Qwen.recipeIdentity(), text), vector)
+        (Request.Request(Effects.modelIdentity(), Effects.recipeIdentity(), text), vector)
 
     @Test
     def theWorkflowRanksBySimilarityAndBreaksTiesByPath(): Unit \ Assert = {
@@ -58,7 +57,7 @@ mod EffectsReading {
             answer("cart a", List#{1.0f64, 0.0f64})
         };
         let result = withSavedAnswers(() -> Effects.locate("cart total", files), saved);
-        Assert.assertEq(expected = Ok(List#{"cart_a.rb", "cart_b.rb", "mail.rb"}), Result.map(Qwen.rankedPaths, result))
+        Assert.assertEq(expected = Ok(List#{"cart_a.rb", "cart_b.rb", "mail.rb"}), Result.map(List.map(fst), result))
     }
 
     @Test
@@ -87,8 +86,21 @@ mod EffectsReading {
 
     @Test
     def queryPreparationKeepsTheRecipeCapBeforeTheInstruction(): Unit \ Assert = {
-        let capped = String.repeat(Qwen.capCodeUnits(), "x");
+        let capped = String.repeat(Effects.capCodeUnits(), "x");
         Assert.assertEq(expected = Effects.queryText(capped), Effects.queryText(capped + "outside cap"));
-        Assert.assertEq(expected = "Instruct: " + Qwen.queryInstruction() + "\nQuery: issue", Effects.queryText("issue"))
+        Assert.assertEq(expected = "Instruct: " + Effects.queryInstruction() + "\nQuery: issue", Effects.queryText("issue"))
+    }
+
+    @Test
+    def ambiguousEvidenceDoesNotChooseAnAnswerArbitrarily(): Unit \ Assert =
+        Assert.assertErr(withSavedAnswers(() -> Effects.vectorFor("styles disappear"),
+            fixtureAnswers() ::: fixtureAnswers()))
+
+    @Test
+    def invalidVectorsAndDuplicateFilesCannotBeRanked(): Unit \ Assert = {
+        List.forEach(vector -> Assert.assertErr(Effects.rank(vector, Nil)), List#{Nil, List#{0.0f64}});
+        Assert.assertErr(Effects.rank(List#{1.0f64}, List#{("wrong-dimension", List#{1.0f64, 2.0f64})}));
+        Assert.assertErr(Effects.rank(List#{1.0f64}, List#{("same", List#{1.0f64}), ("same", List#{2.0f64})}));
+        Assert.assertErr(withSavedAnswers(() -> Effects.vectorFor("styles disappear"), List#{(fixtureRequest(), List#{0.0f64})}))
     }
 }

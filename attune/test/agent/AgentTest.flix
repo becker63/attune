@@ -6,6 +6,7 @@ import dev.langchain4j.model.chat.response.ChatResponse
 import dev.langchain4j.data.message.{AiMessage, UserMessage, ChatMessage, ToolExecutionResultMessage}
 import dev.langchain4j.agent.tool.ToolExecutionRequest
 import java.util.ArrayList
+import java.lang.IllegalStateException
 
 def allowedRegion(): Agent.Grant \ IO = {
     let source = "def total; price * quantity; end\n";
@@ -105,4 +106,38 @@ def aDifferentProviderCannotReuseTheReply(): Unit \ {Assert, IO} = {
         Agent.withSavedReplies(() -> Agent.Conversation.reply(other, request), List#{(fixtureModel(), request, answer)})));
     Assert.assertEq(expected = Err(Agent.Failure.Denied), Result.map(_ -> (),
         Agent.withModel(() -> Agent.Conversation.reply(other, request), fixtureModel(), model())))
+}
+
+@Test
+def conflictingSavedRepliesAreRejected(): Unit \ {Assert, IO} = {
+    let request = Agent.request(fixtureModel(), List#{(checked_cast(new UserMessage("question")): ChatMessage)});
+    let first = ChatResponse.builder().aiMessage(new AiMessage("first")).build();
+    let second = ChatResponse.builder().aiMessage(new AiMessage("second")).build();
+    Assert.assertEq(expected = Err(Agent.Failure.InvalidReply), Result.map(_ -> (),
+        Agent.withSavedReplies(() -> Agent.Conversation.reply(fixtureModel(), request),
+            List#{(fixtureModel(), request, first), (fixtureModel(), request, second)})))
+}
+
+@Test
+def duplicateToolIdsCannotProduceAmbiguousResults(): Unit \ {Assert, IO} = {
+    let calls = new ArrayList();
+    let call = ToolExecutionRequest.builder().id("duplicate").name("read_evidence").arguments(arguments()).build();
+    discard calls.add(call);
+    discard calls.add(call);
+    let response = ChatResponse.builder().aiMessage(AiMessage.aiMessage(calls)).build();
+    let result = run { Agent.talk(fixtureModel(), "question", List#{allowedRegion()}, 4) }
+        with handler Agent.Conversation {
+            def reply(_model, _request, continueWith) = continueWith(Ok(response))
+        };
+    Assert.assertEq(expected = Err(Agent.Failure.InvalidReply), Result.map(_ -> (), result))
+}
+
+@Test
+def providerExceptionsStayClassified(): Unit \ {Assert, IO} = {
+    let broken = new ChatModel {
+        def doChat(_self: ChatModel, _request: ChatRequest): ChatResponse \ IO =
+            throw new IllegalStateException("recorded transport failure")
+    };
+    Assert.assertEq(expected = Err(Agent.Failure.ProviderFailed), Result.map(_ -> (),
+        Agent.withModel(() -> Agent.talk(fixtureModel(), "question", Nil, 1), fixtureModel(), broken)))
 }

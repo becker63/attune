@@ -2,15 +2,6 @@ load("//platform/build:native.bzl", "native_flix_binary")
 
 package(default_visibility = ["//visibility:public"])
 
-# The pinned Flix compiler as a private Bazel build tool. It is never a public
-# project verb; the native test launcher invokes its authentic test engine, not
-# `flix run` or a fat JAR.
-java_binary(
-    name = "flix",
-    main_class = "ca.uwaterloo.flix.Main",
-    runtime_deps = ["@flix_compiler//jar"],
-)
-
 # The declared authored-source population, minus the exact boundaries: VCS and
 # agent tooling outside this workspace, Bazel output and the pinned foreign
 # families reported in their own role. A glob cannot cross a Bazel package
@@ -38,29 +29,24 @@ filegroup(
     name = "policy_sources",
     srcs = [
         ":policy_files",
+        "//example:policy_files",
         "//notes:policy_files",
         "//platform/build:policy_files",
         "//platform/support/grit:policy_files",
+        "//platform/support/grit/patches:policy_files",
         "//platform/tools:policy_files",
         "//platform/tools/boundary:policy_files",
         "//platform/tools/grit:policy_files",
-        "//platform/tools/parquet:policy_files",
+        "//platform/zed:policy_files",
         "//src:policy_files",
         "//src/grit:policy_files",
         "//test:policy_files",
         "//test/agent:policy_files",
         "//test/dag:policy_files",
-        "//test/docs:policy_files",
         "//test/grit:policy_files",
-        "//test/localization_embedding:policy_files",
-        "//test/localization_jev:policy_files",
-        "//test/localization_qwen:policy_files",
         "//test/localization_runtime:policy_files",
         "//test/policy:policy_files",
-        "//test/receipt:policy_files",
-        "//test/seam:policy_files",
         "//test/spine:policy_files",
-        "//test/study:policy_files",
         "//test/theory:policy_files",
     ],
 )
@@ -76,12 +62,10 @@ test_suite(
     ],
 )
 
-# The policy and counting surface of the same public gate.
+# Source admission and live workspace audit.
 test_suite(
     name = "policy_tests",
     tests = [
-        "//test/policy:accounting_law_test",
-        "//test/policy:count_law_test",
         "//test/policy:declared_source_policy_test",
         "//test/policy:policy_cases_test",
         "//test/policy:workspace_audit_test",
@@ -98,11 +82,9 @@ native_flix_binary(
     name = "demo",
     srcs = [
         "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
         "//src:Attune/Effects.flix",
-        "//src:Attune/Study.flix",
-        "//src:Attune/Study/Embedding.flix",
-        "//src:Attune/Study/Metrics.flix",
-        "//src:Attune/Study/Qwen.flix",
         "//src:Main.flix",
     ],
+    declared_files = ["//example:ranking"],
 )

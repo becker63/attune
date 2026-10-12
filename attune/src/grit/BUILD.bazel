@@ -10,7 +10,7 @@ filegroup(
 )
 
 # The maintained query inventory, packaged as immutable JAR resources by the
-# narrow JVM facade. One entry point per relation per admitted language:
+# Flix resource loader. One entry point per relation per admitted language:
 # `defines`, `imports` and `calls`. The population is listed rather than
 # globbed, so the declared inventory names every frontend it carries.
 filegroup(

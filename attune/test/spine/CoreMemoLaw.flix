@@ -82,3 +82,16 @@ def separatorBearingWorldsDoNotShareMemoEntries(): Unit \ Assert = {
     Assert.assertEq(expected = Ok(Attune.files(wa, List#{"y.rb"})), ra);
     Assert.assertEq(expected = Ok(Attune.files(wb, List#{"z.rb"})), rb)
 }
+
+@Test
+def cachedAnswersCannotMaskForeignWorldFacts(): Unit \ Assert = {
+    let world = Attune.World.World("one");
+    let input = Attune.files(world, List#{"a.flix"});
+    let facts = List#{{world = world, source = "a.flix", atom = Attune.Atom.Imports, target = "b.flix"}};
+    let (_, memo, _, next) = Attune.lookup(Nil, 0, "test", input, Attune.Atom.Imports, facts);
+    let foreign = List.map(fact -> {world = Attune.World.World("two") | fact}, facts);
+    let (answer, _, events, after) = Attune.lookup(memo, next, "test", input, Attune.Atom.Imports, foreign);
+    Assert.assertErr(answer);
+    Assert.assertEq(expected = Nil, events);
+    Assert.assertEq(expected = next, after)
+}

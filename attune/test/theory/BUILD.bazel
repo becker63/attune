@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_test")
+load("//platform/build:native.bzl", "native_flix_reject_test", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,10 +8,6 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# VAL-THEORY-001..005: the admitted bounded descriptor grammar, bounded
-# canonicalization, the fixed native conjunction/guard/projection lowering,
-# candidate/world/scope isolation and the world-shared structural evaluation with
-# cheap application anchor joins.
 native_flix_test(
     name = "theory_law_test",
     srcs = [
@@ -20,4 +16,10 @@ native_flix_test(
         "//src:Attune/Coverage.flix",
         "//src:Attune/Theory.flix",
     ],
+)
+
+native_flix_reject_test(
+    name = "datalog_safety_test",
+    srcs = ["UnsafeRule.flix"],
+    expected = "Undefined name",
 )

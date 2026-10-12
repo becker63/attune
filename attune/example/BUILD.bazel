@@ -1,0 +1,74 @@
+load("//platform/build:native.bzl", "flix_action")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+LIBRARY = [
+    "//src:Attune.flix",
+    "//src:Attune/Effects.flix",
+    "//src:Attune/Artifacts.flix",
+]
+
+flix_action(
+    name = "question_request",
+    srcs = LIBRARY + ["Question.flix"],
+    inputs = {"text": "issue.txt"},
+)
+
+flix_action(
+    name = "cart_request",
+    srcs = LIBRARY + ["Source.flix"],
+    inputs = {"text": "cart.rb"},
+)
+
+flix_action(
+    name = "mail_request",
+    srcs = LIBRARY + ["Source.flix"],
+    inputs = {"text": "mail.rb"},
+)
+
+# These three actions have separate inputs and may run concurrently.
+# They use authored vectors. This graph measures no model's quality.
+flix_action(
+    name = "question_answer",
+    srcs = LIBRARY + ["Answer.flix"],
+    inputs = {
+        "request": ":question_request",
+        "saved": "question.json",
+    },
+)
+
+flix_action(
+    name = "cart_answer",
+    srcs = LIBRARY + ["Answer.flix"],
+    inputs = {
+        "request": ":cart_request",
+        "saved": "cart.json",
+    },
+)
+
+flix_action(
+    name = "mail_answer",
+    srcs = LIBRARY + ["Answer.flix"],
+    inputs = {
+        "request": ":mail_request",
+        "saved": "mail.json",
+    },
+)
+
+flix_action(
+    name = "ranking",
+    srcs = LIBRARY + ["Resume.flix"],
+    inputs = {
+        "question": ":question_answer",
+        "cart": ":cart_answer",
+        "mail": ":mail_answer",
+        "issue": "issue.txt",
+        "cart-source": "cart.rb",
+        "mail-source": "mail.rb",
+    },
+)

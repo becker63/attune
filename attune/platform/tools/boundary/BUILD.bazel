@@ -15,14 +15,12 @@ filegroup(
 java_library(
     name = "native_launch",
     srcs = [
-        "BoundaryProbe.java",
-        "DrainProbe.java",
         "Manifest.java",
-        "NativeInner.java",
         "NativeLaunch.java",
         "NativeTester.java",
-        "ProcessReceipts.java",
-        "Runfiles.java",
     ],
-    deps = ["@flix_compiler//jar"],
+    deps = [
+        "@flix_compiler//jar",
+        "@rules_java//java/runfiles",
+    ],
 )

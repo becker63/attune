@@ -1,13 +1,10 @@
 load("@grit_crates//:defs.bzl", "aliases", "all_crate_deps", "crate_edition")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
-load("@rules_rust//rust:defs.bzl", "rust_shared_library")
+load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population: the
-# inherited pinned Grit native support, its two grammar patches and the one
-# approved Ruby dispatcher arm. It is admitted as an inherited/support family,
-# counted separately from shared first-party implementation code.
+# Maintained native ABI and pinned dependency metadata.
 filegroup(
     name = "policy_files",
     srcs = glob(["**"]),
@@ -30,9 +27,7 @@ cc_import(
     alwayslink = True,
 )
 
-# The frozen Grit ABI shared library. `lib.rs` is the retained native host plus
-# exactly two approved extensions: the Flix/Starlark registry patches that
-# arrive through `@gritql_source`, and the one Ruby dispatcher arm.
+# The native engine uses declared upstream parsers and Flix/Starlark extensions.
 rust_shared_library(
     name = "attune_grit_abi",
     srcs = ["lib.rs"],
@@ -40,6 +35,27 @@ rust_shared_library(
     crate_name = "attune_grit_abi",
     edition = crate_edition(package_name = "attune-grit"),
     link_deps = [":unwind"],
+    proc_macro_deps = all_crate_deps(
+        package_name = "attune-grit",
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        package_name = "attune-grit",
+        normal = True,
+    ) + [
+        "@gritql_source//crates/core:marzano_core",
+        "@gritql_source//crates/language:marzano_language",
+        "@gritql_source//crates/util:marzano_util",
+    ],
+)
+
+# Exercise buffer ownership, classified failures, and exact extraction reuse.
+rust_test(
+    name = "native_test",
+    srcs = ["lib.rs"],
+    aliases = aliases(package_name = "attune-grit"),
+    crate_name = "attune_grit_test",
+    edition = crate_edition(package_name = "attune-grit"),
     proc_macro_deps = all_crate_deps(
         package_name = "attune-grit",
         proc_macro = True,

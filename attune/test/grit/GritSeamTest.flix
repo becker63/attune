@@ -1,6 +1,8 @@
 import attune.grit.fixtures.GritFixtures
 
 use Attune.Repository
+use Attune.Theory
+use Attune.{FileId, World}
 use Attune.Repository.Grit
 use Attune.Coverage
 
@@ -542,15 +544,22 @@ def errorName(error: Grit.Error): String = match error {
 /// never an admitted empty evaluation.
 @Test
 def malformedNativeRecordsAreClassified(): Unit \ Assert = {
-    Assert.assertEq(expected = "wire", decodeName("matched\ttrue\n"));
-    Assert.assertEq(expected = "wire", decodeName("version\t1\nmatched\ttrue\nmatch\tf.rb\tnope\t2\n"));
-    Assert.assertEq(expected = "unsupported-version 2", decodeName("version\t2\n"));
-    Assert.assertEq(expected = "native host", decodeName("version\t1\nerror\thost\tboom\n"));
-    Assert.assertEq(expected = "invalid-range 5 2", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t5\t2\n"));
-    Assert.assertEq(expected = "unexpected-path other.rb", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tother.rb\t0\t2\n"));
-    Assert.assertEq(expected = "log-outside-match 5 7",
-        factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t0\t2\nlog\tx\t5\t7\n"))
+    Assert.assertEq(expected = "wire", decodeName("{\"matched\":true}"));
+    Assert.assertEq(expected = "wire", decodeName("{\"version\":1}"));
+    Assert.assertEq(expected = "wire", decodeName("{\"version\":1,\"version\":1}"));
+    Assert.assertEq(expected = "unsupported-version 2", decodeName("{\"version\":2}"));
+    Assert.assertEq(expected = "native host", decodeName("{\"version\":1,\"error\":{\"kind\":\"host\",\"message\":\"boom\"}}"));
+    Assert.assertEq(expected = "invalid-range 5 2", factsName("f.rb", "abcdefgh", envelope("f.rb", "5", "2", "")));
+    Assert.assertEq(expected = "wire", factsName("f.rb", "abcdefgh", envelope("f.rb", "0.5", "2", "")));
+    Assert.assertEq(expected = "wire", factsName("f.rb", "abcdefgh", envelope("f.rb", "2147483648", "2", "")));
+    Assert.assertEq(expected = "unexpected-path other.rb", factsName("f.rb", "abcdefgh", envelope("other.rb", "0", "2", "")));
+    Assert.assertEq(expected = "log-outside-match 5 7", factsName("f.rb", "abcdefgh",
+        envelope("f.rb", "0", "2", "{\"message\":\"x\",\"start_byte\":5,\"end_byte\":7}")))
 }
+
+def envelope(path: String, start: String, end: String, log: String): String =
+    "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"" + path + "\",\"start_byte\":" +
+        start + ",\"end_byte\":" + end + "}],\"logs\":[" + log + "],\"diagnostics\":[]}"
 
 /// The three forward relations are the only extraction; each inverse is exactly
 /// the reversal of its forward set, including the empty and multiple-edge cases.
@@ -646,4 +655,15 @@ def theWorldFactsAndEarnedCoverageBridgeIsExact(): Unit \ {Assert, IO} = {
         Repository.ask(world, repository, "Shop.Nothing.render", Attune.Atom.Calls));
     Assert.assertEq(expected = true,
         List.length(Repository.scopedFacts(world, repository)#facts) == List.length(facts))
+}
+
+/// The explanatory query consumes actual extraction, not hand-written edges.
+@Test
+def nativeDatalogFindsTheSharedShopDependency(): Unit \ {Assert, IO} = {
+    let repository = admitted(shopFiles());
+    let checkout = FileId.FileId(path("shop/checkout.rb"));
+    let receipt = FileId.FileId(path("shop/receipt.rb"));
+    let pricing = FileId.FileId(path("shop/pricing.rb"));
+    Assert.assertEq(expected = Ok(List#{(checkout, receipt, pricing), (receipt, checkout, pricing)}),
+        Theory.sharedImports(Repository.scopedFacts(World.World("shop"), repository)))
 }

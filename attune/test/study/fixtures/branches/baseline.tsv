@@ -1,2 +1,0 @@
-own	src-fixture	own	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:orig-source-tests; exit 1
-regression	src-fixture	regression	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:shared-regression; exit 0

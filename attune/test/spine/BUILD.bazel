@@ -92,16 +92,13 @@ native_flix_test(
     ],
 )
 
-# VAL-CORE-004: typed evidence and artifact values. Witness/no-match/unknown/
-# failure, the tri-state observation, distinct-entity support and artifact
-# identity stay distinct. The Parquet round trip is `//test/seam`.
+# Typed evidence: witness, complete no-match, unknown, and failure stay distinct.
 native_flix_test(
     name = "core_evidence_test",
     srcs = [
         "CoreEvidenceLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Study.flix",
     ],
 )
 
@@ -112,10 +109,6 @@ native_flix_test(
         "EffectsReading.flix",
         "//src:Attune.flix",
         "//src:Attune/Effects.flix",
-        "//src:Attune/Study.flix",
-        "//src:Attune/Study/Embedding.flix",
-        "//src:Attune/Study/Metrics.flix",
-        "//src:Attune/Study/Qwen.flix",
     ],
 )
 

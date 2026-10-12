@@ -16,3 +16,11 @@ filegroup(
         "languages/flix/outline.scm",
     ],
 )
+
+filegroup(
+    name = "policy_files",
+    srcs = [
+        "BUILD.bazel",
+        ":zed_assets",
+    ],
+)

@@ -1,8 +1,8 @@
-use Attune.Study.Metrics
+use Attune.{Study => Metrics}
 
 /// The corpus-free localization metric laws (`VAL-LOC-003`).
 ///
-/// These laws drive the exact production reducer in `Attune.Study.Metrics` with
+/// These laws drive the exact production reducer in `Attune.Study` with
 /// hand-built immutable rankings and gold populations. They are separating laws
 /// for the metric statements the report depends on, not a second metric engine:
 ///

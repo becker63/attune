@@ -64,6 +64,7 @@ native_flix_test(
         "//src:Attune/Coverage.flix",
         "//src:Attune/Repository.flix",
         "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Theory.flix",
     ],
     declared_files = [
         ":fixtures",

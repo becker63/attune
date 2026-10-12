@@ -228,7 +228,9 @@ pub mod Attune {
         facts: List[Fact]
     ): (Result[String, Frontier], Memo, List[Lookup], Int32) = {
         let key = (worldOf(input), namespace, input, atom);
-        match List.find(entry -> match entry { case (k, _, _) => k == key }, memo) {
+        if (List.exists(fact -> fact#world != worldOf(input), facts))
+            (Err("a fact from another world cannot apply here."), memo, Nil, next)
+        else match List.find(entry -> match entry { case (k, _, _) => k == key }, memo) {
             case Some(entry) => match entry {
                 case (_, ordinal, output) => (Ok(output), memo, Lookup.Hit(ordinal) :: Nil, next)
             }
