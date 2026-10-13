@@ -5,15 +5,43 @@ import other files, and functions call other functions. Attune expresses these
 relationships as small programs whose results we can inspect and whose work we
 can reuse across related questions.
 
-I built Attune to make repository analysis inspectable and experiments
-reproducible. Its practical focus is separating expensive acquisition from
-deterministic processing, reusing exact results, and scheduling independent
-work. Typed queries and tests make those boundaries checkable.
+Attune separates a calculation from the expensive work it asks for. The same
+Flix code can use a saved answer, a shared web result, or an artifact built for
+an experiment. Exact inputs and tests determine when reuse is valid.
+
+## One program, two execution models
+
+```mermaid
+flowchart TB
+    F["Attune · Flix<br/>Relationships · effects · localization"]
+    F --> W["Web · Flix/WASM<br/>Run the calculation in your browser"]
+    F --> S["Science · Flix/JVM<br/>Run reproducible experiments"]
+    W <--> N["Next.js cached functions<br/>Public source · Grit observations · embeddings"]
+    S <--> B["Bazel + BuildBuddy<br/>Declared actions · remote workers · saved artifacts"]
+    N --> V["Reuse across visitors"]
+    B --> E["Reuse across experiments"]
+```
+
+**Same meaning. Different scheduling.** The website aims to avoid repeating
+expensive work for each visitor. Experiments aim to run independent work in
+parallel and keep unchanged results. Neither needs a second ranking algorithm.
+
+An effect makes the boundary explicit. Flix asks for an embedding of exact
+text, using a specified model and recipe. An adapter obtains the answer; a
+handler supplies it to the calculation. The calculation does not need to know
+whether that answer came from a provider or a previous run.
+
+The boundary is tested: server Grit is compared with native extraction, and
+browser Flix is compared with JVM execution. This is equivalence over tested
+operations, not every runtime feature: **native Datalog remains JVM-only**.
+Next's expiring runtime cache and Bazel's action cache also have different
+lifetimes. An effect alone provides neither caching nor concurrency.
 
 [Explore the website](https://atlas-live-five.vercel.app/) ·
 [Read the measured results](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
 [About the author](https://becker63.digital/)
 
+[One program](#one-program-two-execution-models) ·
 [Effects & waits](#effects-waits-and-reused-work) ·
 [Experiments](#what-the-experiments-found) ·
 [Small programs](#small-programs-over-repository-structure) ·
@@ -432,7 +460,7 @@ attune/notes/design.md    ownership, provenance, and source accounting
 
 The website lives in `web/`, outside the Flix workspace.
 [Studio](https://atlas-live-five.vercel.app/studio) lets you index a public
-JS/TS repository in your browser and compare text matching, embeddings,
+JS/TS repository and compare text matching, embeddings,
 structural context and model judgment.
 Its [guide](web/README.md) explains the small Flix interface, exact reuse,
 verification, and the current browser Datalog limitation. The existing
