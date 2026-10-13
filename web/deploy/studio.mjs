@@ -32,7 +32,7 @@ async function api(route, method = "GET", body) {
   return response.json();
 }
 const mode = process.argv[2];
-if (mode === "configure") {
+if (mode === "configure" || mode === "configure-preview") {
   if (
     !fs.existsSync(
       path.join(
@@ -56,7 +56,7 @@ if (mode === "configure") {
       key,
       value,
       type: "encrypted",
-      target: ["production"],
+      target: [mode === "configure-preview" ? "preview" : "production"],
     })),
   );
   await api(`/v9/projects/${project}`, "PATCH", { framework: "nextjs" });
@@ -66,10 +66,10 @@ if (mode === "configure") {
     if (["STUDIO_ACCESS_CODE", "STUDIO_JEV_KEY"].includes(env.key))
       await api(`/v9/projects/${project}/env/${env.id}`, "DELETE");
   console.log(
-    "Configured encrypted production variables:",
+    "Configured encrypted runtime variables:",
     Object.keys(values).join(", "),
   );
-} else if (mode === "deploy") {
+} else if (mode === "deploy" || mode === "preview") {
   const output = path.join(web, ".vercel/output");
   const manifest = fs.readFileSync(
     path.join(output, "static/runtime/manifest.json"),
@@ -84,6 +84,7 @@ if (mode === "configure") {
     process.execPath,
     [
       path.join(web, "deploy/deploy.mjs"),
+      ...(mode === "preview" ? ["--preview"] : []),
       "--output",
       output,
       "--build-revision",
@@ -100,7 +101,82 @@ if (mode === "configure") {
     },
   );
   if (result.status !== 0) throw new Error("Publishing failed.");
+} else if (["verify-preview", "probe-preview", "logs-preview"].includes(mode)) {
+  const url = new URL(process.argv[3]);
+  if (
+    url.protocol !== "https:" ||
+    !/^atlas-live-[a-z0-9]+-becker63s-projects\.vercel\.app$/.test(url.hostname)
+  )
+    throw new Error("Expected this project's immutable preview URL.");
+  if (mode === "logs-preview") {
+    const logs = spawnSync(path.join(web, "node_modules/.bin/vercel"),
+      ["logs", url.origin, "--scope", "becker63s-projects", "--since", "30m", "--limit", "10", "--expand"],
+      { cwd: web, encoding: "utf8", env: { ...process.env, VERCEL_TOKEN: token } });
+    for (const output of [logs.stdout, logs.stderr]) console.log((output ?? "").split(token).join("[redacted]"));
+    process.exit(logs.status ?? 1);
+  }
+  let settings = await api(`/v9/projects/${project}`);
+  let bypass = Object.keys(settings.protectionBypass ?? {}).find(
+    (k) => settings.protectionBypass[k].scope === "automation-bypass",
+  );
+  if (!bypass) {
+    settings = await api(
+      `/v1/projects/${project}/protection-bypass`,
+      "PATCH",
+      {},
+    );
+    bypass = Object.keys(settings.protectionBypass ?? {}).find(
+      (k) => settings.protectionBypass[k].scope === "automation-bypass",
+    );
+  }
+  if (!bypass) throw new Error("Preview test authentication unavailable.");
+  const probe = await fetch(`${url.origin}/api/extraction`, {
+    method: "POST",
+    headers: {
+      origin: url.origin,
+      "content-type": "application/json",
+      "x-vercel-protection-bypass": bypass,
+    },
+    body: JSON.stringify({ operation: "fixture" }),
+  });
+  const answer = await probe.text();
+  console.log(
+    "Preview extraction:",
+    probe.status,
+    probe.headers.get("content-type"),
+  );
+  if (!probe.ok) throw new Error(answer.slice(0, 160));
+  const receipt = JSON.parse(answer);
+  console.log("Verified fixture files:", receipt.files?.length);
+  if (mode === "probe-preview") process.exit(0);
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "--test",
+      "test/network.test.ts",
+      "test/browser.test.ts",
+    ],
+    {
+      cwd: web,
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        STUDIO_TEST_URL: url.origin,
+        STUDIO_PREVIEW_BYPASS: bypass,
+        STUDIO_SKIP_PARITY: "1",
+        STUDIO_NETWORK_TEST: "1",
+      },
+    },
+  );
+  if (result.status !== 0) throw new Error("Preview verification failed.");
 } else if (mode === "metadata") {
   const data = await api(`/v9/projects/${project}/env`);
   console.log(data.envs.map(({ key, target }) => ({ key, target })));
-} else throw new Error("Use configure, deploy, or metadata.");
+  const target = (await api(`/v9/projects/${project}`)).targets?.production;
+  console.log({ productionDeployment: target?.id, url: target?.url });
+} else
+  throw new Error(
+    "Use configure, configure-preview, deploy, preview, verify-preview, or metadata.",
+  );

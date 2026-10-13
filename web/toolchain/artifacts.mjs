@@ -16,17 +16,24 @@ const result = spawnSync(
 );
 if (result.status !== 0) throw new Error("Browser artifact build failed.");
 // A single distribution boundary, after Bazel has built the entire graph.
-const destination = path.join(checkout, "web/public");
-// Bazel outputs have read-only directory modes. A previous staged copy must
-// still be replaceable when the next build produces a new artifact.
-await fs.mkdir(destination, { recursive: true });
-for (const entry of await fs.readdir(destination, {
-  recursive: true,
-  withFileTypes: true,
-}))
-  if (entry.isDirectory())
-    await fs.chmod(path.join(entry.parentPath, entry.name), 0o755);
-await fs.cp(path.join(checkout, "bazel-bin/web/browser_assets"), destination, {
-  recursive: true,
-  dereference: true,
-});
+// These directories contain only this tool's generated output.
+for (const [from, to] of [
+  ["browser_assets", "public"],
+  ["server_assets", ".artifacts/server"],
+]) {
+  const destination = path.join(checkout, "web", to);
+  if (await fs.stat(destination).catch(() => null)) {
+    await fs.chmod(destination, 0o755);
+    for (const entry of await fs.readdir(destination, {
+      recursive: true,
+      withFileTypes: true,
+    }))
+      if (entry.isDirectory())
+        await fs.chmod(path.join(entry.parentPath, entry.name), 0o755);
+  }
+  await fs.rm(destination, { recursive: true, force: true });
+  await fs.cp(path.join(checkout, "bazel-bin/web", from), destination, {
+    recursive: true,
+    dereference: true,
+  });
+}

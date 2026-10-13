@@ -189,6 +189,8 @@ research files are checked by SHA-256; this refactor does not regenerate them.
 
 ## Studio distribution
 
+The original Studio checkpoint below is followed by the remote-cache migration.
+
 `Attune.Studio` is the browser entry point. `Repository.fromObservations` admits
 versioned Grit envelopes through the existing conservative rules. Studio uses
 ordinary Flix routes, word scoring, vector similarity and rank fusion. It
@@ -200,9 +202,9 @@ These recipes are independent of the historical Atlas signature experiments.
 The root Bazel module joins the library and website into one dependency graph:
 
 ```text
-Flix -> JVM jar -> TeaVM WASM ----+
-Grit -> Rust WASM -> wasm-bindgen +-> browser_assets -> Next/Vercel
-TypeScript -> Aspect workers ----+
+Flix -> JVM jar -> TeaVM WASM -> browser assets -> Flix worker
+Grit -> Rust WASM -> Node binding -> server assets -> Next extraction
+TypeScript -> Aspect bundles ----^              Next packages both
 ```
 
 `platform/browser/` contains compiler/export mechanics and one string ABI.
@@ -254,8 +256,8 @@ comparison, not a restatement of the earlier refactor's accounting population.
 
 The existing research site's scripts and teaching assets are outside the new
 application count and retained unchanged apart from its Studio navigation link.
-Studio adds 261 semantic Flix lines and 115 mechanical Java lines. Browser
-transport, UI, persistence and provider checks account for most of the addition;
+Studio adds 261 semantic Flix lines and 115 mechanical Java lines. At that checkpoint, browser
+transport, UI, persistence and provider checks accounted for most of the addition;
 they are counted as authored implementation, not hidden as fixtures or generated
 code. The compact library's stretch budgets remain exceeded.
 
@@ -272,7 +274,7 @@ The graph runtime adds a 32.66 MiB DuckDB WASM plus a 0.74 MiB worker (uncompres
 artifact sizes). It is separate from the 0.85 MiB Flix and 6.26 MiB Grit WASMs.
 The [distribution notes](../../web/THIRD_PARTY.md) cover its license and telemetry.
 
-The Preact timeout was reproduced on a bounded 111-file inventory. An optimized
+Before the remote-cache migration, the Preact timeout was reproduced on a bounded 111-file inventory. An optimized
 Grit build and per-relation checkpoints then completed all 333 relations in
 23.624 seconds with four browser workers. Warm extraction took 12.3 ms and
 reloading took 14.3 ms, both reusing all 333 results. These are local development
@@ -296,3 +298,214 @@ the locally verified output. Production desktop/mobile tests cover the fixed
 graph, hover connections, click-only source, independent score scales, replay
 and the flamegraph. The three web Bazel gates and TypeScript check passed.
 DuckDB's indirect Node imports still produce non-fatal Webpack warnings.
+
+## Remote-cache migration
+
+October 13, 2026; baseline `336d41e`. This changes Studio's execution and reuse,
+without changing Flix semantics or frozen research results.
+
+```text
+Before
+browser -> GitHub -> browser Grit workers -> Flix -> graph
+                      IndexedDB retains source, facts, vectors,
+                      indexes, private answers, comparisons and traces
+
+After
+browser -> Next cached public source -> cached per-file Grit processes
+        <- verified source + observations
+        -> browser Flix -> graph
+
+public file vectors -> Next cache
+private answers     -> active worker memory
+comparison + trace  -> shared React layout
+```
+
+The [Studio reuse table](../../web/README.md#reuse-and-privacy) maps every former
+IndexedDB responsibility to its destination and lists the cached functions,
+arguments and lifetimes. `cacheLife` expires immutable entries after 30 days;
+public vectors expire after seven days. The mutable default-branch lookup expires
+after ten minutes. `cacheTag` names coarse invalidation families. Next owns
+argument/function/build identity and cache storage; application code uses no
+Vercel cache API. Another host must configure Next's `cacheHandlers.remote`.
+
+Public cache entries require server-fetched GitHub source, verified commit/tree
+membership, Git blob identity, UTF-8 validity and size bounds. Clients cannot
+submit observations for shared storage. Extractor identity includes the actual
+WASM, grammar, query and normalization artifacts. All three relations must finish
+before a file extraction is cached. A failed file can remain text-searchable,
+but contributes no structural facts. Cache/runtime failure, extraction failure
+and valid empty output remain distinct.
+
+**Reuse currently stops at a commit boundary.** Passing source text into a
+cached function exceeded the managed cache's URL limit (HTTP 414). Compact
+repository/commit/path arguments work and remain independent of HTTP batches.
+Changing a commit therefore creates new entries even for unchanged files.
+Deployments can also invalidate Next's function keys. This is an expiring web
+cache, not a permanent content-addressed artifact store.
+
+The browser sends four concurrent requests, two files per request. Separate
+Node processes provide real CPU parallelism, bounded by `min(4, available CPUs)`
+per Function instance. Each process initializes the pinned Grit runtime, runs
+three queries, then exits. Worker threads retained WASM compilation memory;
+optimizing compilation exceeded the preview's 1 GiB limit. The tested Node 24
+baseline compiler (`--liftoff-only`) trades cold speed for bounded memory.
+A 180-second child watchdog sits inside a 210-second cache-fill timeout and a
+240-second Function request. There is no whole-repository five-minute deadline.
+Requests may share a Function; four requests do not imply four CPU allocations.
+
+### Measurements
+
+Chromium 151.0.7922.108; Mitt at `6b41670516ed8e8b738612f60491995470aa63b3`
+(3 files), Preact at `8ff8785bac0749c8129f2a76920b3f10b9d6766f` (120 files).
+These are the admitted, bounded inventories, not every file in either repository.
+Times below end when the Flix worker returns its admitted index, before graph
+startup. Each row is one cold/warm pair, not a timing distribution.
+
+| Execution | Mitt cold / warm | Preact cold / warm | Warm population |
+| --- | ---: | ---: | --- |
+| Previous local browser implementation | 2.26 / 0.32 s | 30.49 / 0.59 s | Same browser, persisted index and facts |
+| Current local Next server | 3.31 / 0.23 s | 53.28 / 2.53 s | Fresh browser, shared source/facts, new Flix admission |
+| Vercel preview | 6.72 / 0.75 s | 252.02 / 4.32 s | Fresh browser, shared source/facts, new Flix admission |
+
+Cold execution regressed. Locally, Preact rose from 30.49 to 53.28 seconds;
+the lower-memory compiler and server transport add work. The preview's 252-second
+cold run remains a limitation. Comparing it directly to the old local time would
+also mix hardware and network conditions. Warm server reuse benefits independent
+visitors; the old faster warm result additionally skipped Flix admission using a
+persisted index. These measurements do not establish a general end-to-end speedup.
+
+Both preview visitors received the same 3/120 unique Grit execution IDs and the
+same inventory/source receipt IDs. On the first paired warm run, 3/3 Mitt and
+100/120 Preact receipts came from a different Function instance than the one
+serving the response. A later warm-only check reused every extraction again,
+with 118/120 Preact receipts crossing instances. This demonstrates shared reuse;
+fast response time alone would not.
+
+| Preview transport and original extraction | Mitt | Preact |
+| --- | ---: | ---: |
+| Browser extraction HTTP requests per index | 3 | 61 |
+| Decoded JSON response bytes per index | 46,055 | 1,718,122 |
+| Unique original Grit file executions in returned receipts | 3 | 120 |
+| Summed original Grit child CPU | 3.329 s | 267.446 s |
+| Largest original child peak RSS | 103.4 MiB | 126.1 MiB |
+
+The receipts describe the original executions, including overlapping processes;
+they are not CPU work charged to a warm request. Whole-Function peak memory,
+cache-backend operations, actual GitHub fetch counts and provider billing totals
+are unavailable in these deployed measurements. Response sizes are decoded JSON,
+not compressed wire bytes. Warm responses still transport source and observations.
+Commit-pinned raw source downloads replace per-file GitHub REST blob requests.
+
+The current local Preact cold run spent 51.25 seconds in HTTP acquisition/extraction
+and 1.45 seconds in Flix admission; warm was 0.53 and 1.43 seconds respectively.
+An isolated 120-file Grit probe used 103.85 CPU seconds over 43.24 seconds of wall
+time and peaked at 121 MiB per child, with exact observation parity. Child peak
+RSS can inherit a parent's earlier high-water mark; it does not measure the whole
+Function. There is now one application Flix worker and no browser Grit workers.
+The Flix WASM is 886,784 decoded bytes; the observed manifest/runtime/WASM transfer
+was 247,073 bytes. Cosmograph's separate 32.66 MiB DuckDB runtime remains.
+
+A separate fresh-browser UI check, with server entries already warm, measured
+the actual graph from clicking **Index repository**: Mitt 5.62 seconds and Preact
+6.37 seconds. Hover interaction succeeded at 5.99 and 6.71 seconds. These include
+graph startup and were measured in headless Chromium using SwiftShader; they are
+not hardware-GPU benchmarks. Cold-server time to first graph was not recorded.
+
+Real Qwen/JEv calls completed all six methods on Mitt for two questions per
+visitor. Repeating the first question reused exact private observations while
+Flix recomputed ranking. No new paid calls were used for Preact or the later
+warm-only verification. The complete paid-run assertions passed; its detailed
+JSON was overwritten by a simultaneous local measurement, so no total bill is
+reported. Measurement filenames now include deployment host and inference mode.
+
+### Deletion and authored size
+
+Removed IndexedDB, `idb-keyval`, storage catalogs/eviction, relation checkpoints,
+persisted inventories/indexes/comparisons, browser Grit workers, the duplicate
+embedding-source verifier and provider in-flight map. Next's concurrent-fill
+test establishes coalescing without that map. The obsolete static-only server,
+publisher and revision stamper were also removed; Next serves the retained site.
+The fixture, graph interactions, source annotations, timing page and exports
+remain. A full reload honestly loses private session state and timing.
+
+SCC 3.7.0, using the preceding section's counting rules, against `336d41e`.
+Comments, blank lines, generated artifacts, dependencies, locks and retained
+research/teaching assets are excluded. Test code is counted separately.
+
+| Authored code | Before | After |
+| --- | ---: | ---: |
+| Flix semantics | 1,831 | 1,831 |
+| Java integration | 431 | 431 |
+| Core/root build configuration | 1,741 | 1,741 |
+| Grit queries + maintained native/grammar code | 909 | 909 |
+| Browser UI and transport | 4,173 | 3,596 |
+| Server execution and validation | 494 | 1,127 |
+| Web build/publisher | 1,064 | 998 |
+| **Implementation and build total** | **10,643** | **10,633** |
+| Core tests/fixtures, separately | 1,819 | 1,819 |
+| Web tests, separately | 1,378 | 1,701 |
+| **Total including tests** | **13,840** | **14,153** |
+
+Browser code fell by 577 lines, but trusted source acquisition and isolated
+execution add 633 server lines. Total authored implementation is effectively
+flat, not a large LOC reduction. The gain is fewer persistence mechanisms and
+duplicated boundaries; the small-library stretch budgets remain exceeded.
+
+### Verification and deployment
+
+The preview is [Attune Studio](https://atlas-live-kamppx0s9-becker63s-projects.vercel.app/studio),
+build `studio-pOWLFWgkqr7MyxkGm0qAb-3affbb10b2666a60`. It uses the project's
+existing Vercel preview login protection; there is no application inference key.
+Production remains at deployment `dpl_9iSSxJNpsjq2Z6ZeauN2pD9CjpyX`.
+
+| Command / target | Result |
+| --- | --- |
+| `pnpm check`; `pnpm test` | TypeScript passes; eight unit tests pass |
+| `cd web; nix run .#test` | `//web:layout_test`, `//web:studio_transport_test`, `//web:browser_parity_test` pass |
+| `node --import tsx --test test/cache.test.ts` | Real Next cache tests pass: batching, identity changes, poisoning, eviction/outage, failed-file recovery, private requests and vector fill coalescing |
+| `pnpm verify` | Production-build UI, desktop/mobile, source/graph, timing/export and transient-session checks pass |
+| `pnpm exec vercel build --standalone` | Passes; deployed extraction executes the packaged WASM/grammars/programs |
+| `STUDIO_LIVE_INFERENCE=1 STUDIO_LARGE_TEST=1 node deploy/studio.mjs verify-preview <url>` | Three pass; native parity skipped here and passed separately through Bazel |
+| `nix run .#test` in the library | 20 pass; `//test/policy:workspace_audit_test` fails on 4,004 preserved user-file entries |
+| Root `bazel build //web:browser_assets --config=remote` with the documented output base | 10 remote executions, 841 remote cache hits; local fallback disabled |
+
+[BuildBuddy invocation](https://app.buildbuddy.io/invocation/f8dee49b-1dbc-4f5d-961d-f19f7e9cf603).
+Native/server/retained-browser Grit parity includes all three relations, Unicode
+ranges, empty and unresolved cases; JVM/WASM Flix outputs agree over the tested
+operations. The preview tests reject browser persistence APIs and verify shared
+receipts across fresh sessions. Native Datalog remains JVM-only.
+
+<details>
+<summary>Exact passing library targets</summary>
+
+```text
+//platform/support/grit:native_test
+//test/agent:agent_test
+//test/agent:embedding_sdk_test
+//test/browser:studio_law_test
+//test/dag:declared_artifact_consumer_test
+//test/grit:grit_ruby_test
+//test/localization_runtime:metrics_law
+//test/policy:declared_source_policy_test
+//test/policy:policy_cases_test
+//test/spine:core_apply_test
+//test/spine:core_evidence_test
+//test/spine:core_identity_test
+//test/spine:core_memo_test
+//test/spine:effects_reading_test
+//test/spine:envelope_test
+//test/spine:isolation_test
+//test/spine:nominal_negative_test
+//test/spine:undeclared_effect_test
+//test/theory:datalog_safety_test
+//test/theory:theory_law_test
+```
+
+</details>
+
+Local measurements and per-file LOC records are retained under
+`.git/remote-cache-20261013/`; ordinary test outputs remain ignored in
+`web/test-results/`. User `.gitignore` edits, `.repomixignore`,
+`notes/repository-through-time/` and `x` remain untouched. No Git push or production
+deployment was performed. Frozen study files and the retained research site are
+unchanged.

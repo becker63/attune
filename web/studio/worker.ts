@@ -1,10 +1,8 @@
 /// <reference lib="webworker" />
 import { batches, parallel, EMBEDDING_CONCURRENCY } from "./batches";
 import { acquire } from "./github";
-import { clearCache, digest, key, read, readMany, write } from "./cache";
-import { GRIT_VERSION, RELATIONS, type SavedRelations } from "./grit";
-import { extractFiles } from "./extraction";
-import { fixture, JUDGMENTS, QUESTIONS, VECTORS } from "./fixture";
+import { digest } from "./digest";
+import { JUDGMENTS, QUESTIONS, VECTORS } from "./fixture";
 import type {
   Comparison,
   FileProgress,
@@ -29,19 +27,11 @@ let evaluate: (input: unknown) => any;
 let extractionIdentity = "";
 let semantics = "";
 let initializationMs = 0;
-let gritHash = "";
-let extraction = {
-  gritWorkers: 0,
-  gritLinearMemoryBytes: null as number | null,
-  gritIntervals: [] as Loaded["runtime"]["gritIntervals"],
-  assets: [] as Loaded["runtime"]["assets"],
-  failures: [] as Loaded["extractionFailures"],
-};
+const questions = new Map<string, number[]>();
+const judgments = new Map<string, { scores: [string, number][] }>();
 function runtimeMeasurements() {
   return {
-    ...extraction,
     assets: [
-      ...extraction.assets,
       ...performance
         .getEntriesByType("resource")
         .map((entry) => entry as PerformanceResourceTiming)
@@ -82,147 +72,55 @@ function initialize() {
     const probe = evaluate({ operation: "probe" });
     if (!probe.traversal || !probe.savedEffect)
       throw new Error("Compiled Flix failed its startup check.");
-    gritHash = manifest.grit;
     initializationMs = performance.now() - start;
   })());
 }
 const progress = (id: number, text: string, files?: FileProgress) =>
   postMessage({ id, type: "progress", text, files });
-async function index(repository: Repository, id: number): Promise<Loaded> {
-  const timings: Timing[] = [
-    {
-      stage: "GitHub acquisition",
-      ms: repository.acquisitionMs,
-      executed: repository.apiRequests + repository.rawRequests,
-      reused: repository.sourceHits,
-      bytes: repository.fetchedBytes,
-    },
-  ];
-  let reused = 0,
-    reusedRelations = 0,
-    completed = 0;
-  const start = performance.now();
-  const observations: Observation[] = new Array(repository.files.length);
-  const missing: {
-    file: Repository["files"][number];
-    key: string;
-    index: number;
-    saved: SavedRelations;
-  }[] = [];
-  const keys = await Promise.all(
-    repository.files.map((file) =>
-      key("grit-relations-v1", [
-        GRIT_VERSION,
-        extractionIdentity,
-        file.path,
-        file.digest,
-      ]),
-    ),
+async function index(
+  url: string,
+  example: boolean,
+  id: number,
+): Promise<Loaded> {
+  const acquired = await acquire(
+    url,
+    example,
+    extractionIdentity,
+    (text, files) => progress(id, text, files),
   );
-  const cached = await readMany<SavedRelations>(keys);
-  for (const [index, file] of repository.files.entries()) {
-    const saved = cached[index] ?? {};
-    reusedRelations += RELATIONS.filter(
-      (relation) => saved[relation] !== undefined,
-    ).length;
-    if (RELATIONS.every((relation) => saved[relation] !== undefined)) {
-      observations[index] = {
-        path: file.path,
-        source: file.source,
-        ...saved,
-      } as Observation;
-      reused++;
-    } else missing.push({ file, key: keys[index], index, saved });
-  }
-  progress(
-    id,
-    `Extracting ${missing.length} files · ${reusedRelations} saved relations reused…`,
-    { phase: "Structure", completed: reused, total: repository.files.length },
-  );
-  let storageAvailable = true;
-  extraction = await extractFiles(
-    missing.map((job) => job.file),
-    gritHash,
-    async (observation, index) => {
-      const job = missing[index];
-      observations[job.index] = observation;
-      progress(
-        id,
-        `Extracted ${++completed + reused} / ${repository.files.length} files…`,
-        {
-          phase: "Structure",
-          completed: completed + reused,
-          total: repository.files.length,
-        },
-      );
-    },
-    {
-      saved: missing.map((job) => job.saved),
-      checkpoint: async (answers, index) => {
-        storageAvailable =
-          (await write(missing[index].key, answers)) && storageAvailable;
-      },
-    },
-  );
-  timings.push({
-    stage: "Grit extraction",
-    start: performance.timeOrigin + start,
-    ms: performance.now() - start,
-    executed: extraction.gritIntervals.length,
-    reused: reusedRelations,
-    workers: extraction.gritWorkers,
-  });
+  const { repository, observations, failures, executions, timings } = acquired;
+  // A failed file changes the admitted world; a retry cannot reuse its identity.
   const content = await digest(
-    // A partial graph has a different world from a later successful retry.
     JSON.stringify([
       repository.files.map((f) => [f.path, f.digest]),
-      observations.filter(Boolean).map((o) => o.path),
+      observations.map((o) => o.path),
     ]),
   );
-  const indexKey = await key("index-v1", [
-    semantics,
-    repository.origin,
-    repository.revision,
-    content,
-  ]);
   const before = performance.now();
-  let admitted = await read<Index>(indexKey);
-  const hit = !!admitted;
-  if (!admitted) {
-    admitted = evaluate({
-      operation: "index",
-      origin: repository.origin,
-      revision: repository.revision,
-      digest: content,
-      semantics,
-      observations: observations.filter(Boolean),
-    });
-    await write(indexKey, admitted);
-  }
+  const admitted: Index = evaluate({
+    operation: "index",
+    origin: repository.origin,
+    revision: repository.revision,
+    digest: content,
+    semantics,
+    observations,
+  });
   timings.push({
     stage: "Flix admission",
     ms: performance.now() - before,
-    executed: hit ? 0 : 1,
-    reused: hit ? 1 : 0,
+    executed: 1,
+    reused: 0,
   });
-  const result = {
+  questions.clear();
+  judgments.clear();
+  return (loaded = {
     repository,
-    index: admitted!,
-    observations: observations.filter(Boolean),
-    extractionFailures: extraction.failures,
-    localCacheAvailable: storageAvailable,
+    index: admitted,
+    extractionFailures: failures,
     timings,
     initializationMs,
-    runtime: runtimeMeasurements(),
-  };
-  await write("last", { semantics, result });
-  loaded = result;
-  if (!storageAvailable)
-    progress(
-      id,
-      "Browser storage unavailable; this run cannot be fully reused.",
-    );
-  return result;
+    runtime: { ...runtimeMeasurements(), executions },
+  });
 }
 async function ask(
   question: string,
@@ -233,29 +131,15 @@ async function ask(
   const start = performance.now(),
     { repository, index } = loaded;
   const isFixture = repository.origin === "attune:studio-fixture";
-  const queryId = await key("query-v1", [
-    semantics,
-    index.identity,
-    question,
-    "batched-openrouter-v3",
-    isFixture ? "authored-fixture-v1" : live ? "live-v1" : "local",
-  ]);
-  const cached = await read<Comparison>(queryId);
-  if (cached)
-    return {
-      ...cached,
-      timings: [
-        {
-          stage: "Comparison replay",
-          ms: performance.now() - start,
-          executed: 0,
-          reused: 1,
-        },
-      ],
-      providerCalls: 0,
-      providerRequests: 0,
-      usage: { inputTokens: null, outputTokens: null, costUsd: null },
-    };
+  const queryId = await digest(
+    JSON.stringify([
+      semantics,
+      index.identity,
+      question,
+      "batched-openrouter-v3",
+      isFixture ? "authored-fixture-v1" : live ? "live-v1" : "local",
+    ]),
+  );
   progress(id, "Asking the compiled Flix library…");
   const input = {
     operation: "query",
@@ -299,7 +183,6 @@ async function ask(
     const missing: {
       request: Request;
       identity: string;
-      vectorKey: string;
       publicFile?: { repository: string; revision: string; path: string };
     }[] = [];
     const seen = new Set<string>();
@@ -307,8 +190,7 @@ async function ask(
       const identity = JSON.stringify(request);
       if (seen.has(identity)) continue;
       seen.add(identity);
-      const vectorKey = await key("provider-vector-v1", request);
-      const vector = await read<number[]>(vectorKey);
+      const vector = i === 0 ? questions.get(identity) : undefined;
       if (vector) {
         reused++;
         saved.set(identity, [request, vector]);
@@ -316,7 +198,6 @@ async function ask(
         missing.push({
           request,
           identity,
-          vectorKey,
           ...(i
             ? {
                 publicFile: {
@@ -381,7 +262,10 @@ async function ask(
                 usage: observation.usage,
               });
             }
-            await write(job.vectorKey, vector);
+            if (!job.publicFile) {
+              if (questions.size >= 32) questions.clear();
+              questions.set(job.identity, vector);
+            }
             saved.set(job.identity, [job.request, vector]);
             completed++;
           }
@@ -433,19 +317,14 @@ async function ask(
   if (isFixture && QUESTIONS.includes(question)) {
     const saved: [Request, number[]][] = [];
     for (let i = 0; i < result.requests.length; i++) {
-      const request = result.requests[i],
-        vectorKey = await key("authored-fixture-vector-v1", request);
-      let vector = await read<number[]>(vectorKey);
-      if (vector) reused++;
-      else {
-        vector =
-          i === 0
-            ? question === QUESTIONS[0]
-              ? [1, 0, 0]
-              : [0.6, 0.8, 0]
-            : VECTORS[repository.files[i - 1].path];
-        await write(vectorKey, vector);
-      }
+      const request = result.requests[i];
+      const vector =
+        i === 0
+          ? question === QUESTIONS[0]
+            ? [1, 0, 0]
+            : [0.6, 0.8, 0]
+          : VECTORS[repository.files[i - 1].path];
+      reused++;
       saved.push([request, vector]);
     }
     const rankingStart = performance.now();
@@ -519,12 +398,8 @@ async function ask(
             poolName === "combined" ? h.witnesses : [],
           ]),
         });
-        const judgmentKey = await key("jev-observation-v1", request);
-        let observation = await read<{
-          scores: [string, number][];
-          model: string;
-          usage: Comparison["usage"];
-        }>(judgmentKey);
+        const judgmentKey = JSON.stringify(request);
+        let observation = judgments.get(judgmentKey);
         if (observation) judgmentHits++;
         else {
           progress(id, `Judging ${poolName} candidates…`);
@@ -562,7 +437,8 @@ async function ask(
             pool: panel.pool,
             scores: body.scores,
           });
-          await write(judgmentKey, body);
+          if (judgments.size >= 96) judgments.clear();
+          judgments.set(judgmentKey, body);
         }
         panel.results = evaluate({
           operation: "rerank",
@@ -628,7 +504,6 @@ async function ask(
         : "These demo recipes do not reproduce the historical localization campaign.",
     ],
   };
-  if (!inferenceFailure) await write(queryId, comparison);
   return comparison;
 }
 let queue = Promise.resolve();
@@ -637,52 +512,19 @@ onmessage = ({ data }) => {
     const { id, operation } = data;
     try {
       if (operation === "clear") {
-        await clearCache();
         loaded = undefined;
+        questions.clear();
+        judgments.clear();
         postMessage({ id, type: "result", value: null });
         return;
       }
       await initialize();
       let value;
-      if (operation === "restore") {
-        const saved = await read<{ semantics: string; result: Loaded }>("last");
-        if (saved?.semantics === semantics) {
-          loaded = saved.result;
-          value = {
-            ...loaded,
-            initializationMs,
-            runtime: runtimeMeasurements(),
-            timings: [
-              {
-                stage: "Saved repository replay",
-                ms: 0,
-                executed: 0,
-                reused: 1,
-              },
-            ],
-          };
-        } else value = null;
-      } else if (operation === "index")
-        value = await index(
-          data.fixture
-            ? await fixture()
-            : await acquire(data.url, (text, files) =>
-                progress(id, text, files),
-              ),
-          id,
-        );
+      if (operation === "index")
+        value = await index(data.url, data.fixture === true, id);
       else if (operation === "query")
         value = await ask(data.question, id, data.live === true);
       else throw new Error("Unknown worker request.");
-      if (loaded && (operation === "index" || operation === "query"))
-        await write("last-trace", {
-          repository: loaded.repository.name,
-          revision: loaded.repository.revision,
-          initializationMs: loaded.initializationMs,
-          runtime: loaded.runtime,
-          timings: loaded.timings,
-          comparison: operation === "query" ? value : null,
-        });
       postMessage({ id, type: "result", value });
     } catch (error) {
       postMessage({

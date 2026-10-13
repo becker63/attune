@@ -17,9 +17,6 @@ importers:
       apache-arrow:
         specifier: 17.0.0
         version: 17.0.0
-      idb-keyval:
-        specifier: 6.3.0
-        version: 6.3.0
       next:
         specifier: 16.4.0
         version: 16.4.0(@playwright/test@1.56.1)(@types/node@24.10.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -2204,9 +2201,6 @@ packages:
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
-
-  idb-keyval@6.3.0:
-    resolution: {integrity: sha512-um+2dgAWmYsu615EXpWVwSmapJhON0G43t3Ka/EVaohzPQXSMqKEqeDK/oIW3Ow+BXaF2PvSc+oBTFp793A5Ow==}
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -4963,8 +4957,6 @@ snapshots:
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
-
-  idb-keyval@6.3.0: {}
 
   inherits@2.0.4: {}
 

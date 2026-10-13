@@ -35,5 +35,6 @@ process.env.STUDIO_PARITY_ONLY = "1";
 process.env.STUDIO_PARITY_WORKER = fileURLToPath(
   new URL("../parity-worker.js", import.meta.url),
 );
+process.env.STUDIO_GRIT_ASSETS = fileURLToPath(new URL("../server_assets", import.meta.url));
 register();
 await import("./browser.test.ts");

@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { repositoryName, excluded, boundedBytes } from "../studio/github";
-import { envelope } from "../studio/grit";
-import { key } from "../studio/cache";
+import { repositoryName, excluded, boundedBytes } from "../server/source";
+import { envelope } from "../server/grit";
 import { wallProfile } from "../studio/profile";
 import { Profile } from "pprof-format";
 import {
@@ -13,7 +12,6 @@ import {
   JEV_ID,
   JEV_RESOLVED,
   judge,
-  publicSource,
   MODEL_ID,
   MODEL,
   RECIPE,
@@ -120,19 +118,6 @@ test("source bounds measure decoded bytes rather than compressed Content-Length"
   } finally {
     globalThis.fetch = original;
   }
-});
-test("exact cache identities distinguish input, model, recipe and world", async () => {
-  const baseline = await key("vector", ["model", "recipe", "bytes"]);
-  for (const change of [
-    ["model2", "recipe", "bytes"],
-    ["model", "recipe2", "bytes"],
-    ["model", "recipe", "other"],
-  ])
-    assert.notEqual(await key("vector", change), baseline);
-  assert.notEqual(
-    await key("query", ["rev1", "q"]),
-    await key("query", ["rev2", "q"]),
-  );
 });
 test("inference input checks cannot be bypassed by alternate URLs or models", () => {
   const base = {
@@ -290,20 +275,4 @@ test("JEv validates every fixed-pool observation and resolved model", async () =
     { model: JEV_RESOLVED, answers: { f0: { type: "noul", noul: 2 } } },
   ])
     await assert.rejects(() => judge(state, "fake", fake(body)));
-});
-test("shared cache admission verifies exact public bytes; private input is rejected", async () => {
-  const file = {
-    repository: "a/b",
-    revision: "a".repeat(40),
-    path: "src/a.ts",
-  };
-  const fetchSource = async (url: RequestInfo | URL) => {
-    assert.equal(
-      String(url),
-      `https://raw.githubusercontent.com/a/b/${file.revision}/src/a.ts`,
-    );
-    return new Response("public");
-  };
-  await publicSource(file, "public", fetchSource);
-  await assert.rejects(() => publicSource(file, "private prompt", fetchSource));
 });

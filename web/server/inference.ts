@@ -1,3 +1,5 @@
+import { Denied, limitedText } from "./http";
+import { publicFile } from "./source";
 import {
   batches,
   parallel,
@@ -26,34 +28,19 @@ export type Observation = {
   createdAt: number;
   batchSize: number;
 };
-export class Denied extends Error {
-  constructor(
-    message: string,
-    public status = 400,
-  ) {
-    super(message);
-  }
-}
 export function embeddingInput(body: any) {
   if (
-    typeof body.input !== "string" ||
+    typeof body?.input !== "string" ||
     !body.input ||
     body.input.length > 32768
   )
     throw new Denied("Unsupported or oversized embedding request.");
   if (body.publicFile !== undefined) {
-    const f = body.publicFile;
-    if (
-      !f ||
-      typeof f.repository !== "string" ||
-      !/^\w[\w.-]*\/\w[\w.-]*$/.test(f.repository) ||
-      !/^[a-f0-9]{40}$/.test(f.revision) ||
-      typeof f.path !== "string" ||
-      f.path.length > 512 ||
-      f.path.split("/").some((p: string) => !p || p === "." || p === "..") ||
-      !/^.{1,500}\.(?:[cm]?[jt]s|[jt]sx)$/.test(f.path)
-    )
+    try {
+      publicFile(body.publicFile);
+    } catch {
       throw new Denied("Invalid public source identity.");
+    }
   }
   return {
     input: body.input as string,
@@ -81,49 +68,6 @@ async function json(
   } catch {
     throw new Denied("Provider returned invalid JSON.", 502);
   }
-}
-export async function limitedText(response: Response, max: number) {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Denied("Empty response.", 502);
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      length += value.length;
-      if (length > max) throw new Denied("Response exceeds byte limit.", 413);
-      chunks.push(value);
-    }
-  } finally {
-    await reader.cancel();
-  }
-  const data = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    data.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return new TextDecoder("utf-8", { fatal: true }).decode(data);
-}
-export async function publicSource(
-  file: { repository: string; revision: string; path: string },
-  input: string,
-  send: typeof fetch = fetch,
-) {
-  const response = await send(
-    `https://raw.githubusercontent.com/${file.repository}/${file.revision}/${file.path.split("/").map(encodeURIComponent).join("/")}`,
-    {
-      signal: AbortSignal.timeout(15000),
-      redirect: "error",
-      credentials: "omit",
-    },
-  );
-  if (!response.ok)
-    throw new Denied("Public source could not be verified.", 422);
-  const source = await limitedText(response, 131072);
-  if (source.slice(0, 32768) !== input)
-    throw new Denied("Embedding input does not match the public source.", 422);
 }
 function number(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value >= 0

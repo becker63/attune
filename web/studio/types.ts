@@ -13,11 +13,6 @@ export type Repository = {
   excluded: { path: string; reason: string }[];
   truncated: boolean;
   treeCount: number;
-  fetchedBytes: number;
-  apiRequests: number;
-  rawRequests: number;
-  sourceHits: number;
-  acquisitionMs: number;
 };
 export type Declaration = {
   symbol: string;
@@ -81,8 +76,8 @@ export type Observation = {
 export type Timing = {
   stage: string;
   ms: number;
-  executed: number;
-  reused: number;
+  executed: number | null;
+  reused: number | null;
   bytes?: number;
   workers?: number;
   start?: number;
@@ -116,24 +111,24 @@ export type Comparison = {
 export type Loaded = {
   repository: Repository;
   index: Index;
-  observations: Observation[];
   extractionFailures: {
     path: string;
     relation: "defines" | "imports" | "calls";
     reason: string;
   }[];
-  localCacheAvailable: boolean;
   timings: Timing[];
   initializationMs: number;
   runtime: {
-    gritLinearMemoryBytes: number | null;
-    gritWorkers: number;
-    gritIntervals: {
-      worker: number;
+    executions: {
       path: string;
-      relation?: "defines" | "imports" | "calls";
+      id: string;
+      producer: string;
+      servedBy: string;
+      worker: number;
       start: number;
       end: number;
+      cpuMs: number;
+      rssBytes: number;
     }[];
     assets: {
       path: string;

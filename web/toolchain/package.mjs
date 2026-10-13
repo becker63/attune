@@ -8,15 +8,11 @@ const [
   output,
   site,
   flixDir,
-  gritDir,
-  parsers,
-  programsDir,
   notices,
   studioWorker,
-  gritWorker,
-  adapterFile,
   distribution,
   license,
+  server,
 ] = process.argv.slice(2);
 const copy = async (from, to) => {
   const destination = path.join(output, to);
@@ -25,19 +21,7 @@ const copy = async (from, to) => {
 };
 await copy(site, ".");
 await copy(flixDir, "runtime/flix");
-await copy(gritDir, "runtime/grit");
-await fs.rename(
-  path.join(output, "runtime/grit/grit_bg.wasm"),
-  path.join(output, "runtime/grit/grit.wasm"),
-);
-await copy(parsers, "wasm_parsers");
-await copy(programsDir, "runtime/grit/programs");
-await copy(
-  createRequire(import.meta.url).resolve("web-tree-sitter/tree-sitter.wasm"),
-  "tree-sitter.wasm",
-);
 await copy(studioWorker, "studio-worker.js");
-await copy(gritWorker, "grit-worker.js");
 await copy(path.join(path.dirname(distribution), "licenses"), "licenses");
 // Pin and serve Cosmograph's database locally, rather than fetching a CDN
 // runtime at page load. This is visualization infrastructure, not a retriever.
@@ -80,16 +64,22 @@ async function hashes(directory) {
   return result;
 }
 const flix = await hash(path.join(output, "runtime/flix/attune.wasm"));
-const grit = await hash(path.join(output, "runtime/grit/grit.wasm"));
-const programs = await hashes(programsDir),
-  grammars = await hashes(parsers),
-  adapter = await hash(adapterFile);
-const extractionIdentity = digest(
-  JSON.stringify({ grit, programs, grammars, adapter }),
-);
+const extractionIdentity = digest(JSON.stringify(await hashes(server)));
 const identity = digest(JSON.stringify({ flix, extractionIdentity }));
-const visualization = digest(JSON.stringify(await hashes(path.join(output, "runtime/cosmograph"))));
+const visualization = digest(
+  JSON.stringify(await hashes(path.join(output, "runtime/cosmograph"))),
+);
 await fs.writeFile(
   path.join(output, "runtime/manifest.json"),
-  JSON.stringify({ flix, grit, identity, extractionIdentity, visualization }, null, 2),
+  JSON.stringify(
+    { flix, identity, extractionIdentity, visualization },
+    null,
+    2,
+  ),
+);
+const serverOutput = path.join(path.dirname(output), "server_assets");
+await fs.cp(server, serverOutput, { recursive: true, dereference: true });
+await fs.writeFile(
+  path.join(serverOutput, "manifest.json"),
+  JSON.stringify({ extractionIdentity }),
 );

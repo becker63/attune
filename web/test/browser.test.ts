@@ -4,8 +4,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { chromium } from "@playwright/test";
+import { extractWithGrit } from "../server/extraction";
+import { parallel } from "../studio/batches";
 const root = path.resolve(import.meta.dirname, "..");
 const base = process.env.STUDIO_TEST_URL ?? "http://127.0.0.1:4318";
+const headers = process.env.STUDIO_PREVIEW_BYPASS
+  ? { "x-vercel-protection-bypass": process.env.STUDIO_PREVIEW_BYPASS }
+  : undefined;
 const core = path.resolve(root, "../bazel-bin/external/attune+");
 const parityOnly = process.env.STUDIO_PARITY_ONLY === "1";
 const samples: [string, string][] = [
@@ -35,7 +40,7 @@ function runJvm(input: unknown) {
   return JSON.parse(r.stdout);
 }
 test(
-  "real browser Grit and compiled Flix agree with native execution",
+  "server Grit matches old browser output, native Grit and compiled Flix",
   { timeout: 120000, skip: process.env.STUDIO_SKIP_PARITY === "1" },
   async () => {
     const bundle = await fs.readFile(
@@ -55,16 +60,42 @@ test(
       ],
     });
     try {
-      const page = await browser.newPage();
+      const page = await browser.newPage({ extraHTTPHeaders: headers });
       await page.route("**/test-worker.js", (route) =>
         route.fulfill({
           contentType: "text/javascript",
           body: bundle,
         }),
       );
-      await page.goto(`${base}/studio`);
+      await page.goto(
+        `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
+      );
+      const extracted = await parallel(samples, 4, ([path, source]) =>
+        extractWithGrit(path, source),
+      );
+      const observations = extracted.map((r) => r.observation);
+      const previous = JSON.parse(
+        await fs.readFile(path.join(root, "test/grit-browser.json"), "utf8"),
+      );
+      assert.deepEqual(observations, previous.observations);
+      const spans = extracted.map((r) => r.execution);
+      assert.ok(
+        spans.some((a) =>
+          spans.some(
+            (b) => a.worker !== b.worker && a.start < b.end && b.start < a.end,
+          ),
+        ),
+      );
+      await assert.rejects(
+        () => extractWithGrit("unsupported.py", "print(1)"),
+        /Unsupported/,
+      );
+      assert.deepEqual(
+        (await extractWithGrit(...samples[0])).observation,
+        observations[0],
+      );
       const result: any = await page.evaluate(
-        async (files) =>
+        async ({ files, observations }) =>
           new Promise((resolve, reject) => {
             const worker = new Worker("/test-worker.js");
             worker.onmessage = (e) => {
@@ -74,34 +105,16 @@ test(
             worker.onerror = reject;
             worker.postMessage({
               files,
+              observations,
               questions: [
                 "Where is authenticate defined?",
                 "unrecognized question",
               ],
             });
           }),
-        samples,
+        { files: samples, observations },
       );
       assert.equal(result.error, undefined, result.error);
-      assert.deepEqual(
-        result.parallel,
-        result.observations,
-        "parallel extraction preserves exact output and file order",
-      );
-      assert.ok(
-        result.extraction.gritWorkers >= 2 &&
-          result.extraction.gritWorkers <= 4,
-      );
-      const spans = result.extraction.gritIntervals;
-      assert.ok(
-        spans.some((a: any) =>
-          spans.some(
-            (b: any) =>
-              a.worker !== b.worker && a.start < b.end && b.start < a.end,
-          ),
-        ),
-        "actual worker spans overlap",
-      );
       assert.equal(result.probe.traversal, true);
       assert.equal(result.probe.savedEffect, true);
       assert.equal(result.probe.datalog, false);
@@ -144,7 +157,7 @@ test(
         process.env.STUDIO_GRIT_LIBRARY ??
           path.join(core, "platform/support/grit/libattune_grit_abi.so"),
       );
-      for (const observation of result.observations) {
+      for (const observation of observations) {
         const language = observation.path.endsWith(".tsx")
           ? "tsx"
           : observation.path.endsWith(".ts")
@@ -165,7 +178,9 @@ test(
             { input: observation.source, encoding: "utf8" },
           );
           assert.equal(native.status, 0, native.stderr);
-          const actual = JSON.parse(observation[relation]),
+          const actual = JSON.parse(
+              observation[relation as "defines" | "imports" | "calls"],
+            ),
             expected = JSON.parse(native.stdout);
           assert.deepEqual(actual, expected, `${observation.path} ${relation}`);
         }
@@ -176,7 +191,7 @@ test(
   },
 );
 test(
-  "Cosmograph stages, Shiki source, parallel flamegraph, replay and mobile",
+  "Cosmograph stages, Shiki source, parallel flamegraph, session and mobile",
   { timeout: 90000, skip: parityOnly },
   async () => {
     const browser = await chromium.launch({
@@ -192,9 +207,25 @@ test(
     });
     try {
       const page = await browser.newPage({
+        extraHTTPHeaders: headers,
         viewport: { width: 1440, height: 1000 },
       });
-      await page.goto(`${base}/studio`);
+      await page.addInitScript(() => {
+        for (const name of [
+          "indexedDB",
+          "localStorage",
+          "sessionStorage",
+          "caches",
+        ])
+          Object.defineProperty(globalThis, name, {
+            get() {
+              throw Error("Browser persistence forbidden");
+            },
+          });
+      });
+      await page.goto(
+        `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
+      );
       await page.getByRole("button", { name: "Try the example" }).click();
       await page.getByText("5 files indexed", { exact: false }).waitFor();
       assert.equal(
@@ -410,8 +441,8 @@ test(
       await page.locator(".source-popup").waitFor({ state: "hidden" });
       await page.getByRole("link", { name: "Flamegraph", exact: true }).click();
       await page.locator('[data-viewer="react-pprof"] canvas').waitFor();
-      assert.ok((await page.locator(".work-span").count()) >= 5);
-      await page.getByLabel("Inspect individual workers and batches").check();
+      assert.ok((await page.locator(".work-span").count()) >= 1);
+      await page.getByLabel("Inspect individual requests and batches").check();
       await page.getByRole("button", { name: "Reset zoom" }).click();
       await page.getByRole("link", { name: "← Studio" }).click();
       await page.getByText("5 files indexed", { exact: false }).waitFor();
@@ -419,21 +450,23 @@ test(
       await page
         .getByRole("button", { name: "Compare answers", exact: true })
         .click();
-      await page
-        .getByText("Comparison replay · no new inference requests", {
-          exact: true,
-        })
-        .waitFor();
+      await page.waitForFunction(
+        () =>
+          !document.querySelector<HTMLButtonElement>(".question-actions button")
+            ?.disabled,
+      );
       await page.reload();
+      assert.equal(
+        await page.locator(".graph-node").count(),
+        0,
+        "reload does not restore private session state",
+      );
+      await page.getByRole("button", { name: "Try the example" }).click();
       await page.getByText("5 files indexed", { exact: false }).waitFor();
       await page
         .getByRole("button", { name: "Compare answers", exact: true })
         .click();
-      await page
-        .getByText("Comparison replay · no new inference requests", {
-          exact: true,
-        })
-        .waitFor();
+      await page.getByRole("heading", { name: "Compare the top 10" }).waitFor();
       await page
         .locator('.retrieval-graph[data-renderer="cosmograph"]')
         .waitFor();
@@ -496,7 +529,7 @@ test(
   },
 );
 test(
-  "live transport contract composes all methods and reuses file vectors without paid calls",
+  "live transport contract composes all methods and keeps private observations in memory without paid calls",
   { timeout: 90000, skip: parityOnly },
   async () => {
     const browser = await chromium.launch({
@@ -531,39 +564,55 @@ test(
           .update(source)
           .digest("hex"),
       }));
-      const page = await browser.newPage();
+      const page = await browser.newPage({ extraHTTPHeaders: headers });
       let embeddings = 0,
         judgments = 0,
         vectors = 0,
         active = 0,
         peak = 0;
-      await page.route(
-        "https://api.github.com/repos/attune/test**",
-        async (route) => {
-          const url = route.request().url();
-          const body = url.includes("/git/trees/")
-            ? { tree, truncated: false }
-            : url.includes("/commits/")
-              ? { sha: revision, commit: { tree: { sha: treeSha } } }
-              : {
-                  full_name: "attune/test",
-                  private: false,
-                  default_branch: "main",
-                };
-          await route.fulfill({
-            json: body,
-            headers: { "access-control-allow-origin": "*" },
+      const manifest = await (
+        await fetch(`${base}/runtime/manifest.json`, { headers })
+      ).json();
+      const observed = await parallel(files, 4, ([path, source]) =>
+        extractWithGrit(path, source),
+      );
+      await page.route("**/api/extraction", async (route) => {
+        const body = route.request().postDataJSON();
+        if (body.operation === "repository")
+          return route.fulfill({
+            json: {
+              name: "attune/test",
+              origin: "https://github.com/attune/test",
+              revision,
+              files: tree.map((f) => ({
+                path: f.path,
+                blob: f.sha,
+                bytes: f.size,
+              })),
+              excluded: [],
+              truncated: false,
+              treeCount: files.length,
+            },
           });
-        },
-      );
-      await page.route(
-        "https://raw.githubusercontent.com/attune/test/**",
-        (route) =>
-          route.fulfill({
-            body: files.find(([p]) => route.request().url().endsWith(p))![1],
-            headers: { "access-control-allow-origin": "*" },
-          }),
-      );
+        return route.fulfill({
+          json: {
+            extractor: manifest.extractionIdentity,
+            files: body.paths.map((requested: string) => {
+              const i = files.findIndex(([path]) => path === requested);
+              return {
+                file: {
+                  path: files[i][0],
+                  source: files[i][1],
+                  blob: tree[i].sha,
+                  digest: tree[i].sha,
+                },
+                relations: observed[i].observation,
+                execution: observed[i].execution,
+              };
+            }),
+          },
+        });
+      });
       await page.route("**/api/inference", async (route) => {
         if (route.request().method() === "GET") {
           await route.fulfill({ json: { embedding: true, jev: true } });
@@ -615,11 +664,13 @@ test(
           });
         }
       });
-      await page.goto(`${base}/studio`);
+      await page.goto(
+        `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
+      );
       await page
         .getByLabel("Public GitHub URL")
         .fill("https://github.com/attune/test");
-      await page.getByRole("button", { name: "Index locally" }).click();
+      await page.getByRole("button", { name: "Index repository" }).click();
       await page.getByText("40 files indexed", { exact: false }).waitFor();
       await page
         .getByRole("button", { name: "Compare answers", exact: true })
@@ -655,100 +706,31 @@ test(
           !document.querySelector<HTMLButtonElement>(".question-actions button")
             ?.disabled,
       );
-      assert.equal(embeddings, 4);
-      assert.equal(vectors, 42, "a different query reuses all file vectors");
+      assert.equal(embeddings, 6);
+      assert.equal(
+        vectors,
+        82,
+        "public vectors use the server cache boundary again",
+      );
       assert.equal(judgments, 6);
       await page
         .getByRole("button", { name: "Compare answers", exact: true })
         .click();
-      await page
-        .getByText("Comparison replay · no new inference requests", {
-          exact: true,
-        })
-        .waitFor();
-      assert.equal(embeddings, 4);
+      await page.waitForFunction(
+        () =>
+          !document.querySelector<HTMLButtonElement>(".question-actions button")
+            ?.disabled,
+      );
+      assert.equal(embeddings, 9);
+      assert.equal(
+        vectors,
+        122,
+        "the repeated private question stays in memory",
+      );
       assert.equal(judgments, 6);
     } catch (e) {
       console.error(e);
       throw e;
-    } finally {
-      await browser.close();
-    }
-  },
-);
-
-test(
-  "a timed-out relation preserves checkpoints and retries only missing work",
-  {
-    timeout: 60000,
-    skip: process.env.STUDIO_SKIP_PARITY === "1",
-  },
-  async () => {
-    const browser = await chromium.launch({
-      executablePath:
-        process.env.CHROMIUM_PATH ??
-        execFileSync("which", ["chromium"], { encoding: "utf8" }).trim(),
-      args: ["--no-sandbox"],
-    });
-    try {
-      const page = await browser.newPage();
-      const bundle = await fs.readFile(
-        process.env.STUDIO_PARITY_WORKER ??
-          path.resolve(root, "../bazel-bin/web/parity-worker.js"),
-        "utf8",
-      );
-      await page.route("**/test-worker.js", (route) =>
-        route.fulfill({ contentType: "text/javascript", body: bundle }),
-      );
-      await page.goto(`${base}/studio`);
-      const run = (files: [string, string][], timeout = false) =>
-        page.evaluate(
-          ({ files, timeout }) =>
-            new Promise<any>((resolve, reject) => {
-              const worker = new Worker("/test-worker.js");
-              worker.onmessage = ({ data }) => {
-                worker.terminate();
-                data.error ? reject(Error(data.error)) : resolve(data);
-              };
-              worker.onerror = (error) => {
-                worker.terminate();
-                reject(Error(error.message));
-              };
-              worker.postMessage({ operation: "resume", files, timeout });
-            }),
-          { files, timeout },
-        );
-      const files = samples.slice(0, 2);
-      const failed = await run(files, true);
-      assert.deepEqual(
-        failed.result.failures.map((f: any) => [f.path, f.relation]),
-        [["src/auth.ts", "calls"]],
-      );
-      assert.deepEqual(failed.complete, ["src/session.ts"]);
-      assert.deepEqual(Object.keys(failed.retained[0]).sort(), [
-        "defines",
-        "imports",
-      ]);
-      assert.equal(failed.result.gritIntervals.length, 6);
-      await page.reload();
-      const retry = await run(files);
-      assert.equal(retry.result.failures.length, 0);
-      assert.equal(
-        retry.result.gritIntervals.length,
-        1,
-        "only the failed relation executes after reload",
-      );
-      assert.equal(retry.result.gritIntervals[0].relation, "calls");
-      const changed = await run([
-        [files[0][0], files[0][1] + "// changed\n"],
-        files[1],
-      ]);
-      assert.equal(
-        changed.result.gritIntervals.length,
-        3,
-        "a source change invalidates that file, not its unchanged neighbor",
-      );
-      assert.equal(changed.result.failures.length, 0);
     } finally {
       await browser.close();
     }

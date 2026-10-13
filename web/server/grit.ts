@@ -1,8 +1,5 @@
 // This is a mechanical envelope conversion, not a parser or resolver.
 // The pinned upstream browser binding uses UTF-16 indices; native Grit uses UTF-8.
-import type { Observation } from "./types";
-export const GRIT_VERSION =
-  "c80b3026471b229f41b279c3eb0c162dcdacfdb1:studio-wasm-v1";
 export type Match = {
   __typename: string;
   sourceFile?: string;
@@ -13,7 +10,6 @@ export type Match = {
 };
 export const RELATIONS = ["defines", "imports", "calls"] as const;
 export type Relation = (typeof RELATIONS)[number];
-export type SavedRelations = Partial<Pick<Observation, Relation>>;
 type Range = { startByte: number; endByte: number };
 export function envelope(path: string, source: string, results: Match[]) {
   const offsets = new Map<number, number>([[0, 0]]);
@@ -74,51 +70,4 @@ export function language(path: string) {
           : (() => {
               throw new Error("Unsupported source language.");
             })();
-}
-const programs = new Map<string, Promise<string>>();
-export async function extract(
-  path: string,
-  source: string,
-  run: (
-    pattern: string,
-    paths: string[],
-    contents: string[],
-    a: string[],
-    b: string[],
-    c: string,
-    d: string,
-  ) => Promise<Match[]>,
-): Promise<Observation> {
-  const result: Observation = {
-    path,
-    source,
-    defines: "",
-    imports: "",
-    calls: "",
-  };
-  for (const relation of RELATIONS)
-    result[relation] = await extractRelation(path, source, relation, run);
-  return result;
-}
-export async function extractRelation(
-  path: string,
-  source: string,
-  relation: Relation,
-  run: Parameters<typeof extract>[2],
-) {
-  const url = `/runtime/grit/programs/${relation}/${language(path)}.grit`;
-  if (!programs.has(url))
-    programs.set(
-      url,
-      fetch(url).then((response) => {
-        if (!response.ok)
-          throw new Error("Missing declared extraction program.");
-        return response.text();
-      }),
-    );
-  return envelope(
-    path,
-    source,
-    await run(await programs.get(url)!, [path], [source], [], [], "", ""),
-  );
 }

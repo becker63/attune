@@ -1,0 +1,47 @@
+{
+  "provenance": "Real pinned browser Grit at 336d41e; generated 2026-10-13 before moving extraction to Node.",
+  "observations": [
+    {
+      "path": "src/auth.ts",
+      "source": "// caf\u00e9 \ud83c\udf55\nimport {session} from './session';\nexport function authenticate(token: string){return session(token);}\n",
+      "defines": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/auth.ts\",\"start_byte\":56,\"end_byte\":116}],\"logs\":[{\"message\":\"definition\\n\",\"start_byte\":65,\"end_byte\":77}],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/auth.ts\",\"start_byte\":14,\"end_byte\":48}],\"logs\":[{\"message\":\"import\\n\",\"start_byte\":36,\"end_byte\":47}],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/auth.ts\",\"start_byte\":100,\"end_byte\":114}],\"logs\":[{\"message\":\"call\\n\",\"start_byte\":100,\"end_byte\":107}],\"diagnostics\":[]}"
+    },
+    {
+      "path": "src/session.ts",
+      "source": "export function session(token: string){return token;}\n",
+      "defines": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/session.ts\",\"start_byte\":7,\"end_byte\":53}],\"logs\":[{\"message\":\"definition\\n\",\"start_byte\":16,\"end_byte\":23}],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}"
+    },
+    {
+      "path": "src/view.tsx",
+      "source": "export function View(){return <div>caf\u00e9 \ud83c\udf55</div>}\n",
+      "defines": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/view.tsx\",\"start_byte\":7,\"end_byte\":52}],\"logs\":[{\"message\":\"definition\\n\",\"start_byte\":16,\"end_byte\":20}],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}"
+    },
+    {
+      "path": "src/plain.js",
+      "source": "import {missing} from './absent';\nexport function greet(){return missing();}\n",
+      "defines": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/plain.js\",\"start_byte\":41,\"end_byte\":76}],\"logs\":[{\"message\":\"definition\\n\",\"start_byte\":50,\"end_byte\":55}],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/plain.js\",\"start_byte\":0,\"end_byte\":33}],\"logs\":[{\"message\":\"import\\n\",\"start_byte\":22,\"end_byte\":32}],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/plain.js\",\"start_byte\":65,\"end_byte\":74}],\"logs\":[{\"message\":\"call\\n\",\"start_byte\":65,\"end_byte\":72}],\"diagnostics\":[]}"
+    },
+    {
+      "path": "src/empty.js",
+      "source": "",
+      "defines": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}"
+    },
+    {
+      "path": "src/widget.jsx",
+      "source": "export function Widget() { return <button>Go</button>; }",
+      "defines": "{\"version\":1,\"matched\":true,\"matches\":[{\"path\":\"src/widget.jsx\",\"start_byte\":7,\"end_byte\":56}],\"logs\":[{\"message\":\"definition\\n\",\"start_byte\":16,\"end_byte\":22}],\"diagnostics\":[]}",
+      "imports": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}",
+      "calls": "{\"version\":1,\"matched\":false,\"matches\":[],\"logs\":[],\"diagnostics\":[]}"
+    }
+  ]
+}

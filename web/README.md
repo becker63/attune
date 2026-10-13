@@ -3,7 +3,7 @@
 [Open the laboratory](https://atlas-live-five.vercel.app/studio) ·
 [Read the measurements](https://atlas-live-five.vercel.app/#overview)
 
-Paste a public GitHub repository, index it locally, ask a question, and compare
+Paste a public GitHub repository, index it, ask a question, and compare
 up to ten files from each method. Click a file to inspect its source and the
 relationships that led to it. Queries overlay the research site's fixed folder
 layout. Every file and edge stays in place; node size shows connection count.
@@ -23,7 +23,7 @@ The repository pins Flix, TeaVM, Rust, Grit, JVM and package dependencies.
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
-pnpm artifacts  # one Bazel graph builds both WASMs, workers and their manifest
+pnpm artifacts  # one Bazel graph builds Flix/browser and Grit/server assets
 pnpm dev       # http://localhost:3000/studio
 ```
 
@@ -31,20 +31,24 @@ The first preparation downloads dependencies. Later runs reuse build outputs.
 There is no model call during preparation, compilation or ordinary tests.
 `site/` remains the source of the existing research pages and five-waits plots;
 Next serves those pages at `/` and the application at `/studio`.
+`nix run` in this directory starts the same Next development server. The old
+static-only server and publisher are retired; there is one deployment path.
 
 ## Follow the computation
 
 ```text
-GitHub source -> Grit observations -> Flix admission -> typed repository
-question     -> Flix requests     -> saved/provider answers -> Flix ranking
+Next.js: public GitHub source -> pinned Grit -> shared observations
+Browser: observations -> compiled Flix -> typed repository -> rankings
+Question -> Flix requests -> server answers -> Flix saved-answer handler
 ```
 
 | Where | Responsibility |
 | --- | --- |
 | [Flix library](../attune/src/Attune/Studio.flix) | Admission, anchors, directed routes, scores, candidate pools, judgment evidence and result validation |
-| [Worker](studio/worker.ts) | Load compiled Flix, distribute Grit files across workers, save exact artifacts |
+| [Worker](studio/worker.ts) | Load compiled Flix, request observations, resume with exact answers |
+| [Extraction endpoint](app/api/extraction/route.ts) | Verify public source, obtain independently cached Grit results |
 | [Inference endpoint](app/api/inference/route.ts) | Same-origin admission, bounded provider transport and public-source cache admission |
-| [Bazel actions](BUILD.bazel) | Flix → TeaVM, Rust → Grit WASM, Aspect → workers, then one browser artifact directory |
+| [Bazel actions](BUILD.bazel) | Flix → TeaVM, Rust → Grit WASM, Aspect → workers, then separate browser and server artifact directories |
 | BuildBuddy | Execute eligible build actions remotely and reuse completed artifacts |
 
 The browser calls one interface: `evaluate(JSON.stringify(request))`. That
@@ -85,49 +89,91 @@ cannot translate. CheerpJ 4.3 initialized but rejected Flix's Java 21 class file
 `UnsupportedClassVersionError` (supported maximum: Java 17). No TypeScript
 Datalog replacement is shipped. Native JVM Datalog tests remain intact.
 
-Browser extraction currently supports JS, JSX, TS and TSX. Native extraction
+Studio extraction supports JS, JSX, TS and TSX. Native extraction
 retains Flix and Starlark as well as its other languages. The maintained source
-pin is unchanged. Browser/native parity tests cover exact envelopes, Unicode
-byte ranges, unresolved imports/calls and empty files. The browser adapter
+pin is unchanged. Server/native and retained browser parity tests cover exact envelopes, Unicode
+byte ranges, unresolved imports/calls and empty files. The WASM adapter
 converts upstream UTF-16 offsets into the native UTF-8 envelope before admission.
 
-Cold extraction uses up to four dedicated workers, bounded by available CPU
-concurrency and the number of cache misses. They share a compiled WASM module,
-with isolated Grit instances and memories. Observations retain inventory order;
-Flix admission follows after extraction. Workers terminate when finished. Warm
-indices create no extraction workers. The timing flamegraph shows actual worker
-intervals and wall time, not CPU samples or an inferred speedup.
+Grit runs in separate Node processes, with at most four active files and no more
+than the host's available CPU count. Each file runs all three programs in one
+process, then exits. Node worker threads retained WASM memory after termination
+and exhausted the preview's memory. Separate processes release that memory.
 
-Acquisition uses three GitHub REST requests on a cold index, then at most four
-simultaneous raw-source downloads. Direct archive fetching failed the browser
-CORS check. Limits: 120 files, 128 KiB per file, 5 MiB source and an 8 MiB tree
-response. Binaries, symlinks, dependencies and generated bundles are excluded.
-Truncation, omitted files and unresolved evidence remain visible. Repository code
-is never executed. Implementation files are selected before tests and examples
-when the file limit is reached. Cancel stops the operation; there is no overall
-time limit. Each extraction relation has a 60-second watchdog. A stuck worker is
-replaced and other files continue. Failed files remain searchable by text and
-embeddings; their structure is not admitted, and missing coverage is shown.
+Node 24's `--liftoff-only` selects its baseline WASM compiler: the same instructions
+execute with lower peak memory, at a cold-time cost. The 120-file parity check
+peaked at 121 MiB per child; ordinary optimizing compilation exceeded 1 GiB.
+Receipts record each child's extraction CPU time and peak RSS, not the whole
+Function's memory. HTTP concurrency is measured separately from CPU processes.
 
-## Reuse and inference
+The browser sends up to four requests concurrently, each containing at most two
+file identities. A cache entry belongs to a file, never its HTTP batch. Cold
+requests fetch trusted source and execute Grit; warm requests can return earlier
+observations. There is no browser Grit download or persistent artifact database.
 
-IndexedDB retains exact blobs, versioned extraction results, repository worlds,
-vectors, JEv observations and comparisons (48 MiB / 800 entries, evictable).
-Each successful extraction relation is saved immediately. Retrying after a
-failure or cancellation runs only missing relations. An unchanged file remains
-reusable across commits; changed extraction code or source bytes invalidate it.
-Cache writes update a small size catalog atomically instead of rereading all
-stored sources and vectors. Partial and complete graphs have distinct identities.
-Model, recipe, input bytes and world identity participate in the relevant keys.
-Changed questions reuse unchanged file vectors. Reloading can replay a retained
-comparison. Storage denial or eviction causes recomputation, never a claimed hit.
+Limits: 120 files, 128 KiB per file, 5 MiB source and an 8 MiB tree response.
+Binaries, symlinks, dependencies and generated bundles are excluded. Source
+files come before tests and examples. Truncation and omitted files remain visible.
+Repository code is never executed. A failed file can still supply text and
+embeddings, but contributes no admitted relationships. Partial worlds have
+separate identities. Cancellation stops browser dispatch; already accepted server
+work may finish and remain reusable.
 
-The Node.js endpoint uses Next Cache Components (`use cache: remote`, `cacheLife`,
-`cacheTag`) only for file embeddings whose input matches public GitHub source at
-an immutable revision. Request admission stays outside the cached function.
-Questions and JEv evidence never enter that shared cache. Entries expire; this
-is not Bazel's artifact store. Concurrent requests are coalesced per instance;
-cache misses can still race across instances.
+## Reuse and privacy
+
+| Former browser storage | Now |
+| --- | --- |
+| Repository inventory and source | Verified Next cached functions |
+| Grit checkpoints | Complete per-file Next cached results; failed files retry |
+| Public file vectors | Existing Next cache, after the same source verification |
+| Admitted Flix index | Recomputed in the browser and held in memory |
+| Private question vectors and JEv answers | Bounded maps in the active worker |
+| Whole comparisons | Recomputed in Flix; active result held in React state |
+| Last repository and timing trace | Shared Studio layout; client navigation retains them |
+
+A full reload clears private session state. **Reset session** affects this
+visitor, not shared results. The flamegraph uses current HTTP intervals and
+Flix wall time. Its export describes waits, not sampled CPU stacks. Cached
+Grit receipts describe an earlier execution, not CPU spent on this request.
+
+[Next Cache Components](https://nextjs.org/docs/app/api-reference/directives/use-cache-remote)
+provides `use cache: remote`, `cacheLife` and `cacheTag`. Validation happens
+before the cached function. Only server-fetched public source can populate
+shared extraction and embedding entries. Questions, judgments and comparisons
+never enter that cache.
+
+| Cached function | Exact arguments | Refresh / expire |
+| --- | --- | --- |
+| `repositoryHead` | Public repository | 5 min / 10 min |
+| `inventory` | Repository + immutable commit | 7 days / 30 days |
+| `sourceBlob` | Repository + commit + path + verified Git blob + size | 7 days / 30 days |
+| `extractedFile` | Extractor artifact digest + repository/commit/path, or authored fixture path + source digest | 7 days / 30 days |
+| `sharedEmbedding` | Model + preparation recipe + verified repository/commit/path | 1 day / 7 days |
+
+The extractor digest covers the actual Rust/WASM, grammars, GritQL programs and
+normalization adapter. Changing these artifacts invalidates earlier observations.
+Coarse tags allow family invalidation; they do not replace argument identity.
+Next also includes function/build identity, so a deployment may invalidate reuse.
+
+HTTP batch membership does not affect reuse. **A new commit gets a new cache
+namespace, even for unchanged files.** Direct source-text arguments worked in
+local Next but exceeded Vercel's cache-key URL limit (HTTP 414). Compact immutable
+file locators avoid that limit; cached functions obtain bytes through the same
+verified source boundary. No custom key store or proprietary API is added.
+
+Source uses commit-pinned raw downloads and verifies the tree's Git blob hash.
+This avoids spending a GitHub REST request on every file. These entries describe
+exact public bytes, but do not provide cross-commit content-addressed reuse.
+
+Vercel supplies the managed remote handler. Application code imports no Vercel
+cache SDK. A self-hosted installation can set `ATTUNE_REMOTE_CACHE_HANDLER` to
+its standard Next handler module. Next's default local handler is an in-memory
+LRU, **not proof of persistence across server instances**. Cache eviction causes
+recomputation; outages and extraction failures remain explicit failures.
+Cold files have a 180-second process watchdog, inside a 210-second cache-fill
+watchdog and 240-second request bound. These bound individual work, not the
+whole repository session.
+[Handler configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheHandlers).
 
 Qwen batches up to 16 inputs / 128 KiB, with up to four batches in flight. File
 cache entries remain independent of those batch boundaries. JEv uses OpenRouter's
@@ -135,11 +181,27 @@ decision endpoint and verifies the resolved model version.
 
 Visitors need no access code. Both providers use the encrypted server-side
 OpenRouter key. Same-origin checks, per-request bounds, timeouts, eight concurrent requests and
-180 requests/minute per instance
+180 inference / 600 extraction requests per minute per instance
 limit bursts. **These are not global spending limits.** Spending caps were
 explicitly waived for this deployment. Billing and execution counts remain
 `Unavailable` when the provider/cache cannot establish them. Returned provider
 usage describes the original observation, not necessarily a new charge.
+
+## Measured on the preview
+
+Two independent Chromium sessions received identical source and Grit receipts.
+The second session also received observations produced by other server instances.
+
+| Indexed population | Cold indexing | Fresh browser, warm server |
+| --- | ---: | ---: |
+| Mitt, 3 files | 6.72 s | 0.75 s |
+| Preact, 120 files | 252.02 s | 4.32 s |
+
+These October 13 measurements include source transport and Flix admission,
+before graph rendering. Cold Preact remains slow on the current Function.
+The lower-memory compiler avoids crashes but costs startup time; shared results
+amortize that work across visitors. This is a small deployment check, not a
+general speedup claim. [Revisions, local comparison, CPU receipts and verification](../attune/notes/design.md#remote-cache-migration).
 
 ## Verify and publish
 
@@ -148,20 +210,26 @@ nix run .#test  # static hashes, transport, real browser/native parity and retry
 pnpm check
 pnpm build
 pnpm verify    # production UI, caching, graph, source and mobile checks
+pnpm exec tsx --test test/cache.test.ts  # real Next cache with controlled upstreams
 pnpm run deploy    # prepare, check, build, verify, then publish to atlas-live
 ```
 
 `pnpm verify` uses installed Chromium (or `CHROMIUM_PATH`). The opt-in acquisition
 measurement is `STUDIO_NETWORK_TEST=1 pnpm exec tsx --test test/network.test.ts`
-against a running site; it makes no inference calls unless
-`STUDIO_LIVE_INFERENCE=1` is also supplied (two questions, at most ten files).
+against a running site; add `STUDIO_LARGE_TEST=1` to include Preact. Two fresh
+browser contexts compare extraction receipt identities, not inferred cache hits.
+It makes no inference calls unless
+`STUDIO_LIVE_INFERENCE=1` is also supplied (two questions per visitor, at most ten files).
 `STUDIO_TEST_URL` selects an
 existing deployment. Measurements and screenshots go to ignored `test-results/`.
 
 Deployment uses the existing Vercel publisher and self-contained prebuilt output.
 `deploy/studio.mjs` reads only the configured credential fields from the checkout's
 ignored `.env`, uploads encrypted production variables, and never gives secrets
-to build actions. `pnpm dev` reads only `OPENROUTER_API_KEY` for its local server;
+to build actions. Preview builds use `vercel build --standalone`, then
+`node deploy/studio.mjs configure-preview` and `node deploy/studio.mjs preview`.
+`verify-preview <url>` checks the protected preview without exposing its credentials.
+`pnpm dev` reads only `OPENROUTER_API_KEY` for its local server;
 without it, the authored example and text matching remain available.
 No provider or visitor key enters the frontend. The pinned
 Next release uses its supported Webpack build path: Turbopack panicked while

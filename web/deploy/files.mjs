@@ -28,7 +28,7 @@ export function treeSize(root) {
 /**
  * Makes every file and directory under `root` writable. Bazel outputs are
  * read-only (`0555`), and `fs.cpSync` preserves that, so a copied tree must be
- * made writable before the deploy can stamp it or remove it.
+ * made writable so the temporary upload can be removed.
  */
 export function makeWritable(root) {
   const walk = (dir) => {

@@ -1,11 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import type {
-  Comparison,
-  FileProgress,
-  Loaded,
-  Method,
-} from "../../studio/types";
+import Link from "next/link";
+import { useStudio } from "./session";
+import type { Method } from "../../studio/types";
 import { QUESTIONS } from "../../studio/fixture";
 import Graph from "./graph";
 import "./studio.css";
@@ -25,143 +21,33 @@ const PRIMARY = [
   "embeddings+atlas+jev",
 ];
 export default function Studio() {
-  const worker = useRef<Worker | null>(null),
-    sequence = useRef(0);
-  const pending = useRef(
-    new Map<
-      number,
-      {
-        resolve: (value: any) => void;
-        reject: (reason: Error) => void;
-      }
-    >(),
-  );
-  const [loaded, setLoaded] = useState<Loaded | null>(null),
-    [comparison, setComparison] = useState<Comparison | null>(null);
-  const [url, setUrl] = useState("https://github.com/developit/mitt"),
-    [question, setQuestion] = useState(QUESTIONS[0]);
-  const [live, setLive] = useState(true),
-    [inferenceAvailable, setInferenceAvailable] = useState(false);
-  const [busy, setBusy] = useState(false),
-    [progress, setProgress] = useState(""),
-    [error, setError] = useState("");
-  const [inspected, setInspected] = useState(""),
-    [secondary, setSecondary] = useState(false),
-    [mobileMethod, setMobileMethod] = useState("embeddings");
-  const [controls, setControls] = useState(true);
-  const [fileProgress, setFileProgress] = useState<FileProgress | null>(null);
-  function connect() {
-    const w = new Worker("/studio-worker.js");
-    worker.current = w;
-    w.onmessage = ({ data }) => {
-      if (data.type === "progress") {
-        setProgress(data.files ? "" : data.text);
-        if (data.files) setFileProgress(data.files);
-        return;
-      }
-      const request = pending.current.get(data.id);
-      pending.current.delete(data.id);
-      if (data.type === "error") request?.reject(new Error(data.message));
-      else request?.resolve(data.value);
-    };
-    w.onerror = () => {
-      for (const request of pending.current.values()) {
-        request.reject(
-          new Error(
-            "The browser worker stopped. Cancel and retry, or use a browser with WebAssembly GC support.",
-          ),
-        );
-      }
-      pending.current.clear();
-    };
-  }
-  function send(
-    operation: string,
-    fields: Record<string, unknown> = {},
-  ): Promise<any> {
-    if (!worker.current) connect();
-    const id = ++sequence.current;
-    return new Promise((resolve, reject) => {
-      pending.current.set(id, { resolve, reject });
-      worker.current!.postMessage({ id, operation, ...fields });
-    });
-  }
-  useEffect(() => {
-    void fetch("/api/inference")
-      .then((r) => r.json())
-      .then((c) => setInferenceAvailable(c.embedding || c.jev))
-      .catch(() => {});
-    connect();
-    send("restore")
-      .then((value) => {
-        if (value) {
-          setLoaded(value);
-          if (value.repository.origin.startsWith("https://github.com/"))
-            setUrl(value.repository.origin);
-        }
-      })
-      .catch((e) => setError(e.message));
-    return () => worker.current?.terminate();
-  }, []);
-  async function index(fixture = false) {
-    setBusy(true);
-    setError("");
-    setComparison(null);
-    setProgress("Loading the local analysis engines…");
-    setFileProgress({ phase: "Source", completed: 0, total: 0 });
-    try {
-      const result = await send("index", { url, fixture });
-      setLoaded(result);
-      setInspected("");
-      if (fixture) setQuestion(QUESTIONS[0]);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-      setProgress("");
-      setFileProgress(null);
-    }
-  }
-  async function ask() {
-    setBusy(true);
-    setError("");
-    setProgress("Comparing answers…");
-    try {
-      setComparison(
-        await send("query", {
-          question,
-          live: live && inferenceAvailable,
-        }),
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-      setProgress("");
-    }
-  }
-  function cancel() {
-    worker.current?.terminate();
-    worker.current = null;
-    for (const p of pending.current.values()) {
-      p.reject(new Error("Cancelled."));
-    }
-    pending.current.clear();
-    setBusy(false);
-    setProgress("");
-    setFileProgress(null);
-    setLoaded(null);
-    setComparison(null);
-  }
-  async function clear() {
-    await send("clear");
-    setLoaded(null);
-    setComparison(null);
-    setInspected("");
-  }
-  function inspect(path: string) {
-    setInspected(path);
-  }
+  const {
+    loaded,
+    comparison,
+    url,
+    setUrl,
+    question,
+    setQuestion,
+    live,
+    setLive,
+    inferenceAvailable,
+    busy,
+    progress,
+    error,
+    inspected,
+    setInspected,
+    secondary,
+    setSecondary,
+    mobileMethod,
+    setMobileMethod,
+    controls,
+    setControls,
+    fileProgress,
+    index,
+    ask,
+    cancel,
+    clear,
+  } = useStudio();
   function download() {
     if (!comparison) return;
     const blob = new Blob(
@@ -203,7 +89,7 @@ export default function Studio() {
         <nav aria-label="Main navigation">
           <a href="/">Attune</a>
           <h1>Studio</h1>
-          <a href="/studio/timing">Flamegraph</a>
+          <Link href="/studio/timing">Flamegraph</Link>
           <a href="/#overview" className="research-link">
             Research
           </a>
@@ -243,7 +129,7 @@ export default function Studio() {
               loaded={loaded}
               method={activeMethod}
               inspected={inspected}
-              inspect={inspect}
+              inspect={setInspected}
             />
           ) : (
             <div className="graph-empty">
@@ -275,7 +161,7 @@ export default function Studio() {
             />
             <div className="actions">
               <button disabled={busy} type="submit">
-                Index locally
+                Index repository
               </button>
               <button
                 disabled={busy}
@@ -301,12 +187,7 @@ export default function Studio() {
                   files · index again to retry
                 </span>
               )}
-              {!loaded.localCacheAvailable && (
-                <span className="error">
-                  Browser storage unavailable · completed work may not survive
-                  reload
-                </span>
-              )}
+
               {fixture && <span>Example · authored model answers</span>}
               {loaded.repository.truncated && (
                 <span className="error">Incomplete GitHub inventory</span>
@@ -344,17 +225,13 @@ export default function Studio() {
               )}
             </div>
           </form>
-          {(error ||
-            progress ||
-            comparison?.timings[0]?.stage === "Comparison replay") && (
+          {(error || progress) && (
             <p
               className="operation-status"
               role={error ? "alert" : "status"}
               aria-live="polite"
             >
-              {error ||
-                progress ||
-                "Comparison replay · no new inference requests"}
+              {error || progress}
             </p>
           )}
           {comparison && (
@@ -376,7 +253,7 @@ export default function Studio() {
               </nav>
               {activeMethod && (
                 <div className="active-ranking">
-                  <MethodPanel method={activeMethod} inspect={inspect} />
+                  <MethodPanel method={activeMethod} inspect={setInspected} />
                 </div>
               )}
             </>
@@ -395,8 +272,10 @@ export default function Studio() {
             )}
             <p>
               JS/TS · 120 files · 5 MB source limit. Implementation files come
-              before tests and examples. Analysis is local; inference sends the
-              question and source excerpts.
+              before tests and examples. Public source and extraction are shared
+              on the server; Flix analyzes them in your browser. Inference sends
+              the question and source excerpts. Private answers last for this
+              session.
             </p>
             <label className="toggle">
               <input
@@ -432,9 +311,9 @@ export default function Studio() {
                       ))}
                     </ul>
                     <p>
-                      Completed relations are saved. Failed files remain
-                      searchable by text and embeddings; their structure is not
-                      admitted.
+                      Completed files can be reused across visitors. Failed
+                      files remain searchable by text and embeddings; their
+                      structure is not admitted.
                     </p>
                   </details>
                 )}
@@ -467,7 +346,7 @@ export default function Studio() {
                   compiled Flix traversal, anchored by Qwen.
                 </p>
                 <button disabled={busy} onClick={() => void clear()}>
-                  Clear local data
+                  Reset session
                 </button>
               </>
             )}

@@ -4,161 +4,238 @@ import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { chromium } from "@playwright/test";
 const base = process.env.STUDIO_TEST_URL ?? "http://127.0.0.1:4318";
-// Explicit opt-in: at most ten files, two questions, no retries or campaign.
 const live = process.env.STUDIO_LIVE_INFERENCE === "1";
 test(
-  "bounded real GitHub inventory and cold/warm browser measurements",
-  { skip: process.env.STUDIO_NETWORK_TEST !== "1", timeout: 150000 },
+  "independent visitors reuse public observations; private requests stay session-only",
+  {
+    skip: process.env.STUDIO_NETWORK_TEST !== "1",
+    timeout: 360000,
+  },
   async () => {
     const browser = await chromium.launch({
       executablePath:
         process.env.CHROMIUM_PATH ??
         execFileSync("which", ["chromium"], { encoding: "utf8" }).trim(),
-      args: ["--no-sandbox"],
+      args: [
+        "--no-sandbox",
+        "--enable-unsafe-swiftshader",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+      ],
     });
     try {
-      const page = await browser.newPage();
-      await page.goto(`${base}/studio`);
-      // A direct worker client avoids UI timing in the measured stages. No models.
-      await page.evaluate(() => {
-        const w = new Worker("/studio-worker.js");
-        (window as any).probeWorker = w;
-      });
-      async function request(
-        operation: string,
-        extra: Record<string, unknown> = {},
-      ) {
-        return page.evaluate(
-          ({ operation, extra }) =>
-            new Promise<any>((resolve, reject) => {
-              const w = (window as any).probeWorker;
-              const id = Date.now();
-              w.onmessage = (e: MessageEvent) => {
-                if (e.data.id !== id || e.data.type === "progress") return;
-                e.data.type === "error"
-                  ? reject(Error(e.data.message))
-                  : resolve(e.data.value);
-              };
-              w.postMessage({ id, operation, ...extra });
-            }),
-          { operation, extra },
+      const measurements = [];
+      const graphs = [];
+      for (const repository of process.env.STUDIO_LARGE_TEST === "1"
+        ? ["developit/mitt", "preactjs/preact"]
+        : ["developit/mitt"]) {
+        const runs = [];
+        for (let visitor = 0; visitor < 2; visitor++) {
+          const context = await browser.newContext({
+            extraHTTPHeaders: process.env.STUDIO_PREVIEW_BYPASS
+              ? {
+                  "x-vercel-protection-bypass":
+                    process.env.STUDIO_PREVIEW_BYPASS,
+                }
+              : undefined,
+          });
+          const page = await context.newPage();
+          await page.goto(
+            `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
+          );
+          await page.evaluate(() => {
+            (window as any).probe = new Worker("/studio-worker.js");
+          });
+          const request = (
+            operation: string,
+            extra: Record<string, unknown> = {},
+          ) =>
+            page.evaluate(
+              ({ operation, extra }) =>
+                new Promise<any>((resolve, reject) => {
+                  const worker = (window as any).probe,
+                    id = Date.now();
+                  worker.onmessage = ({ data }: MessageEvent) => {
+                    if (data.id !== id || data.type === "progress") return;
+                    data.type === "error"
+                      ? reject(Error(data.message))
+                      : resolve(data.value);
+                  };
+                  worker.postMessage({ id, operation, ...extra });
+                }),
+              { operation, extra },
+            );
+          const began = performance.now();
+          const indexed = await request("index", {
+            url: `https://github.com/${repository}`,
+          });
+          const wallMs = performance.now() - began;
+          assert.match(indexed.repository.revision, /^[a-f0-9]{40}$/);
+          assert.ok(
+            indexed.repository.files.length > 0 &&
+              indexed.repository.files.length <= 120,
+          );
+          assert.equal(
+            indexed.extractionFailures.length,
+            0,
+            JSON.stringify(indexed.extractionFailures),
+          );
+          assert.equal(
+            indexed.runtime.executions.length,
+            indexed.repository.files.length,
+          );
+          const record: any = {
+            visitor,
+            repository,
+            revision: indexed.repository.revision,
+            files: indexed.repository.files.length,
+            wallMs,
+            initializationMs: indexed.initializationMs,
+            timings: indexed.timings,
+            runtime: indexed.runtime,
+            inventoryReceipt: indexed.repository.observationId,
+            sourceReceipts: indexed.repository.files.map(
+              (f: any) => f.observationId,
+            ),
+          };
+          if (live && repository === "developit/mitt") {
+            assert.ok(
+              indexed.repository.files.length <= 10,
+              "paid smoke-test bound",
+            );
+            const first = await request("query", {
+              live,
+              question: "Where is mitt defined?",
+            });
+            const second = await request("query", {
+              live,
+              question: "What imports mitt?",
+            });
+            const repeated = await request("query", {
+              live,
+              question: "Where is mitt defined?",
+            });
+            assert.ok(
+              first.methods.every((m: any) => m.status === "complete"),
+              JSON.stringify(first.methods),
+            );
+            assert.deepEqual(repeated.methods, first.methods);
+            assert.ok(
+              repeated.timings
+                .filter((t: any) => t.stage.startsWith("JEv"))
+                .every((t: any) => t.executed === 0 && t.reused === 1),
+            );
+            assert.ok(
+              repeated.timings.some(
+                (t: any) =>
+                  t.stage.includes("Flix embedding ranking") &&
+                  t.executed === 1,
+              ),
+            );
+            record.queries = { first, second, repeated };
+          }
+          runs.push(record);
+          await context.close();
+        }
+        assert.deepEqual(
+          runs[0].runtime.executions.map((e: any) => e.id).sort(),
+          runs[1].runtime.executions.map((e: any) => e.id).sort(),
+          "independent visitors received the same extraction receipts",
         );
-      }
-      const cold = await request("index", {
-        url: "https://github.com/developit/mitt",
-      });
-      assert.match(cold.repository.revision, /^[a-f0-9]{40}$/);
-      assert.ok(cold.repository.files.length > 0);
-      assert.ok(cold.repository.apiRequests <= 3);
-      assert.ok(cold.repository.files.length <= 120);
-      if (live)
-        assert.ok(
-          cold.repository.files.length <= 10,
-          "paid smoke-test source bound",
+        assert.equal(runs[0].inventoryReceipt, runs[1].inventoryReceipt);
+        assert.deepEqual(runs[0].sourceReceipts, runs[1].sourceReceipts);
+        measurements.push(runs);
+        // Fresh browser assets, warm public server entries. Include the real
+        // graph startup rather than calling worker completion a usable graph.
+        const context = await browser.newContext({
+          viewport: { width: 1440, height: 1000 },
+          extraHTTPHeaders: process.env.STUDIO_PREVIEW_BYPASS
+            ? {
+                "x-vercel-protection-bypass": process.env.STUDIO_PREVIEW_BYPASS,
+              }
+            : undefined,
+        });
+        const page = await context.newPage();
+        await page.goto(
+          `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
         );
-      const first = await request("query", {
-        live,
-        question: "Where is mitt defined?",
-      });
-      if (live)
-        assert.ok(
-          first.methods.every((m: any) => m.status === "complete"),
-          JSON.stringify(
-            first.methods.map((m: any) => ({
-              method: m.method,
-              status: m.status,
-              detail: m.detail,
+        await page
+          .getByLabel("Public GitHub URL")
+          .fill(`https://github.com/${repository}`);
+        const began = performance.now();
+        await page
+          .getByRole("button", { name: "Index repository", exact: true })
+          .click();
+        await page
+          .locator('.retrieval-graph[data-renderer="cosmograph"]')
+          .waitFor({ timeout: 60000 });
+        assert.equal(await page.locator(".graph-node").count(), runs[0].files);
+        const graphMs = performance.now() - began;
+        await page.locator(".graph-node").first().hover();
+        await page.locator(".node-tooltip").waitFor();
+        const assets = await page.evaluate(() =>
+          (
+            performance.getEntriesByType(
+              "resource",
+            ) as PerformanceResourceTiming[]
+          )
+            .filter((r) => /\.wasm|worker\.js|\/runtime\//.test(r.name))
+            .map((r) => ({
+              path: new URL(r.name).pathname,
+              transferred: r.transferSize,
+              decoded: r.decodedBodySize,
             })),
-          ),
         );
-      const second = await request("query", {
-        live,
-        question: "What imports mitt?",
-      });
-      const repeated = await request("query", {
-        live,
-        question: "Where is mitt defined?",
-      });
-      assert.equal(repeated.timings[0].stage, "Comparison replay");
-      assert.equal(repeated.providerCalls, 0);
-      const reindexed = await request("index", {
-        url: "https://github.com/developit/mitt",
-      });
-      assert.equal(reindexed.repository.rawRequests, 0);
-      assert.equal(
-        reindexed.timings.find((t: any) => t.stage === "Grit extraction")
-          .executed,
-        0,
-      );
-      const memory = await page.evaluate(() => ({
-        usedJsHeapBytes: (performance as any).memory?.usedJSHeapSize ?? null,
-      }));
-      await page.reload();
-      await page.evaluate(() => {
-        (window as any).probeWorker = new Worker("/studio-worker.js");
-      });
-      const restored = await request("restore");
-      assert.equal(restored.repository.revision, cold.repository.revision);
-      const afterReload = await request("query", {
-        live,
-        question: "Where is mitt defined?",
-      });
-      assert.equal(afterReload.timings[0].stage, "Comparison replay");
-      const artifacts = await page.evaluate(() =>
-        performance.getEntriesByType("resource").map((x: any) => ({
-          name: x.name,
-          transferBytes: x.transferSize,
-          decodedBytes: x.decodedBodySize,
-        })),
-      );
-      const summary = {
-        date: new Date().toISOString(),
-        browser: browser.version(),
-        repository: cold.repository.name,
-        revision: cold.repository.revision,
-        files: cold.repository.files.length,
-        excluded: cold.repository.excluded.length,
-        initializationMs: cold.initializationMs,
-        runtime: cold.runtime,
-        cold: cold.timings,
-        first: first.timings,
-        second: second.timings,
-        repeated: repeated.timings,
-        reindexed: reindexed.timings,
-        reloaded: afterReload.timings,
-        memory,
-        artifacts,
-        inference: {
-          live,
-          first: {
-            requests: first.providerRequests,
-            calls: first.providerCalls,
-            usage: first.usage,
-            observations: first.providerObservations,
-          },
-          second: {
-            requests: second.providerRequests,
-            calls: second.providerCalls,
-            usage: second.usage,
-            observations: second.providerObservations,
-          },
-          repeat: {
-            requests: repeated.providerRequests,
-            calls: repeated.providerCalls,
-          },
-        },
-        methods: first.methods.map((m: any) => ({
-          method: m.method,
-          status: m.status,
-          results: m.results.map((r: any) => r.path),
-        })),
-      };
+        graphs.push({
+          repository,
+          graphMs,
+          hoverMs: performance.now() - began,
+          assets,
+        });
+        await context.close();
+      }
       await fs.mkdir("test-results", { recursive: true });
       await fs.writeFile(
-        "test-results/real-repository.json",
-        JSON.stringify(summary, null, 2),
+        `test-results/server-reuse-${new URL(base).hostname}${live ? "-inference" : ""}.json`,
+        JSON.stringify(
+          {
+            date: new Date().toISOString(),
+            origin: base,
+            browser: browser.version(),
+            measurements,
+            graphs,
+          },
+          null,
+          2,
+        ),
       );
-      console.log(JSON.stringify(summary));
+      for (const runs of measurements)
+        console.log(
+          runs.map(
+            ({ runtime, repository, visitor, files, wallMs, timings }) => ({
+              repository,
+              visitor,
+              files,
+              wallMs,
+              httpRequests: timings[0].executed,
+              decodedBytes: timings[0].bytes,
+              crossInstanceReceipts: runtime.executions.filter(
+                (e: any) => e.producer !== e.servedBy,
+              ).length,
+              peakServerRss: Math.max(
+                ...runtime.executions.map((e: any) => e.rssBytes),
+              ),
+            }),
+          ),
+        );
+      console.log(
+        "Warm-server, fresh-browser graph:",
+        graphs.map(({ repository, graphMs, hoverMs }) => ({
+          repository,
+          graphMs,
+          hoverMs,
+        })),
+      );
     } finally {
       await browser.close();
     }

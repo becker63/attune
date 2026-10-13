@@ -48,10 +48,10 @@ they first appear. Prefer ordinary values over descriptor languages or registrie
 Java owns only native memory, compiler bootstrapping, declared paths, process
 isolation, and the narrow browser ABI. `platform/browser/` exports actual Flix
 classes through TeaVM; it must never substitute Java or TypeScript algorithms.
-Browser Flix calls are serial; Grit extraction uses a bounded worker pool.
+Browser Flix calls are serial; Studio Grit extraction uses bounded Node processes.
 Browser Datalog remains unavailable. Bazel owns dependencies and scheduling;
-BuildBuddy supplies remote
-workers and caches. Do not move algorithms into glue to meet a Flix budget.
+BuildBuddy supplies remote workers and caches. Do not move algorithms into glue
+to meet a Flix budget.
 
 There is no DSH/Cordis/Typert runtime or presentation renderer. Historical campaign
 implementations remain in Git history. Tests assert semantics, compiler rejection,

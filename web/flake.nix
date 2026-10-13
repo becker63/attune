@@ -22,7 +22,7 @@
           };
           bazel = ''nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel"'';
         in {
-          default = command "preview" ''cd ..; exec ${bazel} run //web:preview -- "$@"'';
+          default = command "studio" ''exec node toolchain/dev.mjs "$@"'';
           test = command "test" ''cd ..; exec ${bazel} test //web:layout_test //web:studio_transport_test //web:browser_parity_test --test_env=CHROMIUM_PATH=${pkgs.chromium}/bin/chromium --test_output=errors "$@"'';
           deploy = command "deploy" ''exec node deploy/publish.mjs "$@"'';
         };

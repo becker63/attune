@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { read } from "../../../studio/cache";
+import Link from "next/link";
+import { useStudio } from "../session";
 import { wallProfile } from "../../../studio/profile";
 import type { Timing, Trace } from "../../../studio/types";
 import "../studio.css";
@@ -14,22 +15,19 @@ const FlameGraph = dynamic(
   { ssr: false },
 );
 export default function TimingPage() {
-  const [trace, setTrace] = useState<Trace | null>(null),
-    [error, setError] = useState("");
+  const { loaded, comparison } = useStudio();
+  const trace: Trace | null = loaded
+    ? {
+        ...loaded,
+        repository: loaded.repository.name,
+        revision: loaded.repository.revision,
+        comparison,
+      }
+    : null;
   const [view, setView] = useState("Indexing"),
     [work, setWork] = useState(false),
     [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  async function refresh() {
-    try {
-      setTrace((await read<Trace>("last-trace")) ?? null);
-    } catch {
-      setError("Local timing data could not be read.");
-    }
-  }
-  useEffect(() => {
-    void refresh();
-  }, []);
   const timings: Timing[] =
     view === "Query"
       ? (trace?.comparison?.timings ?? [])
@@ -46,15 +44,7 @@ export default function TimingPage() {
   const spans = useMemo(
     () =>
       timings.flatMap((t) => {
-        const items =
-          t.stage === "Grit extraction" && t.executed
-            ? (trace?.runtime.gritIntervals ?? []).map((i) => ({
-                label: `${i.path}${i.relation ? ` · ${i.relation}` : ""}`,
-                start: i.start,
-                end: i.end,
-                lane: i.worker,
-              }))
-            : (t.spans ?? []);
+        const items = t.spans ?? [];
         return items.map((i) => ({
           ...i,
           stage: t.stage,
@@ -93,15 +83,17 @@ export default function TimingPage() {
       <header className="studio-header">
         <nav aria-label="Main navigation">
           <a href="/">Attune</a>
-          <a href="/studio">← Studio</a>
+          <Link href="/studio">← Studio</Link>
           <h1>Flamegraph</h1>
         </nav>
-        <button onClick={() => void refresh()}>Refresh</button>
       </header>
       {!trace ? (
         <div className="timing-empty">
-          <p>{error || "Index a repository in Studio to record a run."}</p>
-          <a href="/studio">Open Studio →</a>
+          <p>
+            Index a repository in this session to record a run. A full reload
+            clears the trace.
+          </p>
+          <Link href="/studio">Open Studio →</Link>
         </div>
       ) : (
         <>
@@ -144,7 +136,7 @@ export default function TimingPage() {
                   setSelected(null);
                 }}
               />
-              Inspect individual workers and batches
+              Inspect individual requests and batches
             </label>
           </div>
           <div className="profile-view" data-viewer="react-pprof">
@@ -207,7 +199,7 @@ export default function TimingPage() {
               </table>
             </section>
             <section className="parallel-timeline">
-              <h2>Parallel execution</h2>
+              <h2>Concurrent requests</h2>
               <p>
                 Each bar keeps its actual start and end. Width in the flamegraph
                 groups duration; it does not show chronology.
@@ -268,8 +260,8 @@ export default function TimingPage() {
                 {timings.map((t, i) => (
                   <tr key={i}>
                     <td>{t.stage}</td>
-                    <td>{t.executed}</td>
-                    <td>{t.reused}</td>
+                    <td>{t.executed ?? "Unavailable"}</td>
+                    <td>{t.reused ?? "Unavailable"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -278,6 +270,12 @@ export default function TimingPage() {
               {trace.comparison?.providerRequests ?? 0} inference HTTP requests
               in the saved comparison. Provider execution count:{" "}
               {trace.comparison?.providerCalls ?? "Unavailable"}.
+            </p>
+            <p>
+              Grit receipts describe the original extraction, which may have run
+              for another visitor. Current server execution count and cache-hit
+              status are unavailable. The timeline measures this browser’s HTTP
+              requests.
             </p>
             <p>
               Batch usage is reported once per observation. Shared-cache bills
@@ -313,8 +311,8 @@ export default function TimingPage() {
             </table>
           </details>
           <footer className="studio-status">
-            Measured stages and waits, not sampled CPU stacks. Saved locally in
-            this browser. Viewer: react-pprof.
+            Measured stages and waits, not sampled CPU stacks. Kept for this
+            session; reloading clears the trace. Viewer: react-pprof.
           </footer>
         </>
       )}

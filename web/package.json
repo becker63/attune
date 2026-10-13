@@ -28,7 +28,6 @@
     "@cosmograph/cosmograph": "2.5.1",
     "@duckdb/duckdb-wasm": "1.32.0",
     "apache-arrow": "17.0.0",
-    "idb-keyval": "6.3.0",
     "next": "16.4.0",
     "pprof-format": "2.3.2",
     "react": "19.3.0",

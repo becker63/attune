@@ -1,5 +1,3 @@
-import { digest } from "./cache";
-import type { Repository } from "./types";
 export const QUESTIONS = [
   "Where is authenticate defined?",
   "What calls loadSession?",
@@ -41,26 +39,3 @@ export const JUDGMENTS: Record<string, number> = {
   "src/cache.ts": 0.05,
   "src/mail.ts": 0.01,
 };
-export async function fixture(): Promise<Repository> {
-  return {
-    name: "Authored shop fixture",
-    origin: "attune:studio-fixture",
-    revision: "fixture-v1",
-    files: await Promise.all(
-      SOURCES.map(async ([path, source]) => ({
-        path,
-        source,
-        digest: await digest(source),
-        blob: "",
-      })),
-    ),
-    excluded: [],
-    truncated: false,
-    treeCount: SOURCES.length,
-    fetchedBytes: 0,
-    apiRequests: 0,
-    rawRequests: 0,
-    sourceHits: 0,
-    acquisitionMs: 0,
-  };
-}

@@ -1,7 +1,7 @@
 # Working on the website
 
 - This is a separate source directory, outside `../attune/`, in the root Bazel graph. The Next application is
-  in `app/`; `studio/` is browser transport/cache plumbing; `server/` is bounded
+  in `app/`; `studio/` is browser transport; `server/` owns verified public acquisition, Grit and bounded
   provider transport. Flix owns admission, effects, scoring and evidence policy.
 - Preserve `site/`, its layout, diagrams and five-waits measurements. `authoring/`
   retains earlier teaching material; it cannot regenerate the curated site.
@@ -30,9 +30,13 @@
   native clusters come from actual Flix results, without moving files or edges.
   Merge labels show separate contributions; edges, rings and arithmetic highlight
   on hover, source opens on click. Avoid permanent cluster labels and instruction bars.
-  structure starts from Qwen candidates. Grit uses a bounded browser worker pool.
+  Structure starts from Qwen candidates. Grit uses bounded, short-lived Node processes.
   Distinguish ranking, filtering and expansion; flamegraphs show wall-time spans.
-  Source colors and edges come only from admitted witnesses. Cache completed Grit
-  relations immediately; a failure is not an empty successful observation.
+  Source colors and edges come only from admitted witnesses. Cache complete Grit files through Next; a failure is not an empty observation.
+- Keep public source, Grit and vectors behind trusted Next cached functions. Private
+  questions and judgments stay in session memory. No browser persistence layer.
+  Cached execution receipts describe their original run; do not label them as
+  current CPU work or infer hits from latency. Preserve shared-layout navigation
+  and the transient timing trace. Never replace Flix semantics with server glue.
 - Count authored web implementation, tests and build tools separately from Flix,
   Java, generated WASM, vendored runtimes and frozen data. Do not minify source.

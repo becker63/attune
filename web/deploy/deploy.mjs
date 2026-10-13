@@ -1,24 +1,5 @@
-/**
- * Publisher behind `//:deploy`: sends the prebuilt Build Output
- * API v3 tree (`:vercel_output`) to Vercel project `atlas-live` in team
- * `becker63s-projects`, and prints the production URL.
- *
- * Vercel never builds from source. The Bazel tree is copied into a temp
- * directory, the build-revision placeholder is stamped with the deployed
- * revision, the project is linked through a temp `.vercel/project.json`, and the
- * Bazel-provided Vercel CLI 60.1.3 runs `deploy --prebuilt --prod`. The temp
- * directory is removed before this returns.
- *
- * `VERCEL_TOKEN` comes from the environment and is only passed through the child
- * environment: never on a command line, never printed (all printed text is
- * redacted), and `HOME` is redirected into the temp directory so the CLI cannot
- * write anywhere else.
- *
- * `--dry-run` copies and stamps the output and creates/looks up the project, but
- * publishes no deployment.
- *
- * Usage: deploy [--build-revision <commit>] [--output <dir>] [--dry-run] [--verbose]
- */
+// Upload the verified, self-contained Next Build Output API tree.
+// Credentials remain in the child environment, never command arguments.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -27,7 +8,6 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { makeWritable, treeSize } from "./files.mjs";
-import { resolveBuildRevision, stampBuildRevision } from "./revision.mjs";
 import { ensureProject, productionTarget } from "./vercel_api.mjs";
 
 const TEAM_SLUG = "becker63s-projects";
@@ -44,12 +24,13 @@ const SECRET_VARIABLES = [
 ];
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_OUTPUT = path.resolve(SCRIPT_DIR, "..", "vercel_output");
+const DEFAULT_OUTPUT = path.resolve(SCRIPT_DIR, "..", ".vercel/output");
 
 function parseArgs(argv) {
-  const options = { buildRevision: undefined, output: undefined, dryRun: false, verbose: false };
+  const options = { buildRevision: undefined, output: undefined, dryRun: false, verbose: false, preview: false };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
+    if (flag === "--preview") { options.preview = true; continue; }
     if (flag === "--verbose") {
       options.verbose = true;
       continue;
@@ -83,10 +64,10 @@ function redact(text) {
 
 /** URLs the CLI echoed, so the printed output stays verifiable without its noise. */
 function urlsIn(text) {
-  return [...new Set(text.match(/https:\/\/[A-Za-z0-9._-]+\.vercel\.app[^\s]*/g) ?? [])];
+  return [...new Set(text.match(/https:\/\/[A-Za-z0-9._-]+\.vercel\.app/g) ?? [])];
 }
 
-function runVercel(cli, temp, projectId, token) {
+function runVercel(cli, temp, projectId, token, preview) {
   const args = [
     "--cwd",
     temp,
@@ -94,7 +75,7 @@ function runVercel(cli, temp, projectId, token) {
     TEAM_SLUG,
     "deploy",
     "--prebuilt",
-    "--prod",
+    ...(preview ? [] : ["--prod"]),
     "--yes",
     "--non-interactive",
   ];
@@ -136,37 +117,29 @@ async function main() {
   }
   const output = path.resolve(options.output ?? DEFAULT_OUTPUT);
   if (!fs.existsSync(path.join(output, "config.json"))) {
-    throw new Error(`no Build Output API tree at ${output}; build //:vercel_output`);
+    throw new Error(`no Build Output API tree at ${output}; run vercel build --standalone`);
   }
   const cli = process.env.ATTUNE_VERCEL_CLI ?? path.resolve(SCRIPT_DIR, "..", "vercel_cli_", "vercel_cli");
   if (!fs.existsSync(cli)) throw new Error(`the Bazel Vercel CLI launcher is missing at ${cli}`);
 
-  const workspace = process.env.BUILD_WORKSPACE_DIRECTORY;
-  const revision = resolveBuildRevision({ explicit: options.buildRevision, workspace });
-  if (revision === null) {
-    throw new Error(
-      "no build revision: pass --build-revision <commit>, set ATLAS_LIVE_BUILD_REVISION, " +
-        "or run from the jj workspace where `nix develop --command jj` is available",
-    );
-  }
+  const revision = options.buildRevision?.trim();
+  if (!revision) throw new Error("Supply the verified Next build revision.");
 
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "atlas-live-deploy-"));
   try {
     // Runfiles entries are symlinks into bazel-out and read-only; dereference so
     // the upload gets real files, then make the copy writable so it can be
-    // stamped and removed.
+    // removed after upload.
     const vercelOutput = path.join(temp, ".vercel", "output");
     fs.mkdirSync(path.dirname(vercelOutput), { recursive: true });
     // Next's self-contained output uses relative function aliases. Preserve
-    // those aliases; Bazel's static runfiles still need dereferencing.
-    const nextOutput = fs.existsSync(path.join(output, "functions"));
+    // those aliases in the uploaded copy.
     fs.cpSync(output, vercelOutput, {
       recursive: true,
-      dereference: !nextOutput,
-      verbatimSymlinks: nextOutput,
+      dereference: false,
+      verbatimSymlinks: true,
     });
     makeWritable(vercelOutput);
-    const stamped = stampBuildRevision(vercelOutput, revision);
 
     const project = await ensureProject({ token, teamId: TEAM_ID, name: PROJECT });
     fs.writeFileSync(
@@ -177,19 +150,24 @@ async function main() {
 
     if (options.dryRun) {
       console.log(
-        `dry run: ${treeSize(vercelOutput)} bytes copied, ${stamped.files} file(s) stamped ` +
-          `with ${revision}, project ${project.id}; no deployment published`,
+        `dry run: ${treeSize(vercelOutput)} bytes copied for ${revision}, ` +
+          `project ${project.id}; no deployment published`,
       );
       return;
     }
 
-    const run = runVercel(cli, temp, project.id, token);
+    const run = runVercel(cli, temp, project.id, token, options.preview);
     const cliText = redact(`${run.stdout}\n${run.stderr}`);
     if (run.status !== 0) {
       const detail = run.error === undefined ? cliText.trim() : `${String(run.error)}\n${cliText.trim()}`;
       throw new Error(`vercel deploy exited ${run.status}:\n${detail}`);
     }
 
+    if (options.preview) {
+      for (const url of urlsIn(cliText)) console.log(`preview URL: ${url}`);
+      console.log(`build revision: ${revision}`);
+      return;
+    }
     let target;
     try {
       target = await productionTarget({ token, teamId: TEAM_ID, projectId: project.id });
@@ -200,7 +178,7 @@ async function main() {
     const productionUrl = target.alias ?? target.deployment.url;
     console.log(`production URL: ${productionUrl}`);
     console.log(`deployment id: ${target.deployment.id}`);
-    console.log(`build revision: ${revision} (${stamped.files} file(s), ${stamped.replacements} stamp(s))`);
+    console.log(`build revision: ${revision}`);
     if (options.verbose) {
       for (const url of urlsIn(cliText)) console.log(`cli URL: ${url}`);
     }

@@ -23,7 +23,7 @@ or repository executables.
   Apache-2.0 with bundled third-party notices. Cosmograph uses these for display
   records. Their database performs no Attune admission or ranking. Its 33 MiB
   WASM and worker are served by this site, separately from Flix and Grit.
-- Next.js, React, esbuild and idb-keyval: MIT; exact versions in `pnpm-lock.yaml`.
+- Next.js, React and esbuild: MIT; exact versions in `pnpm-lock.yaml`.
 
 Cosmograph's default production telemetry sends its provider the page hostname,
 browser user-agent, and graph row/column counts. It does not send file paths,
