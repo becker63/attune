@@ -15,10 +15,12 @@ final class Manifest {
     static void declared(Path output, List<String> relativePaths) throws IOException {
         List<String> lines = new ArrayList<>();
         lines.add("root\t-");
-        for (String relative : relativePaths) {
-            if (relative.isBlank()) continue;
-            Path real = NativeLaunch.resolve(relative.trim()).toRealPath();
-            lines.add(relative.trim() + "\t" + real + "\tfile\t" + Files.size(real) + "\t-");
+        for (String binding : relativePaths) {
+            if (binding.isBlank()) continue;
+            String[] fields = binding.split("\t", -1);
+            if (fields.length != 2) throw new IOException("Invalid declared input binding");
+            Path real = NativeLaunch.resolve(fields[1]).toRealPath();
+            lines.add(fields[0] + "\t" + real + "\tfile\t" + Files.size(real) + "\t-");
         }
         Files.write(output, lines);
     }

@@ -72,6 +72,7 @@ def admittedWorld(files: List[(String, String)]): Repository.Repository \ {Asser
 
 def emptyRepository(): Repository.Repository = {
     declarations = Nil,
+    witnesses = Nil,
     defines = Nil,
     definedIn = Nil,
     imports = Nil,

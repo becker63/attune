@@ -30,6 +30,7 @@ rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = "2024",
     versions = ["1.98.0"],
+    extra_target_triples = ["wasm32-unknown-unknown"],
 )
 use_repo(rust, "rust_toolchains")
 
@@ -53,6 +54,28 @@ gritql_repository(
         "//platform/support/grit/patches:textual_metavariable.rs",
     ],
 )
+
+gritql_repository(
+    name = "grit_browser_source",
+    browser = True,
+    attune_lib = "//platform/support/grit:lib.rs",
+    cargo_lock = "//platform/browser:grit-Cargo.lock",
+    language_patches = [
+        "//platform/support/grit/patches:flix.rs",
+        "//platform/support/grit/patches:flix_binding.rs",
+        "//platform/support/grit/patches:starlark.rs",
+        "//platform/support/grit/patches:starlark_binding.rs",
+        "//platform/support/grit/patches:textual_metavariable.rs",
+    ],
+)
+crate.from_cargo(
+    name = "grit_browser_crates",
+    cargo_lockfile = "@grit_browser_source//:Cargo.lock",
+    lockfile = "//platform/browser:grit-cargo-bazel-lock.json",
+    manifests = ["@grit_browser_source//:Cargo.toml"],
+    supported_platform_triples = ["aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"],
+)
+use_repo(crate, "grit_browser_crates")
 
 crate.from_cargo(
     name = "grit_crates",
@@ -84,6 +107,19 @@ maven.install(
 )
 use_repo(maven, "attune_maven")
 
+# Browser compilation is a separate tool closure; provider SDKs never ship.
+maven.install(
+    name = "browser_maven",
+    artifacts = [
+        "org.teavm:teavm-classlib:0.16.0",
+        "org.teavm:teavm-tooling:0.16.0",
+        "org.teavm:teavm-jso:0.16.0",
+    ],
+    repositories = ["https://repo.maven.apache.org/maven2"],
+    lock_file = "//:browser_maven_install.json",
+)
+use_repo(maven, "browser_maven")
+
 # Resolve pinned user/network isolation tools from Nix.
 local_unshare = use_repo_rule("//platform/build:unshare_repository.bzl", "local_unshare")
 
@@ -104,3 +140,23 @@ buildbuddy.platform(
     container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
 )
 use_repo(buildbuddy, "buildbuddy_toolchain")
+
+bazel_dep(name = "bazel_lib", version = "3.7.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_rust_wasm_bindgen", version = "0.74.0")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "bindgen_arm64",
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"],
+    sha256 = "079731dd1bc7798c1efa4f08fcc45130827cbcc9ff60a0b4c6047d64fc6fd25c",
+    strip_prefix = "wasm-bindgen-0.2.128-aarch64-unknown-linux-musl",
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+)
+http_archive(
+    name = "bindgen_amd64",
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"],
+    sha256 = "b51f0208fdff83515a787bd8ab9ac5865ed84dabb66d0c709957bb59793c645f",
+    strip_prefix = "wasm-bindgen-0.2.128-x86_64-unknown-linux-musl",
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+)
+register_toolchains("//platform/browser:bindgen_arm64", "//platform/browser:bindgen_amd64")

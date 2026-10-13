@@ -104,6 +104,7 @@ pub mod Attune.Repository {
     /// them, the reopened symbols, and every refusal.
     pub type alias Repository = {
         declarations = List[Declaration],
+        witnesses    = List[Witness],
         defines      = List[(String, String)],
         definedIn    = List[(String, String)],
         imports      = List[(String, String)],
@@ -112,6 +113,18 @@ pub mod Attune.Repository {
         callers      = List[(String, String)],
         reopened     = List[String],
         refusals     = List[Refusal]
+    }
+
+    /// The exact source token that earned a forward edge. Inverse edges refer
+    /// back to this same observation, not a second extraction.
+    pub type alias Witness = {
+        file = String, startByte = Int32, endByte = Int32,
+        source = String, atom = Atom, target = String
+    }
+
+    def witness(atom: Atom, edge: (String, String), fact: Grit.Fact): Witness = {
+        file = fact#path, startByte = fact#valueStart, endByte = fact#valueEnd,
+        source = fst(edge), atom = atom, target = snd(edge)
     }
 
     /// One `from -> to` line per edge, for evidence and assertions.
@@ -679,6 +692,25 @@ pub mod Attune.Repository {
         // Visit files in order. A failed extraction stops the whole admission.
         Result.traverse(fileFacts, world) |> Result.map(assemble(world))
 
+    /// Browser extraction supplies the same versioned envelopes as the native
+    /// engine. Admission still checks paths, UTF-8 ranges and logged source.
+    /// No caller may supply pre-admitted edges in place of these observations.
+    pub type alias Observation = {
+        path = String, source = String, defines = String, imports = String, calls = String
+    }
+
+    pub def fromObservations(observations: List[Observation]): Result[Grit.Error, Repository] =
+        if (List.length(List.distinct(List.map(o -> o#path, observations))) != List.length(observations))
+            Err(Grit.Error.Wire("Duplicate source path."))
+        else forM (
+            entries <- Result.traverse(o -> forM (
+                _ <- Option.toOk(Grit.Error.UnsupportedFile(o#path), Grit.language(o#path));
+                definitions <- Grit.facts(o#path, o#source, o#defines);
+                imports <- Grit.facts(o#path, o#source, o#imports);
+                calls <- Grit.facts(o#path, o#source, o#calls)
+            ) yield {id = o#path, source = o#source, definitions = definitions, imports = imports, calls = calls}, observations)
+        ) yield assemble(List.map(o -> (o#path, o#source), observations), entries)
+
     /// One analyzed file: its id and exact source plus the three fact sets.
     ///
     /// The definitions, imports and calls of one file share a single element
@@ -692,9 +724,9 @@ pub mod Attune.Repository {
         calls       = List[Grit.Fact]
     }
 
-    type alias Relation = { edges = List[(String, String)], refusals = List[Refusal] }
+    type alias Relation = { edges = List[(String, String)], refusals = List[Refusal], witnesses = List[Witness] }
 
-    def emptyRelation(): Relation = { edges = Nil, refusals = Nil }
+    def emptyRelation(): Relation = { edges = Nil, refusals = Nil, witnesses = Nil }
 
     def assemble(world: List[(String, String)], perFile: List[Entry]): Repository = {
         let ids = List.map(match (id, _) -> id, world);
@@ -706,6 +738,11 @@ pub mod Attune.Repository {
         let callEdges = dedupSorted(List.flatMap(relation -> relation#edges, calls));
         {
             declarations = declarations,
+            witnesses = List.flatMap(entry -> List.flatMap(fact ->
+                List.map(d -> witness(Atom.Defines, (entry#id, d#symbol), fact),
+                    List.filter(d -> d#file == entry#id and d#startByte == fact#startByte and d#endByte == fact#endByte, declarations)),
+                entry#definitions), perFile)
+                ::: List.flatMap(r -> r#witnesses, imports ::: calls),
             defines = invert(definedIn),
             definedIn = definedIn,
             imports = importEdges,
@@ -723,14 +760,16 @@ pub mod Attune.Repository {
 
     def importsOf(ids: List[String], entry: Entry): Relation =
         List.foldLeft((relation, fact) -> match resolveImport(ids, entry#id, fact) {
-            case Ok(target)   => { edges = (entry#id, target) :: relation#edges, refusals = relation#refusals }
-            case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals }
+            case Ok(target)   => { edges = (entry#id, target) :: relation#edges, refusals = relation#refusals,
+                witnesses = witness(Atom.Imports, (entry#id, target), fact) :: relation#witnesses }
+            case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals, witnesses = relation#witnesses }
         }, emptyRelation(), entry#imports)
 
     def callsOf(declarations: List[Declaration], entry: Entry): Relation =
         List.foldLeft((relation, fact) -> match callEdge(declarations, entry, fact) {
-            case Ok(edge)     => { edges = edge :: relation#edges, refusals = relation#refusals }
-            case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals }
+            case Ok(edge)     => { edges = edge :: relation#edges, refusals = relation#refusals,
+                witnesses = witness(Atom.Calls, edge, fact) :: relation#witnesses }
+            case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals, witnesses = relation#witnesses }
         }, emptyRelation(), entry#calls)
 
     // -------------------------------------------- world facts and coverage

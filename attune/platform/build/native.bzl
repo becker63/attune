@@ -41,7 +41,15 @@ _jar_manifest = rule(
 
 def _declared_manifest_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".txt")
-    ctx.actions.write(out, "\n".join(sorted([file.short_path for file in ctx.files.srcs])) + "\n")
+    # Logical names stay workspace-relative when this library is an external
+    # module of the Studio build. Runfiles locations retain their repo prefix.
+    lines = []
+    for file in ctx.files.srcs:
+        if file.owner.workspace_name != ctx.label.workspace_name:
+            fail("declared inputs must belong to this workspace: %s" % file.owner)
+        name = file.short_path.split("/", 2)[2] if file.short_path.startswith("../") else file.short_path
+        lines.append(name + "\t" + file.short_path)
+    ctx.actions.write(out, "\n".join(sorted(lines)) + "\n")
     return [DefaultInfo(files = depset([out]))]
 
 declared_manifest = rule(

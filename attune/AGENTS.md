@@ -1,7 +1,8 @@
 # Working on Attune
 
-The library and Bazel workspace are in `attune/`. The independent website is
-in `web/`. Start with `src/Attune/Effects.flix` and `example/BUILD.bazel`.
+The library module is in `attune/`; the root Bazel graph also builds `web/`.
+The library remains independently buildable. Start with `src/Attune/Effects.flix`
+and `example/BUILD.bazel`.
 
 ## Preserve work and evidence
 
@@ -44,8 +45,12 @@ cache validity, and evaluation. Use small functions, enums, pattern matching,
 `Result`, native Datalog, and direct JVM calls. Explain advanced features where
 they first appear. Prefer ordinary values over descriptor languages or registries.
 
-Java owns only native memory, compiler bootstrapping, declared paths, and process
-isolation. Bazel owns dependencies and scheduling; BuildBuddy supplies remote
+Java owns only native memory, compiler bootstrapping, declared paths, process
+isolation, and the narrow browser ABI. `platform/browser/` exports actual Flix
+classes through TeaVM; it must never substitute Java or TypeScript algorithms.
+Browser Flix calls are serial; Grit extraction uses a bounded worker pool.
+Browser Datalog remains unavailable. Bazel owns dependencies and scheduling;
+BuildBuddy supplies remote
 workers and caches. Do not move algorithms into glue to meet a Flix budget.
 
 There is no DSH/Cordis/Typert runtime or presentation renderer. Historical campaign

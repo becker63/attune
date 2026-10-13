@@ -181,7 +181,103 @@ costs preserve self-inspection and conservative extraction. The central Flix
 build rule is 156 lines. Test BUILD declarations and Nix configuration count in
 build machinery; test assertions and fixtures are reported separately.
 
-The website is an independent, unchanged workspace and is outside these library
+At that checkpoint the website was an independent, unchanged workspace and is outside these library
 counts. Lockfiles, frozen data, documentation, generated outputs, and downloaded
 dependencies are excluded. The Maven pin shrank from 20 to 11 artifacts. Frozen
 research files are checked by SHA-256; this refactor does not regenerate them.
+
+
+## Studio distribution
+
+`Attune.Studio` is the browser entry point. `Repository.fromObservations` admits
+versioned Grit envelopes through the existing conservative rules. Studio uses
+ordinary Flix routes, word scoring, vector similarity and rank fusion. It
+prepares fixed-pool judgment evidence and rejects incomplete observations. Qwen’s
+first five results seed structural traversal; structure has no standalone
+natural-language ranker. The Flix output records each stage’s actual candidates.
+These recipes are independent of the historical Atlas signature experiments.
+
+The root Bazel module joins the library and website into one dependency graph:
+
+```text
+Flix -> JVM jar -> TeaVM WASM ----+
+Grit -> Rust WASM -> wasm-bindgen +-> browser_assets -> Next/Vercel
+TypeScript -> Aspect workers ----+
+```
+
+`platform/browser/` contains compiler/export mechanics and one string ABI.
+Only reachable application/runtime classes ship. The Flix compiler, LangChain4j,
+native Grit FFM and filesystem code stay outside the browser closure. The library
+is still independently buildable. The Next build consumes the declared artifact
+directory; it does not read separate Cargo builds or another workspace's outputs.
+
+A single-thread queue substitution supports Flix region bookkeeping, not thread
+execution. TeaVM 0.16.0 cannot translate the native Datalog runtime's virtual
+threads/concurrent structures. CheerpJ 4.3 rejects the generated Java 21 classes.
+Browser Datalog therefore remains explicitly unavailable; native Datalog and the
+Flix/Starlark extraction surfaces remain tested and unchanged.
+
+The worker stages external embedding requests, retains exact answers and
+re-evaluates with the native Flix saved-answer handler. This is explicit replay,
+not an implicit Bazel scheduler. `example/` remains the independent declared
+request/action/answer graph. The complete root `//web:browser_assets` and
+`@attune//example:ranking` built successfully on BuildBuddy in invocation
+`d0333856-a0f1-4dab-9516-c50d2e4e4a96`: 518 remote executions and 415 remote cache
+hits, with local fallback disabled. Earlier attempts hit the default transfer
+timeout while uploading DuckDB's 30.9 MB package. The remote configuration now
+allows 180 seconds per transfer; no action or isolation requirement was removed.
+
+The complete native gate passed 20 targets, with the existing
+`//test/policy:workspace_audit_test` still rejecting 4,004 protected user-file
+entries. Studio's separate browser tests compare native envelopes, admitted
+worlds and answers, verify parallel extraction against sequential/native results,
+exercise effect replay, and use fake inference to check
+candidate boundaries and reuse without paying for new observations.
+
+For this addition, SCC 3.7.0 was run again against `e09acfc` and the resulting
+source, with the same language lexers on both sides. This count includes authored
+configuration and test-build declarations, excludes dependency locks/generated
+outputs, and separates the trailing native Rust test module. It is a fresh
+comparison, not a restatement of the earlier refactor's accounting population.
+
+| Code without comments/blanks | Before Studio | With Studio |
+| --- | ---: | ---: |
+| Flix semantic implementation | 1,570 | 1,831 |
+| First-party Java integration | 316 | 431 |
+| Core/root build/configuration | 1,500 | 1,741 |
+| Grit extraction programs | 372 | 372 |
+| Native ABI/grammar support | 537 | 537 |
+| Core tests/fixtures | 1,770 | 1,819 |
+| New web application | 0 | 4,667 |
+| Website build/configuration/publisher | 585 | 1,064 |
+| New web tests | 0 | 1,375 |
+
+The existing research site's scripts and teaching assets are outside the new
+application count and retained unchanged apart from its Studio navigation link.
+Studio adds 261 semantic Flix lines and 115 mechanical Java lines. Browser
+transport, UI, persistence and provider checks account for most of the addition;
+they are counted as authored implementation, not hidden as fixtures or generated
+code. The compact library's stretch budgets remain exceeded.
+
+The graph keeps fixed file coordinates and admitted edges. Cosmograph 2.5.1
+supplies native cluster metadata and collision-aware labels; query stages change
+overlays, not layout. Flix exports the two merge contributions so the view can
+show their arithmetic without implementing another ranking algorithm. The
+independent bar scales retain raw scores. Shiki annotations use the admitted
+source ranges, with a different color for each observed relationship.
+Hover highlights a file's connections; clicking pins its source without pinning
+edge emphasis. Both interactions leave the graph and camera in place.
+
+The graph runtime adds a 32.66 MiB DuckDB WASM plus a 0.74 MiB worker (uncompressed
+artifact sizes). It is separate from the 0.85 MiB Flix and 6.26 MiB Grit WASMs.
+The [distribution notes](../../web/THIRD_PARTY.md) cover its license and telemetry.
+
+The Preact timeout was reproduced on a bounded 111-file inventory. An optimized
+Grit build and per-relation checkpoints then completed all 333 relations in
+23.624 seconds with four browser workers. Warm extraction took 12.3 ms and
+reloading took 14.3 ms, both reusing all 333 results. These are local development
+measurements of extraction, not whole-agent speedups or historical campaign data.
+The later source-first inventory included 120 files and `hooks/src/index.js`;
+the live Qwen/JEv smoke test completed all six methods for “Where are hooks
+defined?”. The combined JEv result put that file first. A repeated question made
+no new inference requests. This is a functional check, not an accuracy benchmark.

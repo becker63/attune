@@ -558,6 +558,9 @@ exclude = [
     repository_ctx.file("attune-grit/lib.rs", repository_ctx.read(repository_ctx.attr.attune_lib))
 
     _extend_language_registry(repository_ctx)
+    if repository_ctx.attr.browser:
+        _browser_workspace(repository_ctx)
+        return
 
     repository_ctx.file(
         "crates/grit-util/BUILD.bazel",
@@ -792,9 +795,69 @@ path = "../crates/util"
         'exports_files(["Cargo.toml"])\n',
     )
 
+def _browser_workspace(ctx):
+    # Same upstream pin and admission-language patches; a separate Cargo feature
+    # closure keeps native parser libraries out of the browser artifact.
+    _replace(ctx, "Cargo.toml", 'members = ["attune-grit"]', 'members = ["crates/wasm-bindings", "vendor/tree-sitter-facade", "vendor/web-tree-sitter"]')
+    _replace(ctx, "Cargo.toml", '  "crates/*",', "")
+    for vendor in ["tree-sitter-facade", "web-tree-sitter"]:
+        _replace(ctx, "Cargo.toml", '  "vendor/%s",' % vendor, "")
+    # WASM loads parser modules at runtime. Native parser libraries are outside
+    # this feature closure; retain all language enums and admission code.
+    manifest = "crates/language/Cargo.toml"
+    ctx.file(manifest, "\n".join([line for line in ctx.read(manifest).split("\n")
+                                if not (line.startswith("tree-sitter-") and "optional = true" in line)]))
+    for language in ["gritql", "javascript", "typescript", "java", "ruby", "flix", "starlark"]:
+        _replace(ctx, "crates/language/Cargo.toml", '    "tree-sitter-%s",\n' % language, "")
+    # The upstream core tests pull authentication/network crates into Cargo's
+    # feature union. We build its library, not those native test programs.
+    core = ctx.read("crates/core/Cargo.toml")
+    before, tests = core.split("[dev-dependencies]", 1)
+    core = before + "[features]" + tests.split("[features]", 1)[1]
+    before, defaults = core.split("default = [\n", 1)
+    ctx.file("crates/core/Cargo.toml", before + 'default = ["wasm_core"]\n' + defaults.split("]\n", 1)[1])
+    _replace(ctx, "crates/language/Cargo.toml", 'default = ["builtin-parser"]', 'default = []')
+    for grammar in ["javascript", "typescript"]:
+        _replace(ctx, "resources/language-metavariables/tree-sitter-%s/Cargo.toml" % grammar, "~1.0.83", "1")
+    _replace(ctx, "crates/wasm-bindings/src/match_pattern.rs", "PatternLanguage::Universal =>",
+             'PatternLanguage::Flix | PatternLanguage::Starlark => Err(anyhow::anyhow!("Browser parser not packaged for this language")),\n        PatternLanguage::Universal =>')
+    packages = [
+        ("crates/grit-util", "grit_util", [], []),
+        ("crates/grit-pattern-matcher", "grit_pattern_matcher", ["//crates/grit-util:grit_util"], []),
+        ("vendor/web-tree-sitter", "web_tree_sitter_sg", [], ["default", "node"]),
+        ("vendor/tree-sitter-facade", "tree_sitter", ["//vendor/web-tree-sitter:web_tree_sitter_sg"], []),
+        ("crates/util", "marzano_util", ["//crates/grit-util:grit_util", "//vendor/tree-sitter-facade:tree_sitter"], ["network_requests_common", "network_requests_external", "external_functions_ffi"]),
+        ("crates/language", "marzano_language", ["//crates/grit-util:grit_util", "//crates/util:marzano_util", "//vendor/tree-sitter-facade:tree_sitter"], []),
+        ("crates/core", "marzano_core", ["//crates/grit-util:grit_util", "//crates/grit-pattern-matcher:grit_pattern_matcher", "//crates/util:marzano_util", "//crates/language:marzano_language", "//vendor/tree-sitter-facade:tree_sitter"], ["wasm_core", "getrandom", "wasm-bindgen", "network_requests_common", "network_requests_external", "external_functions_common", "external_functions_ffi"]),
+        ("crates/wasm-bindings", "grit_wasm_bindings", ["//crates/grit-util:grit_util", "//crates/core:marzano_core", "//crates/language:marzano_language", "//crates/util:marzano_util", "//vendor/tree-sitter-facade:tree_sitter", "//vendor/web-tree-sitter:web_tree_sitter_sg"], []),
+    ]
+    for path, name, deps, features in packages:
+        rule = "rust_shared_library" if name == "grit_wasm_bindings" else "rust_library"
+        ctx.file(path + "/BUILD.bazel", """load("@grit_browser_crates//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", %r)
+%s(
+    name = %r,
+    crate_name = %r,
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2021",
+    aliases = aliases() | %r,
+    crate_features = %r,
+    compile_data = ["//resources/node-types:all"],
+    deps = all_crate_deps(normal = True) + %r,
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    visibility = ["//visibility:public"],
+)
+""" % (rule, rule, name, name, {"//vendor/web-tree-sitter:web_tree_sitter_sg": "web_tree_sitter"} if path == "vendor/tree-sitter-facade" else {}, features, deps) + ('\nexports_files(["LICENSE"])\n' if path == "vendor/web-tree-sitter" else ""))
+    ctx.file("resources/node-types/BUILD.bazel", 'filegroup(name = "all", srcs = glob(["*.json"]), visibility = ["//visibility:public"])')
+    ctx.file("BUILD.bazel", 'exports_files(["Cargo.toml", "Cargo.lock", "LICENSE", "resources/language-metavariables/tree-sitter-typescript/LICENSE", "resources/language-metavariables/tree-sitter-javascript/LICENSE"])')
+    # Pinned upstream parser WASMs match the original browser build.
+    ctx.file("crates/wasm-bindings/wasm_parsers/BUILD.bazel", 'filegroup(name = "parsers", srcs = %r, visibility = ["//visibility:public"])' % ["tree-sitter-%s.wasm" % lang for lang in ["gritql", "javascript", "typescript", "tsx", "vue"]])
+
 gritql_repository = repository_rule(
     implementation = _gritql_repository_impl,
     attrs = {
+        "browser": attr.bool(default = False),
         "attune_lib": attr.label(allow_single_file = True, mandatory = True),
         "cargo_lock": attr.label(allow_single_file = True, mandatory = True),
         "language_patches": attr.label_list(

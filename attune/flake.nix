@@ -92,7 +92,11 @@
             # The checkout root holds this nested workspace (`attune/`), the
             # ignored `.env` and the read-only reference checkout. Only the
             # credential helper is told that root, and only to read `.env`.
-            checkout="$(${pkgs.coreutils}/bin/dirname -- "$workspace")"
+            if [ -d "$workspace/attune" ]; then
+              checkout="$workspace"
+            else
+              checkout="$(${pkgs.coreutils}/bin/dirname -- "$workspace")"
+            fi
             # Forward a Factory Computer Secret to the credential helper when
             # present. The validated key charset has no separators, so the
             # conditional-argument shape is safe.
