@@ -471,6 +471,9 @@ def _gritql_repository_impl(repository_ctx):
         sha256 = "87066b84963dc1b89b9344fbae046f941ed8fce5e983c48d74a26964f6e7cb48",
         stripPrefix = "gritql-%s" % _GRIT_REVISION,
     )
+    # Skip an unused state copy when `contains` has no `until` condition.
+    # Required rollback/history copies remain. Shared by native and WASM.
+    repository_ctx.patch(repository_ctx.attr.contains_patch, strip = 1)
     repository_ctx.download_and_extract(
         url = "https://github.com/getgrit/tree-sitter-facade/archive/a26c147cea7049a5d2c42006499371b346b52648.tar.gz",
         sha256 = "bb0ed7d6ca292c97d7e84861ebddbe712b3a36250e38f14ddbbc085bca35f490",
@@ -858,6 +861,10 @@ gritql_repository = repository_rule(
     implementation = _gritql_repository_impl,
     attrs = {
         "browser": attr.bool(default = False),
+        "contains_patch": attr.label(
+            default = Label("//platform/support/grit/patches:contains-state.patch"),
+            allow_single_file = True,
+        ),
         "attune_lib": attr.label(allow_single_file = True, mandatory = True),
         "cargo_lock": attr.label(allow_single_file = True, mandatory = True),
         "language_patches": attr.label_list(

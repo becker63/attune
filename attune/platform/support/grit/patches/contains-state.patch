@@ -1,0 +1,9 @@
+--- a/crates/grit-pattern-matcher/src/pattern/contains.rs
++++ b/crates/grit-pattern-matcher/src/pattern/contains.rs
+@@ -61,5 +61,5 @@
+-        let mut state = cur_state.clone();
+         let skip_children = if let Some(until) = until {
++            let mut state = cur_state.clone();
+             until.execute(&node_lhs, &mut state, context, logs)?
+         } else {
+             false

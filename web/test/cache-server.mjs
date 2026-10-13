@@ -1,4 +1,4 @@
-// Controlled upstreams; actual Next Cache Components and actual Grit WASM.
+// Controlled upstreams; actual Next Cache Components and native Grit.
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import http from "node:http";

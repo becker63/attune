@@ -5,7 +5,7 @@ import {
   initializeTreeSitter,
   matchPattern,
 } from "../.artifacts/server/grit/grit.js";
-import { envelope, language, RELATIONS } from "./grit";
+import { envelope, language, RELATIONS } from "./grit-envelope";
 let ready;
 function initialize() {
   return (ready ??= initializeTreeSitter().then(() => {

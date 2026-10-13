@@ -64,7 +64,15 @@ async function hashes(directory) {
   return result;
 }
 const flix = await hash(path.join(output, "runtime/flix/attune.wasm"));
-const extractionIdentity = digest(JSON.stringify(await hashes(server)));
+// The executable includes the pinned engine, maintained grammars, envelope
+// conversion and UTF-8 coordinates. Query files are independently hashed.
+const extractor = {
+  runtime: "native",
+  target: "aarch64-unknown-linux-musl",
+  envelope: "grit-v1-utf8",
+  artifacts: await hashes(server),
+};
+const extractionIdentity = digest(JSON.stringify(extractor));
 const identity = digest(JSON.stringify({ flix, extractionIdentity }));
 const visualization = digest(
   JSON.stringify(await hashes(path.join(output, "runtime/cosmograph"))),
@@ -81,5 +89,5 @@ const serverOutput = path.join(path.dirname(output), "server_assets");
 await fs.cp(server, serverOutput, { recursive: true, dereference: true });
 await fs.writeFile(
   path.join(serverOutput, "manifest.json"),
-  JSON.stringify({ extractionIdentity }),
+  JSON.stringify({ extractionIdentity, ...extractor }, null, 2),
 );

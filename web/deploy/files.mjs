@@ -39,7 +39,8 @@ export function makeWritable(root) {
         walk(full);
         fs.chmodSync(full, 0o755);
       } else {
-        fs.chmodSync(full, 0o644);
+        // Preserve declared native executables in a prebuilt Function.
+        fs.chmodSync(full, fs.statSync(full).mode & 0o111 ? 0o755 : 0o644);
       }
     }
   };

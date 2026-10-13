@@ -2,9 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { chromium } from "@playwright/test";
+import { chromium, type BrowserContext } from "@playwright/test";
 const base = process.env.STUDIO_TEST_URL ?? "http://127.0.0.1:4318";
 const live = process.env.STUDIO_LIVE_INFERENCE === "1";
+// Pin the existing public inventory API during controlled comparisons. This
+// changes neither cache identity nor freshness and adds no application bypass.
+async function pinRevision(context: BrowserContext, repository: string) {
+  const revision = process.env.STUDIO_PREACT_REVISION;
+  if (repository !== "preactjs/preact" || !revision) return;
+  assert.match(revision, /^[a-f0-9]{40}$/);
+  await context.route("**/api/extraction", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.continue(body.operation === "repository"
+      ? { postData: JSON.stringify({ ...body, revision }) } : undefined);
+  });
+}
 test(
   "independent visitors reuse public observations; private requests stay session-only",
   {
@@ -39,6 +51,7 @@ test(
                 }
               : undefined,
           });
+          await pinRevision(context, repository);
           const page = await context.newPage();
           await page.goto(
             `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
@@ -65,12 +78,14 @@ test(
                 }),
               { operation, extra },
             );
-          const began = performance.now();
+          const began = performance.now(), requestedAt = Date.now();
           const indexed = await request("index", {
             url: `https://github.com/${repository}`,
           });
           const wallMs = performance.now() - began;
           assert.match(indexed.repository.revision, /^[a-f0-9]{40}$/);
+          if (repository === "preactjs/preact" && process.env.STUDIO_PREACT_REVISION)
+            assert.equal(indexed.repository.revision, process.env.STUDIO_PREACT_REVISION);
           assert.ok(
             indexed.repository.files.length > 0 &&
               indexed.repository.files.length <= 120,
@@ -96,6 +111,10 @@ test(
             revision: indexed.repository.revision,
             files: indexed.repository.files.length,
             wallMs,
+            requestedAt,
+            receiptsDuringRun: indexed.runtime.executions.filter(
+              (e: any) => e.start >= requestedAt && e.end <= Date.now(),
+            ).length,
             initializationMs: indexed.initializationMs,
             timings: indexed.timings,
             runtime: indexed.runtime,
@@ -171,6 +190,7 @@ test(
               }
             : undefined,
         });
+        await pinRevision(context, repository);
         const page = await context.newPage();
         await page.goto(
           `${base}/studio${process.env.STUDIO_PREVIEW_BYPASS ? "?x-vercel-set-bypass-cookie=true" : ""}`,
@@ -212,7 +232,7 @@ test(
       }
       await fs.mkdir("test-results", { recursive: true });
       await fs.writeFile(
-        `test-results/server-reuse-${new URL(base).hostname}${live ? "-inference" : ""}.json`,
+        `test-results/server-reuse-${new URL(base).hostname}-${Date.now()}${live ? "-inference" : ""}.json`,
         JSON.stringify(
           {
             date: new Date().toISOString(),

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { repositoryName, excluded, boundedBytes } from "../server/source";
-import { envelope } from "../server/grit";
+import { envelope } from "./grit-envelope";
 import { wallProfile } from "../studio/profile";
 import { Profile } from "pprof-format";
 import {

@@ -48,7 +48,7 @@ Question -> Flix requests -> server answers -> Flix saved-answer handler
 | [Worker](studio/worker.ts) | Load compiled Flix, request observations, resume with exact answers |
 | [Extraction endpoint](app/api/extraction/route.ts) | Verify public source, obtain independently cached Grit results |
 | [Inference endpoint](app/api/inference/route.ts) | Same-origin admission, bounded provider transport and public-source cache admission |
-| [Bazel actions](BUILD.bazel) | Flix → TeaVM, Rust → Grit WASM, Aspect → workers, then separate browser and server artifact directories |
+| [Bazel actions](BUILD.bazel) | Flix → TeaVM, Rust → static native Grit, Aspect → browser workers |
 | BuildBuddy | Execute eligible build actions remotely and reuse completed artifacts |
 
 The browser calls one interface: `evaluate(JSON.stringify(request))`. That
@@ -89,22 +89,19 @@ cannot translate. CheerpJ 4.3 initialized but rejected Flix's Java 21 class file
 `UnsupportedClassVersionError` (supported maximum: Java 17). No TypeScript
 Datalog replacement is shipped. Native JVM Datalog tests remain intact.
 
-Studio extraction supports JS, JSX, TS and TSX. Native extraction
-retains Flix and Starlark as well as its other languages. The maintained source
-pin is unchanged. Server/native and retained browser parity tests cover exact envelopes, Unicode
-byte ranges, unresolved imports/calls and empty files. The WASM adapter
-converts upstream UTF-16 offsets into the native UTF-8 envelope before admission.
+Studio extraction supports JS, JSX, TS and TSX. The same native engine also
+retains Flix, Starlark and the library's other languages. The Grit and grammar
+pins are unchanged. Exact parity tests cover dialects, Unicode byte ranges,
+unresolved references, empty files and classified failures. Native output already
+uses UTF-8 coordinates; it needs no browser offset conversion.
 
-Grit runs in separate Node processes, with at most four active files and no more
-than the host's available CPU count. Each file runs all three programs in one
-process, then exits. Node worker threads retained WASM memory after termination
-and exhausted the preview's memory. Separate processes release that memory.
-
-Node 24's `--liftoff-only` selects its baseline WASM compiler: the same instructions
-execute with lower peak memory, at a cold-time cost. The 120-file parity check
-peaked at 121 MiB per child; ordinary optimizing compilation exceeded 1 GiB.
-Receipts record each child's extraction CPU time and peak RSS, not the whole
-Function's memory. HTTP concurrency is measured separately from CPU processes.
+Grit runs in a small, statically linked ARM64 subprocess, built by Bazel for the
+Function's actual architecture. Each file runs three fixed programs, then exits.
+There is no JVM, dynamic loader or Nix dependency in the Function. At most four
+children run, bounded by the host's available CPU count. They receive no provider
+credentials; input, output and execution time are bounded. A native subprocess
+is **not a security sandbox**. Repository code and client-supplied programs never run.
+The old bounded-memory WASM runner remains only as a test oracle.
 
 The browser sends up to eight requests concurrently, one file each, largest first.
 Independent requests let the host distribute work, but do not guarantee separate
@@ -152,8 +149,8 @@ never enter that cache.
 | `extractedFile` | Extractor artifact digest + repository/commit/path, or authored fixture path + source digest | 7 days / 30 days |
 | `sharedEmbedding` | Model + preparation recipe + verified repository/commit/path | 1 day / 7 days |
 
-The extractor digest covers the actual Rust/WASM, grammars, GritQL programs and
-normalization adapter. Changing these artifacts invalidates earlier observations.
+The extractor digest covers the native executable (including grammars and UTF-8
+envelope conversion), GritQL programs and the declared runtime/schema identity. Changing these artifacts invalidates earlier observations.
 Coarse tags allow family invalidation; they do not replace argument identity.
 Next also includes function/build identity, so a deployment may invalidate reuse.
 
@@ -192,25 +189,31 @@ usage describes the original observation, not necessarily a new charge.
 
 ## Measured on the preview
 
-Two independent Chromium sessions received identical source and Grit receipts.
-The second session also received observations produced by other server instances.
+The native extractor makes uncached work cheaper. A fresh browser still benefits
+from complete per-file results saved by earlier visitors.
 
 | Indexed population | Cold indexing | Fresh browser, warm server |
 | --- | ---: | ---: |
-| Mitt, 3 files | 5.03 s | 0.88 s |
-| Preact, 120 files | 151.85 s | 4.14 s |
+| Mitt, 3 files | 3.47 s | 1.04 s |
+| Preact, unchanged 120 files | 53.44 s | 5.21 s |
 
-These October 13 measurements include source transport and Flix admission,
-before graph rendering. Preact is the default. Eight single-file requests with
-the largest files first reduced its cold wait from 252.02 to 151.85 seconds in
-this comparison. Six instances produced observations, versus four previously;
-HTTP requests rose from 61 to 121. The largest file alone took 147.99 seconds.
-More requests cannot divide that extraction. Shared results remove the need
-for later visitors to repeat it.
+All 120 Preact executions began during the cold run. The second browser received
+the same 120 receipts, including 96 served by a different instance. These October
+13 results include source transport and Flix admission, before graph rendering.
+They are single observations, not a timing distribution. The previous WASM
+preview took 151.85 seconds cold and 4.14 seconds warm; cloud allocation differed.
+Warm Preact graph readiness took 10.47 seconds in headless Chromium.
 
-These are single cold/warm pairs, not a timing distribution. The warm graph
-became visible in 8.53 seconds in headless Chromium, including rendering startup.
-[Revisions, CPU receipts, real model calls and verification](../attune/notes/design.md#request-fan-out).
+In the repeated local comparison, the slowest file fell from a median **37.54
+to 12.24 seconds**, with three fresh processes per variant. The source-shaped
+query was retained: a direct call-node query changed time by only about 1–2%.
+A small matcher patch avoids copying state when there is no `until` condition.
+No files, calls or source bytes were dropped. Peak child RSS on the preview was
+15.6 MiB; whole-Function peak memory was unavailable.
+
+[Comparison matrix, every sample, source identities and reproduction](test/cold-grit/README.md).
+The extraction experiment made no model calls. Historical localization and
+scheduling results remain separate evidence.
 
 ## Verify and publish
 

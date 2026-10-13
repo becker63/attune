@@ -1,7 +1,8 @@
-# Browser distribution
+# Runtime distribution
 
-The browser receives compiled Flix application/runtime classes, TeaVM's generated
-WASM GC runtime, Grit's WASM binding, and Tree-sitter's JS/TS/TSX/GritQL/Vue parsers.
+The browser receives compiled Flix application/runtime classes and TeaVM's generated
+WASM GC runtime. Grit and its maintained Tree-sitter grammars run in a separate,
+statically linked server executable. The WASM Grit binding is a test oracle only.
 It receives neither the Flix compiler nor LangChain4j, provider SDKs, native FFM,
 or repository executables.
 
@@ -10,6 +11,9 @@ or repository executables.
 - [Grit, pinned commit](https://github.com/getgrit/gritql/tree/c80b3026471b229f41b279c3eb0c162dcdacfdb1): MIT.
 - [Tree-sitter](https://github.com/tree-sitter/tree-sitter): MIT. Browser binding
   and grammar versions are frozen by `pnpm-lock.yaml` and the Grit source pin.
+- The server executable links musl 1.2.6 from the pinned LLVM Bazel toolchain.
+  Its [copyright and license notice](licenses/musl-COPYRIGHT.txt) is distributed
+  with the other runtime notices. It requires no system dynamic loader.
 - [Shiki 4.5.0](https://shiki.style/guide/bundles): MIT; only JS/JSX/TS/TSX
   grammars, the JavaScript regex engine and GitHub Dark theme are bundled.
 - [react-pprof 1.5.1](https://github.com/platformatic/react-pprof): Apache-2.0;

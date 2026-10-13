@@ -3,12 +3,13 @@ load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@bazel_lib//lib:directory_path.bzl", "directory_path")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
 npm_link_all_packages(name = "node_modules")
 directory_path(name = "tree_sitter_wasm", directory = ":node_modules/web-tree-sitter/dir", path = "tree-sitter.wasm")
 copy_to_bin(name = "test_package", srcs = ["package.json"])
-copy_to_bin(name = "test_sources", srcs = glob(["studio/*.ts", "server/*.ts"]) + ["test/grit-browser.json"])
+copy_to_bin(name = "test_sources", srcs = glob(["studio/*.ts", "server/*.ts"]) + ["test/grit-browser.json", "test/grit-envelope.ts"])
 
 # Package the checked-in site without rerunning any research or model calls.
 copy_to_directory(
@@ -42,7 +43,7 @@ js_test(
     ],
 )
 
-# Both WASM implementations and the worker bundles are ordinary dependencies.
+# Flix remains browser WASM; Grit runs as a fixed-program native subprocess.
 copy_to_directory(
     name = "flix_runtime",
     srcs = ["@attune//platform/browser:wasm"],
@@ -57,9 +58,9 @@ copy_to_directory(
     include_external_repositories = ["*"],
 )
 esbuild(
-    name = "grit-server-worker",
-    entry_point = "server/grit-worker.mjs",
-    srcs = ["server/grit-worker.mjs", "server/grit.ts", "studio/types.ts", ":grit_node_runtime"],
+    name = "grit-wasm-probe",
+    entry_point = "test/grit-wasm-worker.mjs",
+    srcs = ["test/grit-wasm-worker.mjs", "test/grit-envelope.ts", ":grit_node_runtime"],
     deps = [":node_modules/web-tree-sitter-wasm-bindgen"],
     platform = "node",
     format = "cjs",
@@ -68,12 +69,25 @@ esbuild(
     sourcemap = False,
 )
 copy_to_directory(
-    name = "grit_server_assets",
-    srcs = [":grit-server-worker", ":grit_node_runtime", ":grit_parsers", ":grit_programs", ":tree_sitter_wasm"],
+    name = "grit_wasm_assets",
+    srcs = [":grit-wasm-probe", ":grit_node_runtime", ":grit_parsers", ":grit_programs", ":tree_sitter_wasm"],
     root_paths = ["web/.artifacts/server/grit", "web/grit_parsers", "web/grit_programs", "web"],
     include_srcs_patterns = ["**/grit-worker.cjs", "**/grit_bg.wasm", "**/*.grit", "**/tree-sitter*.wasm"],
     include_external_repositories = ["*"],
     replace_prefixes = {"**/tree-sitter.wasm": "tree-sitter.wasm"},
+)
+# The deployment target belongs here; the standalone library builds its native
+# runner for the host without needing the web module's musl toolchain.
+platform_transition_filegroup(
+    name = "grit_native",
+    srcs = ["@attune//platform/support/grit:grit_runner"],
+    target_platform = "@llvm//platforms:linux_aarch64_musl",
+)
+copy_to_directory(
+    name = "grit_server_assets",
+    srcs = [":grit_native", ":grit_programs"],
+    root_paths = ["**/platform/support/grit", "web/grit_programs"],
+    include_external_repositories = ["*"],
 )
 copy_to_directory(
     name = "grit_parsers",
@@ -115,7 +129,7 @@ copy_to_directory(
 js_binary(
     name = "package_browser",
     entry_point = "toolchain/package.mjs",
-    data = [":node_modules/web-tree-sitter", ":node_modules/@duckdb/duckdb-wasm"],
+    data = [":node_modules/@duckdb/duckdb-wasm"],
 )
 js_run_binary(
     name = "browser_assets",
@@ -135,7 +149,7 @@ js_test(
     name = "browser_parity_test",
     size = "large",
     entry_point = "test/run-parity.mjs",
-    data = ["test/browser.test.ts", ":test_sources", ":test_package", ":browser_assets", ":parity-worker",
+    data = ["test/browser.test.ts", "test/grit.test.ts", ":test_sources", ":test_package", ":browser_assets", ":parity-worker", ":grit_wasm_assets",
             ":node_modules/tsx", ":node_modules/@playwright/test", ":node_modules/esbuild",
             "@attune//platform/browser:jvm", "@attune//test/browser:grit_probe",
             "@attune//platform/support/grit:attune_grit_abi"],

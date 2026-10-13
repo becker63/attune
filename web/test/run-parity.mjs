@@ -36,5 +36,7 @@ process.env.STUDIO_PARITY_WORKER = fileURLToPath(
   new URL("../parity-worker.js", import.meta.url),
 );
 process.env.STUDIO_GRIT_ASSETS = fileURLToPath(new URL("../server_assets", import.meta.url));
+process.env.STUDIO_GRIT_WASM = fileURLToPath(new URL("../grit_wasm_assets", import.meta.url));
 register();
 await import("./browser.test.ts");
+await import("./grit.test.ts");

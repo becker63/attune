@@ -216,15 +216,15 @@ test(
       );
       await fs.writeFile(control, JSON.stringify({ epoch: 2 }));
       await fs.rename(
-        path.join(assets, "grit_bg.wasm"),
-        path.join(assets, "held.wasm"),
+        path.join(assets, "grit_runner"),
+        path.join(assets, "held.runner"),
       );
       const failed = await read(["src/a.ts"]);
       assert.equal(failed.files[0].failure.kind, "extraction");
       assert.equal(failed.files[0].relations, undefined);
       await fs.rename(
-        path.join(assets, "held.wasm"),
-        path.join(assets, "grit_bg.wasm"),
+        path.join(assets, "held.runner"),
+        path.join(assets, "grit_runner"),
       );
       const recovered = await read(["src/a.ts"]);
       assert.ok(

@@ -21,5 +21,23 @@ esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuil
 esbuild.toolchain(name = "esbuild", esbuild_version = "0.28.0")
 use_repo(esbuild, "esbuild_toolchains")
 register_toolchains("@esbuild_toolchains//:all")
+# The Function ships an ARM64 executable with its C runtime linked in.
+bazel_dep(name = "rules_rust", version = "0.74.0")
+bazel_dep(name = "llvm", version = "0.8.21")
+bazel_dep(name = "platforms", version = "1.1.0")
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2024", versions = ["1.98.0"], extra_target_triples = ["wasm32-unknown-unknown"])
+rust.repository_set(
+    name = "rust_musl",
+    edition = "2024",
+    versions = ["1.98.0"],
+    exec_triple = "aarch64-unknown-linux-gnu",
+    target_triple = "aarch64-unknown-linux-musl",
+    target_compatible_with = ["@platforms//cpu:aarch64", "@platforms//os:linux", "@llvm//constraints/libc:musl"],
+)
+use_repo(rust, "rust_toolchains")
+# GNU and musl triples otherwise advertise the same OS/CPU constraints.
+# Resolve the explicitly constrained musl toolchain before the general defaults.
+register_toolchains("@rust_toolchains//:rust_musl__aarch64-unknown-linux-musl__stable", "@rust_toolchains//:all")
 buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
 use_repo(buildbuddy, "buildbuddy_toolchain")

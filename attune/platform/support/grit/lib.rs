@@ -129,7 +129,7 @@ fn target(language: &str) -> Result<TargetLanguage, Vec<u8>> {
     TargetLanguage::try_from(pattern).map_err(|error| failure("host", error.to_string()))
 }
 
-fn compile(language: &str, program: &[u8]) -> Result<Problem, Vec<u8>> {
+pub(crate) fn compile(language: &str, program: &[u8]) -> Result<Problem, Vec<u8>> {
     let source = text(program, "program")?;
     let language = target(language)?;
     match src_to_problem_libs(source, &BTreeMap::new(), language, None, None, None, None) {
@@ -138,7 +138,7 @@ fn compile(language: &str, program: &[u8]) -> Result<Problem, Vec<u8>> {
     }
 }
 
-fn execute(problem: &Problem, path: String, source: String) -> Vec<u8> {
+pub(crate) fn execute(problem: &Problem, path: String, source: String) -> Vec<u8> {
     let context = ExecutionContext::default();
     let inputs = vec![RichFile::new(path, source)];
     let mut evaluation = Evaluation {
@@ -162,6 +162,11 @@ fn execute(problem: &Problem, path: String, source: String) -> Vec<u8> {
                 }
             }
             MatchResult::AnalysisLog(diagnostic) => {
+                // Match the WASM boundary: a parse/runtime error is not an
+                // empty successful observation, even when it has a source range.
+                if diagnostic.level < 400 {
+                    return failure("extraction", diagnostic.message);
+                }
                 if let Some(range) = diagnostic.range {
                     evaluation.logs.push(Log {
                         message: diagnostic.message,
@@ -172,19 +177,9 @@ fn execute(problem: &Problem, path: String, source: String) -> Vec<u8> {
                     evaluation.diagnostics.push(diagnostic.message);
                 }
             }
-            MatchResult::Rewrite(item) => {
-                evaluation.matched = true;
-                for range in item.original.ranges {
-                    evaluation.matches.push(Span {
-                        path: item.original.source_file.clone(),
-                        start_byte: range.start_byte as usize,
-                        end_byte: range.end_byte as usize,
-                    });
-                }
-            }
-            MatchResult::CreateFile(_)
-            | MatchResult::RemoveFile(_)
-            | MatchResult::PatternInfo(_)
+            MatchResult::Rewrite(_) | MatchResult::CreateFile(_) | MatchResult::RemoveFile(_) =>
+                return failure("extraction", "Extraction may not rewrite source."),
+            MatchResult::PatternInfo(_)
             | MatchResult::AllDone(_)
             | MatchResult::InputFile(_)
             | MatchResult::DoneFile(_) => {}
@@ -331,6 +326,34 @@ language js(typescript)
   log(message="call", variable=$callee)
 }
 "#;
+
+    #[test]
+    fn contains_until_still_skips_children_without_losing_later_matches() {
+        for (until, expected) in [("", 3), (" until `stop($...)`", 2)] {
+            let program = format!(
+                "engine marzano(0.1)\nlanguage js(jsx)\ncontains bubble {{ `foo()` where {{ log(message=\"seen\") }} }}{until}"
+            );
+            let problem = compile("jsx", program.as_bytes()).unwrap();
+            let bytes = execute(&problem, "x.jsx".into(), "foo(); stop(foo()); foo();".into());
+            let value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(value["error"], serde_json::Value::Null, "{value}");
+            assert_eq!(value["diagnostics"].as_array().unwrap().len(), expected, "{value}");
+        }
+    }
+
+    #[test]
+    fn source_errors_and_rewrites_are_not_successful_empty_results() {
+        for (program, source) in [
+            (PROGRAM.to_vec(), "function broken( { missing(foo(;"),
+            (b"engine marzano(0.1)\nlanguage js(typescript)\n`foo()` => `bar()`".to_vec(), "foo();"),
+        ] {
+            let problem = compile("typescript", &program).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(
+                &execute(&problem, "x.ts".into(), source.into())
+            ).unwrap();
+            assert_eq!(value["error"]["kind"], "extraction", "{value}");
+        }
+    }
 
     fn through_abi(language: &[u8], program: &[u8], path: &[u8], source: &[u8]) -> (i32, Vec<u8>) {
         let mut data = ptr::null_mut();

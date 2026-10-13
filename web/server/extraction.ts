@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { fork } from "node:child_process";
+import { execFile } from "node:child_process";
 import { availableParallelism } from "node:os";
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Observation } from "../studio/types";
 
@@ -38,6 +38,7 @@ const waiting: (() => void)[] = [];
 export async function extractWithGrit(
   path: string,
   source: string,
+  timeoutMs = 180000, // Tests may shorten the watchdog; HTTP callers cannot set it.
 ): Promise<Extraction> {
   if (waiting.length >= 8)
     throw new ExtractionFailure("Grit is busy; retry this file.");
@@ -45,64 +46,41 @@ export async function extractWithGrit(
     await new Promise<void>((resolve) => waiting.push(resolve));
   else active++;
   try {
-    // Runtime path prevents Next from rebundling Bazel's declared worker.
-    const worker = fork(realpathSync(`${directory}/grit-worker.cjs`), {
-      // Pinned Node 24: baseline WASM compilation keeps a child below 130 MiB
-      // on the retained Preact probe. Optimizing compilation exceeded 1 GiB.
-      execArgv: ["--max-old-space-size=256", "--liftoff-only"],
-      stdio: ["ignore", "ignore", "pipe", "ipc"],
-      // Preserve Bazel's Node/runfiles isolation, without provider credentials.
-      env: {
-        NODE_ENV: "production",
-        ...Object.fromEntries(
-          Object.keys(process.env)
-            .filter((key) => key.startsWith("JS_BINARY__"))
-            .map((key) => [key, process.env[key]]),
-        ),
-      },
-    });
-    let diagnostic = "";
-    worker.stderr?.on("data", (chunk) => {
-      diagnostic = (diagnostic + chunk).slice(0, 1024);
-    });
-    try {
-      return await new Promise<Extraction>((resolve, reject) => {
-        const timer = setTimeout(
-          () =>
-            reject(new ExtractionFailure("Grit exceeded the file time limit.")),
-          180000,
-        );
-        worker.once("error", (error) => {
-          clearTimeout(timer);
-          reject(new ExtractionFailure(error.message));
-        });
-        worker.once("exit", (code) => {
-          clearTimeout(timer);
-          reject(new ExtractionFailure(`Grit exited (${code}): ${diagnostic}`));
-        });
-        worker.once("message", (data: Extraction & { error?: string }) => {
-          clearTimeout(timer);
-          if (data.error) reject(new ExtractionFailure(data.error));
-          else {
-            console.info("attune.grit", JSON.stringify(data.execution));
-            resolve({
-              ...data,
-              execution: { ...data.execution, producer: serverInstance },
-            });
+    return await new Promise<Extraction>((resolve, reject) => {
+      const worker = execFile(
+        `${directory}/grit_runner`,
+        [],
+        {
+          env: { NODE_ENV: "production" }, // No credentials reach the child.
+          timeout: Math.min(timeoutMs, 180000),
+          killSignal: "SIGKILL",
+          maxBuffer: 2 * 1024 * 1024,
+        },
+        (error, stdout, stderr) => {
+          if (error) {
+            reject(new ExtractionFailure(
+              error.killed
+                ? "Grit exceeded the file time or output limit."
+                : `Grit exited (${error.code}): ${stderr.slice(0, 1024)}`,
+            ));
+            return;
           }
-        });
-        worker.send({ path, source });
-      });
-    } finally {
-      // Worker threads retained WASM compilation memory after termination.
-      // A process releases it; three relations still share one initialization.
-      if (worker.exitCode === null && worker.signalCode === null) {
-        await new Promise<void>((resolve) => {
-          worker.once("exit", () => resolve());
-          worker.kill("SIGKILL");
-        });
-      }
-    }
+          try {
+            const data = JSON.parse(stdout);
+            if (data.error) throw new Error(data.error);
+            if (data.observation?.path !== path || data.observation?.source !== source)
+              throw new Error("Grit response identity mismatch.");
+            const execution = { ...data.execution, id: randomUUID(), producer: serverInstance };
+            console.info("attune.grit", JSON.stringify(execution));
+            resolve({ observation: data.observation, execution });
+          } catch (error) {
+            reject(new ExtractionFailure(error instanceof Error ? error.message : "Invalid Grit output."));
+          }
+        },
+      );
+      worker.stdin!.on("error", () => {}); // Early child exit is handled by execFile.
+      worker.stdin!.end(JSON.stringify({ path, source }));
+    });
   } finally {
     const next = waiting.shift();
     if (next) next();

@@ -578,3 +578,57 @@ Across the changed source files, SCC counts one fewer runtime implementation
 line, nine additional deployment lines, one JSON configuration line and 76
 additional test lines. Comments and blank lines are excluded; Flix and Java
 are unchanged. No dependency or scheduling framework was added.
+
+### Making cold extraction cheaper
+
+The next change starts from `15cdb04`. It replaces server WASM execution with
+the existing native Grit engine and a small, fixed-program Rust executable.
+The preceding WASM measurements remain historical; this is the current path:
+
+```text
+Before: Next file cache -> miss -> Node child -> Grit WASM -> observations
+After:  Next file cache -> miss -> native child          -> observations
+                                                            |
+                                                  browser Flix admission
+                                                            |
+                                               typed relationships + ranking
+```
+
+The cache still belongs to an immutable file request, independently of its HTTP
+batch. Eight browser requests remain in flight, largest files first; each
+Function permits at most four children, bounded by available CPUs. There is no
+persistent pool. Native compilation and grammar initialization were only tens
+of milliseconds; matching was the expensive operation.
+
+A controlled four-cell comparison tested the existing and direct call-node
+queries in both runtimes. The query change saved only about 1–2%, so the original
+programs remain. A CPU profile identified binding-state allocation as expensive.
+One maintained patch avoids a state clone when `contains` has no `until` clause,
+without removing the copies needed for rollback. Some synthetic inputs regressed;
+the patch is not a universal speedup.
+
+The selected static executable lowered the largest Preact file's fresh-process
+median from 37.54 to 12.24 seconds across three repetitions. Its observations
+match all 120 retained Preact files exactly, including order, multiplicity and
+byte ranges. The protected preview indexed those same files in 53.44 seconds
+cold and 5.21 seconds in a fresh browser with warm server artifacts. Those cloud
+figures are one pair of observations; the local matrix supplies the controlled
+comparison. Earlier source-ready interaction remains deferred.
+
+`//web:grit_native` selects the Function's ARM64 Linux musl target. The ordinary
+library runner remains independently buildable. Bazel packages a static
+executable and the existing queries; no JVM or Nix dynamic loader is deployed.
+Their digests, target and UTF-8 envelope identity replace the obsolete WASM
+identity in the manifest. Next's cache functions and Flix semantics are unchanged.
+
+The child receives bounded source through stdin, fixed server-selected programs,
+no credentials, a bounded output and a 180-second watchdog. This process boundary
+is not a security sandbox. Native output already uses byte coordinates. The
+WASM conversion and runtime now live only in parity tests, and malformed source
+or rewrites are classified failures in both runtimes.
+
+See the [comparison and reproduction record](../../web/test/cold-grit/README.md)
+for every sample, source and executable identities, preview URL, exact limits,
+verification and code accounting. The BuildBuddy build passes with local fallback
+disabled. The library still has 20 passing targets and the preserved 4,004-file
+`workspace_audit_test` failure. Production and frozen research are unchanged.

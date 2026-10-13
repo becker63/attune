@@ -5,10 +5,10 @@
   provider transport. Flix owns admission, effects, scoring and evidence policy.
 - Preserve `site/`, its layout, diagrams and five-waits measurements. `authoring/`
   retains earlier teaching material; it cannot regenerate the curated site.
-- `pnpm artifacts` builds real Flix and pinned Grit WASM. Never replace semantics
+- `pnpm artifacts` builds real Flix/WASM and a static ARM64 Grit executable. Never replace semantics
   with TypeScript or pretend browser Datalog works. Native Flix/Starlark support
-  must remain. Official Rust/wasm-bindgen rules build optimized Grit; Aspect bundles
-  workers. One Bazel invocation at a time; never clean.
+  must remain. Official Rust rules build Grit; its WASM target remains a parity
+  oracle in tests. Aspect bundles workers. One Bazel invocation at a time; never clean.
 - `nix run .#test` checks static hashes, transport, native/browser parity and retry
   behavior; `pnpm verify` tests the production UI. Fakes must remain labeled.
 - `pnpm run deploy` (also `nix run .#deploy`) prepares and checks before publishing to
@@ -30,7 +30,7 @@
   native clusters come from actual Flix results, without moving files or edges.
   Merge labels show separate contributions; edges, rings and arithmetic highlight
   on hover, source opens on click. Avoid permanent cluster labels and instruction bars.
-  Structure starts from Qwen candidates. Grit uses bounded, short-lived Node processes.
+  Structure starts from Qwen candidates. Grit uses bounded, short-lived native processes.
   Distinguish ranking, filtering and expansion; flamegraphs show wall-time spans.
   Source colors and edges come only from admitted witnesses. Cache complete Grit files through Next; a failure is not an empty observation.
 - Keep public source, Grit and vectors behind trusted Next cached functions. Private
