@@ -250,7 +250,7 @@ comparison, not a restatement of the earlier refactor's accounting population.
 | Core tests/fixtures | 1,770 | 1,819 |
 | New web application | 0 | 4,667 |
 | Website build/configuration/publisher | 585 | 1,064 |
-| New web tests | 0 | 1,375 |
+| New web tests | 0 | 1,378 |
 
 The existing research site's scripts and teaching assets are outside the new
 application count and retained unchanged apart from its Studio navigation link.
@@ -281,3 +281,18 @@ The later source-first inventory included 120 files and `hooks/src/index.js`;
 the live Qwen/JEv smoke test completed all six methods for “Where are hooks
 defined?”. The combined JEv result put that file first. A repeated question made
 no new inference requests. This is a functional check, not an accuracy benchmark.
+
+The October 13 production check used Chromium 151 and `developit/mitt` at
+`6b41670516ed8e8b738612f60491995470aa63b3`: three indexed files, ten excluded.
+All six methods completed with real Qwen/JEv answers. Cold acquisition took
+1.017 seconds, extraction 1.153 seconds, and Flix admission 56 ms. Repeating
+the question took 1.5 ms and made no inference requests; reindexing reused all
+nine extraction observations. Two direct public-file embedding requests also
+returned identical saved observation IDs, timestamps and vectors through Next's
+shared cache. Their responses do not establish a new billing total.
+
+The deployed Next build is `HepUBrrXJgQeoJnqNIIYE`; its runtime manifest matches
+the locally verified output. Production desktop/mobile tests cover the fixed
+graph, hover connections, click-only source, independent score scales, replay
+and the flamegraph. The three web Bazel gates and TypeScript check passed.
+DuckDB's indirect Node imports still produce non-fatal Webpack warnings.

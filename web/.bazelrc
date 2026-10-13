@@ -1,7 +1,0 @@
-startup --host_jvm_args=-Xmx3g
-common --repo_env=ASPECT_TOOLS_TELEMETRY=-all
-build --jobs=1
-build --local_resources=cpu=1
-build --local_resources=memory=3072
-test --build_tests_only
-test --test_output=errors

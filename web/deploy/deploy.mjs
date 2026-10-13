@@ -138,7 +138,7 @@ async function main() {
   if (!fs.existsSync(path.join(output, "config.json"))) {
     throw new Error(`no Build Output API tree at ${output}; build //:vercel_output`);
   }
-  const cli = path.resolve(SCRIPT_DIR, "..", "vercel_cli_", "vercel_cli");
+  const cli = process.env.ATTUNE_VERCEL_CLI ?? path.resolve(SCRIPT_DIR, "..", "vercel_cli_", "vercel_cli");
   if (!fs.existsSync(cli)) throw new Error(`the Bazel Vercel CLI launcher is missing at ${cli}`);
 
   const workspace = process.env.BUILD_WORKSPACE_DIRECTORY;
@@ -157,7 +157,14 @@ async function main() {
     // stamped and removed.
     const vercelOutput = path.join(temp, ".vercel", "output");
     fs.mkdirSync(path.dirname(vercelOutput), { recursive: true });
-    fs.cpSync(output, vercelOutput, { recursive: true, dereference: true });
+    // Next's self-contained output uses relative function aliases. Preserve
+    // those aliases; Bazel's static runfiles still need dereferencing.
+    const nextOutput = fs.existsSync(path.join(output, "functions"));
+    fs.cpSync(output, vercelOutput, {
+      recursive: true,
+      dereference: !nextOutput,
+      verbatimSymlinks: nextOutput,
+    });
     makeWritable(vercelOutput);
     const stamped = stampBuildRevision(vercelOutput, revision);
 

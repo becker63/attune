@@ -1,6 +1,6 @@
 {
   "source": "site/",
-  "sha256": "9fe0d6b3417d82f47e83d07209a8ce4de0f753018e584b6de82545057eb3ede3",
+  "sha256": "b1ab5b554d240128317d1abd4cbf5f4461d740b1aef3e434188850af62744faf",
   "files": {
     "app.js": "d10fdfa1f0985611228fab9ee5cae5511706199576f80e1b0c02c02f6ca6fae6",
     "architecture-context.json": "4a3cb050015b1b6de5b046ea23519a7dadce0e6acc1719a36ce5a83b496bea5e",
@@ -33,7 +33,7 @@
     "grit-timings.json": "eb51c17973c8ef87f81e511cc64022b5de576acb8633ab5c148efc8d42a7e515",
     "guide.json": "0a1ef7719308090e8dd676180b19c07b9ec34bd18f5c54506d88ee2d78316786",
     "highlighted.json": "8cdc785d827a8b9560c1699c1d6a19713e6b42c46402e31f4cd2f7d3e99ba020",
-    "index.html": "c914d869a66ba4f69c9c34d088c92afc89e940d6aa6ed2e83c1f741cf46f9087",
+    "index.html": "6d74a8a4b5f4548e3f95fe2a32055c5a405285f81d67269545617d93db656c01",
     "inline-graphs.js": "ee15fcb0e2113e836e1d8e46a1b98b886e3e96987335e83ad36d66f1fdadf431",
     "live-trace.json": "ef159eb1f323d47998059ab5ca21b955358b8943bf2ac83656a358a8ddc0031f",
     "mechanics.js": "b84ecc0780ea908fd3b6d10d83a790ec9877906d82823256e16ba75b7a8f5902",

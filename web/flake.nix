@@ -1,51 +1,33 @@
 {
-  description = "Attune website: preview, check, and publish the retained static site";
+  description = "Attune Studio and retained research website";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
   outputs = { nixpkgs, ... }:
     let
-      forAllSystems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
-      perSystem = system:
+      systems = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ];
+      core = (import ../attune/flake.nix).outputs { inherit nixpkgs; };
+      appsFor = system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          bazel = pkgs.writeShellScriptBin "bazel" ''
-            exec ${pkgs.coreutils}/bin/env -i \
-              HOME="$HOME" USER="''${USER:-unknown}" \
-              BAZELISK_SKIP_WRAPPER=true USE_BAZEL_VERSION=8.6.0 \
-              PATH=${pkgs.lib.makeBinPath [ pkgs.bash pkgs.bazelisk pkgs.coreutils pkgs.git pkgs.gnugrep pkgs.gnused pkgs.which ]}:/usr/bin:/bin \
-              SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
-              ${pkgs.bazelisk}/bin/bazelisk "$@"
-          '';
-          command = name: action: pkgs.writeShellScript "attune-web-${name}" ''
-            set -eu
-            if [ -f "$PWD/web/MODULE.bazel" ]; then cd web; fi
-            if [ ! -f "$PWD/site/index.html" ] || [ ! -f "$PWD/MODULE.bazel" ]; then
-              echo "Run from the Attune checkout or its web/ directory." >&2
-              exit 1
-            fi
-            ${action}
-          '';
-          runBazel = "${bazel}/bin/bazel --output_base=\"$HOME/.cache/attune-website-deploy\"";
-          preview = command "preview" ''exec ${runBazel} run //:preview -- "$@"'';
-          test = command "test" ''exec ${runBazel} test //... "$@"'';
-          deploy = command "deploy" ''
-            launcher=$(${pkgs.coreutils}/bin/mktemp -d -t attune-web-launcher.XXXXXX)
-            trap '${pkgs.coreutils}/bin/rm -rf -- "$launcher"' EXIT
-            ${runBazel} test //...
-            ${runBazel} run --script_path="$launcher/deploy" //:deploy
-            # Credentials enter only the publisher, after Bazel has finished.
-            "$launcher/deploy" "$@"
-          '';
+          command = name: action: {
+            type = "app";
+            program = toString (pkgs.writeShellScript "attune-web-${name}" ''
+              set -eu
+              if [ -f "$PWD/web/site/index.html" ]; then cd web; fi
+              if [ ! -f "$PWD/site/index.html" ] || [ ! -f "$PWD/../MODULE.bazel" ]; then
+                echo "Run from the Attune checkout or web/." >&2
+                exit 1
+              fi
+              ${action}
+            '');
+          };
+          bazel = ''nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel"'';
         in {
-          inherit preview test deploy;
-          devShell = pkgs.mkShell { packages = [ bazel pkgs.bazel-buildtools ]; };
+          default = command "preview" ''cd ..; exec ${bazel} run //web:preview -- "$@"'';
+          test = command "test" ''cd ..; exec ${bazel} test //web:layout_test //web:studio_transport_test //web:browser_parity_test --test_env=CHROMIUM_PATH=${pkgs.chromium}/bin/chromium --test_output=errors "$@"'';
+          deploy = command "deploy" ''exec node deploy/publish.mjs "$@"'';
         };
     in {
-      apps = forAllSystems (system: {
-        default = { type = "app"; program = "${(perSystem system).preview}"; };
-        test = { type = "app"; program = "${(perSystem system).test}"; };
-        deploy = { type = "app"; program = "${(perSystem system).deploy}"; };
-      });
-      devShells = forAllSystems (system: { default = (perSystem system).devShell; });
+      apps = systems appsFor;
+      devShells = core.devShells;
     };
 }

@@ -34,6 +34,7 @@ export function makeWritable(root) {
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
+      if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
         walk(full);
         fs.chmodSync(full, 0o755);

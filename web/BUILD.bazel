@@ -1,15 +1,17 @@
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test", "js_run_binary")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//:vercel/package_json.bzl", vercel_bin = "bin")
 
 npm_link_all_packages(name = "node_modules")
+copy_to_bin(name = "test_package", srcs = ["package.json"])
 
 # Package the checked-in site without rerunning any research or model calls.
 copy_to_directory(
     name = "static",
     srcs = glob(["site/**"]),
-    root_paths = ["site"],
+    root_paths = ["web/site"],
 )
 
 copy_to_directory(
@@ -38,18 +40,105 @@ js_binary(
     entry_point = "serve.mjs",
 )
 
-vercel_bin.vercel_binary(
-    name = "vercel_cli",
-    tags = ["manual"],
+# Provider-free validation; the browser integration suite additionally runs the
+# real compiled artifacts through Chromium and compares them with the JVM.
+js_test(
+    name = "studio_transport_test",
+    size = "small",
+    entry_point = "test/run-unit.mjs",
+    env = {"PATH": "/usr/local/bin:/usr/bin:/bin:/run/current-system/sw/bin"},
+    data = glob(["studio/*.ts", "server/*.ts", "test/unit.test.ts"]) + [
+        ":test_package",
+        ":node_modules/tsx",
+        ":node_modules/idb-keyval",
+        ":node_modules/pprof-format",
+    ],
 )
 
+# Both WASM implementations and the worker bundles are ordinary dependencies.
+copy_to_directory(
+    name = "flix_runtime",
+    srcs = ["@attune//platform/browser:wasm"],
+    root_paths = ["platform/browser/wasm"],
+    include_external_repositories = ["*"],
+)
+copy_to_directory(
+    name = "grit_runtime",
+    srcs = ["@attune//platform/browser:grit_wasm"],
+    out = "public/runtime/grit",
+    root_paths = ["**/grit_wasm"],
+    include_external_repositories = ["*"],
+)
+copy_to_directory(
+    name = "grit_parsers",
+    srcs = ["@attune//platform/browser:grit_parsers"],
+    root_paths = ["**/wasm_parsers"],
+    include_external_repositories = ["*"],
+)
+copy_to_directory(
+    name = "grit_programs",
+    srcs = ["@attune//src/grit:programs"],
+    root_paths = ["src/grit"],
+    include_external_repositories = ["*"],
+    include_srcs_patterns = ["**/javascript.grit", "**/jsx.grit", "**/typescript.grit", "**/tsx.grit"],
+)
+copy_to_directory(
+    name = "grit_notices",
+    srcs = ["@attune//platform/browser:grit_notices"],
+    include_external_repositories = ["*"],
+)
+
+[
+    esbuild(
+        name = name,
+        entry_point = entry,
+        srcs = glob(["studio/*.ts"]) + [":grit_runtime"],
+        deps = [":node_modules/idb-keyval", ":node_modules/web-tree-sitter-wasm-bindgen"],
+        format = "iife",
+        platform = "browser",
+        target = "es2022",
+        sourcemap = False,
+        external = ["fs", "path"],
+        define = {"process.versions.node": "undefined", "import.meta.url": "self.location.href"},
+    )
+    for name, entry in [
+        ("studio-worker", "studio/worker.ts"),
+        ("grit-worker", "studio/grit-worker.ts"),
+        ("parity-worker", "test/parity-worker.ts"),
+    ]
+]
+
 js_binary(
-    name = "deploy",
-    data = glob(["deploy/*.mjs"]) + [
-        "release.json",
-        ":vercel_cli",
-        ":vercel_output",
-    ],
-    entry_point = "deploy.mjs",
-    tags = ["manual"],
+    name = "package_browser",
+    entry_point = "toolchain/package.mjs",
+    data = [":node_modules/web-tree-sitter", ":node_modules/@duckdb/duckdb-wasm"],
+)
+js_run_binary(
+    name = "browser_assets",
+    tool = ":package_browser",
+    srcs = glob(["licenses/*.txt"]) + [":static", ":grit_runtime", ":grit_parsers", ":grit_programs", ":grit_notices",
+            ":studio-worker", ":grit-worker", "studio/grit.ts", "THIRD_PARTY.md", "//:license",
+            ":flix_runtime"],
+    out_dirs = ["browser_assets"],
+    args = ["web/browser_assets", "$(rootpath :static)", "$(rootpath :flix_runtime)",
+            "$(rootpath :grit_runtime)", "$(rootpath :grit_parsers)", "$(rootpath :grit_programs)",
+            "$(rootpath :grit_notices)", "$(rootpath :studio-worker)", "$(rootpath :grit-worker)",
+            "$(rootpath studio/grit.ts)", "$(rootpath THIRD_PARTY.md)", "$(rootpath //:license)"],
+    mnemonic = "BrowserAssets",
+    env = {"PATH": "/usr/local/bin:/usr/bin:/bin:/run/current-system/sw/bin"},
+)
+
+js_test(
+    name = "browser_parity_test",
+    size = "large",
+    entry_point = "test/run-parity.mjs",
+    data = ["test/browser.test.ts", ":test_package", ":browser_assets", ":parity-worker",
+            ":node_modules/tsx", ":node_modules/@playwright/test", ":node_modules/esbuild",
+            "@attune//platform/browser:jvm", "@attune//test/browser:grit_probe",
+            "@attune//platform/support/grit:attune_grit_abi"],
+    env = {"STUDIO_JVM": "$(rootpath @attune//platform/browser:jvm)",
+           "PATH": "/usr/local/bin:/usr/bin:/bin:/run/current-system/sw/bin",
+           "STUDIO_GRIT_PROBE": "$(rootpath @attune//test/browser:grit_probe)",
+           "STUDIO_GRIT_LIBRARY": "$(rootpath @attune//platform/support/grit:attune_grit_abi)"},
+    tags = ["no-remote"],
 )

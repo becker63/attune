@@ -430,9 +430,13 @@ attune/platform/          pinned build rules and mechanical interfaces
 attune/notes/design.md    ownership, provenance, and source accounting
 ```
 
-The website lives in `web/`, outside the Flix workspace. Run `nix run ./web`
-to preview it; its [guide](https://github.com/becker63/attune/tree/main/web)
-explains checks and deployment.
+The website lives in `web/`, outside the Flix workspace.
+[Studio](https://atlas-live-five.vercel.app/studio) lets you index a public
+JS/TS repository in your browser and compare text matching, embeddings,
+structural context and model judgment.
+Its [guide](web/README.md) explains the small Flix interface, exact reuse,
+verification, and the current browser Datalog limitation. The existing
+five-waits measurements remain on the research pages.
 
 Start with [core identity and relations](attune/src/Attune.flix),
 [Repository](attune/src/Attune/Repository.flix), or the

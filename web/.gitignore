@@ -1,3 +1,9 @@
 /bazel-*
 /node_modules/
 /.vercel/
+/.next/
+/.artifacts/
+/public/
+/next-env.d.ts
+/tsconfig.tsbuildinfo
+/test-results/
