@@ -20,8 +20,8 @@ function useSessionState() {
   } | null>(null);
   const [loaded, setLoaded] = useState<Loaded | null>(null),
     [comparison, setComparison] = useState<Comparison | null>(null);
-  const [url, setUrl] = useState("https://github.com/developit/mitt"),
-    [question, setQuestion] = useState(QUESTIONS[0]);
+  const [url, setUrl] = useState("https://github.com/preactjs/preact"),
+    [question, setQuestion] = useState("Where are hooks defined?");
   const [live, setLive] = useState(true),
     [inferenceAvailable, setInferenceAvailable] = useState(false);
   const [busy, setBusy] = useState(false),

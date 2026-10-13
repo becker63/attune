@@ -231,16 +231,16 @@ test("public cache misses batch with bounded overlapping execution and propagate
     }));
   });
   const answers = await Promise.all(
-    Array.from({ length: 65 }, (_, i) => queue(String(i))),
+    Array.from({ length: 129 }, (_, i) => queue(String(i))),
   );
-  assert.equal(peak, 4);
+  assert.equal(peak, 8);
   assert.deepEqual(
     groups.map((g) => g.length),
-    [16, 16, 16, 16, 1],
+    [16, 16, 16, 16, 16, 16, 16, 16, 1],
   );
   assert.deepEqual(
     answers.map((a) => a.vector[0]),
-    Array.from({ length: 65 }, (_, i) => i),
+    Array.from({ length: 129 }, (_, i) => i),
   );
   const fail = embeddingQueue(async () => {
     throw Error("fixture failure");
@@ -249,6 +249,47 @@ test("public cache misses batch with bounded overlapping execution and propagate
     (await Promise.allSettled([fail("a"), fail("b")])).map((r) => r.status),
     ["rejected", "rejected"],
   );
+});
+test("later embedding misses use free capacity without waiting for a slow batch", async () => {
+  let started!: () => void, finish!: () => void;
+  const began = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const held = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  const queue = embeddingQueue(async (inputs) => {
+    if (inputs.includes("slow")) {
+      started();
+      await held;
+    }
+    return inputs.map(() => ({
+      vector: [1],
+      model: MODEL_ID,
+      usage: { inputTokens: null, outputTokens: null, costUsd: null },
+      observationId: "fixture",
+      createdAt: 1,
+      batchSize: inputs.length,
+    }));
+  });
+  const slow = queue("slow");
+  await began;
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    await Promise.race([
+      queue("later"),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(Error("Idle slot waited for the slow batch")),
+          500,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer!);
+    finish();
+    await slow;
+  }
 });
 test("JEv validates every fixed-pool observation and resolved model", async () => {
   const state = {

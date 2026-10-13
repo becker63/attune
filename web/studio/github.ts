@@ -1,5 +1,5 @@
 // Bounded HTTP transport. The server owns public source and Grit reuse.
-import { parallel } from "./batches";
+import { parallel, EXTRACTION_CONCURRENCY } from "./batches";
 import type {
   FileProgress,
   Loaded,
@@ -100,60 +100,66 @@ export async function acquire(
     progress("Resolving public source…");
     const inventory = await request({ operation: "repository", url });
     repository = { ...inventory, files: [] };
-    const groups: { path: string }[][] = [];
-    for (let i = 0; i < inventory.files.length; i += 2)
-      groups.push(inventory.files.slice(i, i + 2));
-    const results = await parallel(groups, 4, async (group, _i, lane) => {
-      const began = performance.timeOrigin + performance.now();
-      try {
-        const response = await request({
-          operation: "files",
-          repository: inventory.name,
-          revision: inventory.revision,
-          paths: group.map((f) => f.path),
-        });
-        if (response.files.length !== group.length)
-          throw new Error("Incomplete source response.");
-        return response.files.map((value: any, i: number) => {
-          if (!value.file) {
-            repository.excluded.push({
-              path: group[i].path,
-              reason: value.failure.reason,
+    // One file per request lets the host distribute CPU work across instances.
+    // Start larger files first so they do not become a serial tail at the end.
+    const groups: { path: string }[][] = [...inventory.files]
+      .sort((a, b) => b.bytes - a.bytes)
+      .map((file) => [file]);
+    const results = await parallel(
+      groups,
+      EXTRACTION_CONCURRENCY,
+      async (group, _i, lane) => {
+        const began = performance.timeOrigin + performance.now();
+        try {
+          const response = await request({
+            operation: "files",
+            repository: inventory.name,
+            revision: inventory.revision,
+            paths: group.map((f) => f.path),
+          });
+          if (response.files.length !== group.length)
+            throw new Error("Incomplete source response.");
+          return response.files.map((value: any, i: number) => {
+            if (!value.file) {
+              repository.excluded.push({
+                path: group[i].path,
+                reason: value.failure.reason,
+              });
+              return null;
+            }
+            if (value.file.path !== group[i].path)
+              throw new Error("Source response identity mismatch.");
+            accept({
+              ...value,
+              extractor: response.extractor,
+              servedBy: response.servedBy,
             });
-            return null;
-          }
-          if (value.file.path !== group[i].path)
-            throw new Error("Source response identity mismatch.");
-          accept({
-            ...value,
-            extractor: response.extractor,
-            servedBy: response.servedBy,
+            return value.file;
           });
-          return value.file;
-        });
-      } catch (error) {
-        for (const file of group)
-          repository.excluded.push({
-            path: file.path,
-            reason:
-              error instanceof Error ? error.message : "Source unavailable.",
+        } catch (error) {
+          for (const file of group)
+            repository.excluded.push({
+              path: file.path,
+              reason:
+                error instanceof Error ? error.message : "Source unavailable.",
+            });
+          return [];
+        } finally {
+          completed += group.length;
+          spans.push({
+            label: group.map((f) => f.path).join(" + "),
+            lane,
+            start: began,
+            end: performance.timeOrigin + performance.now(),
           });
-        return [];
-      } finally {
-        completed += group.length;
-        spans.push({
-          label: group.map((f) => f.path).join(" + "),
-          lane,
-          start: began,
-          end: performance.timeOrigin + performance.now(),
-        });
-        progress("", {
-          phase: "Structure",
-          completed,
-          total: inventory.files.length,
-        });
-      }
-    });
+          progress("", {
+            phase: "Structure",
+            completed,
+            total: inventory.files.length,
+          });
+        }
+      },
+    );
 
     repository.files = results.flat().filter(Boolean);
   }

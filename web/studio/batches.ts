@@ -1,7 +1,8 @@
 // Transport bounds, shared by browser dispatch and the server's cache-miss batcher.
 export const BATCH_ITEMS = 16;
 export const BATCH_BYTES = 128 * 1024;
-export const EMBEDDING_CONCURRENCY = 4;
+export const EMBEDDING_CONCURRENCY = 8;
+export const EXTRACTION_CONCURRENCY = 8;
 export function batches<T>(items: T[], text: (item: T) => string): T[][] {
   const result: T[][] = [];
   let group: T[] = [],

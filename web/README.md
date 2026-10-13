@@ -106,8 +106,10 @@ peaked at 121 MiB per child; ordinary optimizing compilation exceeded 1 GiB.
 Receipts record each child's extraction CPU time and peak RSS, not the whole
 Function's memory. HTTP concurrency is measured separately from CPU processes.
 
-The browser sends up to four requests concurrently, each containing at most two
-file identities. A cache entry belongs to a file, never its HTTP batch. Cold
+The browser sends up to eight requests concurrently, one file each, largest first.
+Independent requests let the host distribute work, but do not guarantee separate
+CPUs: Vercel's Fluid Compute can serve several on one instance.
+A cache entry belongs to a file, never its HTTP batch. Cold
 requests fetch trusted source and execute Grit; warm requests can return earlier
 observations. There is no browser Grit download or persistent artifact database.
 
@@ -175,7 +177,8 @@ watchdog and 240-second request bound. These bound individual work, not the
 whole repository session.
 [Handler configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheHandlers).
 
-Qwen batches up to 16 inputs / 128 KiB, with up to four batches in flight. File
+Qwen batches up to 16 inputs / 128 KiB, with up to eight batches in flight.
+New misses fill available slots without waiting for a slow earlier batch. File
 cache entries remain independent of those batch boundaries. JEv uses OpenRouter's
 decision endpoint and verifies the resolved model version.
 
@@ -194,14 +197,20 @@ The second session also received observations produced by other server instances
 
 | Indexed population | Cold indexing | Fresh browser, warm server |
 | --- | ---: | ---: |
-| Mitt, 3 files | 6.72 s | 0.75 s |
-| Preact, 120 files | 252.02 s | 4.32 s |
+| Mitt, 3 files | 5.03 s | 0.88 s |
+| Preact, 120 files | 151.85 s | 4.14 s |
 
 These October 13 measurements include source transport and Flix admission,
-before graph rendering. Cold Preact remains slow on the current Function.
-The lower-memory compiler avoids crashes but costs startup time; shared results
-amortize that work across visitors. This is a small deployment check, not a
-general speedup claim. [Revisions, local comparison, CPU receipts and verification](../attune/notes/design.md#remote-cache-migration).
+before graph rendering. Preact is the default. Eight single-file requests with
+the largest files first reduced its cold wait from 252.02 to 151.85 seconds in
+this comparison. Six instances produced observations, versus four previously;
+HTTP requests rose from 61 to 121. The largest file alone took 147.99 seconds.
+More requests cannot divide that extraction. Shared results remove the need
+for later visitors to repeat it.
+
+These are single cold/warm pairs, not a timing distribution. The warm graph
+became visible in 8.53 seconds in headless Chromium, including rendering startup.
+[Revisions, CPU receipts, real model calls and verification](../attune/notes/design.md#request-fan-out).
 
 ## Verify and publish
 
@@ -218,6 +227,8 @@ pnpm run deploy    # prepare, check, build, verify, then publish to atlas-live
 measurement is `STUDIO_NETWORK_TEST=1 pnpm exec tsx --test test/network.test.ts`
 against a running site; add `STUDIO_LARGE_TEST=1` to include Preact. Two fresh
 browser contexts compare extraction receipt identities, not inferred cache hits.
+Paid checks additionally require `STUDIO_LIVE_INFERENCE=1`; Preact model calls
+require `STUDIO_LIVE_PREACT=1` and are bounded to the default question and its replay.
 It makes no inference calls unless
 `STUDIO_LIVE_INFERENCE=1` is also supplied (two questions per visitor, at most ten files).
 `STUDIO_TEST_URL` selects an

@@ -75,6 +75,12 @@ test(
             indexed.repository.files.length > 0 &&
               indexed.repository.files.length <= 120,
           );
+          if (repository === "preactjs/preact")
+            assert.equal(
+              indexed.repository.files.length,
+              120,
+              "No files lost to fan-out failures",
+            );
           assert.equal(
             indexed.extractionFailures.length,
             0,
@@ -98,22 +104,32 @@ test(
               (f: any) => f.observationId,
             ),
           };
-          if (live && repository === "developit/mitt") {
+          if (
+            live &&
+            (repository === "developit/mitt" ||
+              process.env.STUDIO_LIVE_PREACT === "1")
+          ) {
+            const preact = repository === "preactjs/preact";
             assert.ok(
-              indexed.repository.files.length <= 10,
+              indexed.repository.files.length <= (preact ? 120 : 10),
               "paid smoke-test bound",
             );
+            const question = preact
+              ? "Where are hooks defined?"
+              : "Where is mitt defined?";
             const first = await request("query", {
               live,
-              question: "Where is mitt defined?",
+              question,
             });
-            const second = await request("query", {
-              live,
-              question: "What imports mitt?",
-            });
+            const second = preact
+              ? undefined
+              : await request("query", {
+                  live,
+                  question: "What imports mitt?",
+                });
             const repeated = await request("query", {
               live,
-              question: "Where is mitt defined?",
+              question,
             });
             assert.ok(
               first.methods.every((m: any) => m.status === "complete"),
@@ -222,7 +238,13 @@ test(
               crossInstanceReceipts: runtime.executions.filter(
                 (e: any) => e.producer !== e.servedBy,
               ).length,
-              peakServerRss: Math.max(
+              producingInstances: new Set(
+                runtime.executions.map((e: any) => e.producer),
+              ).size,
+              servingInstances: new Set(
+                runtime.executions.map((e: any) => e.servedBy),
+              ).size,
+              peakChildRss: Math.max(
                 ...runtime.executions.map((e: any) => e.rssBytes),
               ),
             }),

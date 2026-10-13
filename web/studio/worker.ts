@@ -220,7 +220,7 @@ async function ask(
         try {
           progress(
             id,
-            `Embedding ${completed} / ${seen.size} inputs · up to four parallel batches…`,
+            `Embedding ${completed} / ${seen.size} inputs · up to ${EMBEDDING_CONCURRENCY} parallel batches…`,
           );
           const response = await fetch("/api/inference", {
             method: "POST",

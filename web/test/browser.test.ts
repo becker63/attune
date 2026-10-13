@@ -569,7 +569,9 @@ test(
         judgments = 0,
         vectors = 0,
         active = 0,
-        peak = 0;
+        peak = 0,
+        extracting = 0,
+        extractionPeak = 0;
       const manifest = await (
         await fetch(`${base}/runtime/manifest.json`, { headers })
       ).json();
@@ -594,7 +596,10 @@ test(
               treeCount: files.length,
             },
           });
-        return route.fulfill({
+        assert.equal(body.paths.length, 1, "One independent file per request");
+        extractionPeak = Math.max(extractionPeak, ++extracting);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await route.fulfill({
           json: {
             extractor: manifest.extractionIdentity,
             files: body.paths.map((requested: string) => {
@@ -612,6 +617,7 @@ test(
             }),
           },
         });
+        extracting--;
       });
       await page.route("**/api/inference", async (route) => {
         if (route.request().method() === "GET") {
@@ -670,8 +676,15 @@ test(
       await page
         .getByLabel("Public GitHub URL")
         .fill("https://github.com/attune/test");
+      await page
+        .getByLabel("Question or issue description")
+        .fill("Where is authenticate defined?");
       await page.getByRole("button", { name: "Index repository" }).click();
       await page.getByText("40 files indexed", { exact: false }).waitFor();
+      assert.ok(
+        extractionPeak > 4 && extractionPeak <= 8,
+        "Eight bounded extraction requests overlap",
+      );
       await page
         .getByRole("button", { name: "Compare answers", exact: true })
         .click();
@@ -679,7 +692,7 @@ test(
       assert.equal(embeddings, 3);
       assert.equal(vectors, 41);
       assert.ok(
-        peak > 1 && peak <= 4,
+        peak > 1 && peak <= 8,
         "browser runs bounded embedding batches concurrently",
       );
       assert.equal(judgments, 3);

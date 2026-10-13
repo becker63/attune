@@ -140,6 +140,12 @@ async function main() {
       verbatimSymlinks: true,
     });
     makeWritable(vercelOutput);
+    // Deployment-scoped compute selection; never mutate project/production settings.
+    const { fluid } = JSON.parse(
+      fs.readFileSync(path.join(SCRIPT_DIR, "../vercel.json"), "utf8"),
+    );
+    if (typeof fluid === "boolean")
+      fs.writeFileSync(path.join(temp, "vercel.json"), JSON.stringify({ fluid }));
 
     const project = await ensureProject({ token, teamId: TEAM_ID, name: PROJECT });
     fs.writeFileSync(

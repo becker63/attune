@@ -115,6 +115,8 @@ if (mode === "configure" || mode === "configure-preview") {
     for (const output of [logs.stdout, logs.stderr]) console.log((output ?? "").split(token).join("[redacted]"));
     process.exit(logs.status ?? 1);
   }
+  const deployment = await api(`/v13/deployments/${url.hostname}`);
+  console.log({ deployment: deployment.id });
   let settings = await api(`/v9/projects/${project}`);
   let bypass = Object.keys(settings.protectionBypass ?? {}).find(
     (k) => settings.protectionBypass[k].scope === "automation-bypass",
@@ -174,8 +176,10 @@ if (mode === "configure" || mode === "configure-preview") {
 } else if (mode === "metadata") {
   const data = await api(`/v9/projects/${project}/env`);
   console.log(data.envs.map(({ key, target }) => ({ key, target })));
-  const target = (await api(`/v9/projects/${project}`)).targets?.production;
+  const settings = await api(`/v9/projects/${project}`);
+  const target = settings.targets?.production;
   console.log({ productionDeployment: target?.id, url: target?.url });
+  console.log({ fluid: settings.resourceConfig?.fluid });
 } else
   throw new Error(
     "Use configure, configure-preview, deploy, preview, verify-preview, or metadata.",

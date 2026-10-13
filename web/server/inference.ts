@@ -2,7 +2,6 @@ import { Denied, limitedText } from "./http";
 import { publicFile } from "./source";
 import {
   batches,
-  parallel,
   BATCH_ITEMS,
   BATCH_BYTES,
   EMBEDDING_CONCURRENCY,
@@ -174,32 +173,29 @@ export function embeddingQueue(
   execute: (inputs: string[]) => Promise<Observation[]>,
 ) {
   let waiting: Waiting[] = [],
+    scheduled = false,
+    active = 0;
+  function flush() {
     scheduled = false;
-  async function flush() {
-    const jobs = waiting;
-    waiting = [];
-    try {
-      await parallel(
-        batches(jobs, (j) => j.input),
-        EMBEDDING_CONCURRENCY,
-        async (group) => {
-          try {
-            const answers = await execute(group.map((j) => j.input));
-            group.forEach((job, i) => job.resolve(answers[i]));
-          } catch (error) {
-            group.forEach((job) => job.reject(error));
-          }
-        },
-      );
-    } finally {
-      if (waiting.length) setTimeout(flush, 5);
-      else scheduled = false;
+    while (waiting.length && active < EMBEDDING_CONCURRENCY) {
+      const group = batches(waiting, (job) => job.input)[0];
+      waiting = waiting.slice(group.length);
+      active++;
+      void execute(group.map((job) => job.input))
+        .then((answers) => group.forEach((job, i) => job.resolve(answers[i])))
+        .catch((error) => group.forEach((job) => job.reject(error)))
+        .finally(() => {
+          active--;
+          // A free slot can accept new cache misses immediately. It must not
+          // wait for the slowest request in the previous wave.
+          flush();
+        });
     }
   }
   return (input: string): Promise<Observation> =>
     new Promise((resolve, reject) => {
       waiting.push({ input, resolve, reject });
-      if (!scheduled) {
+      if (!scheduled && active < EMBEDDING_CONCURRENCY) {
         scheduled = true;
         setTimeout(flush, 5);
       }

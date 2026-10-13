@@ -343,7 +343,7 @@ Changing a commit therefore creates new entries even for unchanged files.
 Deployments can also invalidate Next's function keys. This is an expiring web
 cache, not a permanent content-addressed artifact store.
 
-The browser sends four concurrent requests, two files per request. Separate
+This first migration sent four concurrent requests, two files per request. Separate
 Node processes provide real CPU parallelism, bounded by `min(4, available CPUs)`
 per Function instance. Each process initializes the pinned Grit runtime, runs
 three queries, then exits. Worker threads retained WASM compilation memory;
@@ -509,3 +509,72 @@ Local measurements and per-file LOC records are retained under
 `notes/repository-through-time/` and `x` remain untouched. No Git push or production
 deployment was performed. Frozen study files and the retained research site are
 unchanged.
+
+### Request fan-out
+
+The October 13 follow-up starts from `0a0c271`. It sends eight independent
+single-file requests and starts the largest files first. Cache identities,
+Grit programs, admission and the 120-file population are unchanged. Preact and
+"Where are hooks defined?" are now Studio's defaults.
+
+Qwen also allows eight concurrent batches of at most 16 inputs / 128 KiB.
+The server fills a free slot when another cache miss arrives; it no longer
+waits for every batch in the preceding group. A delayed-first-batch test
+verifies that independent later work can finish first.
+
+Same revisions and browser as the preceding measurement, on a new preview:
+
+| Measurement | Earlier preview | Eight requests, largest first |
+| --- | ---: | ---: |
+| Mitt cold / fresh-browser warm index | 6.72 / 0.75 s | 5.03 / 0.88 s |
+| Preact cold / fresh-browser warm index | 252.02 / 4.32 s | 151.85 / 4.14 s |
+| Preact producing instances | 4 | 6 |
+| Preact HTTP requests per index | 61 | 121 |
+| Preact decoded response bytes | 1,718,122 | 1,729,381 |
+| Preact summed original child CPU | 267.446 s | 218.643 s |
+| Preact largest child peak RSS | 126.1 MiB | 124.8 MiB |
+
+All 120 extraction IDs were reused by the independent second visitor; 96 were
+served by instances other than their original producer. These are single runs,
+not a controlled timing distribution. Scheduling, runtime load and response
+grouping all differ. The CPU receipts describe original executions, not work
+performed on the warm request. Neither network traffic nor billing fell by
+the wall-time ratio.
+
+`compat/test/browser/suspense.test.jsx` took 147.99 seconds, nearly the whole
+151.85-second index. File-level fan-out cannot split that critical path.
+Fluid Compute can place several requests on one Function; request count is
+not allocated CPU count. Disabling Fluid was tested but Vercel rejected the
+240-second Function on this Hobby project's 60-second non-Fluid limit. The
+deployment explicitly retains Fluid; no project plan or production setting changed.
+See [Vercel's execution model](https://vercel.com/docs/fluid-compute).
+
+An exact-output local probe of the same large file took 21.18 seconds with
+optimizing WASM compilation, but used 2.53 GiB of child RSS. Disabling inlining
+or optimization did not solve its memory requirement. The bounded-memory
+`--liftoff-only` runtime remains. No source files were excluded to improve times.
+
+Real Qwen and JEv completed all six methods for the default Preact question.
+Its first embedding request stage took 8.34 seconds over eight HTTP batches;
+the second visitor took 3.05 seconds. Same-session repetitions took 1.44 and
+1.20 seconds and reused all private JEv observations; Flix recomputed ranking.
+Public vector lookups still make HTTP requests and their cache hit status is
+unavailable. No matched earlier embedding timing or total provider bill is
+available, so this is not an embedding-speedup or zero-spend claim.
+Mitt's two-question checks also passed. A separate warm-server graph check
+took 5.96 seconds for Mitt and 8.53 seconds for Preact in headless Chromium;
+hover interaction passed. These include graph startup, unlike the index table.
+
+Preview: [Attune Studio](https://atlas-live-2vovj8dcc-becker63s-projects.vercel.app/studio),
+build `studio-2oLtRp3PMzNHRGAUE8Ew0-95dd3576ca2cfbbe`, deployment
+`dpl_43oJ5yfQrPYJk3PQecTLQTVrwtBx`. Existing preview login protection applies.
+Production remains unchanged. Type checking, nine unit tests, the three web
+Bazel targets above, real Next/cache tests, production build and UI checks pass.
+The live preview suite passed three tests with native parity skipped there;
+it passed separately in Bazel. The earlier library audit failure remains on
+preserved user files; this follow-up does not rerun or suppress it.
+Detailed receipts and probe logs are retained in `.git/parallel-startup-20261013/`.
+Across the changed source files, SCC counts one fewer runtime implementation
+line, nine additional deployment lines, one JSON configuration line and 76
+additional test lines. Comments and blank lines are excluded; Flix and Java
+are unchanged. No dependency or scheduling framework was added.
