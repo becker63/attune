@@ -1,6 +1,6 @@
-# Attune: measurements and lessons
+# Attune: latency, reusable work, and localization
 
-**Frozen-study summary · October 12, 2026.** This is a shorter reading of existing
+**Frozen-study summary · October 12, 2026; emphasis revised October 14.** This is a shorter reading of existing
 results, not a new experiment. Localization uses the generation-18 synthesis;
 ReviewBench uses generation 19 **plus the committed recall-denominator repair**.
 
@@ -19,9 +19,29 @@ summary and committed tables for current ReviewBench claims.**
 
 ## What the work asked
 
+**Low latency was a primary project goal.** The intended experience is quick
+repository navigation and feedback, including possible editor experiences. A
+useful answer should arrive while someone is working, without repeating a
+whole repository investigation for every question. Accuracy, provider spend,
+and latency are separate measures of whether that experience works.
+
+The central design is to **decompose the work and reuse its outputs**: obtain
+source vectors and structural relationships once, keep them for unchanged
+inputs, and do only the query-dependent work when a new question arrives.
+Qwen's retained requests were already seconds-scale; reuse removes repeated
+source embedding from subsequent queries. Prepared Jev judgments were
+subsecond at the median. The table below separates those stages from the much
+slower repository preparation and agent inspection.
+
+The author also reports building a rough browser prototype in about a day with
+Next.js and Vercel, without paying for CPU capacity. That practical experience
+motivates the editor direction. It is an implementation observation; end-to-end browser latency remains
+unmeasured in the frozen study.
+
 | Question | Finding | Scope |
 | --- | --- | --- |
-| Where does the time go? | Five kinds of work have very different durations and long tails. | 707 retained operations; different timing boundaries. |
+| Can localization respond quickly enough for interactive use? | Qwen requests had a 2.43 s median; prepared Jev judgments 0.37 s. Reusing source vectors avoids acquiring them again for every question. | 351 embedding requests and 88 judgments; full editor/browser latency was not measured. |
+| Where does the time go? | Repository preparation and agent inspection have much longer waits, with substantial tails. | 707 retained operations; different timing boundaries. |
 | Can exact work be reused and independent work scheduled? | Yes: saved file vectors, extraction artifacts, and evaluation outputs can be reused. | Specific retained inputs and historical offline evaluation; no live-agent speedup established. |
 | Does structure improve localization? | Mixed. Richer additive scoring hurt top-one accuracy; structural context helped hosted reranking on this cohort. | 85 eligible SWE-rebench-V2 JS/TS tasks; exploratory. |
 | Does a structural packet improve review efficiency? | Not demonstrated. All three packet calls were refused. | 10-task pilot, 24-task holdout; corrected quality reduction. |
@@ -32,13 +52,31 @@ summary and committed tables for current ReviewBench claims.**
 [View the interactive five-wait distributions](https://atlas-live-five.vercel.app/#overview)
 · [README figure](README.md#five-kinds-of-wait)
 
-| Timer | n | Median | Boundary |
-| --- | ---: | ---: | --- |
-| Qwen embeddings | 351 | 2.43 s | Synchronous SDK request, including provider/network waiting; local preparation and writes excluded. |
-| Source extraction | 90 | 93.77 s | Whole remote extraction process, not a separately timed Grit or Flix kernel. |
-| Theory preparation | 90 | 20.61 s | Whole remote Theory process, including preparation; external scheduling excluded. |
-| Jev judgment | 88 | 0.37 s | Request after shortlist/context preparation. |
-| Sol inspection | 88 | 28.94 s | Whole inspection turn, including tool interaction. |
+These measurements distinguish work that can be prepared and retained from work
+needed for a new question. **A cold repository build is not the latency of a
+query against an already prepared repository.**
+
+| Timed operation | n | Median | p90 | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen embedding request, up to 32 inputs | 351 | 2.427 s | 8.268 s | 77.513 s |
+| Source extraction process | 90 | 93.77 s | 658.328 s | 2,548.744 s |
+| Theory preparation process | 90 | 20.61 s | 57.400 s | 110.404 s |
+| Jev judgment on prepared candidates/context | 88 | 0.370 s | 0.506 s | 1.992 s |
+| Sol inspection turn | 88 | 28.942 s | 40.111 s | 52.453 s |
+
+p90 is the nearest-rank 90th percentile, computed from the retained observations
+in [wait-classes.json](web/site/wait-classes.json). The Qwen row measures a
+request, often a batch, rather than one file or a complete repository index.
+Its tail matters: seconds-scale median acquisition does not guarantee that
+every fresh query returns in that time.
+
+| Operation | What the timer includes | How it relates to an interactive query |
+| --- | --- | --- |
+| Qwen | Synchronous SDK request, including provider and network waiting; excludes local preparation and writes. | Reuse unchanged file vectors; a new query still needs its own vector. |
+| Source extraction | Whole remote extraction process, rather than a separately timed Grit or Flix kernel. | Retain file analysis; changes require acquisition and downstream world-dependent work. |
+| Theory preparation | Whole remote Theory process, including preparation; excludes external scheduling. | Reuse materialized relationships for the same world and recipe. |
+| Jev | Judgment request after shortlist/context preparation. | Optional query-dependent reranking; preparation is outside this timer. |
+| Sol | Whole inspection turn, including tool interaction. | A different answer protocol, with its own context-gathering work. |
 
 Boxes span the middle half; the line is the median and diamond the mean.
 Whiskers reach observations within 1.5 interquartile ranges; farther dots are
@@ -57,26 +95,71 @@ to 9.34 hours within a roughly 5.03-hour build span, with up to seven overlappin
 It was partly cached and interrupted, **not a successful cold full-corpus run**.
 [Retained intervals](https://atlas-live-five.vercel.app/physical-time.json).
 
+### How decomposition and reuse work
+
+An embedding is a numeric vector computed from text. Retrieval compares the
+question's vector with saved source vectors using cosine similarity: the dot
+product divided by the product of the vectors' lengths. It sorts files by that
+similarity. Comparing saved vectors does not call the embedding provider again.
+Structural processing follows extracted relationships; optional Jev reranking
+asks a model to judge a bounded candidate shortlist with its supplied context.
+
+The work divides into these steps:
+
+| Step | Input → output | When it runs |
+| --- | --- | --- |
+| Prepare source inputs | Source text + model + preparation recipe → exact embedding inputs. | On initial acquisition or when those inputs change. Identical prepared inputs can share a vector. |
+| Acquire source vectors | Batches of prepared inputs → stored Qwen vectors. | For missing inputs; retain vectors for reuse across questions and compatible snapshots. |
+| Prepare structure | Source → declarations/imports/calls → bounded relationship rows. | Separately from embeddings; retain reusable outputs, then resolve world-dependent relationships. |
+| Embed a question | Prepared question text → query vector. | For a new question; this does not require re-embedding unchanged source files. |
+| Retrieve and add context | Query vector + saved vectors → ranked paths; structural rows → supporting context. | For the question. Similarity calculation and structural joins reuse prepared inputs. |
+| Optionally rerank | Shortlist + question + context → Jev judgments → reordered candidates. | For a new judgment input; identical retained judgments can be replayed. |
+
+For example, a second question about the same repository needs a question vector
+and new ranking work, while the repository's saved vectors remain usable. An
+edited file needs a vector for its new prepared text. Changing the model or
+embedding recipe invalidates matching vector reuse. Structural updates can also
+require reference resolution and query reevaluation beyond the edited file.
+
+This is the latency mechanism: **move reusable repository work out of the wait
+for each new question**. Batching reduces acquisition requests, reuse eliminates
+unchanged acquisition, and independent scheduling overlaps work that remains.
+These are different sources of savings.
+
 ### What reuse actually saved
 
-- **Embeddings:** 27,733 logical rows shared 10,555 distinct inputs; acquisition
-  used 351 hosted requests. Reuse depends on exact text, model, and recipe.
-  Warm replay made no new provider calls; local replay time and warm receipt
-  cost were unavailable.
-- **Extraction:** a historical Attune checkpoint reused 158 of 163 file
-  acquisitions, reading five afresh. That does not remove the need to resolve
-  references and re-evaluate questions in the changed repository world.
-- **Historical AttuneFlix scheduling:** 61 completed JS/TS SWE-Explore cases
-  preserved predictions/evaluation outputs, with numeric tolerance 1e-10.
-  4,301.12 seconds of sequential shard work became 51.70 seconds of cold remote
-  wall time (83.2× relative to that summed baseline); an unchanged warm graph
-  took 0.153 seconds. JEV acquisition reported $0.581381; embedding cost was
-  unavailable. Exact replay made no new provider calls.
-  [Sealed historical report and usage](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
+| Retained experiment | Work acquired or recomputed | Reused result | Measured consequence |
+| --- | --- | --- | --- |
+| Localization embeddings | 27,733 logical rows mapped to 10,555 distinct inputs, acquired in 351 hosted requests. | Exact prepared text, model, and recipe identify reusable vectors. | Unchanged warm replay made **zero new provider calls**; warm local wall time and receipt cost were unavailable. |
+| Historical Attune file checkpoint | Five of 163 file acquisitions read afresh. | 158 acquisitions reused (**96.9%**). | Less source acquisition; reference resolution and changed-world questions still need reevaluation. No end-to-end latency is supplied for this checkpoint. |
+| Historical AttuneFlix offline evaluation | 61 completed JS/TS SWE-Explore cases; 4,301.12 s of summed sequential shard work. | Saved inputs and unchanged graph outputs; predictions/evaluation preserved to numeric tolerance 1e-10. | **51.70 s cold remote wall**, 83.2× relative to summed sequential work; **0.153 s unchanged warm graph wall**. |
 
-Attune memoization, Bazel action reuse, and BuildBuddy remote execution are
-separate mechanisms. The historical evaluation result does not measure a live
-coding agent or the current implementation's latency.
+The 153 ms warm graph result demonstrates the value of exact reuse in that
+historical offline evaluation. It does not time a new question, a changed graph,
+or the current browser implementation. That run reported $0.581381 in JEV
+acquisition; embedding cost was unavailable.
+[Sealed historical report and usage](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
+
+Attune memoization reuses identified values; Bazel reuses action outputs when
+its declared inputs match; BuildBuddy can execute independent missing actions
+remotely. Their benefits depend on the decomposition and the cache state.
+
+### What this means for an editor experience
+
+The intended interaction is to show retrieved paths from saved vectors, then
+add structural context and optionally refine the ordering with Jev. The current
+[embedding transport](web/server/inference.ts) batches provider requests, the
+[public-file cache](web/server/embeddings.ts) retains source observations, and
+the browser's compiled Flix library performs ranking. Hosted Qwen inference and
+browser ranking are separate operations.
+
+The important remaining measurement is **new-question-to-visible-results
+latency on a prepared repository**, followed by optional reranking latency and
+latency after a source edit. That includes query embedding, cache access,
+transfer, ranking, context preparation, and rendering. The recorded stage
+medians cannot simply be added to produce it. The existing evidence makes
+interactive use a concrete design direction; a full editor latency claim still
+needs that measurement.
 
 ## 2. Localization: finding the files a fix touches
 
@@ -202,11 +285,17 @@ Qwen's cold embedding acquisition reported $0.1409903. Pricing the retained
 estimate: **33.0×** the Qwen charge. Adding QS's Jev judgments brings known
 model spend to $0.164905688, or **28.2× below** the same estimate.
 
-Qwen / QS / inspected Sol recovered at least one required file within ten in
-73 / 78 / 65 of the **85 eligible tasks**. Complete recovery was 38 / 47 / 41;
-top-one hits were 35 / 52 / 60. Qwen alone therefore had better partial
-recovery, but weaker top-one and complete recovery than inspected Sol.
-Different answer protocols prevent a quality-matched interpretation.
+| Method | Top-one hits / 85 | Any required file @10 / 85 | All required files @10 / 85 | Model spend for retained acquisition | Timed stage median |
+| --- | ---: | ---: | ---: | --- | --- |
+| Qwen retrieval | 35 | 73 | 38 | $0.1409903 reported | 2.427 s per embedding request; source and query acquisition, up to 32 inputs. |
+| QS: Qwen + structure + Jev | 52 | 78 | 47 | $0.164905688 reported, including Qwen acquisition | 0.370 s for prepared Jev judgment; excludes embedding and context preparation. |
+| Inspected Sol | 60 | 65 | 41 | $4.6544292 API-equivalent estimate; actual subscription billing unknown | 28.942 s per inspection turn, including tool interaction. |
+
+Quality counts use **85 eligible tasks**; cost and inspection timing cover the
+retained acquisitions/88 turns, including three ineligible tasks. Qwen alone
+had better partial recovery, but weaker top-one and complete recovery than
+inspected Sol. Different answer protocols prevent a quality-matched
+interpretation, and the timed stages do not describe equivalent work.
 
 Cold acquisition made 351 embedding requests; unchanged warm replay made none.
 Warm local wall time was not measured. Source-analysis, build, and local compute
