@@ -1,0 +1,20 @@
+---
+title: "Agent and decision boundaries"
+description: "Keep permissions caller-owned and replay exact model inputs."
+---
+
+The small Flix agent receives a model reply, validates tool requests, supplies permitted evidence, and continues within a finite budget. The provider SDK handles transport; Flix owns the loop.
+
+The only source tool is `read_evidence`, with world, path, first line, and last line. The caller supplies grants. A model cannot grant itself access.
+
+A read requires one matching grant, an allowed relative path and range, the right permission, and the source SHA-256. Duplicate JSON keys, additional fields, ambiguous grants, and repeated tool-call IDs fail. The agent exposes no shell or arbitrary filesystem tool.
+
+Conversation replay requires an exact model/request match. SDK exceptions become classified failures; live timeouts and retries are caller-configured. Tests use fakes.
+
+`Decisions.Choice` is a separate effect for bounded choices. Requests have explicit identities; decoded choices and distributions must fit the legal action set. Saved choices do not fall through to a provider. Bounded search uses revealed feedback rather than evaluator labels as implicit policy inputs.
+
+Agent fixtures demonstrate these contracts. They do not establish measured multi-agent coordination or successful issue resolution. See [coordination](/experiments/coordination) for the historical evidence boundary.
+
+## Sources
+
+[Agent.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Agent.flix) · [Decisions.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Decisions.flix) · [AgentTest.flix](https://github.com/becker63/attune/blob/d71e033/attune/test/agent/AgentTest.flix)

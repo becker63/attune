@@ -1,0 +1,30 @@
+---
+title: "Repository map"
+description: "Find the implementation, website, experiments, and frozen evidence."
+---
+
+| Location | Responsibility |
+| --- | --- |
+| `attune/src/Attune.flix` | Nominal entities, relations, transitions, and exact memoization. |
+| `attune/src/Attune/` | Effects, repository admission, Theory, agents, ranking, metrics, policy, and Studio. |
+| `attune/src/grit/` | Pinned extraction programs. |
+| `attune/platform/` | Native memory and process boundaries, browser compilation, build rules, editor assets. |
+| `attune/example/` | Seven-action saved-answer walkthrough. |
+| `attune/test/` | Semantic laws, failure cases, extraction fixtures, and isolation checks. |
+| `attune/experiments/native_patterns/` | Native pattern campaign, specialization, agreement, and bounded-search work. |
+| `attune/notes/` | Design history and repository-through-time evidence. |
+| `web/` | Studio and retained research website, built by the root graph. |
+| `evidence/` | Frozen localization and ReviewBench tables with hashes. |
+| `docs/` | This Mintlify documentation. |
+
+The sibling `attuneflix/` checkout is a separate reference. Its historical results have their own implementation and protocol. Do not treat it as current Attune source or as a build input.
+
+## Read the core in order
+
+Start with `Effects.flix`, then `Attune.flix`, `Repository.flix`, `Theory.flix`, and `Agent.flix`. The [module reference](/reference/modules) gives a source-linked index. [Architecture](/architecture/overview) explains why each boundary exists.
+
+Historical campaign frameworks were removed from the small library and preserved in Git history. New native-pattern experiments are separate research packages; their presence does not mean the former framework is the current runtime.
+
+## Sources
+
+[README.md](https://github.com/becker63/attune/blob/d71e033/README.md) · [AGENTS.md](https://github.com/becker63/attune/blob/d71e033/attune/AGENTS.md) · [design.md](https://github.com/becker63/attune/blob/d71e033/attune/notes/design.md)

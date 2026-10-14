@@ -1,0 +1,28 @@
+---
+title: "Five kinds of wait"
+description: "707 retained operations reveal different costs and timing boundaries."
+---
+
+| Timer | Observations | Median | Included work |
+| --- | ---: | ---: | --- |
+| Qwen embeddings | 351 | 2.43 s | Synchronous SDK request. |
+| Source extraction | 90 | 93.77 s | Whole remote extraction process. |
+| Theory preparation | 90 | 20.61 s | Whole remote preparation process. |
+| Jev judgment | 88 | 0.37 s | Request after shortlist preparation. |
+| Sol inspection | 88 | 28.94 s | Whole inspection turn, including tool interaction. |
+
+![Five retained wait distributions, on a logarithmic scale](https://atlas-live-five.vercel.app/five-waits.svg)
+
+Extraction averaged 344.58 seconds and reached 2,548.744 seconds, or 42.5 minutes. The long tail motivates reusing exact acquisition and scheduling independent work.
+
+These are separate runs, not a simultaneous timeline. Dividing Jev's prepared-request median into Sol's whole-turn median does not measure an end-to-end speedup. Their 88-task timing populations include three tasks outside the accuracy cohort.
+
+A separate partly cached, interrupted build had 180 process intervals totaling 9.34 hours in a roughly 5.03-hour span, with up to seven overlapping. It was not a successful cold full-corpus run.
+
+Embedding acquisition had 27,733 logical rows but 10,555 distinct prepared inputs, acquired with 351 requests. Unchanged warm replay made no new provider calls; warm local wall time was unavailable.
+
+[Exact observations and timer boundaries](https://atlas-live-five.vercel.app/wait-classes.json) · [Retained process intervals](https://atlas-live-five.vercel.app/physical-time.json).
+
+## Sources
+
+[LOCALIZATION_REPORT.md](https://github.com/becker63/attune/blob/d71e033/LOCALIZATION_REPORT.md)

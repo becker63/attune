@@ -1,0 +1,27 @@
+---
+title: "Metrics and populations"
+description: "Interpret retrieval scores without changing denominators."
+---
+
+| Metric | Meaning |
+| --- | --- |
+| Hit@k | At least one eligible required file is in the first k. |
+| Recall@k | Fraction of a task's eligible required files recovered; averaged under the declared population. |
+| FileAcc@k | Every eligible required file is recovered within k. |
+| MRR@10 | Reciprocal rank of the first required file within ten, or zero for a miss. |
+| Task-micro | Each eligible task contributes under the declared reducer. |
+| Repository-macro | Repository-group summaries receive equal group weight. |
+
+`Study` preserves exact rational arithmetic with BigInt intermediates. Metrics are rendered after reduction. Undefined tasks remain distinguishable from eligible misses. Strict metric extensions include additional FileAcc cutoffs.
+
+A reduced metric fraction is not necessarily a task count. The frozen `2/17` for 11.8% represents ten hits over 85 tasks. Read the population fields alongside numerator and denominator.
+
+Adding more candidates changes the answer budget. Compare top-ten rankings, 32-file pools, and unions against appropriate budget controls. Counts of recovered/displaced files do not determine repository-macro scores when task denominators differ.
+
+Failure handling is part of a procedure. Strict structural failure-as-miss and explicit Qwen fallback have different predictions; later fallback results must not overwrite the earlier strict account.
+
+The [localization chapter](/experiments/localization) uses task-micro percentages. Native-pattern and specialization chapters identify repository-macro results. Do not compare their rounded headlines as if the protocols were identical.
+
+## Sources
+
+[Study.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Study.flix) · [README.md](https://github.com/becker63/attune/blob/d71e033/evidence/README.md)

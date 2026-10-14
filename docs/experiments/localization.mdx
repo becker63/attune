@@ -1,0 +1,36 @@
+---
+title: "Localization: finding the files"
+description: "Structure helped some uses and harmed others on the same retained cohort."
+---
+
+The original panel had 96 tasks in 24 repository groups. Runtime-limited exclusions left 88 tasks in 22 groups; 85 had eligible gold, containing 218 files. Eligible splits were development 50, calibration 20, and final 15. The small final split limits generalization.
+
+Gold contains existing modified/deleted JS/TS paths, excluding new files and tests. Prediction never reads it. Ranking arms share a frozen 29,493-candidate universe.
+
+| Condition | Hit@1 | Hit@10 | Recall@10 | All files @10 |
+| --- | ---: | ---: | ---: | ---: |
+| Lexical/path prior | 11.8% | 35.3% | 23.4% | 16.5% |
+| Prior + anchors | 18.8% | 41.2% | 27.1% | 20.0% |
+| + admitted facts | 16.5% | 41.2% | 28.0% | 21.2% |
+| + bounded Theory | 12.9% | 41.2% | 27.2% | 21.2% |
+| Hosted Qwen retrieval | 41.2% | 85.9% | 64.0% | 44.7% |
+| Qwen + Jev | 57.6% | 90.6% | 72.0% | 52.9% |
+| Qwen + structure + Jev | 61.2% | 91.8% | 73.3% | 55.3% |
+
+All rows are task-micro on 85 eligible tasks. Deterministic arms are cumulative. Hit finds any required file; Recall averages recovered fractions; complete-file accuracy requires every required file.
+
+## What changed the direction
+
+Anchors helped the lexical prior. More additive structure reduced top-one accuracy. Equal top-ten aggregates concealed gains and losses. Hosted judgment used structure differently, as context for decisions over retrieved candidates, and improved these cohort results.
+
+The inspected Sol arm had 60/85 top-one hits but used a different answer protocol; its 20 read-floor failures stayed misses. It is not a ranking comparison under identical procedures.
+
+## Costs and repeated judgments
+
+Qwen acquisition reported $0.1409903; structural Jev judgment $0.023915388. Together they were about 28.2× below a $4.6544292 API-equivalent estimate for recorded Sol inspection. Sol actually ran on a subscription; its plan bill is unknown. Compute is excluded and quality was not matched.
+
+Five observations of the lexical judgments had modest top-ten effects and did not establish free improvement from larger answers. The report retains unions and equal-size controls. [Cost receipts](https://atlas-live-five.vercel.app/costs.json).
+
+## Sources
+
+[LOCALIZATION_REPORT.md](https://github.com/becker63/attune/blob/d71e033/LOCALIZATION_REPORT.md) · [metrics.tsv](https://github.com/becker63/attune/blob/d71e033/evidence/localization/metrics.tsv) · [tasks.tsv](https://github.com/becker63/attune/blob/d71e033/evidence/localization/tasks.tsv)

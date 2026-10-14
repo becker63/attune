@@ -1,0 +1,27 @@
+---
+title: "Routes, Datalog, and witnesses"
+description: "Follow relationships sequentially or ask which facts hold together."
+---
+
+Routes follow one directed relation after another. Datalog joins several observations that must hold simultaneously. Both operate on admitted, world-scoped facts.
+
+The shared-import rule asks which different files depend on the same file:
+
+```flix
+Shared(first, second, dependency) :-
+    Imports(first, dependency),
+    Imports(second, dependency),
+    if (first != second).
+```
+
+Flix supplies the facts with `inject` and obtains answers with `query`. The compiler checks types and rule safety. Rules are native values; there is no descriptor interpreter in the small library.
+
+`Theory.follow` executes a route. `describe` bounds a panel to at most 64 routes, each no longer than eight steps. This does not reproduce the archived Atlas signature protocol, which enumerates a different family.
+
+`Patterns` expands the native join vocabulary for experiments. Witnesses retain the anchor, candidate, and typed participating files or symbols. Duplicate proof paths must not multiply support votes. Python generation assembles Flix syntax; Flix executes the joins.
+
+Native Datalog is currently JVM-only. Browser/JVM parity applies to the tested supported operations and does not imply browser support for all Flix features.
+
+## Sources
+
+[Theory.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Theory.flix) · [Patterns.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Patterns.flix) · [PATTERNS.md](https://github.com/becker63/attune/blob/d71e033/attune/experiments/native_patterns/PATTERNS.md)

@@ -1,0 +1,82 @@
+# Import/call-agreement recovery — executed evidence
+
+React's 62.5% → 100% result reproduces. The two missed helpers were accessible from Qwen anchors through same-anchor imports and owned-call relationships. Expansion was essential for #3249 (rank 208); reranking was sufficient for #3335 (rank 22). Both gains survive a separate conservative source-binding qualification. The conjunction was useful filtering, but its ingredients are not statistically independent.
+
+The broad follow-up does **not** justify replacing the strongest universal default with a large new policy bank. Fixed Studio with Qwen fallback scores 70.0004% repository-macro Recall@10; a separately versioned exact-path admission repair raises it to 71.1368%. The new 72-arm primary shrinkage selector scores 67.1325%. A matched five-choice selector using repaired facts scores 72.1295%, versus 68.5311% with original facts. These are cross-fitted results on already exposed data, with small repository samples, not pristine replication.
+
+## Population and contracts
+
+85 eligible issues, 22 repository groups, 81 distinct source worlds. Structural execution completed for 47 issues in 14 groups; 38 fallbacks comprise 36 parser/admission failures and two pruned extraction timeouts. Eight groups are wholly structurally unmeasured. The inherited 96-entry ledger and original strict-execution account remain unchanged and hash-verified. This experiment uses an explicit versioned Qwen fallback, retains attempted failures, and separately reports the common-completed 47/14 account in `tables/common-completed-performance.json`.
+
+Dataset: `nebius/SWE-rebench-V2`, revision `10483de0f50fe5da545942705a76c6150171af7f`, train parquet SHA-256 `0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad`; previously exposed localization panel of 2026-10-06. Fixing paths are a retrieval oracle. They do not establish runtime behavior or agent success. Original source snapshots, candidate universes, issue text, labels and Qwen acquisition identities were retained. No new provider calls.
+
+## Frozen intervention outcomes
+
+80 initial arms, including 38 exact inherited configurations, across 12 structural templates; one additional soundness-qualified binding version is a separate descriptive arm. No new learned gate or outcome-selected thresholds. All final answers retain ten files and pools 32.
+
+| Arm | Full-cohort macro Recall@10 | Non-React delta against Qwen | Required occurrences recovered / displaced at ten |
+|---|---:|---:|---:|
+| Qwen | 63.8909% | 0.0000 pp | 0 / 0 |
+| StudioCurrent | 70.0004% | 6.4004 pp | 17 / 1 |
+| Import.5.normalized.expansion | 64.2704% | -0.7929 pp | 9 / 13 |
+| Call.5.normalized.expansion | 52.1130% | -11.1482 pp | 12 / 24 |
+| Union.5.normalized.expansion | 54.0902% | -9.0769 pp | 12 / 25 |
+| Agreement.5.normalized.expansion | 67.3000% | 1.7857 pp | 7 / 3 |
+| Import.5.normalized.fixed | 66.9122% | 1.9747 pp | 6 / 0 |
+| Agreement.10.normalized.expansion | 64.8379% | -0.7937 pp | 7 / 7 |
+| Agreement.5.normalized.promotion | 64.8379% | 0.3968 pp | 3 / 1 |
+| TwoTargetsSameCaller.5.normalized.expansion | 66.5424% | 2.1825 pp | 5 / 0 |
+| TwoTargetsSameFile.5.normalized.expansion | 66.5424% | 2.1825 pp | 6 / 1 |
+| exact-path-v1.StudioCurrent | 71.1368% | 7.5909 pp | 18 / 1 |
+| exact-js-ts-v2.StudioCurrent | 71.1368% | 7.5909 pp | 18 / 1 |
+
+The strict source-qualified agreement arm scores 65.5954%: two React recoveries, no gains or harms outside React. This is a coverage-limited certificate, not proof that other dependencies are absent or false. Namespace imports, parameter forwarding, receiver/prototype flow, destructured requires, and unresolved shadowing remain unknown.
+
+Agreement removes many call-only distractors: matched call-only and union arms perform substantially worse. More anchors expose additional relations but also damage ranking. The caller-specific arm recovers five required occurrences without displacement in its descriptive aggregate; its non-React delta is +2.1825 pp. Source inspection validates concrete Greenwood and Firebase #2214 relationships but identifies unsupported nominal joins in Community Server #1170 and part of Firebase #2321. Its React proof also includes a false nominal call. This score cannot be interpreted as five equally trustworthy mechanism confirmations.
+
+## Selection outcomes
+
+| Cross-fitted procedure | Full-cohort macro Recall@10 | Non-React delta against Qwen | Gaining / harmed issues |
+|---|---:|---:|---:|
+| primary-shrinkage | 67.1325% | 2.8007 pp | 7 / 1 |
+| primary-local | 66.2802% | 2.5031 pp | 5 / 0 |
+| primary-pooled | 66.9431% | 3.1975 pp | 7 / 1 |
+| primary-imports | 64.3231% | 0.4528 pp | 4 / 1 |
+| no-react-pooled | 70.0004% | 6.4004 pp | 12 / 0 |
+| no-react-shrinkage | 69.0264% | 5.3800 pp | 9 / 0 |
+| repair-control-shrinkage | 68.5311% | 3.0754 pp | 8 / 1 |
+| exact-path-v1-shrinkage | 72.1295% | 6.8452 pp | 12 / 0 |
+| exact-path-v1-pooled | 71.1368% | 7.5909 pp | 13 / 0 |
+| exact-js-ts-v2-shrinkage | 72.1295% | 6.8452 pp | 12 / 0 |
+
+The inherited React selector is not purely local learning: three local calibration issues receive weight 3/5 and other-repository calibration receives 2/5. For #3249, agreement's pooled Recall effect is +73/3024, versus −155/4536 for the local chain winner. Local Recall ties span 104 choices; MRR and simplicity resolve them. For #3335, agreement has a positive pooled effect while the local triangle has a negative one. The normalized/votes choice is itself tied on Recall and MRR there and resolved by declared simplicity/identity. Exact fractions, calibration IDs, tie sets, and choices are in `tables/inherited-react-selector.json`.
+
+Local #3249 **does** recover ast.js to rank 6, but pushes the other required rule to rank 12: no net Recall gain. Local #3335 keeps the helper at rank 24. The dramatic shrinkage result combines reachable evidence, candidate expansion/ranking and policy choice. Reproducing it is not independent corroboration.
+
+Excluding React from calibration changes the pooled selection to Studio and improves pooled performance from 66.9431% to 70.0004%. React's striking response can mislead a universal recipe. The narrow repair comparison holds its five-candidate catalogue fixed; comparing repaired five-choice selection to the larger primary bank would confound admission and catalogue size.
+
+## Opportunity and bottlenecks
+
+The ledger covers all 218 required-file occurrences. 38 issues have zero Qwen Recall@10 headroom. 0 required occurrences are absent from the eligible candidate universe. Failures affect 93 required occurrences; available graphs leave 37 occurrences without any tested primary witness. Flags overlap and explicitly retain uncertainty. Required counts above ten remain visible (including tasks with 11 and 13 files), with ceiling min(10, eligible required candidates)/gold count.
+
+On the new held-out primary procedure: 7 issues improve, 12 have a useful tested intervention the calibration choice does not identify, 38 fall back after unavailable structural execution, and 28 have no improving tested intervention. This is a diagnostic partition, not a training feature. Full arm/pool/rank support, additions and displacements are in the ledger and sealed native payloads.
+
+Got is a ceiling case; all-fallback groups are structurally unmeasured. Pino's nominal witness discrepancy remains unresolved. Spectral and Renovate respond more strongly to the existing Studio route than to this agreement family. Firebase contains both genuine consumer/helper recovery and nominal-symbol ambiguity; Greenwood shows useful same-caller filtering that avoids agreement's displacement of existing gold. See `CASES.md` and `FAILURE-LEDGER.md`.
+
+## Execution, preservation and cost
+
+Actual native execution completed for all frozen predictions, evaluations, 20 training shards, 85 held-out applications and 85 held evaluations. The initial cohort took 195.806 seconds through authorized 80-core RBE. Fits took 16.575 seconds; warm reconstruction took 0.290 seconds with 2,748 action-cache hits and no scientific execution. Representative independent predictions, profiles and applications reproduce exact bytes. 3,230 inherited complete-ranking checks, 88 original-admission byte comparisons, 6,800 independent signed metric/net checks, 144 finite typed witness checks, and 1,340 training-profile checks pass.
+
+Selected-only queries consumed actual results inside the timed boundary. In three representative worlds, fresh JVM samples have median join-and-consume times of 151.1 ms for agreement and 223.0 ms for caller-specific matching; support/ranking/serialization medians are approximately 33 ms. These include first-query/JIT effects, have no steady-state warm-up claim, and exclude extraction/admission. Flix compilation and JVM/action startup (often around ten seconds) dominate these action samples. Cache hits are replay, not new computation timings. Existing vectors/source inventories were referenced, not copied wholesale.
+
+Calibration, split, rule and evaluator-label mutations test distinct dependency boundaries. A label change reuses the identical prediction action. Rule mutation changes rankings without source or inference acquisition. Calibration changes native profiles and downstream selections; split changes profile identity. See `PARITY-CACHE.md`, action receipts, and exact reproduction commands.
+
+The default admission behavior remains byte-identical. Two opt-in general repairs address exact-path mirror ambiguity and written .js→.ts/.tsx resolution; parser failures remain unchanged. A conservative binding-qualification bug at a block-comment boundary was repaired with a positive fixture. Earlier failed outputs and compiler/wiring errors are preserved, not overwritten as successes. Six affected tests pass; the known workspace audit fails with 4,004 preserved research findings. An optional Ruby extractor/toolchain probe was canceled after several minutes and is ResourceLimited; it is not counted as a passed JS mechanism regression.
+
+## Answer and limitations
+
+The simplest supported default is the existing deterministic Studio route with explicit Qwen fallback; exact-path admission is a promising separately versioned improvement. Agreement is useful as a targeted retrieval treatment, especially for distant helpers reached from relevant anchors. The bounded caller-specific filter supplies a concrete non-React net-recovery example in Greenwood, but nominal call identity still limits attribution elsewhere. More templates or anchors are not automatically better, and the expanded selector did not beat Studio.
+
+Additional evidence that could change this conclusion: exact binding for namespace/receiver/parameter flows; more independently acquired issues for these same repositories; and untouched replication with the procedure frozen. No unused fully acquired eligible clean replication panel exists in the retained inventory. There is no verified label-availability chronology for a temporal account. Repository omission ranges, full metric families, harm distributions, oracle diagnostics, and matched admission accounts are published as machine-readable reductions. The hindsight repository/task oracles (73.1444% / 74.3515%) are descriptive headroom only. No significance or whole-agent speedup claim is made.
+
+Artifact seal: 1,053 native scientific payloads are retained as deterministic gzip (mtime zero), approximately 64.6 MB compressed, with separate raw/gzip SHA-256 identities. Final producing source and all input hashes are frozen; no source/vector inventory was copied wholesale. Complete task/config response rows and all metric families with explicit issue/repository denominators are in `tables/task-configuration-response.jsonl` and `tables/quality-summary.json`. Handwritten experiment logic includes matching, binding, ranking, reference checks, assembly and reporting; generated BUILD and scratch mutation bytes are separately counted in `producing-source-final.json`.

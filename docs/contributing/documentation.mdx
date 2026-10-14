@@ -1,0 +1,34 @@
+---
+title: "Maintain these docs"
+description: "Keep the project story tied to exact implementation and evidence."
+---
+
+Documentation lives under `/docs` in `becker63/attune`. `docs.json` names the site Attune and defines its navigation. Mintlify can deploy this directory from the repository's `main` branch.
+
+## Local checks
+
+Use the pinned CLI version recorded in `package.json`:
+
+```sh
+cd docs
+npm install
+npm run validate
+npm run links
+npm run dev
+```
+
+Validation checks MDX and site configuration. Link checks catch local route errors. Neither establishes the correctness of a scientific claim; verify that claim against its report and exact metric rows.
+
+## MCP editing
+
+The admin MCP at `https://mcp.mintlify.com` uses Mintlify OAuth and can edit content, navigation, and project settings. Project settings apply immediately. Content publication follows the project's editing branch and save behavior.
+
+Use Git as the maintained source after repository connection. Avoid simultaneous edits to the same page from Git and the dashboard. Preserve the old project's content in its original repository when changing the Git source.
+
+## Evidence rules
+
+Each chapter must state its question, population, procedure, result, limitation, and source. Keep task-micro and repository-macro metrics explicit. Do not replace strict failures with a fallback result without naming the new procedure. Preserve corrections as corrections, rather than rewriting the historical record.
+
+Copied reports have hashes in `assets/reports/manifest.json`. They preserve the original text; original links to external campaign artifacts may need those directories. Do not claim these summaries bundle a full replay corpus.
+
+[Mintlify monorepo setup](https://www.mintlify.com/docs/deploy/monorepo) · [Admin MCP](https://www.mintlify.com/docs/ai/mintlify-mcp).

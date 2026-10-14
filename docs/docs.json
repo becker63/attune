@@ -1,0 +1,81 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "Attune",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#DBEAFE",
+    "dark": "#1E3A8A"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/becker63/attune"
+    }
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Start here",
+        "pages": [
+          "index",
+          "get-started/quickstart",
+          "get-started/repository-map"
+        ]
+      },
+      {
+        "group": "Concepts",
+        "pages": [
+          "concepts/worlds",
+          "concepts/effects",
+          "concepts/reuse",
+          "concepts/coverage",
+          "concepts/theory"
+        ]
+      },
+      {
+        "group": "Architecture",
+        "pages": [
+          "architecture/overview",
+          "architecture/extraction",
+          "architecture/build",
+          "architecture/agents",
+          "architecture/studio",
+          "architecture/evolution"
+        ]
+      },
+      {
+        "group": "Experiments",
+        "pages": [
+          "experiments/story",
+          "experiments/waits",
+          "experiments/scheduling",
+          "experiments/localization",
+          "experiments/reviewbench",
+          "experiments/coordination",
+          "experiments/repository-history",
+          "experiments/native-patterns",
+          "experiments/specialization",
+          "experiments/agreement",
+          "experiments/cold-extraction",
+          "experiments/evidence"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/modules",
+          "reference/metrics",
+          "reference/research"
+        ]
+      },
+      {
+        "group": "Contributing",
+        "pages": [
+          "contributing/development",
+          "contributing/documentation"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+---
+title: "Declared scientific actions"
+description: "An effect becomes schedulable only through explicit artifact boundaries."
+---
+
+Bazel sees declared files, tools, and dependencies. It cannot discover and schedule a new action merely because a Flix program performs an effect.
+
+The example has seven actions: three requests, three answers, and a final ranking. Answer branches are independent. Flix itself processes the ranking requests sequentially; Bazel may schedule the declared branches independently.
+
+`flix_action` declares source closure, SDK jars, pinned compiler/JDK, named inputs, isolation tools, and one output. `Artifacts` resolves declared inputs and outputs. Changing an input affects its dependent action graph rather than requiring a bespoke campaign scheduler.
+
+A dynamically discovered tool call requires a later round: collect requests, declare the next stage, and invoke the build again. There is no automatic multi-round agent scheduler in the small example.
+
+## Execution boundaries
+
+Local actions use a pinned user/network namespace and a cleared environment. Remote actions use the declared container with networking disabled. BuildBuddy is opt-in through `--config=remote`, with local fallback disabled for those checks. Host isolation tests remain local.
+
+Dependencies must be available before isolated action execution. Use one owner for the shared Bazel output base. Do not clear shared caches to get a passing gate.
+
+## What a cache hit establishes
+
+A hit means a declared action result was reused under its key. It is not evidence of evaluator-level memoization, a model charge, architectural locality, or an end-to-end agent speedup. The [historical scheduling experiment](/experiments/scheduling) has its own frozen population and timer.
+
+## Sources
+
+[BUILD.bazel](https://github.com/becker63/attune/blob/d71e033/attune/example/BUILD.bazel) · [native.bzl](https://github.com/becker63/attune/blob/d71e033/attune/platform/build/native.bzl) · [Artifacts.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Artifacts.flix) · [AGENTS.md](https://github.com/becker63/attune/blob/d71e033/attune/AGENTS.md)

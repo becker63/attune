@@ -1,0 +1,18 @@
+---
+title: "Historical scheduling and replay"
+description: "Declared work reduced offline wall time while preserving outputs."
+---
+
+The historical AttuneFlix SWE-Explore experiment completed 61 JS/TS cases. Its summed sequential evaluation-shard work was 4,301.12 seconds; cold remote wall time was 51.70 seconds. The unchanged warm graph took 0.153 seconds.
+
+The 83.2× ratio compares summed sequential work with cold remote elapsed time. It is a scheduling result for this offline graph, not a live coding-agent speedup or a measurement of current Attune.
+
+Predictions and evaluation outputs were preserved with numeric tolerance 1e-10. Exact replay made no new provider calls. JEV acquisition reported $0.581381; embedding cost was unavailable.
+
+This result made declared artifact boundaries consequential: expensive observations could be retained while independent downstream work ran remotely. It did not make an effect into a scheduler; the action graph still had to be declared.
+
+The historical implementation and sealed usage remain in the [AttuneFlix experiment](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale). The local reference checkout is separate and read-only. Current [build semantics](/architecture/build) use a smaller implementation.
+
+## Sources
+
+[LOCALIZATION_REPORT.md](https://github.com/becker63/attune/blob/d71e033/LOCALIZATION_REPORT.md) · [README.md](https://github.com/becker63/attune/blob/d71e033/evidence/README.md)

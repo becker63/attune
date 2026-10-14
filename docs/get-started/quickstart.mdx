@@ -1,0 +1,45 @@
+---
+title: "Run Attune"
+description: "Build a provider-free example and follow its declared requests."
+---
+
+The default example asks which of two tiny Ruby files matches an issue. It uses authored vectors, so it needs no provider account and makes no model calls.
+
+## Requirements
+
+Use Git and Nix with flakes enabled. The checkout pins the compiler and build environment. First-time dependency downloads are separate from isolated execution. Coordinate with other users of the shared Bazel output base before starting a build.
+
+```sh
+git clone https://github.com/becker63/attune.git
+cd attune
+nix run
+```
+
+The command builds the declared example graph, reads `example/ranking.json`, and prints the ranked files with an explanation of the request boundary.
+
+```sh
+nix run .#test
+```
+
+This runs the current library checks. A live workspace audit can report preserved research files outside the owned source population. Report that failure separately; deleting those files changes the checkout rather than proving the policy passed.
+
+## Follow the calculation
+
+1. `Effects.locate` requests a question vector and a vector for each source file.
+2. Three request actions write exact embedding requests.
+3. Three independent answer actions validate their saved fixtures.
+4. `Resume.flix` supplies those answers to the same ranking function.
+
+```text
+issue -> question request -> saved question answer --+
+cart  -> source request   -> saved source answer ----+-> ranking
+mail  -> source request   -> saved source answer ----+
+```
+
+A changed model, recipe, or prepared input invalidates a saved answer. A missing answer is an error; replay does not silently contact a provider.
+
+Read [effects and replay](/concepts/effects), then [declared actions](/architecture/build).
+
+## Sources
+
+[Main.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Main.flix) · [Effects.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Effects.flix) · [BUILD.bazel](https://github.com/becker63/attune/blob/d71e033/attune/example/BUILD.bazel)

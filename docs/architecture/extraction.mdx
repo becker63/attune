@@ -1,0 +1,28 @@
+---
+title: "Source extraction and admission"
+description: "Acquire syntax conservatively and admit only supported relationships."
+---
+
+Grit runs pinned programs and grammar extensions over source. Repository admission turns their observations into typed relationships. These stages answer different questions: syntax can reveal a candidate declaration or call; admission must establish a supported identity and relation.
+
+The retained extractor covers JS/JSX, TS/TSX, Java, Flix, Starlark, and Ruby surfaces. This is conservative extraction, with fixture-backed resolution rules rather than a complete language compiler.
+
+## Scientific path
+
+The native Grit ABI has explicit input/output ownership. Java FFM allocates the input arena and releases native output on both success and failure. Flix owns decoding and admission. Named program artifacts and compiler pins belong to declared action inputs.
+
+## Studio path
+
+The server obtains commit-pinned public bytes, verifies their Git blob identity, and sends source to a static ARM64 Linux executable. Each file uses three fixed programs in a fresh child. The child receives no provider credentials. Programs, source, output size, and execution time are bounded.
+
+This native process boundary is not a security sandbox. Client-supplied programs and repository code are never executed. The former WASM extractor remains a parity oracle.
+
+## Resolver policies
+
+`fromObservations` preserves the original admission behavior. Separately versioned exact-path and JS/TS policies allow explicit comparisons. They must not silently relabel earlier observations. The later [repair study](/experiments/agreement) compares those policies on the same retained cohort.
+
+Malformed source, ambiguous imports, unsupported bindings, and failed files stay explicit. Exact output comparisons include order, multiplicity, ranges, logs, and diagnostics.
+
+## Sources
+
+[Repository.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Repository.flix) · [Grit.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Repository/Grit.flix) · [README.md](https://github.com/becker63/attune/blob/d71e033/web/test/cold-grit/README.md)
