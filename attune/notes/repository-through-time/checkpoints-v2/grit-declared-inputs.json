@@ -1,0 +1,215 @@
+{
+  "source_receipt_type": "current declared cached-stack source inventory; not a reconstructed historical build action receipt",
+  "files": [
+    {
+      "path": "platform/support/grit/BUILD.bazel",
+      "sha256": "5a89ddd653f22288db700dc8b0298dcbf9a0fde45170e597556702329fd30157",
+      "bytes": 1941
+    },
+    {
+      "path": "platform/support/grit/Cargo.lock",
+      "sha256": "abffe50e26e7c9666b170f574fbfaaaffd1d495826966ae4c950e3411a21176b",
+      "bytes": 28168
+    },
+    {
+      "path": "platform/support/grit/Cargo.toml",
+      "sha256": "b19ee54be1e26cb3b8800ba87f5f0eb000d6d4e1d9cd4def1c214d3c0b9c3e75",
+      "bytes": 905
+    },
+    {
+      "path": "platform/support/grit/attune_grit.h",
+      "sha256": "9af0757b4bb18431392d50b05c0d09e64204c5b3a7513ed109f7480617bf3e86",
+      "bytes": 956
+    },
+    {
+      "path": "platform/support/grit/cargo-bazel-lock.json",
+      "sha256": "18047a7b1218a3f0f7e45f43e34fc55051d8462bf9a324934d35cd7da62cdef7",
+      "bytes": 539344
+    },
+    {
+      "path": "platform/support/grit/lib.rs",
+      "sha256": "11dd803ec5f69bf1a3f22eefcd5dfb189ea49b152a6a1ab64c77e325e638c868",
+      "bytes": 22849
+    },
+    {
+      "path": "platform/support/grit/patches/BUILD.bazel",
+      "sha256": "14d2c94ab54de7dfbcf89dad6d7ebe0294a3dd65c1ba7f2c850c03333a4bf025",
+      "bytes": 454
+    },
+    {
+      "path": "platform/support/grit/patches/flix.rs",
+      "sha256": "a8e0f0acf306f9ecc13200b6f6914f4730ccda884491901462b4853ac7b2de0a",
+      "bytes": 3301
+    },
+    {
+      "path": "platform/support/grit/patches/flix_binding.rs",
+      "sha256": "f513582b534fbeb050ebd7f0f5446c18f375085244686966ba88be5361ba13d0",
+      "bytes": 673
+    },
+    {
+      "path": "platform/support/grit/patches/starlark.rs",
+      "sha256": "f29fc3a5706ba661df8fd712cbcffec86cd7c2de2e997bd7fecb613154e1389b",
+      "bytes": 3220
+    },
+    {
+      "path": "platform/support/grit/patches/starlark_binding.rs",
+      "sha256": "34645817f80ca5383dbc99f8a020a775251f88182f0221c570bd50c0464826a6",
+      "bytes": 637
+    },
+    {
+      "path": "platform/support/grit/patches/textual_metavariable.rs",
+      "sha256": "a3687c48692b47d86aecdf5380639cb8ef363b49b5625a69bf6ad4a2f528fdf5",
+      "bytes": 2929
+    },
+    {
+      "path": "platform/build/grit_repository.bzl",
+      "sha256": "9bc1cff12baad55cb0d4445e112c429aa2771aeeadbbfb9ad5a76a5398b24f77",
+      "bytes": 32791
+    },
+    {
+      "path": "platform/tools/grit/AttuneGrit.java",
+      "sha256": "8554324d574a8d9374d2799f4018c4211132df49bf8c1707deb606397f79ddad",
+      "bytes": 5260
+    },
+    {
+      "path": "platform/tools/grit/AttuneGritNative.java",
+      "sha256": "4ccce1076e0e8e24e155488680ed9613bc332e966286d1a8755e0c21a87c1c56",
+      "bytes": 6122
+    },
+    {
+      "path": "platform/tools/grit/BUILD.bazel",
+      "sha256": "24e972a496247608e63af8542f08d4c2bfbefd967842b98235f3794bf12e1378",
+      "bytes": 1079
+    },
+    {
+      "path": "src/grit/BUILD.bazel",
+      "sha256": "4e3fd170105741de5f4790b678bdd49d9e552e2355d3ba25e3df4de8a24a8f9d",
+      "bytes": 1442
+    },
+    {
+      "path": "src/grit/README.md",
+      "sha256": "b0a89e74a2e2dfc6b4e954151075dc2851b95dd257f13b5bbdce578862e22b1a",
+      "bytes": 4930
+    },
+    {
+      "path": "src/grit/calls/flix.grit",
+      "sha256": "551cf29438fcf07325fcdc8e198f1e0c6ab44531f3dfd091813953a454a12da5",
+      "bytes": 1331
+    },
+    {
+      "path": "src/grit/calls/java.grit",
+      "sha256": "607f6c06bab22201fe06fc523ecd3f16936e32ec83b2f68809f3aefbe021389b",
+      "bytes": 1556
+    },
+    {
+      "path": "src/grit/calls/javascript.grit",
+      "sha256": "4d77d225337651fb9d6b479d04589e64bc0b679c73ece4892d5ae8a678b71a30",
+      "bytes": 1765
+    },
+    {
+      "path": "src/grit/calls/jsx.grit",
+      "sha256": "6778315ccb4fab253c0eab6602079078da3407552f6bd26cc101453267d9f4c6",
+      "bytes": 1633
+    },
+    {
+      "path": "src/grit/calls/ruby.grit",
+      "sha256": "a0dc7a75242cca4f9394ac10bbe916c4667924efedd5085de6bf396bcb5942a2",
+      "bytes": 2813
+    },
+    {
+      "path": "src/grit/calls/starlark.grit",
+      "sha256": "b8dd89c828f410b77db5af1e3797ea31861c3d8ecdee71e4c1164addba666e0d",
+      "bytes": 1641
+    },
+    {
+      "path": "src/grit/calls/tsx.grit",
+      "sha256": "b8974c7b3b098df429db0cb9f34e50c1ac8d70b2b2dfe8fbdb1a5d70b3587723",
+      "bytes": 1761
+    },
+    {
+      "path": "src/grit/calls/typescript.grit",
+      "sha256": "e84e1c3a5779bae714684dd7a1586fc59235f0aeb411c35fba8f84a385316a5a",
+      "bytes": 1671
+    },
+    {
+      "path": "src/grit/defines/flix.grit",
+      "sha256": "7b598a2ae4eb4feb5f90a26216b2c7591f59c70cf66590db35e42d78ae4a6623",
+      "bytes": 1934
+    },
+    {
+      "path": "src/grit/defines/java.grit",
+      "sha256": "102617be800418de0df9fbbed5c622728a0889b79f78c48553dbd38dcb7701b9",
+      "bytes": 1861
+    },
+    {
+      "path": "src/grit/defines/javascript.grit",
+      "sha256": "f900274ac3946ac34f6b45f6b0d563fac419c3a18469bd10eebc10b4544ca3ae",
+      "bytes": 4384
+    },
+    {
+      "path": "src/grit/defines/jsx.grit",
+      "sha256": "381f8ff92982d131e59429dd3ea480ac2b9de89125e09604421b4dd86627edf4",
+      "bytes": 4252
+    },
+    {
+      "path": "src/grit/defines/ruby.grit",
+      "sha256": "90b9e488cada5705a635941578f3031b4ea5867d708ef3d4f01e1b0ada66c33b",
+      "bytes": 2387
+    },
+    {
+      "path": "src/grit/defines/starlark.grit",
+      "sha256": "77801343abb4a4f73f5942a9e8bf0cdb658744f383b4d6da8cb92b3ba9ea17cf",
+      "bytes": 1697
+    },
+    {
+      "path": "src/grit/defines/tsx.grit",
+      "sha256": "eb560f45914c3cbd7e3d3e58cc2051c55995cb38e32724e37c31e86dbf2dec14",
+      "bytes": 4380
+    },
+    {
+      "path": "src/grit/defines/typescript.grit",
+      "sha256": "90694687a51de99b715fb55e59c53072bdad9cdced9b3b7c76a83b6c19fa576c",
+      "bytes": 4290
+    },
+    {
+      "path": "src/grit/imports/flix.grit",
+      "sha256": "91324e1f100638717401d3307178278e8841ad0b7f0a47fa9aca755bd512ff72",
+      "bytes": 1871
+    },
+    {
+      "path": "src/grit/imports/java.grit",
+      "sha256": "245ef61198093603d46be5399ba71800006f68cedde538ea9374e2f1313cfaf4",
+      "bytes": 1687
+    },
+    {
+      "path": "src/grit/imports/javascript.grit",
+      "sha256": "2d8ae48d4ec92f03994ac31f78a14cfce6061adb196bb3226601243211c0f1ed",
+      "bytes": 1410
+    },
+    {
+      "path": "src/grit/imports/jsx.grit",
+      "sha256": "bd7d241bd0b8f009455bac08705bf8cef5e94b1985d217709e5c03627b17cb82",
+      "bytes": 1278
+    },
+    {
+      "path": "src/grit/imports/ruby.grit",
+      "sha256": "d4daf2bceb62f3c686e1242e30b3583e1fe1de89e0610be2222a217ac11573c2",
+      "bytes": 2177
+    },
+    {
+      "path": "src/grit/imports/starlark.grit",
+      "sha256": "282d4f8170f74df4777882a75f31d1439394b0336339810fb7afcd56ca0f3e9a",
+      "bytes": 1903
+    },
+    {
+      "path": "src/grit/imports/tsx.grit",
+      "sha256": "d29a731ca5a02bdb948db211376bfbdacb60bb07e27a6fd6b33b3e1b1e7b0671",
+      "bytes": 1406
+    },
+    {
+      "path": "src/grit/imports/typescript.grit",
+      "sha256": "681edf9ffc137fe14b67a4ffc1d582a26557508799924ced210cfd973606e218",
+      "bytes": 1316
+    }
+  ]
+}

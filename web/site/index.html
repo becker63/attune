@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self'; img-src 'self' data:;">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1c1016">
+<title>Attune — Small, observable computations</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="module">
+import('./app.js').catch(error=>{
+ const message=document.createElement('p');message.setAttribute('role','alert');
+ message.textContent='The local site could not load. Refresh to retry. If this persists, the browser console contains the module error.';
+ document.querySelector('#main').replaceChildren(message);console.error(error);
+});
+</script>
+</head>
+<body>
+<button id="nav-toggle" aria-controls="sidebar" aria-expanded="false">☰ Navigation</button>
+<aside id="sidebar">
+  <a class="wordmark" href="#overview">attune<span aria-hidden="true"> /</span></a>
+  <p class="sidebar-title">Effects, scheduling &amp; replay.<br>Small, observable computations.</p>
+  <nav aria-label="Navigation">
+    <a href="/studio">Open Studio · try your repository →</a>
+    <a href="#overview" data-nav="overview">Start here · five waits</a>
+    <a href="#runtime" data-nav="runtime">Scheduling &amp; replay</a>
+    <a href="#effects" data-nav="effects">Effects · request &amp; handle</a>
+    <a href="#benchmark" data-nav="benchmark">Benchmark · data &amp; scores</a>
+    <p class="nav-parent">Find the files</p>
+    <a href="#retrieval" data-nav="retrieval">1. Qwen · order</a>
+    <a href="#relationships" data-nav="relationships">2. Atlas · connect</a>
+    <a href="#localization" data-nav="localization">3. Jev · judge</a>
+    <p class="nav-parent">Look closer</p>
+    <a href="#field" data-nav="field">All 85 issues</a>
+    <a href="#extraction" data-nav="extraction">Grit · source &amp; time</a>
+    <a href="#patterns" data-nav="patterns">Architecture census</a>
+    <a href="#history" data-nav="history">Attune over time</a>
+  </nav>
+  <div id="case-sidebar"></div>
+  <p class="sidebar-foot">Historical replay · no models running<br><a href="https://github.com/becker63/attune">Source &amp; README</a><br><a href="https://github.com/becker63/attune/tree/main/evidence">Frozen evidence</a><br><a href="https://becker63.digital/">Portfolio</a></p>
+</aside>
+<main id="main"><p>Loading the recorded measurements…</p></main>
+<footer><span>Frozen evidence. No models running.</span><a href="#benchmark">Benchmark: 85 issues · 22 repositories</a></footer>
+<noscript>This local prototype requires JavaScript to display the frozen census.</noscript>
+</body>
+</html>

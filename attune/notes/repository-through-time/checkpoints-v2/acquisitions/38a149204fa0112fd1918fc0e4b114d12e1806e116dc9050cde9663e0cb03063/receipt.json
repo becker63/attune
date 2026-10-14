@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 9572,
+    "language": "flix",
+    "path": "test/localization_strict/StrictLaw.flix",
+    "physical_lines": 155,
+    "repository_path": "attune/test/localization_strict/StrictLaw.flix",
+    "sha256": "1f6c57c4d92e84a2f3f64299d2edb84e9d167cb5f6d2130870d5ab68b7245e0e"
+  },
+  "program": "imports",
+  "root_revision": "c6b5bd7bb66c395eebb1d0c7d7e9fa0876e23f96",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

@@ -30,6 +30,7 @@ rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = "2024",
     versions = ["1.98.0"],
+    extra_target_triples = ["wasm32-unknown-unknown"],
 )
 use_repo(rust, "rust_toolchains")
 
@@ -54,6 +55,28 @@ gritql_repository(
     ],
 )
 
+gritql_repository(
+    name = "grit_browser_source",
+    browser = True,
+    attune_lib = "//platform/support/grit:lib.rs",
+    cargo_lock = "//platform/browser:grit-Cargo.lock",
+    language_patches = [
+        "//platform/support/grit/patches:flix.rs",
+        "//platform/support/grit/patches:flix_binding.rs",
+        "//platform/support/grit/patches:starlark.rs",
+        "//platform/support/grit/patches:starlark_binding.rs",
+        "//platform/support/grit/patches:textual_metavariable.rs",
+    ],
+)
+crate.from_cargo(
+    name = "grit_browser_crates",
+    cargo_lockfile = "@grit_browser_source//:Cargo.lock",
+    lockfile = "//platform/browser:grit-cargo-bazel-lock.json",
+    manifests = ["@grit_browser_source//:Cargo.toml"],
+    supported_platform_triples = ["aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"],
+)
+use_repo(crate, "grit_browser_crates")
+
 crate.from_cargo(
     name = "grit_crates",
     cargo_lockfile = "@gritql_source//:Cargo.lock",
@@ -66,7 +89,7 @@ crate.from_cargo(
 )
 use_repo(crate, "grit_crates")
 
-# SDK transport and Parquet interop. Tests use recorded transport;
+# SDK transport. Tests use recorded transport;
 # dependency downloads are separate from isolated action execution.
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
@@ -77,8 +100,6 @@ maven.install(
         "dev.langchain4j:langchain4j-http-client:1.18.1",
         "dev.langchain4j:langchain4j-http-client-jdk:1.18.1",
         "dev.langchain4j:langchain4j-open-ai:1.18.1",
-        "org.apache.arrow:arrow-dataset:19.0.0",
-        "org.apache.arrow:arrow-memory-unsafe:19.0.0",
         "org.slf4j:slf4j-nop:2.0.18",
     ],
     lock_file = "//:maven_install.json",
@@ -86,46 +107,18 @@ maven.install(
 )
 use_repo(maven, "attune_maven")
 
-# One DSH evidence tool, an installable Cordis package, and real Typert generation.
-bazel_dep(name = "rules_nodejs", version = "6.7.6")
-bazel_dep(name = "aspect_rules_js", version = "2.9.3")
-bazel_dep(name = "aspect_rules_ts", version = "3.5.1")
-
-# Register runtime toolchains before the Node execution toolchains.
-nodejs = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
-nodejs.toolchain(node_version = "24.18.1")
-use_repo(nodejs, "nodejs_toolchains")
-
-register_toolchains("@nodejs_toolchains//:linux_amd64_runtime_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_amd64_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_arm64_runtime_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_arm64_toolchain")
-
-# The npm lock records the pinned DSH dependency graph. Its pnpm import is
-# Bazel's input; neither lock is hand-edited. Missing dependencies fail the action.
-dsh_npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
-dsh_npm.npm_translate_lock(
-    name = "dsh_npm",
-    data = ["//platform/dsh:package.json"],
-    pnpm_lock = "//platform/dsh:pnpm-lock.yaml",
-    # Bare imports need these pinned peers and platform addons at the package root.
-    public_hoist_packages = {
-        "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
-        # Retain the upstream runtime's session peers without adding another copy.
-        "@deepseek-ai/dsh-session-persistence-jsonl@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-session-query-sqlite@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-session@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-tools@0.2.0-rc.2": ["platform/dsh"],
-        "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
-        "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],
-        "typescript@6.0.3": ["platform/dsh"],
-    },
-    update_pnpm_lock = False,
+# Browser compilation is a separate tool closure; provider SDKs never ship.
+maven.install(
+    name = "browser_maven",
+    artifacts = [
+        "org.teavm:teavm-classlib:0.16.0",
+        "org.teavm:teavm-tooling:0.16.0",
+        "org.teavm:teavm-jso:0.16.0",
+    ],
+    repositories = ["https://repo.maven.apache.org/maven2"],
+    lock_file = "//:browser_maven_install.json",
 )
-use_repo(dsh_npm, "dsh_npm")
+use_repo(maven, "browser_maven")
 
 # Resolve pinned user/network isolation tools from Nix.
 local_unshare = use_repo_rule("//platform/build:unshare_repository.bzl", "local_unshare")
@@ -147,3 +140,28 @@ buildbuddy.platform(
     container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
 )
 use_repo(buildbuddy, "buildbuddy_toolchain")
+
+bazel_dep(name = "bazel_lib", version = "3.7.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_rust_wasm_bindgen", version = "0.74.0")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "bindgen_arm64",
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"],
+    sha256 = "079731dd1bc7798c1efa4f08fcc45130827cbcc9ff60a0b4c6047d64fc6fd25c",
+    strip_prefix = "wasm-bindgen-0.2.128-aarch64-unknown-linux-musl",
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+)
+http_archive(
+    name = "bindgen_amd64",
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"],
+    sha256 = "b51f0208fdff83515a787bd8ab9ac5865ed84dabb66d0c709957bb59793c645f",
+    strip_prefix = "wasm-bindgen-0.2.128-x86_64-unknown-linux-musl",
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+)
+register_toolchains("//platform/browser:bindgen_arm64", "//platform/browser:bindgen_amd64")
+
+# Optional, retained science inputs. Ordinary library tests need no corpus.
+# Campaign commands override this empty repository with the frozen input bundle.
+campaign_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+campaign_repository(name = "native_campaign_inputs", path = "experiments/native_patterns/data")

@@ -1,0 +1,129 @@
+<Chapter id="start">
+
+## First, find somewhere worth looking.
+
+Qwen orders source files by how well their text matches the issue. Rank 1 is its first suggestion; rank 28 means 27 files come before it. A rank is a position, not a confidence score.
+
+<StartFacts />
+
+The optional graph at the end shows this retained neighborhood, not the whole repository.
+
+Finding one relevant file is useful. It does not mean we found the whole fix.
+
+</Chapter>
+
+<Chapter id="connections">
+
+## What makes this a matching pattern?
+
+A connection is a recorded fact. A structural pattern is a small set of facts that fit together. A design-pattern name still needs evidence from the source.
+
+<ConnectionFacts />
+
+</Chapter>
+
+<Chapter id="source">
+
+## Check what the connection actually means.
+
+A graph tells us that code is connected. The source tells us what those connections do.
+
+<SourceFacts />
+
+</Chapter>
+
+<Chapter id="results">
+
+## Did we find every file the fix needed?
+
+The three saved conditions use the same candidate files. Q is Qwen’s original order. QJ is Jev’s judgment of the original first 32; QS is a separate judgment of those same 32, with Atlas clues. QS does not run after QJ.
+
+Positions 1 through 10 count as recovered at this cutoff. A larger rank means the file is farther down the list, not absent from the repository. Finding one required file is an any-file hit. Finding every eligible required file is a complete recovery.
+
+<ResultFacts />
+
+A rank change is an observation, not an explanation of the model’s reasoning. Structure supplied metadata to Jev. It did not independently decide these ranks.
+
+</Chapter>
+
+<Chapter id="theory">
+
+## Why this stays small
+
+There are three different limits here: **the size of a structural question**, **the number of question descriptions**, and **the number of files Jev judges**. None is a bound on the size of the repository or the number of matching answers.
+
+The code below is the current Flix implementation, copied with its original comments and line numbers. It explains the machinery; it does not establish which implementation produced the frozen benchmark results.
+
+### A question can mention only a few connections
+
+An *atom* is one relation, such as Imports. A *role* is a numbered place for a file or symbol. An *output* is a place whose value should be returned.
+
+<FlixBlock name="bounds" />
+
+Read the first four limits as: **at most three connections, four places, two returned values and one “these must differ” condition**. The three-step file → function → function → file example fits exactly.
+
+The built-in template family declares one- and two-atom descriptions. The grammar can admit three atoms; that does not mean every admitted three-atom description is in the default family.
+
+### The limit is checked before matching
+
+`safe` reads a description and returns a Boolean. It checks the number of atoms, that they connect, that their types agree, and that each requested output actually appears in the question.
+
+<FlixBlock name="safe" />
+
+`bound(output, atoms)` means the requested output slot occurs in the facts being matched. The final check applies the same rule to both sides of an inequality. A malformed question is refused instead of acquiring an invented endpoint.
+
+### A file cannot silently become a function
+
+For every role, `domainsConsistent` gathers the domains required by its relations. After removing duplicates, there can be no more than one domain for that role.
+
+<FlixBlock name="domains" />
+
+So `Defines ; Calls` can connect: Defines ends at a Symbol and Calls starts at a Symbol. `Imports ; Calls` cannot connect directly: its middle place would need to be both a File and a Symbol.
+
+### Different slot names should not create duplicate questions
+
+Renaming the slots in the same description should not multiply the work. `canonical` chooses one stable representation. `identityKey` turns that representation into its identity.
+
+<FlixBlock name="canonical" />
+
+This is a structural identity. It is not a label such as “plugin system,” and it does not say that two repositories behave the same way.
+
+### Keep a bounded population of descriptions
+
+`population` resolves duplicate IDs, canonicalizes descriptions, rejects unsafe ones, removes equivalent descriptions, and keeps a deterministic prefix.
+
+<FlixBlock name="population" />
+
+The limit of **256 candidates here means 256 structural descriptions**, not 256 source files. The returned `dropped`, `conflicts` and `truncated` fields preserve what was excluded.
+
+The kept descriptions are divided into batches. This bounds the description work scheduled per batch; it does not cap the number of matching rows.
+
+<FlixBlock name="shards" />
+
+Theory’s batch size of 32 and Jev’s top-32 file window are separate limits on different things. Their equal number does not make them the same population.
+
+### Reuse a match when the starting point changes
+
+A `Binding` contains the matched entities. `Output` selects the requested slots. `Task` joins those existing results to an `Anchor`, the application’s chosen starting entity, in the same source snapshot.
+
+<FlixBlock name="reuse" />
+
+Read the last rule as: **keep this matched pair when its first entity is the chosen anchor**. The anchor join uses already materialized structural rows; it does not rerun structural matching for that join.
+
+<TheoryFacts />
+
+### Keep model judgment narrow too
+
+The frozen study asks Jev about Qwen’s first 32 files. The promotion rule puts Relevant decisions first, then uses the original rank to keep the order stable.
+
+<FlixBlock name="promotion" />
+
+This code orders the decisions; it does not impose the top-32 request window itself. That window comes from the study setup. A required file below Q32 cannot be rescued by this promotion.
+
+### What “small” does not promise
+
+A short question can still match many files around a popular helper. A large source world can still require substantial extraction and matching work. Embedding retrieval also has its own cost.
+
+The design bounds descriptions and narrows judgment. **The census does not measure latency, memory, tokens or dollars**, so these mechanisms are not a benchmark of cheap execution.
+
+</Chapter>

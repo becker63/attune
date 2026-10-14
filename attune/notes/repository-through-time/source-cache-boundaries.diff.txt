@@ -1,0 +1,379 @@
+diff --git a/experiments/atlas-work-topology/BUILD.bazel b/experiments/atlas-work-topology/BUILD.bazel
+index 7aea0ba85d..bef281c967 100644
+--- a/experiments/atlas-work-topology/BUILD.bazel
++++ b/experiments/atlas-work-topology/BUILD.bazel
+@@ -1,5 +1,6 @@
++load(":artifacts.bzl", "attune_artifact_boundary_test", "attune_control_stage")
+ load(":control_signatures.bzl", "attune_control_signature_artifacts_test", "attune_control_signature_check", "attune_control_signatures")
+-load(":round_topology.bzl", "attune_round_artifacts_test", "attune_round_check", "attune_round_topology")
++load(":round_topology.bzl", "attune_round_artifacts_test", "attune_round_check", "attune_round_reproducibility_test", "attune_round_topology")
+ load(":topology.bzl", "attune_control_topology", "attune_control_topology_artifacts_test", "attune_control_topology_check")
+ load(":work_topology.bzl", "attune_control_acquisition", "attune_control_reproducibility_test")
+ 
+@@ -8,22 +9,67 @@
+ # The frozen control evidence (§2, §3, §6, §8, §9, §14). Committed under
+ # control/; read-only typed Parquet, the identity map, and the frozen topology
+ # and co-change documents, never hand-edited.
++#
++# Round 4 declares the evidence as four *typed artifact boundaries*, one per
++# stage that produces it, instead of one 10-file list (K4 Hill-Climb Round 4,
++# PREREGISTRATION.md §7/§14). A consumer declares the boundary it actually
++# reads, so a change to one stage's artifact no longer invalidates the
++# consumers of another stage's:
++#
++#   world      acquisition (`acquire`)                 attuneflix-grit-{sources,facts}-v2
++#   signature  depth 1..7 signature stage              attune-atlas-signature-{observations,summary}-v1
++#   topology   work-topology / co-change stage         (frozen documents)
++#   locality   Build channel (`measure_bazel_locality.sh`)
++#
++# `control_files` stays as the union so one label still names the whole frozen
++# record (the report and the round bookkeeping read it that way).
+ filegroup(
+-    name = "control_files",
++    name = "control_world_artifacts",
+     srcs = [
+-        "control/control.cochange.json",
+-        "control/control.cochange_history.txt",
+         "control/control.facts.parquet",
+         "control/control.files.txt",
++        "control/control.revision.txt",
++        "control/control.sources.parquet",
++    ],
++)
++
++filegroup(
++    name = "control_signature_artifacts",
++    srcs = [
+         "control/control.identity_map.json",
+-        "control/control.revision.txt",
+         "control/control.signatures.parquet",
+-        "control/control.sources.parquet",
+         "control/control.summaries.parquet",
++    ],
++)
++
++filegroup(
++    name = "control_topology_artifacts",
++    srcs = [
++        "control/control.cochange.json",
++        "control/control.cochange_history.txt",
+         "control/control.topology.json",
+     ],
+ )
+ 
++filegroup(
++    name = "control_locality_artifacts",
++    srcs = [
++        "control/control.fanout.txt",
++        "control/control.targets.txt",
++        "control/control.tests.txt",
++    ],
++)
++
++filegroup(
++    name = "control_files",
++    srcs = [
++        ":control_locality_artifacts",
++        ":control_signature_artifacts",
++        ":control_topology_artifacts",
++        ":control_world_artifacts",
++    ],
++)
++
+ exports_files([
+     "scripts/fanout_delta.sh",
+     "scripts/measure_bazel_locality.sh",
+@@ -53,6 +99,44 @@
+     ],
+ )
+ 
++# Rounds 2 and 3 candidate measurements (PREREGISTRATION.md §9, §10;
++# VAL-HC23-003, VAL-HC23-004). Same instrument and artifacts as round 1, at the
++# round-2 revision 10f3a21 (narrow cell crossings) and the round-3 revision
++# 73b8709 (shared build/law-surface stabilization). `round2/` additionally
++# records the round-2 revision's declared `src/BUILD.bazel` comment in its
++# oracle verdicts (O4 false); see `rounds/round23.md`.
++filegroup(
++    name = "round2_files",
++    srcs = [
++        "round2/round2.fanout.txt",
++        "round2/round2.fanout_delta.tsv",
++        "round2/round2.files.txt",
++        "round2/round2.identity_map.json",
++        "round2/round2.oracle.json",
++        "round2/round2.revision.txt",
++        "round2/round2.sources.txt",
++        "round2/round2.targets.txt",
++        "round2/round2.tests.txt",
++        "round2/round2.topology.json",
++    ],
++)
++
++filegroup(
++    name = "round3_files",
++    srcs = [
++        "round3/round3.fanout.txt",
++        "round3/round3.fanout_delta.tsv",
++        "round3/round3.files.txt",
++        "round3/round3.identity_map.json",
++        "round3/round3.oracle.json",
++        "round3/round3.revision.txt",
++        "round3/round3.sources.txt",
++        "round3/round3.targets.txt",
++        "round3/round3.tests.txt",
++        "round3/round3.topology.json",
++    ],
++)
++
+ # `bazel run //experiments/atlas-work-topology:acquire` materializes the control
+ # revision in an isolated /tmp worktree and freezes the typed evidence.
+ attune_control_acquisition()
+@@ -82,6 +166,44 @@
+ # `control.cochange.json` (§6, §8).
+ attune_control_topology()
+ 
++# The two expensive scientific stages as declared, cacheable Bazel actions
++# (K4 Hill-Climb Round 4; PREREGISTRATION.md §7, §14; VAL-HC4-001).
++#
++# Each stage is a pure function of the frozen typed evidence, so it is declared
++# with exactly that evidence as its inputs and its typed artifacts as declared
++# outputs. They are the artifact boundaries downstream consumers read:
++#
++#   bazel build //experiments/atlas-work-topology:control_signature_tables \
++#               //experiments/atlas-work-topology:control_topology_documents \
++#               --config=buildbuddy-rbe
++#
++# A second invocation reuses the action cache (`N remote cache hit`) because
++# nothing either stage reads has changed. The `bazel run` commands of record
++# above still write the committed evidence; these actions derive the same
++# artifacts into the build graph without touching the source tree.
++attune_control_stage(
++    name = "control_signature_tables",
++    evidence = [":control_world_artifacts"],
++    stage = "signatures",
++    tool = ":control_signatures_bin",
++)
++
++attune_control_stage(
++    name = "control_topology_documents",
++    evidence = [
++        ":control_world_artifacts",
++        "control/control.cochange_history.txt",
++    ],
++    stage = "topology",
++    tool = ":control_topology_bin",
++)
++
++# `bazel test //experiments/atlas-work-topology:artifact_boundary_test` is the
++# in-graph downstream consumer of those declared artifacts: it checks every
++# declared stage output against the committed frozen evidence, so the boundary
++# is only reused when it re-derives the frozen bytes exactly.
++attune_artifact_boundary_test()
++
+ # Provenance and protocol law tests for the topology instrument (§4, §5, §6, §8).
+ attune_control_topology_check()
+ 
+@@ -103,18 +225,33 @@
+ # the committed evidence and compares them with the committed artifacts.
+ attune_round_artifacts_test()
+ 
++# `bazel test //experiments/atlas-work-topology:round3_artifacts_test`
++# the same full `attune.command=verify` guard for the round-3 revision (its
++# verdict set passes: `src/BUILD.bazel` is restored byte-identically).
++attune_round_artifacts_test(name = "round3_artifacts_test", role = "round3")
++
++# `bazel test //experiments/atlas-work-topology:round2_reproducibility_test`
++# re-derives the round-2 documents and compares them byte-for-byte. The full
++# verdict set is not asserted for round 2 because its revision's `src/BUILD.bazel`
++# comment trips the implemented (over-broad) production-drift proxy; the
++# recorded `O4 = false` nevertheless stays pinned by the byte-equality diff.
++attune_round_reproducibility_test(name = "round2_reproducibility_test", role = "round2")
++
+ # Cell D — Research law surface: one aggregation point for the research cell's
+ # replay, signature-provenance, and topology-provenance laws. The frozen
+ # historical instrument's provenance law is aggregated here unchanged.
+ test_suite(
+     name = "research_tests",
+     tests = [
++        ":artifact_boundary_test",
+         ":control_reproducibility_test",
+         ":control_signature_artifacts_test",
+         ":control_signature_test",
+         ":control_topology_artifacts_test",
+         ":control_topology_test",
+         ":round1_artifacts_test",
++        ":round2_reproducibility_test",
++        ":round3_artifacts_test",
+         ":round_test",
+         "//experiments/atlas-parallelism:parallelism_provenance_test",
+     ],
+diff --git a/experiments/atlas-work-topology/artifacts.bzl b/experiments/atlas-work-topology/artifacts.bzl
+new file mode 100644
+index 0000000000..77b7ca034d
+--- /dev/null
++++ b/experiments/atlas-work-topology/artifacts.bzl
+@@ -0,0 +1,141 @@
++"""Declared typed-artifact stage boundaries (K4 Hill-Climb Round 4).
++
++PREREGISTRATION.md §7 and §14 bind four `bazel run` commands of record; this
++file adds the *build-graph* boundary for the two expensive scientific stages
++among them:
++
++  signatures : the depth 1..7 Atlas signature derivation
++               (`ControlSignature.compute`, `attune.command=compute`) over the
++               frozen world, writing the typed observation and summary tables
++               plus the logical identity map.
++  topology   : the static work-topology and co-change measurement
++               (`ControlMeasure.measure`, `attune.command=measure`) over the
++               frozen world and the frozen co-change history extract, writing
++               the two topology documents.
++
++Both stages are pure deterministic functions of the frozen typed Parquet
++evidence: nothing in them reads the ambient environment, the VCS state or any
++source text. They are therefore declared here as ordinary Bazel actions whose
++declared inputs are exactly that evidence and whose declared outputs are the
++typed artifacts. Consequences the round is after:
++
++- **Independent rebuilds.** The action's input set is the stage's typed
++  evidence and the stage's own Flix sources (through the tool's runfiles), and
++  nothing else in the repository: editing a law, an application module or
++  another experiment's wiring cannot invalidate either stage.
++- **Cache reuse for downstream consumers.** A consumer that reads a declared
++  output (`//experiments/atlas-work-topology:control_signature_tables`,
++  `:control_topology_documents`, or one of their `OutputGroupInfo` groups) gets
++  the typed artifact from the action cache instead of re-deriving it.
++  `bazel build <stage> --config=buildbuddy-rbe` twice reports the second run as
++  a cache hit; `//experiments/atlas-work-topology:artifact_boundary_test` is
++  the in-graph consumer that checks the declared artifacts against the frozen
++  committed evidence.
++
++The `bazel run` commands of record stay unchanged: they write the committed
++artifacts under `control/` (PREREGISTRATION.md §14), and the actions declared
++here re-derive the same bytes as declared build outputs. No grammar, atom,
++evaluator or typed schema is added or changed; nothing under `src/` moves.
++"""
++
++# The frozen world boundary is declared as ordinary `filegroup`s by the
++# package, so the mapping from an input file to the JVM property the stage
++# reads is keyed by basename.
++_INPUT_PROPERTIES = {
++    "control.sources.parquet": "attune.sources",
++    "control.facts.parquet": "attune.facts",
++    "control.revision.txt": "attune.revision",
++    "control.files.txt": "attune.files",
++    "control.cochange_history.txt": "attune.cochange_history",
++}
++
++# stage -> struct(command, mnemonic, progress, outputs)
++# outputs: (declared basename, JVM property the stage writes, output group)
++_STAGES = {
++    "signatures": struct(
++        command = "compute",
++        mnemonic = "AttuneControlSignatures",
++        progress = "Deriving the typed depth 1..7 signature artifacts",
++        outputs = [
++            ("control.signatures.parquet", "attune.output_signatures", "signatures"),
++            ("control.summaries.parquet", "attune.output_summaries", "summaries"),
++            ("control.identity_map.json", "attune.output_identity", "identity_map"),
++        ],
++    ),
++    "topology": struct(
++        command = "measure",
++        mnemonic = "AttuneControlTopology",
++        progress = "Deriving the typed work-topology and co-change documents",
++        outputs = [
++            ("control.topology.json", "attune.output_topology", "topology"),
++            ("control.cochange.json", "attune.output_cochange", "cochange"),
++        ],
++    ),
++}
++
++def _stage_impl(ctx):
++    stage = _STAGES[ctx.attr.stage]
++    args = ctx.actions.args()
++    args.add("--jvm_flag=-Dattune.command=%s" % stage.command)
++    for evidence in ctx.files.evidence:
++        property_name = _INPUT_PROPERTIES.get(evidence.basename)
++        if property_name == None:
++            fail("no JVM property is declared for stage input %s" % evidence.basename)
++        args.add("--jvm_flag=-D%s=%s" % (property_name, evidence.path))
++    declared = []
++    groups = {}
++    for basename, property_name, group in stage.outputs:
++        artifact = ctx.actions.declare_file(ctx.label.name + "/" + basename)
++        args.add("--jvm_flag=-D%s=%s" % (property_name, artifact.path))
++        declared.append(artifact)
++        groups[group] = depset([artifact])
++    ctx.actions.run(
++        executable = ctx.executable.tool,
++        arguments = [args],
++        inputs = ctx.files.evidence,
++        outputs = declared,
++        mnemonic = stage.mnemonic,
++        progress_message = stage.progress + " %{label}",
++    )
++    return [
++        DefaultInfo(files = depset(declared)),
++        OutputGroupInfo(**groups),
++    ]
++
++attune_control_stage = rule(
++    implementation = _stage_impl,
++    doc = """One expensive scientific stage as a declared, cacheable action.
++
++`evidence` is the stage's complete typed input boundary; `tool` is the stage's
++`java_binary` (it carries the stage's Flix sources in its runfiles, so a source
++change invalidates exactly this action). The stage's own `attune.command`
++selects the measurement, and every artifact path is a declared output.""",
++    attrs = {
++        "stage": attr.string(mandatory = True, values = _STAGES.keys()),
++        "evidence": attr.label_list(allow_files = True, mandatory = True),
++        "tool": attr.label(executable = True, cfg = "exec", mandatory = True),
++    },
++)
++
++def attune_artifact_boundary_test(name = "artifact_boundary_test"):
++    """The downstream consumer of the declared stage artifacts.
++
++    Reads the declared outputs of `//...:control_signature_tables` and
++    `//...:control_topology_documents` and checks each one against the frozen
++    committed evidence under `control/`, so reusing a cached artifact is only
++    sound when the stage re-derives the frozen bytes. It never re-runs a stage
++    itself and never reads the ambient environment: the derivation is the
++    cached action's, the comparison is `cmp`."""
++    native.sh_test(
++        name = name,
++        size = "medium",
++        srcs = ["artifact_boundary_test.sh"],
++        data = [
++            ":control_signature_artifacts",
++            ":control_signature_tables",
++            ":control_topology_artifacts",
++            ":control_topology_documents",
++            ":control_world_artifacts",
++            "@bazel_tools//tools/bash/runfiles",
++        ],
++    )
+diff --git a/experiments/atlas-work-topology/control_signatures.bzl b/experiments/atlas-work-topology/control_signatures.bzl
+index f21b9335f6..0128e218af 100644
+--- a/experiments/atlas-work-topology/control_signatures.bzl
++++ b/experiments/atlas-work-topology/control_signatures.bzl
+@@ -65,14 +65,16 @@
+ 
+ def attune_control_signature_artifacts_test(name = "control_signature_artifacts_test"):
+     """Re-derives the landmarks and identity map from the committed evidence and
+-    compares them with the committed artifacts; a mismatch is a non-zero exit."""
++    compares them with the committed artifacts; a mismatch is a non-zero exit.
++    Reads the world boundary and the signature stage's typed boundary only."""
+     native.sh_test(
+         name = name,
+         size = "medium",
+         srcs = ["control_signature_artifacts_test.sh"],
+         data = [
++            ":control_signature_artifacts",
+             ":control_signatures_bin",
+-            ":control_files",
++            ":control_world_artifacts",
+             "@bazel_tools//tools/bash/runfiles",
+         ],
+     )

@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 199,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+    "physical_lines": 3,
+    "repository_path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+    "sha256": "379fb3caadd1da512736e92782cc561b3edc47ddc958d9a21fafcd985d7026d9"
+  },
+  "program": "imports",
+  "root_revision": "10f3a212d0c4d10a6c06a8f1570b0e2dd284c920",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

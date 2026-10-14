@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 16322,
+    "language": "starlark",
+    "path": "build/attune.bzl",
+    "physical_lines": 409,
+    "repository_path": "build/attune.bzl",
+    "sha256": "4231a8a7405dfc7e0a83d9d83c7c102bc167cea68036695e3937a4a96835b213"
+  },
+  "program": "defines",
+  "root_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

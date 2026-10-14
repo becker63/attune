@@ -1,0 +1,6 @@
+or {
+  `import $source`,
+  `require($source)`
+} as $import where {
+  log(message="import", variable=$source)
+}

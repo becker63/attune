@@ -1,0 +1,671 @@
+[
+  {
+    "invocation_id": "1c4ee58b-c072-4127-9957-6ce4758a795c",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 23591000,
+    "cache_metrics": {
+      "actionCacheHits": "6",
+      "actionCacheMisses": "2",
+      "actionCacheUploads": "7",
+      "casCacheHits": "286",
+      "casCacheUploads": "28",
+      "totalDownloadSizeBytes": "797273282",
+      "totalUploadSizeBytes": "62382",
+      "totalDownloadTransferredSizeBytes": "409539252",
+      "totalUploadTransferredSizeBytes": "71181",
+      "totalDownloadUsec": "1782856",
+      "totalUploadUsec": "88245",
+      "downloadThroughputBytesPerSecond": "447188826",
+      "uploadThroughputBytesPerSecond": "706918",
+      "totalUncachedActionExecUsec": "464737"
+    }
+  },
+  {
+    "invocation_id": "2601be7c-4ce2-41c9-9723-304b03adb989",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 19360000,
+    "cache_metrics": {
+      "actionCacheHits": "35",
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "3",
+      "casCacheHits": "150",
+      "casCacheUploads": "14",
+      "totalDownloadSizeBytes": "439628096",
+      "totalUploadSizeBytes": "38093",
+      "totalDownloadTransferredSizeBytes": "254743091",
+      "totalUploadTransferredSizeBytes": "42520",
+      "totalDownloadUsec": "1377442",
+      "totalUploadUsec": "15472",
+      "downloadThroughputBytesPerSecond": "319162691",
+      "uploadThroughputBytesPerSecond": "2462060",
+      "totalCachedActionExecUsec": "26578255"
+    }
+  },
+  {
+    "invocation_id": "b81a27e1-f1fd-45ef-9151-33d6810a8367",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 24084000,
+    "cache_metrics": {
+      "actionCacheHits": "3",
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "4",
+      "casCacheHits": "147",
+      "casCacheUploads": "77",
+      "totalDownloadSizeBytes": "439619676",
+      "totalUploadSizeBytes": "85872574",
+      "totalDownloadTransferredSizeBytes": "254717521",
+      "totalUploadTransferredSizeBytes": "85366396",
+      "totalDownloadUsec": "1577102",
+      "totalUploadUsec": "3857035",
+      "downloadThroughputBytesPerSecond": "278751581",
+      "uploadThroughputBytesPerSecond": "22263882",
+      "totalUncachedActionExecUsec": "22092348"
+    }
+  },
+  {
+    "invocation_id": "34724183-63b2-4472-a73f-dd0a4f2f7da9",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 13568000,
+    "cache_metrics": {
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "1",
+      "casCacheHits": "147",
+      "casCacheUploads": "15",
+      "totalDownloadSizeBytes": "439618116",
+      "totalUploadSizeBytes": "50774",
+      "totalDownloadTransferredSizeBytes": "254712918",
+      "totalUploadTransferredSizeBytes": "50703",
+      "totalDownloadUsec": "1081346",
+      "totalUploadUsec": "14419",
+      "downloadThroughputBytesPerSecond": "406547132",
+      "uploadThroughputBytesPerSecond": "3521326"
+    }
+  },
+  {
+    "invocation_id": "421b7014-06ef-40c6-ad36-0dfc00e04d37",
+    "status": "FAILURE",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 7040000,
+    "cache_metrics": {
+      "actionCacheHits": "4",
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "3",
+      "casCacheHits": "151",
+      "casCacheUploads": "15",
+      "totalDownloadSizeBytes": "439695582",
+      "totalUploadSizeBytes": "23399",
+      "totalDownloadTransferredSizeBytes": "254720497",
+      "totalUploadTransferredSizeBytes": "27121",
+      "totalDownloadUsec": "1041074",
+      "totalUploadUsec": "15225",
+      "downloadThroughputBytesPerSecond": "422348057",
+      "uploadThroughputBytesPerSecond": "1536880",
+      "totalCachedActionExecUsec": "464737"
+    }
+  },
+  {
+    "invocation_id": "d16165c8-6bf8-485c-9426-40e96f44f04f",
+    "status": "FAILURE",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 7625000,
+    "cache_metrics": {
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "1",
+      "casCacheHits": "147",
+      "casCacheUploads": "15",
+      "totalDownloadSizeBytes": "439618907",
+      "totalUploadSizeBytes": "21775",
+      "totalDownloadTransferredSizeBytes": "254713166",
+      "totalUploadTransferredSizeBytes": "21036",
+      "totalDownloadUsec": "1085119",
+      "totalUploadUsec": "13373",
+      "downloadThroughputBytesPerSecond": "405134282",
+      "uploadThroughputBytesPerSecond": "1628280"
+    }
+  },
+  {
+    "invocation_id": "39cd0f2e-a140-498d-9293-e764a29ec536",
+    "status": "FAILURE",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 3839000,
+    "cache_metrics": {
+      "actionCacheHits": "3",
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "3",
+      "casCacheHits": "149",
+      "casCacheUploads": "15",
+      "totalDownloadSizeBytes": "439625481",
+      "totalUploadSizeBytes": "22044",
+      "totalDownloadTransferredSizeBytes": "254719400",
+      "totalUploadTransferredSizeBytes": "24498",
+      "totalDownloadUsec": "1138507",
+      "totalUploadUsec": "13376",
+      "downloadThroughputBytesPerSecond": "386142097",
+      "uploadThroughputBytesPerSecond": "1648026"
+    }
+  },
+  {
+    "invocation_id": "46ff4c49-5859-40af-92c1-0b739293e331",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 20398000,
+    "cache_metrics": {
+      "actionCacheHits": "3",
+      "actionCacheMisses": "1",
+      "actionCacheUploads": "4",
+      "casCacheHits": "218",
+      "casCacheUploads": "18",
+      "totalDownloadSizeBytes": "525475078",
+      "totalUploadSizeBytes": "2826118",
+      "totalDownloadTransferredSizeBytes": "340059082",
+      "totalUploadTransferredSizeBytes": "2453772",
+      "totalDownloadUsec": "4648565",
+      "totalUploadUsec": "160533",
+      "downloadThroughputBytesPerSecond": "113040277",
+      "uploadThroughputBytesPerSecond": "17604592",
+      "totalUncachedActionExecUsec": "14935628"
+    }
+  },
+  {
+    "invocation_id": "a32ed874-6c11-47d1-ac77-42b2f9493ba1",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 27276000,
+    "cache_metrics": {
+      "actionCacheHits": "6",
+      "actionCacheMisses": "2",
+      "actionCacheUploads": "8",
+      "casCacheHits": "394",
+      "casCacheUploads": "29",
+      "totalDownloadSizeBytes": "889296997",
+      "totalUploadSizeBytes": "3141451",
+      "totalDownloadTransferredSizeBytes": "495687433",
+      "totalUploadTransferredSizeBytes": "2652631",
+      "totalDownloadUsec": "4519049",
+      "totalUploadUsec": "248481",
+      "downloadThroughputBytesPerSecond": "196788527",
+      "uploadThroughputBytesPerSecond": "12642620",
+      "totalUncachedActionExecUsec": "17863057"
+    }
+  },
+  {
+    "invocation_id": "4ad81c1c-259d-4764-960a-8265c3277a51",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-swe-explore:signature"
+    ],
+    "duration_usec": 27067000,
+    "cache_metrics": {
+      "actionCacheHits": "6",
+      "actionCacheMisses": "2",
+      "actionCacheUploads": "4",
+      "casCacheHits": "367",
+      "casCacheUploads": "23",
+      "totalDownloadSizeBytes": "884146300",
+      "totalUploadSizeBytes": "3159546",
+      "totalDownloadTransferredSizeBytes": "495701091",
+      "totalUploadTransferredSizeBytes": "2661916",
+      "totalDownloadUsec": "1986366",
+      "totalUploadUsec": "186842",
+      "downloadThroughputBytesPerSecond": "445107447",
+      "uploadThroughputBytesPerSecond": "16910255",
+      "totalUncachedActionExecUsec": "16223987"
+    }
+  },
+  {
+    "invocation_id": "5297d97a-c726-4348-8a5c-8e57807cb903",
+    "status": "FAILURE",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:compute_control_signatures"
+    ],
+    "duration_usec": 3480000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "6690",
+      "totalUploadTransferredSizeBytes": "6741",
+      "totalUploadUsec": "1794",
+      "uploadThroughputBytesPerSecond": "3729096"
+    }
+  },
+  {
+    "invocation_id": "bfab4aa4-8273-44ac-8516-2d9a1c89af39",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:compute_control_signatures"
+    ],
+    "duration_usec": 22781000,
+    "cache_metrics": {
+      "actionCacheHits": "4",
+      "actionCacheMisses": "8",
+      "actionCacheUploads": "8",
+      "casCacheHits": "350",
+      "casCacheUploads": "33",
+      "totalDownloadSizeBytes": "882652295",
+      "totalUploadSizeBytes": "3617310",
+      "totalDownloadTransferredSizeBytes": "527421165",
+      "totalUploadTransferredSizeBytes": "3048113",
+      "totalDownloadUsec": "5887978",
+      "totalUploadUsec": "282297",
+      "downloadThroughputBytesPerSecond": "149907539",
+      "uploadThroughputBytesPerSecond": "12813844",
+      "totalUncachedActionExecUsec": "18525384"
+    }
+  },
+  {
+    "invocation_id": "87e786c0-3efa-4e03-ba2e-b67ede96dcdb",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:compute_control_signatures"
+    ],
+    "duration_usec": 5811000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "7967",
+      "totalUploadTransferredSizeBytes": "8027",
+      "totalUploadUsec": "1839",
+      "uploadThroughputBytesPerSecond": "4332245"
+    }
+  },
+  {
+    "invocation_id": "b0226973-2caa-427a-9395-a43da7579160",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:compute_control_signatures"
+    ],
+    "duration_usec": 11247000,
+    "cache_metrics": {
+      "actionCacheHits": "2",
+      "casCacheHits": "74",
+      "casCacheUploads": "2",
+      "totalDownloadSizeBytes": "87286569",
+      "totalUploadSizeBytes": "23921",
+      "totalDownloadTransferredSizeBytes": "86515928",
+      "totalUploadTransferredSizeBytes": "24086",
+      "totalDownloadUsec": "164502",
+      "totalUploadUsec": "1966",
+      "downloadThroughputBytesPerSecond": "530610989",
+      "uploadThroughputBytesPerSecond": "12167344",
+      "totalCachedActionExecUsec": "15333425"
+    }
+  },
+  {
+    "invocation_id": "53be405b-b40b-45d4-b5a3-145f292bdb8b",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-live-self:acquire"
+    ],
+    "duration_usec": 89355000,
+    "cache_metrics": {
+      "actionCacheHits": "748",
+      "actionCacheMisses": "621",
+      "actionCacheUploads": "2",
+      "casCacheHits": "3250",
+      "casCacheUploads": "19",
+      "totalDownloadSizeBytes": "820322452",
+      "totalUploadSizeBytes": "5362306",
+      "totalDownloadTransferredSizeBytes": "547671893",
+      "totalUploadTransferredSizeBytes": "4779727",
+      "totalDownloadUsec": "13326434",
+      "totalUploadUsec": "6569373",
+      "downloadThroughputBytesPerSecond": "61556036",
+      "uploadThroughputBytesPerSecond": "816258",
+      "totalCachedActionExecUsec": "243006357",
+      "totalUncachedActionExecUsec": "20048581"
+    }
+  },
+  {
+    "invocation_id": "f7446c91-9f80-4c49-b189-079e6787d6b5",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-live-self:acquire"
+    ],
+    "duration_usec": 1375000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "6682",
+      "totalUploadTransferredSizeBytes": "6745",
+      "totalUploadUsec": "2581",
+      "uploadThroughputBytesPerSecond": "2588919"
+    }
+  },
+  {
+    "invocation_id": "05991965-210a-443e-80be-94fbaaaa31ab",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-parallelism:acquire"
+    ],
+    "duration_usec": 13907000,
+    "cache_metrics": {
+      "actionCacheHits": "597",
+      "actionCacheMisses": "8",
+      "actionCacheUploads": "7",
+      "casCacheHits": "867",
+      "casCacheUploads": "33",
+      "totalDownloadSizeBytes": "802978687",
+      "totalUploadSizeBytes": "653115",
+      "totalDownloadTransferredSizeBytes": "457724890",
+      "totalUploadTransferredSizeBytes": "656383",
+      "totalDownloadUsec": "11241975",
+      "totalUploadUsec": "333763",
+      "downloadThroughputBytesPerSecond": "71426834",
+      "uploadThroughputBytesPerSecond": "1956822",
+      "totalCachedActionExecUsec": "121961154",
+      "totalUncachedActionExecUsec": "431014"
+    }
+  },
+  {
+    "invocation_id": "8f1a5e29-5b10-493e-a790-19f1120ad516",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-parallelism:acquire"
+    ],
+    "duration_usec": 24787000,
+    "cache_metrics": {
+      "actionCacheHits": "2",
+      "actionCacheMisses": "4",
+      "actionCacheUploads": "4",
+      "casCacheHits": "222",
+      "casCacheUploads": "21",
+      "totalDownloadSizeBytes": "525247989",
+      "totalUploadSizeBytes": "5435685",
+      "totalDownloadTransferredSizeBytes": "356558254",
+      "totalUploadTransferredSizeBytes": "4932234",
+      "totalDownloadUsec": "4549199",
+      "totalUploadUsec": "380127",
+      "downloadThroughputBytesPerSecond": "115459444",
+      "uploadThroughputBytesPerSecond": "14299655",
+      "totalUncachedActionExecUsec": "19148569"
+    }
+  },
+  {
+    "invocation_id": "48c0c2ed-a9a9-4be5-bb76-78cd9518a463",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-parallelism:acquire"
+    ],
+    "duration_usec": 23163000,
+    "cache_metrics": {
+      "actionCacheMisses": "2",
+      "actionCacheUploads": "2",
+      "casCacheHits": "75",
+      "casCacheUploads": "20",
+      "totalDownloadSizeBytes": "86681600",
+      "totalUploadSizeBytes": "4424917",
+      "totalDownloadTransferredSizeBytes": "86046365",
+      "totalUploadTransferredSizeBytes": "3979069",
+      "totalDownloadUsec": "335582",
+      "totalUploadUsec": "308978",
+      "downloadThroughputBytesPerSecond": "258302292",
+      "uploadThroughputBytesPerSecond": "14321139",
+      "totalUncachedActionExecUsec": "18480449"
+    }
+  },
+  {
+    "invocation_id": "5ffdbe94-8acf-4d97-b79b-31794d04fb03",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 41714000,
+    "cache_metrics": {
+      "actionCacheHits": "597",
+      "actionCacheMisses": "8",
+      "actionCacheUploads": "8",
+      "casCacheHits": "934",
+      "casCacheUploads": "28",
+      "totalDownloadSizeBytes": "889633822",
+      "totalUploadSizeBytes": "3425810",
+      "totalDownloadTransferredSizeBytes": "543765221",
+      "totalUploadTransferredSizeBytes": "3051417",
+      "totalDownloadUsec": "6987585",
+      "totalUploadUsec": "425592",
+      "downloadThroughputBytesPerSecond": "127316350",
+      "uploadThroughputBytesPerSecond": "8049516",
+      "totalCachedActionExecUsec": "121961154",
+      "totalUncachedActionExecUsec": "17191909"
+    }
+  },
+  {
+    "invocation_id": "53046032-621e-4cd1-89e8-27ad6342dda0",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 290000,
+    "cache_metrics": {
+      "casCacheUploads": "1",
+      "totalUploadSizeBytes": "2734",
+      "totalUploadTransferredSizeBytes": "2761",
+      "totalUploadUsec": "1078",
+      "uploadThroughputBytesPerSecond": "2536178"
+    }
+  },
+  {
+    "invocation_id": "31783e7a-7818-40e5-b9cd-e1d1e2e330af",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 7208000,
+    "cache_metrics": {
+      "actionCacheMisses": "2",
+      "actionCacheUploads": "1",
+      "casCacheHits": "6",
+      "casCacheUploads": "16",
+      "totalDownloadSizeBytes": "12023",
+      "totalUploadSizeBytes": "27826",
+      "totalDownloadTransferredSizeBytes": "3187",
+      "totalUploadTransferredSizeBytes": "24551",
+      "totalDownloadUsec": "5892",
+      "totalUploadUsec": "12657",
+      "downloadThroughputBytesPerSecond": "2040563",
+      "uploadThroughputBytesPerSecond": "2198467"
+    }
+  },
+  {
+    "invocation_id": "3844a164-7af2-47f1-9c2a-767b433e9da1",
+    "status": "FAILURE",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 8951000,
+    "cache_metrics": {
+      "actionCacheHits": "2",
+      "actionCacheMisses": "4",
+      "actionCacheUploads": "3",
+      "casCacheHits": "152",
+      "casCacheUploads": "15",
+      "totalDownloadSizeBytes": "438661639",
+      "totalUploadSizeBytes": "26015",
+      "totalDownloadTransferredSizeBytes": "270596252",
+      "totalUploadTransferredSizeBytes": "27384",
+      "totalDownloadUsec": "3057389",
+      "totalUploadUsec": "14847",
+      "downloadThroughputBytesPerSecond": "143475900",
+      "uploadThroughputBytesPerSecond": "1752205"
+    }
+  },
+  {
+    "invocation_id": "9199fda0-90b5-4275-acc6-b31714455c8f",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 27445000,
+    "cache_metrics": {
+      "actionCacheHits": "2",
+      "actionCacheMisses": "4",
+      "actionCacheUploads": "4",
+      "casCacheHits": "223",
+      "casCacheUploads": "19",
+      "totalDownloadSizeBytes": "525350024",
+      "totalUploadSizeBytes": "2828655",
+      "totalDownloadTransferredSizeBytes": "356658348",
+      "totalUploadTransferredSizeBytes": "2444616",
+      "totalDownloadUsec": "5019930",
+      "totalUploadUsec": "234050",
+      "downloadThroughputBytesPerSecond": "104652858",
+      "uploadThroughputBytesPerSecond": "12085686",
+      "totalUncachedActionExecUsec": "21371751"
+    }
+  },
+  {
+    "invocation_id": "d7484f64-545c-4f52-8c36-5d29ef7a36e5",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 337000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "5366",
+      "totalUploadTransferredSizeBytes": "5408",
+      "totalUploadUsec": "2438",
+      "uploadThroughputBytesPerSecond": "2200984"
+    }
+  },
+  {
+    "invocation_id": "f833d687-bbaf-467f-b9c0-febfea4b4716",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 404000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "5666",
+      "totalUploadTransferredSizeBytes": "5723",
+      "totalUploadUsec": "1674",
+      "uploadThroughputBytesPerSecond": "3384707"
+    }
+  },
+  {
+    "invocation_id": "aadf5ad9-407e-4d61-ba0f-335ffce4197f",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 353000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "5576",
+      "totalUploadTransferredSizeBytes": "5633",
+      "totalUploadUsec": "2001",
+      "uploadThroughputBytesPerSecond": "2786606"
+    }
+  },
+  {
+    "invocation_id": "4c117e3e-5b2c-4e42-8591-55e5a9794923",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 291000,
+    "cache_metrics": {
+      "casCacheUploads": "2",
+      "totalUploadSizeBytes": "5688",
+      "totalUploadTransferredSizeBytes": "5745",
+      "totalUploadUsec": "2070",
+      "uploadThroughputBytesPerSecond": "2747826"
+    }
+  },
+  {
+    "invocation_id": "8e459ded-bf35-4881-bac9-2a6a758027f1",
+    "status": "SUCCESS",
+    "command": "run",
+    "pattern": [
+      "//experiments/atlas-work-topology:acquire"
+    ],
+    "duration_usec": 5479000,
+    "cache_metrics": {
+      "actionCacheHits": "593",
+      "casCacheHits": "593",
+      "casCacheUploads": "2",
+      "totalDownloadSizeBytes": "7662830",
+      "totalUploadSizeBytes": "608995",
+      "totalDownloadTransferredSizeBytes": "15547805",
+      "totalUploadTransferredSizeBytes": "612493",
+      "totalDownloadUsec": "1653790",
+      "totalUploadUsec": "186963",
+      "downloadThroughputBytesPerSecond": "4633496",
+      "uploadThroughputBytesPerSecond": "3257302",
+      "totalCachedActionExecUsec": "121961154"
+    }
+  },
+  {
+    "invocation_id": "c6513144-0d03-400d-97ae-cde433c05d29",
+    "status": "SUCCESS",
+    "command": "build",
+    "pattern": [
+      "//experiments/attune-final-topology:source_signatures"
+    ],
+    "duration_usec": 45303000,
+    "cache_metrics": {
+      "actionCacheHits": "501",
+      "actionCacheMisses": "11",
+      "actionCacheUploads": "20",
+      "casCacheHits": "2123",
+      "casCacheUploads": "208",
+      "totalDownloadSizeBytes": "3752597878",
+      "totalUploadSizeBytes": "12215318",
+      "totalDownloadTransferredSizeBytes": "2027124914",
+      "totalUploadTransferredSizeBytes": "8258076",
+      "totalDownloadUsec": "18106657",
+      "totalUploadUsec": "2496835",
+      "downloadThroughputBytesPerSecond": "207249625",
+      "uploadThroughputBytesPerSecond": "4892320",
+      "totalCachedActionExecUsec": "224254890",
+      "totalUncachedActionExecUsec": "88989219"
+    }
+  }
+]

@@ -1,12 +1,9 @@
 package(default_visibility = ["//visibility:public"])
 
-# The two repository-local Grit language implementations (`flix.rs`,
-# `starlark.rs`), their ABI-14 grammar bindings and the shared metavariable
-# helper that `//build:grit_repository.bzl` copies into the frozen Grit closure.
-# They are inherited pinned support sources, not newly authored native code.
+# Maintained Flix/Starlark Grit extensions, counted as implementation.
 filegroup(
     name = "policy_files",
     srcs = glob(["**"]),
 )
 
-exports_files(glob(["*.rs"]))
+exports_files(glob(["*.rs", "*.patch"]))

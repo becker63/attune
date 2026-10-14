@@ -1,18 +1,14 @@
-/// The canonical typed envelope over the pinned native Grit boundary: the wire
-/// projection of the Repository owner.
-///
-/// Flix owns the meaning here: the admitted language vocabulary, deterministic
-/// language detection, the one canonical fact shape, and the projection from
-/// the native envelope into facts. The narrow JVM facade in
-/// `//platform/tools/grit` only copies the versioned JSON the pinned engine
-/// returns into a canonical record stream; it classifies nothing.
-///
-/// The fact shape is one shape for every language: a syntactic kind, a path, the
-/// byte range of the match, the byte range of the logged value, and that value.
-/// There are no per-language fact types. Identity assignment, conservative
-/// resolution, admission and inverse derivation live in the parent
-/// `Attune.Repository` module, one step above this projection.
+/// Grit observations become typed, source-grounded facts here.
+/// JSON is decoded directly in Flix. Native byte ranges are checked before
+/// source text is admitted; unresolved references stay in Repository.
 pub mod Attune.Repository.Grit {
+    use Util.Json
+    use Util.Json.FromJson
+    import java.lang.{Class => JClass, String => JString}
+    import java.io.IOException
+    import java.util.Objects
+    import java.nio.charset.StandardCharsets
+
 
     /// The admitted source languages: the seven retained surfaces plus the
     /// approved bounded Ruby arm. Order is stable.
@@ -165,98 +161,63 @@ pub mod Attune.Repository.Grit {
                 }
         }
 
-    // ------------------------------------------------------------- decoding
 
-    /// Decode the canonical record stream the JVM facade produces.
-    pub def decode(wire: String): Result[Error, Evaluation] =
-        match List.filterMap(parseRecord, String.lines(wire)) {
-            case Record.RVersion(version) :: rest =>
-                if (version != 1)
-                    Err(Error.UnsupportedVersion(version))
-                else
-                    assemble(rest, false, Nil, Nil, Nil)
-            case _ => Err(Error.Wire("native envelope does not begin with a version record"))
-        }
+    /// Read the engine's JSON directly. The standard decoder checks numeric
+    /// bounds, missing fields and types; no second text protocol is needed.
+    pub def decode(wire: String): Result[Error, Evaluation] = forM (
+        json <- Result.mapErr(_ -> Error.Wire("Invalid JSON envelope."), Json.parse(wire));
+        version <- field("version", json);
+        result <- if (version != 1) Err(Error.UnsupportedVersion(version))
+            else match FromJson.getAtKeyOpt("error", json) {
+                case Ok(Some(error)) => forM (
+                    kind <- field("kind", error);
+                    message <- field("message", error);
+                    failed <- Err(Error.Native(kind, message))
+                ) yield failed
+                case Ok(None) => forM (
+                    matched <- field("matched", json);
+                    spans <- field("matches", json);
+                    matches <- Result.traverse(span, spans);
+                    entries <- field("logs", json);
+                    logs <- Result.traverse(logEntry, entries);
+                    diagnostics <- field("diagnostics", json)
+                ) yield {matched = matched, matches = matches, logs = logs, diagnostics = diagnostics}
+                case Err(_) => Err(Error.Wire("Invalid error envelope."))
+            }
+    ) yield result
 
-    /// One canonical record line. `RMalformed` is a non-blank line the canonical
-    /// grammar does not recognise: it is a classified failure, not a line to
-    /// skip silently, so a truncated or corrupted envelope can never collapse
-    /// into a complete empty evaluation.
-    enum Record {
-        case RVersion(Int32)
-        case RError(String, String)
-        case RMatched(Bool)
-        case RSpan(Span)
-        case RLog(Log)
-        case RDiagnostic(String)
-        case RMalformed
-    }
+    def field(key: String, json: Json.Json): Result[Error, a] with FromJson.FromJson[a] =
+        Result.mapErr(_ -> Error.Wire("Invalid native field: " + key), FromJson.decodeAtKey(key, json))
 
-    /// Parse one record line. A blank line is dropped; a non-blank line that is
-    /// not a canonical record is preserved as `RMalformed`.
-    def parseRecord(line: String): Option[Record] =
-        if (String.isEmpty(String.trim(line))) None
-        else match String.split(regex = "\t", line) {
-            case "version" :: version :: Nil =>
-                match Int32.fromString(version) {
-                    case Some(value) => Some(Record.RVersion(value))
-                    case None        => Some(Record.RMalformed)
-                }
-            case "error" :: kind :: message :: Nil => Some(Record.RError(unescape(kind), unescape(message)))
-            case "matched" :: value :: Nil         => Some(Record.RMatched(value == "true"))
-            case "match" :: path :: start :: end :: Nil =>
-                match (Int32.fromString(start), Int32.fromString(end)) {
-                    case (Some(s), Some(e)) => Some(Record.RSpan({ path = unescape(path), startByte = s, endByte = e }))
-                    case _                  => Some(Record.RMalformed)
-                }
-            case "log" :: message :: start :: end :: Nil =>
-                match (Int32.fromString(start), Int32.fromString(end)) {
-                    case (Some(s), Some(e)) => Some(Record.RLog({ message = unescape(message), startByte = s, endByte = e }))
-                    case _                  => Some(Record.RMalformed)
-                }
-            case "diagnostic" :: message :: Nil => Some(Record.RDiagnostic(unescape(message)))
-            case _                              => Some(Record.RMalformed)
-        }
+    def span(json: Json.Json): Result[Error, Span] = forM (
+        path <- field("path", json);
+        start <- field("start_byte", json);
+        end <- field("end_byte", json)
+    ) yield {path = path, startByte = start, endByte = end}
 
-    /// Fold the record stream into one evaluation, preserving order.
-    def assemble(
-        records: List[Record],
-        matched: Bool,
-        spans: List[Span],
-        logs: List[Log],
-        diagnostics: List[String]
-    ): Result[Error, Evaluation] = match records {
-        case Nil =>
-            Ok({
-                matched = matched,
-                matches = List.reverse(spans),
-                logs = List.reverse(logs),
-                diagnostics = List.reverse(diagnostics)
-            })
-        case record :: rest => match record {
-            case Record.RError(kind, message) => Err(Error.Native(kind, message))
-            case Record.RMatched(value)       => assemble(rest, value, spans, logs, diagnostics)
-            case Record.RSpan(span)           => assemble(rest, matched, span :: spans, logs, diagnostics)
-            case Record.RLog(log)             => assemble(rest, matched, spans, log :: logs, diagnostics)
-            case Record.RDiagnostic(message)  => assemble(rest, matched, spans, logs, message :: diagnostics)
-            case Record.RVersion(_)           => Err(Error.Wire("duplicate version record"))
-            case Record.RMalformed            => Err(Error.Wire("native envelope carries an unparseable record"))
-        }
-    }
+    def logEntry(json: Json.Json): Result[Error, Log] = forM (
+        message <- field("message", json);
+        start <- field("start_byte", json);
+        end <- field("end_byte", json)
+    ) yield {message = message, startByte = start, endByte = end}
 
-    /// The four escaped characters the facade writes, restored as themselves.
-    def unescape(value: String): String = unescapeAt(value, 0, Nil)
-
-    def unescapeAt(value: String, index: Int32, acc: List[String]): String =
-        if (index >= String.length(value)) List.join("", List.reverse(acc))
+    /// A packaged query is a JVM resource. Always close its stream, including
+    /// on a failed read. File and program names come from the closed enums.
+    pub def program(language: Language, operation: Program): Result[Error, String] \ IO = {
+        let resource = "grit/" + programName(operation) + "/" + name(language) + ".grit";
+        let stream = JClass.forName("attune.grit.AttuneGritNative").getResourceAsStream("/" + resource);
+        if (Objects.isNull(stream)) Err(Error.Wire("Missing packaged query: " + resource))
         else {
-            let rest = String.drop(index, value);
-            if (String.startsWith(prefix = "\\\\", rest)) unescapeAt(value, index + 2, "\\" :: acc)
-            else if (String.startsWith(prefix = "\\t", rest)) unescapeAt(value, index + 2, "\t" :: acc)
-            else if (String.startsWith(prefix = "\\n", rest)) unescapeAt(value, index + 2, "\n" :: acc)
-            else if (String.startsWith(prefix = "\\r", rest)) unescapeAt(value, index + 2, "\r" :: acc)
-            else unescapeAt(value, index + 1, String.take(1, rest) :: acc)
+            let bytes = try { Ok(stream.readAllBytes()) }
+                catch { case _: IOException => Err(Error.Wire("Cannot read packaged query.")) };
+            let closed = try { stream.close(); Ok(()) }
+                catch { case _: IOException => Err(Error.Wire("Cannot close packaged query.")) };
+            forM (
+                data <- bytes;
+                _ <- closed
+            ) yield new JString(data, StandardCharsets.UTF_8)
         }
+    }
 
     // ---------------------------------------------------------------- facts
 

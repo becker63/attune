@@ -1,0 +1,14 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by org.apache.arrow.memory.util.MemoryUtil (file:/tmp/attune-checkpoints-v2/instrument/artifact/instrument.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.arrow.memory.util.MemoryUtil
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+SUMMARY_METRIC seeds 16.0
+SUMMARY_METRIC observations 52464.0
+SUMMARY_METRIC summaries 3036.0
+SUMMARY_METRIC identities 112.0
+SUMMARY_METRIC D50 5.0
+SUMMARY_METRIC D80 8.0
+SUMMARY_METRIC D90 8.0
+SUMMARY_METRIC D95 8.0
+SUMMARY_METRIC depth7_reach 0.6729910714285715
+CONTROL_SIGNATURE revision=c236a3aabfa13e5f36162e895d1ca4742f9730c0 files=112 logical_ids=112

@@ -1,0 +1,786 @@
+[
+  {
+    "source": [
+      "build/grit_repository.bzl",
+      "_copy_language_sources",
+      16049,
+      16498
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/grit_repository.bzl",
+      "_drop_nested_workspace",
+      10290,
+      10568
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/grit_repository.bzl",
+      "_extend_node_types",
+      15337,
+      16047
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/grit_repository.bzl",
+      "_gritql_repository_impl",
+      20478,
+      31575
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/grit_repository.bzl",
+      "_replace",
+      10054,
+      10288
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/jextract.bzl",
+      "_jextract_bindings_impl",
+      107,
+      2162
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "build/jextract_repository.bzl",
+      "_jextract_repository_impl",
+      555,
+      1367
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/AcquisitionTest.flix",
+      "everyDecisionPayloadIsIssueBlindStructure",
+      12346,
+      14047
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/ClusterTest.flix",
+      "recordedRoutesReplayToTheirExactFrontier",
+      4156,
+      4882
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Cluster.flix",
+      "frontier",
+      4578,
+      5217
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/ClusteringLaw.flix",
+      "families",
+      4435,
+      5540
+    ],
+    "target": [
+      "src/Repository/Table.flix",
+      "entities",
+      2079,
+      2426
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/Main.flix",
+      "acquire",
+      4784,
+      5372
+    ],
+    "target": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "describe",
+      1819,
+      1951
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "_clustered_pairs",
+      18499,
+      18949
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "_families_export_law_test_impl",
+      30022,
+      30490
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "_space_file",
+      10453,
+      10605
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "_space_root",
+      10291,
+      10451
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "families_acquisitions",
+      14176,
+      15290
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/families.bzl",
+      "families_inventories",
+      6092,
+      6916
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Cluster/Law.flix",
+      "naming",
+      6322,
+      7620
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Cluster.flix",
+      "frontier",
+      4578,
+      5217
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Cluster/Table.flix",
+      "read",
+      5180,
+      5532
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Rows.flix",
+      "readLayout",
+      2795,
+      3276
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Edge/Table.flix",
+      "read",
+      3664,
+      4002
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Rows.flix",
+      "readLayout",
+      2795,
+      3276
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Embedding.flix",
+      "vectors",
+      9123,
+      10242
+    ],
+    "target": [
+      "src/Repository/Physical.flix",
+      "index",
+      3536,
+      3846
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Embedding.flix",
+      "vectors",
+      9123,
+      10242
+    ],
+    "target": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "describe",
+      1819,
+      1951
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Provider.flix",
+      "fetch",
+      5042,
+      5468
+    ],
+    "target": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "describe",
+      1819,
+      1951
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Provider.flix",
+      "fetch",
+      5042,
+      5468
+    ],
+    "target": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "live",
+      1147,
+      1251
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-families/src/Families/Provider.flix",
+      "keyAbsent",
+      3810,
+      3957
+    ],
+    "target": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "live",
+      1147,
+      1251
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "experiments/atlas-work-topology/artifacts.bzl",
+      "_stage_impl",
+      3702,
+      4822
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/ScientificTable.flix",
+      "read",
+      1343,
+      1523
+    ],
+    "target": [
+      "src/native/parquet/AttuneParquet.java",
+      "readTable",
+      2856,
+      4586
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/inference/AttuneDecision.java",
+      "decide",
+      623,
+      1484
+    ],
+    "target": [
+      "src/native/inference/OpenRouter.java",
+      "kind",
+      2380,
+      2673
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/inference/AttuneEmbed.java",
+      "embed",
+      1349,
+      2004
+    ],
+    "target": [
+      "src/native/inference/OpenRouter.java",
+      "kind",
+      2380,
+      2673
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/inference/AttuneOpenRouter.java",
+      "describe",
+      1819,
+      1951
+    ],
+    "target": [
+      "src/native/inference/OpenRouter.java",
+      "kind",
+      2380,
+      2673
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/parquet/AttuneParquet.java",
+      "remove",
+      12772,
+      13158
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Navigation.flix",
+      "walk",
+      3401,
+      4096
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/parquet/AttuneParquet.java",
+      "write",
+      10342,
+      12014
+    ],
+    "target": [
+      "experiments/atlas-families/src/Families/Navigation.flix",
+      "walk",
+      3401,
+      4096
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "src/native/parquet/AttuneParquetTest.java",
+      "main",
+      160,
+      2130
+    ],
+    "target": [
+      "src/native/parquet/AttuneParquet.java",
+      "readTable",
+      2856,
+      4586
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Applications/LocalizationTest.flix",
+      "judgeCanLeaveThePriorUntouched",
+      1941,
+      2867
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Applications/LocalizationTest.flix",
+      "sandwichEnumeratesThenDeduplicatesTypedOutcomes",
+      1420,
+      1939
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Applications/PopulationTableTest.flix",
+      "populationTablesRoundTripTypedMeaning",
+      1068,
+      1760
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Engine/AtlasSignatureTableTest.flix",
+      "atlasCensusUsesTypedFileAndSymbolSeedFamilies",
+      3813,
+      4808
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Engine/AtlasTest.flix",
+      "atlasEvaluationReturnsExactTypedStatesAndReusesTransitions",
+      995,
+      2153
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/Engine/AtlasTest.flix",
+      "atlasSignatureExplainsExtinctionExpansionReachAndReuse",
+      2155,
+      3561
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/GritAcquisitionTest.flix",
+      "ambiguousJavaReferencesAreConservativelyRejected",
+      7156,
+      8551
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/GritAcquisitionTest.flix",
+      "facts",
+      1295,
+      1551
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/GritAcquisitionTest.flix",
+      "flixSourceAdmitsTheExpectedFacts",
+      4201,
+      5619
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/GritAcquisitionTest.flix",
+      "javaSourceAdmitsTheExpectedFacts",
+      2610,
+      4199
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/GritAcquisitionTest.flix",
+      "starlarkSourceAdmitsTheExpectedFacts",
+      5621,
+      6953
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/RepositoryAdmissionTest.flix",
+      "indexedCallAdmissionPreservesOwnerAndTargetRules",
+      228,
+      1970
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/RepositoryTableTest.flix",
+      "repositoryWorldRejectsSnapshotIdentityDrift",
+      2359,
+      2946
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/RepositoryTableTest.flix",
+      "repositoryWorldScientificIdentityIgnoresSerializationPaths",
+      2948,
+      3834
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "test/World/RepositoryTableTest.flix",
+      "repositoryWorldTypedRowsRoundTripExactly",
+      1233,
+      2357
+    ],
+    "target": [
+      "test/World/LocationTableLaw.flix",
+      "fail",
+      1882,
+      1987
+    ],
+    "full_world_target_name_population": 4,
+    "common_world_target_name_population": 1
+  },
+  {
+    "source": [
+      "web/atlas-live/projection/BUILD.bazel",
+      "\"layout_worlds\"",
+      3697,
+      4048
+    ],
+    "target": [
+      "src/Repository/Physical.flix",
+      "index",
+      3536,
+      3846
+    ],
+    "full_world_target_name_population": 2,
+    "common_world_target_name_population": 1
+  }
+]

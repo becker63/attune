@@ -1,0 +1,402 @@
+[
+  {
+    "bytes": 3112,
+    "language": "starlark",
+    "path": "BUILD.bazel",
+    "physical_lines": 100,
+    "repository_path": "BUILD.bazel",
+    "sha256": "df7a0c72f7cf51e8ff623cee307ac36b92bfe461129c0bdca0d6619aa0da5257"
+  },
+  {
+    "bytes": 4964,
+    "language": "starlark",
+    "path": "MODULE.bazel",
+    "physical_lines": 120,
+    "repository_path": "MODULE.bazel",
+    "sha256": "fa4de9d267fca137ff49fd4b631c7dd345c65d4cd6a4e7ebd60490117616c0f6"
+  },
+  {
+    "bytes": 315,
+    "language": "starlark",
+    "path": "build/BUILD.bazel",
+    "physical_lines": 14,
+    "repository_path": "build/BUILD.bazel",
+    "sha256": "ce4c1e3912d5a99bd61af53b036dfffec37a4298388aaa0fa1d3bbf19eedd307"
+  },
+  {
+    "bytes": 32791,
+    "language": "starlark",
+    "path": "build/grit_repository.bzl",
+    "physical_lines": 804,
+    "repository_path": "build/grit_repository.bzl",
+    "sha256": "61a5669887d588245db1b1c361bc453e8ad9d7ab24e1cfec2be392e66edbd8f9"
+  },
+  {
+    "bytes": 6499,
+    "language": "starlark",
+    "path": "build/native.bzl",
+    "physical_lines": 167,
+    "repository_path": "build/native.bzl",
+    "sha256": "e513d1fc709ef0ed52f87a74f6bc9a5cf2a3e1220abe4306b5a65a3d3282c4d0"
+  },
+  {
+    "bytes": 4014,
+    "language": "starlark",
+    "path": "build/unshare_repository.bzl",
+    "physical_lines": 105,
+    "repository_path": "build/unshare_repository.bzl",
+    "sha256": "404f23b788ed68829791afc48023f32d4b4735f111f33a808d6435add9d9da10"
+  },
+  {
+    "bytes": 903,
+    "language": "starlark",
+    "path": "build/workspace_root.bzl",
+    "physical_lines": 22,
+    "repository_path": "build/workspace_root.bzl",
+    "sha256": "0a30dcaa034e084582c72f1766ba3662aa81f01c8b8e7cbe0ec2ab2063fac24f"
+  },
+  {
+    "bytes": 195,
+    "language": "flix",
+    "path": "src/Attune.flix",
+    "physical_lines": 6,
+    "repository_path": "src/Attune.flix",
+    "sha256": "ebb7959c081094d4a3672419285731a8bb92b91f643b8628edbb9476bd2645d7"
+  },
+  {
+    "bytes": 4339,
+    "language": "flix",
+    "path": "src/Attune/Envelope.flix",
+    "physical_lines": 110,
+    "repository_path": "src/Attune/Envelope.flix",
+    "sha256": "32b2988a8a9c1521b7c67c469999e3c8eb1f1cf7d235cfd5e5e2c13e392f17ca"
+  },
+  {
+    "bytes": 14665,
+    "language": "flix",
+    "path": "src/Attune/Grit.flix",
+    "physical_lines": 335,
+    "repository_path": "src/Attune/Grit.flix",
+    "sha256": "73394605c15f2d0b261217f34e364d04bb29321c0b3f86e7c3cec73ed3c4ab09"
+  },
+  {
+    "bytes": 4018,
+    "language": "flix",
+    "path": "src/Attune/Isolation.flix",
+    "physical_lines": 86,
+    "repository_path": "src/Attune/Isolation.flix",
+    "sha256": "176b7ea3c96df08f74965f67e2ce2bc5c7bbebe44a55341c0670f5b32cf9130f"
+  },
+  {
+    "bytes": 40859,
+    "language": "flix",
+    "path": "src/Attune/Policy.flix",
+    "physical_lines": 828,
+    "repository_path": "src/Attune/Policy.flix",
+    "sha256": "1bf7819493361f3e6a6e8d7f83689582080e300a1e1fca689a6d24027c8416f2"
+  },
+  {
+    "bytes": 23867,
+    "language": "flix",
+    "path": "src/Attune/Repository.flix",
+    "physical_lines": 491,
+    "repository_path": "src/Attune/Repository.flix",
+    "sha256": "5f25cdf38931503864052d23af2704df20b754a2a8fa819c5edc807a120a903a"
+  },
+  {
+    "bytes": 1572,
+    "language": "starlark",
+    "path": "src/BUILD.bazel",
+    "physical_lines": 59,
+    "repository_path": "src/BUILD.bazel",
+    "sha256": "fe6258432ef46a87d8667a95859b6ac34cf329f5558958447ba236b7cf5fd374"
+  },
+  {
+    "bytes": 1442,
+    "language": "starlark",
+    "path": "src/grit/BUILD.bazel",
+    "physical_lines": 44,
+    "repository_path": "src/grit/BUILD.bazel",
+    "sha256": "4e3fd170105741de5f4790b678bdd49d9e552e2355d3ba25e3df4de8a24a8f9d"
+  },
+  {
+    "bytes": 5260,
+    "language": "java",
+    "path": "src/native/grit/AttuneGrit.java",
+    "physical_lines": 127,
+    "repository_path": "src/native/grit/AttuneGrit.java",
+    "sha256": "8554324d574a8d9374d2799f4018c4211132df49bf8c1707deb606397f79ddad"
+  },
+  {
+    "bytes": 6122,
+    "language": "java",
+    "path": "src/native/grit/AttuneGritNative.java",
+    "physical_lines": 134,
+    "repository_path": "src/native/grit/AttuneGritNative.java",
+    "sha256": "4ccce1076e0e8e24e155488680ed9613bc332e966286d1a8755e0c21a87c1c56"
+  },
+  {
+    "bytes": 958,
+    "language": "starlark",
+    "path": "src/native/grit/BUILD.bazel",
+    "physical_lines": 28,
+    "repository_path": "src/native/grit/BUILD.bazel",
+    "sha256": "dbe50b2c31ddd4b3f5ccb67e4e0a815d06633e4d40bfb35993da2f7e187a800c"
+  },
+  {
+    "bytes": 16265,
+    "language": "java",
+    "path": "src/native/parquet/AttuneParquet.java",
+    "physical_lines": 358,
+    "repository_path": "src/native/parquet/AttuneParquet.java",
+    "sha256": "9c27a92979f7e9e74464ffa25b2b57c3aa8b8ce8fffc08c36336edd9b0b935e9"
+  },
+  {
+    "bytes": 1102,
+    "language": "starlark",
+    "path": "src/native/parquet/BUILD.bazel",
+    "physical_lines": 28,
+    "repository_path": "src/native/parquet/BUILD.bazel",
+    "sha256": "4e5a20124432b5d3f4cf4ff812bb597c580c6b131dbfed2de80111069ba5d0c9"
+  },
+  {
+    "bytes": 1941,
+    "language": "starlark",
+    "path": "support/grit/BUILD.bazel",
+    "physical_lines": 55,
+    "repository_path": "support/grit/BUILD.bazel",
+    "sha256": "5a89ddd653f22288db700dc8b0298dcbf9a0fde45170e597556702329fd30157"
+  },
+  {
+    "bytes": 454,
+    "language": "starlark",
+    "path": "support/grit/patches/BUILD.bazel",
+    "physical_lines": 12,
+    "repository_path": "support/grit/patches/BUILD.bazel",
+    "sha256": "14d2c94ab54de7dfbcf89dad6d7ebe0294a3dd65c1ba7f2c850c03333a4bf025"
+  },
+  {
+    "bytes": 266,
+    "language": "starlark",
+    "path": "test/BUILD.bazel",
+    "physical_lines": 9,
+    "repository_path": "test/BUILD.bazel",
+    "sha256": "4af4e15ca4f63ce984b370c7284afa42e7a8f5aa11b015d756de4f4b9d32debc"
+  },
+  {
+    "bytes": 2626,
+    "language": "starlark",
+    "path": "test/grit/BUILD.bazel",
+    "physical_lines": 75,
+    "repository_path": "test/grit/BUILD.bazel",
+    "sha256": "1b7d9d41e3c946d30aa85c0438af8ff073636c5220c34d510ee32239c140d833"
+  },
+  {
+    "bytes": 2319,
+    "language": "java",
+    "path": "test/grit/GritFixtures.java",
+    "physical_lines": 59,
+    "repository_path": "test/grit/GritFixtures.java",
+    "sha256": "ab31a3c17e7358dc124edd9dd727c173abf88c225cc883b3e3c783dfdfa9595b"
+  },
+  {
+    "bytes": 18913,
+    "language": "flix",
+    "path": "test/grit/GritSeamTest.flix",
+    "physical_lines": 390,
+    "repository_path": "test/grit/GritSeamTest.flix",
+    "sha256": "eb0b850c49b46b24ea09aa3ca11d77a4b8db98f3aa44d306a22827875c604e48"
+  },
+  {
+    "bytes": 2135,
+    "language": "flix",
+    "path": "test/policy/AuditLaw.flix",
+    "physical_lines": 42,
+    "repository_path": "test/policy/AuditLaw.flix",
+    "sha256": "a31b077a7625a14aff4cce8eda65def6a801c823cf3c5e163a0f6606e2627e87"
+  },
+  {
+    "bytes": 2162,
+    "language": "starlark",
+    "path": "test/policy/BUILD.bazel",
+    "physical_lines": 63,
+    "repository_path": "test/policy/BUILD.bazel",
+    "sha256": "96ea44038182cc36643bec5e6d6a604484d1e3c96df0871cc088918cd0fde728"
+  },
+  {
+    "bytes": 4037,
+    "language": "flix",
+    "path": "test/policy/CountLaw.flix",
+    "physical_lines": 85,
+    "repository_path": "test/policy/CountLaw.flix",
+    "sha256": "224f9764f3f849287c1c2d6d2789fd8e74a485f31b4d8686acd6d94170378005"
+  },
+  {
+    "bytes": 1302,
+    "language": "flix",
+    "path": "test/policy/DeclaredPolicyLaw.flix",
+    "physical_lines": 27,
+    "repository_path": "test/policy/DeclaredPolicyLaw.flix",
+    "sha256": "5a38f437075ebfdd0b132779f29269676c2c229cc698c0e08891f9dc9b450773"
+  },
+  {
+    "bytes": 9950,
+    "language": "flix",
+    "path": "test/policy/PolicyCases.flix",
+    "physical_lines": 203,
+    "repository_path": "test/policy/PolicyCases.flix",
+    "sha256": "5762c2d5a81a5a7e70c733ec2a4e7b1c9935697778aecb43bb230058cf661d6e"
+  },
+  {
+    "bytes": 10634,
+    "language": "java",
+    "path": "test/seam/AttuneInference.java",
+    "physical_lines": 245,
+    "repository_path": "test/seam/AttuneInference.java",
+    "sha256": "f38e4d22457e717724e061b2b3781db5384e7c2c3a6015de9a33dd85bb4a9c35"
+  },
+  {
+    "bytes": 2267,
+    "language": "starlark",
+    "path": "test/seam/BUILD.bazel",
+    "physical_lines": 61,
+    "repository_path": "test/seam/BUILD.bazel",
+    "sha256": "3c4a4524115ee66b5d870dc55a979e8aff6a366fcbd3eb4c65100bf3319aaac5"
+  },
+  {
+    "bytes": 745,
+    "language": "flix",
+    "path": "test/seam/FalseAssertionJava.flix",
+    "physical_lines": 14,
+    "repository_path": "test/seam/FalseAssertionJava.flix",
+    "sha256": "a46dcc86bed5dd79bba4c929cf61a1065052114b50396e66cdd72da8af71c623"
+  },
+  {
+    "bytes": 4042,
+    "language": "flix",
+    "path": "test/seam/InferenceSeamTest.flix",
+    "physical_lines": 62,
+    "repository_path": "test/seam/InferenceSeamTest.flix",
+    "sha256": "85862714629763c1ed7c403d3acc907c9687ef177f07064595f919a5ba908439"
+  },
+  {
+    "bytes": 2597,
+    "language": "flix",
+    "path": "test/seam/ParquetSeamTest.flix",
+    "physical_lines": 36,
+    "repository_path": "test/seam/ParquetSeamTest.flix",
+    "sha256": "a0df13a97093e0d293ee051f652d38d77cafd9a1f44bbbdb63149dc00a45db18"
+  },
+  {
+    "bytes": 2131,
+    "language": "flix",
+    "path": "test/seam/Seam.flix",
+    "physical_lines": 39,
+    "repository_path": "test/seam/Seam.flix",
+    "sha256": "08999563050c7494ba92dee7f133fc2da0b18e57c43032d7b52e89ac9be58ea4"
+  },
+  {
+    "bytes": 1642,
+    "language": "starlark",
+    "path": "test/spine/BUILD.bazel",
+    "physical_lines": 56,
+    "repository_path": "test/spine/BUILD.bazel",
+    "sha256": "c7747c84b98026f181f4f20dae95a86b8622450f7e54aeaf057992348d983fda"
+  },
+  {
+    "bytes": 2356,
+    "language": "flix",
+    "path": "test/spine/EnvelopeLaw.flix",
+    "physical_lines": 46,
+    "repository_path": "test/spine/EnvelopeLaw.flix",
+    "sha256": "0b204bab694528bd98279cbb373f1d260dd43bc92810bec9af91830e8456357f"
+  },
+  {
+    "bytes": 569,
+    "language": "flix",
+    "path": "test/spine/FalseAssertion.flix",
+    "physical_lines": 14,
+    "repository_path": "test/spine/FalseAssertion.flix",
+    "sha256": "7ab4c9727991654426e8815aaed2f7e708055e5f19c036e6437f24d1b66b1cbb"
+  },
+  {
+    "bytes": 3382,
+    "language": "flix",
+    "path": "test/spine/IsolationLaw.flix",
+    "physical_lines": 76,
+    "repository_path": "test/spine/IsolationLaw.flix",
+    "sha256": "34c2fec6d4faff25973b7c730b7c325609e0474f96bf694e180864f284d21bae"
+  },
+  {
+    "bytes": 539,
+    "language": "flix",
+    "path": "test/spine/NominalNegative.flix",
+    "physical_lines": 14,
+    "repository_path": "test/spine/NominalNegative.flix",
+    "sha256": "01b1dcf83c522dfec3c07d2489fadf54ef28cf02bcb0bee0bf6352b56f9d21b5"
+  },
+  {
+    "bytes": 194,
+    "language": "starlark",
+    "path": "tools/BUILD.bazel",
+    "physical_lines": 7,
+    "repository_path": "tools/BUILD.bazel",
+    "sha256": "6f207ffc06dff7260df1e1e7625340a24abfd058223edead52323201e312e944"
+  },
+  {
+    "bytes": 810,
+    "language": "starlark",
+    "path": "tools/boundary/BUILD.bazel",
+    "physical_lines": 26,
+    "repository_path": "tools/boundary/BUILD.bazel",
+    "sha256": "4c3c6c4b2b9a089514ecb03c28b573a90b8cffd673724564992f9b1d0b7aed0a"
+  },
+  {
+    "bytes": 3677,
+    "language": "java",
+    "path": "tools/boundary/BoundaryProbe.java",
+    "physical_lines": 103,
+    "repository_path": "tools/boundary/BoundaryProbe.java",
+    "sha256": "22ca7e0a7c9bb9d51cf6c9ef216e49285621b5c3ceeca817a0004160c8dee5d4"
+  },
+  {
+    "bytes": 4343,
+    "language": "java",
+    "path": "tools/boundary/Manifest.java",
+    "physical_lines": 94,
+    "repository_path": "tools/boundary/Manifest.java",
+    "sha256": "ee5fbf0ba0f2a99563c96cea7a5ce3258b8e76c40eb738298786810b0658a7ff"
+  },
+  {
+    "bytes": 1853,
+    "language": "java",
+    "path": "tools/boundary/NativeInner.java",
+    "physical_lines": 53,
+    "repository_path": "tools/boundary/NativeInner.java",
+    "sha256": "232c1151dc9b5d6acc1a26c38af077206d06094a6611844b2f9164b3a48ee45c"
+  },
+  {
+    "bytes": 9511,
+    "language": "java",
+    "path": "tools/boundary/NativeLaunch.java",
+    "physical_lines": 230,
+    "repository_path": "tools/boundary/NativeLaunch.java",
+    "sha256": "b41cb09fd25a7c3e29788951916d6908cf0fe821ef3143f14ecb8a8f38f86115"
+  },
+  {
+    "bytes": 2438,
+    "language": "java",
+    "path": "tools/boundary/NativeTester.java",
+    "physical_lines": 58,
+    "repository_path": "tools/boundary/NativeTester.java",
+    "sha256": "1a9b1ea6f194cb577e41e2ff5dede367690e0baedf19f7d61345770a8cb1d3f1"
+  },
+  {
+    "bytes": 1942,
+    "language": "java",
+    "path": "tools/boundary/Runfiles.java",
+    "physical_lines": 56,
+    "repository_path": "tools/boundary/Runfiles.java",
+    "sha256": "e3bdda2b14cbdabfd14f8b32559711fd0a9b3d9c57c71f81e060c281b4c35eca"
+  }
+]

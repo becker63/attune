@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 3976,
+    "language": "flix",
+    "path": "experiments/atlas-families/src/Families/Protocol.flix",
+    "physical_lines": 72,
+    "repository_path": "experiments/atlas-families/src/Families/Protocol.flix",
+    "sha256": "5c2768251e0e1d7fb4904a52a19504fd697d587d2af2546b5c2970852c89660f"
+  },
+  "program": "defines",
+  "root_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

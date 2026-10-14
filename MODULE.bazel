@@ -1,0 +1,43 @@
+module(name = "attune_studio")
+
+# One dependency graph; the small Flix library remains independently buildable.
+bazel_dep(name = "attune", version = "0.1.0")
+local_path_override(module_name = "attune", path = "attune")
+
+bazel_dep(name = "aspect_rules_js", version = "3.4.1")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.27.1")
+bazel_dep(name = "bazel_lib", version = "3.7.2")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
+bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(node_version = "24.18.0")
+pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm")
+pnpm.pnpm(name = "pnpm", pnpm_version = "10.34.5")
+use_repo(pnpm, "pnpm")
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(name = "npm", pnpm_lock = "//web:pnpm-lock.yaml", verify_node_modules_ignored = "//:.bazelignore")
+use_repo(npm, "npm")
+esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuild")
+esbuild.toolchain(name = "esbuild", esbuild_version = "0.28.0")
+use_repo(esbuild, "esbuild_toolchains")
+register_toolchains("@esbuild_toolchains//:all")
+# The Function ships an ARM64 executable with its C runtime linked in.
+bazel_dep(name = "rules_rust", version = "0.74.0")
+bazel_dep(name = "llvm", version = "0.8.21")
+bazel_dep(name = "platforms", version = "1.1.0")
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2024", versions = ["1.98.0"], extra_target_triples = ["wasm32-unknown-unknown"])
+rust.repository_set(
+    name = "rust_musl",
+    edition = "2024",
+    versions = ["1.98.0"],
+    exec_triple = "aarch64-unknown-linux-gnu",
+    target_triple = "aarch64-unknown-linux-musl",
+    target_compatible_with = ["@platforms//cpu:aarch64", "@platforms//os:linux", "@llvm//constraints/libc:musl"],
+)
+use_repo(rust, "rust_toolchains")
+# GNU and musl triples otherwise advertise the same OS/CPU constraints.
+# Resolve the explicitly constrained musl toolchain before the general defaults.
+register_toolchains("@rust_toolchains//:rust_musl__aarch64-unknown-linux-musl__stable", "@rust_toolchains//:all")
+buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
+use_repo(buildbuddy, "buildbuddy_toolchain")

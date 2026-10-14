@@ -1,0 +1,33 @@
+# Packing-only exclusions: these do NOT change what Git tracks.
+# Run Repomix from the checkout root; .gitignore handles local build/cache files.
+
+# Separate read-only reference checkout and agent runtime state.
+/attuneflix/
+/.factory/
+/.pi/
+
+# Retained historical research includes whole source snapshots and acquisitions.
+# Keep it available to the other worker and Git, but out of the current-code pack.
+/attune/notes/repository-through-time/
+
+# Local root capture and the large generated performance report.
+/x
+/LOCALIZATION_REPORT.md
+
+# Pinned inherited support is not first-party implementation.
+/attune/platform/support/
+
+# Dependency resolution metadata stays in Git, not the AI source pack.
+**/package-lock.json
+**/pnpm-lock.yaml
+**/Cargo.lock
+**/cargo-bazel-lock.json
+**/MODULE.bazel.lock
+**/maven_install.json
+
+# Bulk frozen evidence; retain test code, BUILD definitions and small fixtures.
+/attune/test/study/manifest/catalog/export_records.tsv
+/attune/test/embedding/world_sources.bzl
+/attune/test/localization*/decisions*.tsv
+/attune/test/localization*/receipts.tsv
+/attune/test/localization_sol_inspected/fixtures/*.world.tsv

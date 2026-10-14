@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 36831,
+    "language": "flix",
+    "path": "test/localization_qwen/QwenStages.flix",
+    "physical_lines": 663,
+    "repository_path": "attune/test/localization_qwen/QwenStages.flix",
+    "sha256": "bd55de33c028b2168faafcae8e83a4e476eaa6d7d77bcfa95f0f918b97f7308e"
+  },
+  "program": "calls",
+  "root_revision": "c6b5bd7bb66c395eebb1d0c7d7e9fa0876e23f96",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

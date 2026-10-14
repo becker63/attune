@@ -1,0 +1,12 @@
+attune
+attuneflix
+web/node_modules
+web/public
+web/.next
+web/.vercel
+web/.artifacts
+web/test-results
+web/bazel-bin
+web/bazel-out
+web/bazel-testlogs
+web/bazel-web

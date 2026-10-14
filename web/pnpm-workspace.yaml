@@ -1,0 +1,4 @@
+packages:
+  - "."
+hoist: false
+onlyBuiltDependencies: []

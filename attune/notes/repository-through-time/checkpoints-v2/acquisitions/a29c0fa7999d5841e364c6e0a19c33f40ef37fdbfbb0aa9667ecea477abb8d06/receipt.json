@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 49866,
+    "language": "flix",
+    "path": "src/Attune/Policy.flix",
+    "physical_lines": 884,
+    "repository_path": "attune/src/Attune/Policy.flix",
+    "sha256": "a92281fa2087d848db683b55a6dae975ab9de290a4e72ca1311e559bb3204b85"
+  },
+  "program": "defines",
+  "root_revision": "3d1ad9014f175f03e3b13fbe70872962779b7065",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

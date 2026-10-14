@@ -1,0 +1,8 @@
+BUILD.bazel
+MODULE.bazel
+platform/build/BUILD.bazel
+platform/build/embedding.bzl
+platform/build/embedding_runtime.bzl
+platform/build/native.bzl
+platform/build/world_archives.bzl
+platform/embedding/BUILD.bazel

@@ -1,0 +1,32 @@
+{
+  "published": {
+    "checked_files": 272,
+    "different": [],
+    "limits": "Verifies retained source materialization against jj revision; does not recover missing per-fact source-hash acquisition rows.",
+    "materialized_historical_root": "/tmp/attuneflix-self-88f975-k8uj22ez",
+    "missing": [],
+    "revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe"
+  },
+  "remapping_candidates": [
+    {
+      "checked_files": 102,
+      "mismatches": [],
+      "revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0"
+    },
+    {
+      "checked_files": 110,
+      "mismatches": [],
+      "revision": "10f3a212d0c4d10a6c06a8f1570b0e2dd284c920"
+    },
+    {
+      "checked_files": 111,
+      "mismatches": [],
+      "revision": "73b870983147a3cff26052097adea5e979b84271"
+    },
+    {
+      "checked_files": 112,
+      "mismatches": [],
+      "revision": "c236a3aabfa13e5f36162e895d1ca4742f9730c0"
+    }
+  ]
+}

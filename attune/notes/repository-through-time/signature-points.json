@@ -1,0 +1,801 @@
+[
+  {
+    "assets": {
+      "execution.log": {
+        "bytes": 809,
+        "path": "measurements/baseline/execution.log",
+        "sha256": "4730863b2249c2e529c22853ae55142a01d8873df72864c818231411e3c68aae"
+      },
+      "identity.json": {
+        "bytes": 18219,
+        "path": "measurements/baseline/identity.json",
+        "sha256": "48643a3b7a7adb0ee095e45a7d8e73287620e767cbbe7646a93d0b554ff084b5"
+      },
+      "observations.parquet": {
+        "bytes": 1813381,
+        "path": "measurements/baseline/observations.parquet",
+        "sha256": "0f2436c774665de01e4a8b45632333a078323b76d42d75b496286bd05a1f3c94"
+      },
+      "summaries.parquet": {
+        "bytes": 23440,
+        "path": "measurements/baseline/summaries.parquet",
+        "sha256": "2429b1210a9b65098e04af6ee2bbdad62ff7f03519a1d2f1d34826da576015cd"
+      }
+    },
+    "atlas_protocol": "atlas-composition-depth7-v1",
+    "base_revision": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "cumulative_file_reach": [
+      0.09895833333333334,
+      0.3975694444444445,
+      0.501736111111111,
+      0.6024305555555556,
+      0.6354166666666666,
+      0.6458333333333333,
+      0.6493055555555556
+    ],
+    "date": "2026-09-25T02:41:22+00:00",
+    "domains": {
+      "file": {
+        "expansion_p90_by_depth": [
+          8.0,
+          29.5,
+          13.566666666666666,
+          22.0,
+          16.928571428571427,
+          17.677419354838708,
+          17.054054054054053
+        ],
+        "extinction": 0.5940073193046661,
+        "reach_p50": 0.0,
+        "reach_p90": 0.3611111111111111,
+        "reach_p90_by_depth": [
+          0.028871391076115485,
+          0.19444444444444445,
+          0.34120734908136485,
+          0.3611111111111111,
+          0.35170603674540685,
+          0.3611111111111111,
+          0.3700787401574803
+        ],
+        "recurrence_pooled": 11.455021834061135,
+        "survival_by_depth": [
+          0.7916666666666666,
+          0.5972222222222222,
+          0.49537037037037035,
+          0.4537037037037037,
+          0.42386831275720166,
+          0.4092935528120713,
+          0.39871970736168266
+        ]
+      },
+      "symbol": {
+        "expansion_p90_by_depth": [
+          1.0,
+          17.0,
+          17.0,
+          20.0,
+          18.928571428571427,
+          18.928571428571427,
+          18.0
+        ],
+        "extinction": 0.4806343397377249,
+        "reach_p50": 0.007874015748031496,
+        "reach_p90": 0.2638888888888889,
+        "reach_p90_by_depth": [
+          0.013888888888888888,
+          0.04199475065616798,
+          0.06824146981627296,
+          0.125,
+          0.18055555555555555,
+          0.2152230971128609,
+          0.3005249343832021
+        ],
+        "recurrence_pooled": 9.338554645781416,
+        "survival_by_depth": [
+          0.7916666666666666,
+          0.6944444444444444,
+          0.6296296296296297,
+          0.5848765432098766,
+          0.551954732510288,
+          0.5270919067215364,
+          0.5082876085962506
+        ]
+      }
+    },
+    "fact_identity": "repository-facts-v2:3549cd52bd00f5d961e64a3b1dd2d84aae2899462f71ab9897beb829a15aec58",
+    "id": "baseline",
+    "inputs": {
+      "facts": {
+        "bytes": 107737,
+        "path": "inputs/baseline/facts.parquet",
+        "sha256": "bd27f51451f4d6ddb60f374ea79bc2d98468c4618bd5a909e1f4b72004cb2742"
+      },
+      "sources": {
+        "bytes": 8959,
+        "path": "inputs/baseline/sources.parquet",
+        "sha256": "1ab3ad23854c7581d3dd1801ee457cf0bb743e03243b92b8fcfd9079c3587364"
+      }
+    },
+    "physical": {
+      "evaluations": 9525,
+      "logical_routes_per_evaluation": 5.508031496062992,
+      "median_seed_compression": null,
+      "requests": 341184,
+      "reuse_fraction": 0.9720825126617896,
+      "reuses": 331659
+    },
+    "population": {
+      "calls_per_symbol": 1.0091863517060367,
+      "common_language_file_count": 72,
+      "common_supported_languages": [
+        "flix",
+        "java",
+        "starlark"
+      ],
+      "coverage": "partial semantic resolution; supported source inclusion verified",
+      "facts": 5293,
+      "files": 72,
+      "forward_relations_per_entity": 1.9436450839328536,
+      "imports_per_file": 1.25,
+      "languages": {
+        "flix": 41,
+        "java": 11,
+        "starlark": 20
+      },
+      "relations": {
+        "calls": 769,
+        "defines": 762,
+        "imports": 90,
+        "parent": null
+      },
+      "source_directory_boundaries": [
+        "build",
+        "build/src",
+        "build/src/Atlas",
+        "data",
+        "data/evaluation",
+        "experiments",
+        "experiments/atlas-swe-explore",
+        "experiments/atlas-swe-explore/census",
+        "experiments/swe-explore-js-ts-scale",
+        "src",
+        "src/Atlas",
+        "src/Atlas/Signature",
+        "src/Localization",
+        "src/Population",
+        "src/Radii",
+        "src/Repository",
+        "src/grit",
+        "src/native",
+        "src/native/grit",
+        "src/native/identity",
+        "src/native/inference",
+        "src/native/parquet",
+        "test"
+      ],
+      "source_directory_count": 23,
+      "symbols": 762
+    },
+    "repository": "attuneflix",
+    "revision": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "series": "atlas-signature-work-topology-v1",
+    "signature_protocol": "atlas-signature-work-topology-v1",
+    "snapshot_id": "repository-snapshot-v1:0eb85d4563c295799bf50310619e299fc4b68659353e5ad9300611479100e1cb",
+    "source_binding": "every frozen source SHA-256 and byte length verified against exact jj revision; every fact source hash/language/range verified",
+    "source_tree_identity": "attuneflix-source-tree-v2:bcfc126db7b7c7f535353ccc8afca44465903571",
+    "status": "recomputed_signature_over_immutable_historical_facts"
+  },
+  {
+    "assets": {
+      "execution.log": {
+        "bytes": 809,
+        "path": "measurements/cleaned/execution.log",
+        "sha256": "79647b8756e19c5e401962878b903f7826e25fddf8a62a44ee34c86a4a60231b"
+      },
+      "identity.json": {
+        "bytes": 19119,
+        "path": "measurements/cleaned/identity.json",
+        "sha256": "79bd3f11deba2a41cee643c58453c802a13e35cd7800ea22e405e9553fb9edde"
+      },
+      "observations.parquet": {
+        "bytes": 1830320,
+        "path": "measurements/cleaned/observations.parquet",
+        "sha256": "3c0acde4ea44dcb47b7fa83584dc6ad6938e5caa77384315174033f8c918eaea"
+      },
+      "summaries.parquet": {
+        "bytes": 23600,
+        "path": "measurements/cleaned/summaries.parquet",
+        "sha256": "b05e6c9fcbfbaaedd7c8d04ceee622f63f5d64bc46b37f27d48248c2fcffceeb"
+      }
+    },
+    "atlas_protocol": "atlas-composition-depth7-v1",
+    "base_revision": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "cumulative_file_reach": [
+      0.10166666666666666,
+      0.4166666666666667,
+      0.5133333333333334,
+      0.6066666666666667,
+      0.6416666666666667,
+      0.655,
+      0.6566666666666667
+    ],
+    "date": "2026-09-25T17:14:27+00:00",
+    "domains": {
+      "file": {
+        "expansion_p90_by_depth": [
+          8.0,
+          23.666666666666668,
+          10.151515151515152,
+          18.846153846153847,
+          13.571428571428571,
+          15.2,
+          14.071428571428571
+        ],
+        "extinction": 0.5875648063433974,
+        "reach_p50": 0.0,
+        "reach_p90": 0.38666666666666666,
+        "reach_p90_by_depth": [
+          0.04,
+          0.22666666666666666,
+          0.3415384615384615,
+          0.37333333333333335,
+          0.37333333333333335,
+          0.3769230769230769,
+          0.39692307692307693
+        ],
+        "recurrence_pooled": 10.835192069392813,
+        "survival_by_depth": [
+          0.7916666666666666,
+          0.5833333333333334,
+          0.49537037037037035,
+          0.4506172839506173,
+          0.4269547325102881,
+          0.414437585733882,
+          0.40649291266575216
+        ]
+      },
+      "symbol": {
+        "expansion_p90_by_depth": [
+          2.0,
+          14.0,
+          15.0,
+          16.25,
+          16.25,
+          16.181818181818183,
+          15.88888888888889
+        ],
+        "extinction": 0.509225373589509,
+        "reach_p50": 0.0,
+        "reach_p90": 0.32,
+        "reach_p90_by_depth": [
+          0.013333333333333334,
+          0.04,
+          0.10666666666666667,
+          0.13384615384615384,
+          0.2,
+          0.2815384615384615,
+          0.33384615384615385
+        ],
+        "recurrence_pooled": 9.556284153005464,
+        "survival_by_depth": [
+          0.7083333333333334,
+          0.6111111111111112,
+          0.5601851851851852,
+          0.5277777777777778,
+          0.5066872427983539,
+          0.49382716049382713,
+          0.48496799268404206
+        ]
+      }
+    },
+    "fact_identity": "repository-facts-v2:f3a7ec492412f5a8843c9883da7635412aa744ef54f4e4909b8798eeaa8eaa08",
+    "id": "cleaned",
+    "inputs": {
+      "facts": {
+        "bytes": 106653,
+        "path": "inputs/cleaned/facts.parquet",
+        "sha256": "463e067844ca9b72cb4240be18aa1845d7821c9224ab4f1bb6ccd27faa88e43f"
+      },
+      "sources": {
+        "bytes": 9373,
+        "path": "inputs/cleaned/sources.parquet",
+        "sha256": "f93f5454584f9e9484e536739acf06c2480f190a61811c94109bbf4c71bc19e3"
+      }
+    },
+    "physical": {
+      "evaluations": 9924,
+      "logical_routes_per_evaluation": 5.286577992744861,
+      "median_seed_compression": null,
+      "requests": 341184,
+      "reuse_fraction": 0.9709130557118739,
+      "reuses": 331260
+    },
+    "population": {
+      "calls_per_symbol": 1.0661538461538462,
+      "common_language_file_count": 75,
+      "common_supported_languages": [
+        "flix",
+        "java",
+        "starlark"
+      ],
+      "coverage": "partial semantic resolution; supported source inclusion verified",
+      "facts": 5124,
+      "files": 75,
+      "forward_relations_per_entity": 2.0248275862068965,
+      "imports_per_file": 1.6666666666666667,
+      "languages": {
+        "flix": 42,
+        "java": 11,
+        "starlark": 22
+      },
+      "relations": {
+        "calls": 693,
+        "defines": 650,
+        "imports": 125,
+        "parent": null
+      },
+      "source_directory_boundaries": [
+        "build",
+        "build/src",
+        "data",
+        "data/evaluation",
+        "experiments",
+        "experiments/atlas-parallelism",
+        "experiments/atlas-swe-explore",
+        "experiments/atlas-swe-explore/census",
+        "experiments/swe-explore-js-ts-scale",
+        "src",
+        "src/Atlas",
+        "src/Atlas/Signature",
+        "src/Localization",
+        "src/Population",
+        "src/Radii",
+        "src/Repository",
+        "src/ScientificTable",
+        "src/grit",
+        "src/native",
+        "src/native/grit",
+        "src/native/identity",
+        "src/native/inference",
+        "src/native/parquet",
+        "test"
+      ],
+      "source_directory_count": 24,
+      "symbols": 650
+    },
+    "repository": "attuneflix",
+    "revision": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "series": "atlas-signature-work-topology-v1",
+    "signature_protocol": "atlas-signature-work-topology-v1",
+    "snapshot_id": "repository-snapshot-v1:bf74264ec56600df86c72b686c1e7aa4101ee641c1a4bed26b60ef37c2b06ad3",
+    "source_binding": "every frozen source SHA-256 and byte length verified against exact jj revision; every fact source hash/language/range verified",
+    "source_tree_identity": "attuneflix-source-tree-v2:ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "status": "recomputed_signature_over_immutable_historical_facts"
+  },
+  {
+    "assets": {
+      "execution.log": {
+        "bytes": 809,
+        "path": "measurements/control/execution.log",
+        "sha256": "802b68eeb2c8c5fd8b9c3f6d591cb5923a08ea340e73dabf36abb0dc8d3e0a44"
+      },
+      "identity.json": {
+        "bytes": 20812,
+        "path": "measurements/control/identity.json",
+        "sha256": "ea6c24a537137705b79729f318171a317b3f11dbb74e05b75991368a5769fb0f"
+      },
+      "observations.parquet": {
+        "bytes": 1800487,
+        "path": "measurements/control/observations.parquet",
+        "sha256": "173cc2a9f1c335e940da32761c9632ec9f2db75d1103cf64903cbd3c7241cf0f"
+      },
+      "summaries.parquet": {
+        "bytes": 23610,
+        "path": "measurements/control/summaries.parquet",
+        "sha256": "a5b6669c0b75b7aa3288967fdb111eb28f0fa580a8b656c8480d1803e433323a"
+      }
+    },
+    "atlas_protocol": "atlas-composition-depth7-v1",
+    "base_revision": "eca979f524661cbe400d22b90c7e3c305b32052e",
+    "cumulative_file_reach": [
+      0.09722222222222221,
+      0.41358024691358025,
+      0.5246913580246914,
+      0.632716049382716,
+      0.6635802469135802,
+      0.6728395061728395,
+      0.6743827160493827
+    ],
+    "date": "2026-09-25T21:22:48+00:00",
+    "domains": {
+      "file": {
+        "expansion_p90_by_depth": [
+          8.0,
+          24.0,
+          11.371428571428572,
+          22.076923076923077,
+          15.333333333333334,
+          16.823529411764707,
+          15.944444444444445
+        ],
+        "extinction": 0.5865736505032022,
+        "reach_p50": 0.0,
+        "reach_p90": 0.4074074074074074,
+        "reach_p90_by_depth": [
+          0.037037037037037035,
+          0.2222222222222222,
+          0.34191176470588236,
+          0.35171568627450983,
+          0.35171568627450983,
+          0.4019607843137255,
+          0.4074074074074074
+        ],
+        "recurrence_pooled": 10.4928,
+        "survival_by_depth": [
+          0.7916666666666666,
+          0.5833333333333334,
+          0.49537037037037035,
+          0.4506172839506173,
+          0.4279835390946502,
+          0.4152949245541838,
+          0.4075788751714678
+        ]
+      },
+      "symbol": {
+        "expansion_p90_by_depth": [
+          1.0,
+          14.0,
+          17.0,
+          17.0,
+          19.25,
+          18.375,
+          17.8
+        ],
+        "extinction": 0.5626715462031107,
+        "reach_p50": 0.0,
+        "reach_p90": 0.2549019607843137,
+        "reach_p90_by_depth": [
+          0.012345679012345678,
+          0.03553921568627451,
+          0.04938271604938271,
+          0.09803921568627451,
+          0.16049382716049382,
+          0.20987654320987653,
+          0.2839506172839506
+        ],
+        "recurrence_pooled": 11.26320309145556,
+        "survival_by_depth": [
+          0.6666666666666666,
+          0.5694444444444444,
+          0.5185185185185185,
+          0.48148148148148145,
+          0.45781893004115226,
+          0.4411865569272977,
+          0.4302697759487883
+        ]
+      }
+    },
+    "fact_identity": "repository-facts-v2:da53b7c551a0616b652b3a98406542ddfc6b0611bb4d8b3f56922e7174ee1aec",
+    "id": "control",
+    "inputs": {
+      "facts": {
+        "bytes": 124541,
+        "path": "inputs/control/facts.parquet",
+        "sha256": "c9a7974388b023970bbf721c13837f71b896d74d8f9476044135bbdde301b26a"
+      },
+      "sources": {
+        "bytes": 10108,
+        "path": "inputs/control/sources.parquet",
+        "sha256": "262589b59bfb8938d95a05740646a4563852b07983db4e23c77078e567091a88"
+      }
+    },
+    "physical": {
+      "evaluations": 9315,
+      "logical_routes_per_evaluation": 5.632206119162641,
+      "median_seed_compression": null,
+      "requests": 341184,
+      "reuse_fraction": 0.9726980163196398,
+      "reuses": 331869
+    },
+    "population": {
+      "calls_per_symbol": 1.0943627450980393,
+      "common_language_file_count": 81,
+      "common_supported_languages": [
+        "flix",
+        "java",
+        "starlark"
+      ],
+      "coverage": "partial semantic resolution; supported source inclusion verified",
+      "facts": 6254,
+      "files": 81,
+      "forward_relations_per_entity": 2.0579710144927534,
+      "imports_per_file": 1.691358024691358,
+      "languages": {
+        "flix": 48,
+        "java": 11,
+        "starlark": 22
+      },
+      "relations": {
+        "calls": 893,
+        "defines": 816,
+        "imports": 137,
+        "parent": null
+      },
+      "source_directory_boundaries": [
+        "build",
+        "build/src",
+        "data",
+        "data/evaluation",
+        "experiments",
+        "experiments/atlas-parallelism",
+        "experiments/atlas-swe-explore",
+        "experiments/atlas-swe-explore/census",
+        "experiments/swe-explore-js-ts-scale",
+        "src",
+        "src/Atlas",
+        "src/Atlas/Signature",
+        "src/Localization",
+        "src/Population",
+        "src/Radii",
+        "src/Repository",
+        "src/ScientificTable",
+        "src/grit",
+        "src/native",
+        "src/native/grit",
+        "src/native/identity",
+        "src/native/inference",
+        "src/native/parquet",
+        "test"
+      ],
+      "source_directory_count": 24,
+      "symbols": 816
+    },
+    "repository": "attuneflix",
+    "revision": "eca979f524661cbe400d22b90c7e3c305b32052e",
+    "series": "atlas-signature-work-topology-v1",
+    "signature_protocol": "atlas-signature-work-topology-v1",
+    "snapshot_id": "repository-snapshot-v1:279c8f179462ba5aa7d493efe923f464ac7424029a44051f641c5e3558cd658c",
+    "source_binding": "every frozen source SHA-256 and byte length verified against exact jj revision; every fact source hash/language/range verified",
+    "source_tree_identity": "attuneflix-source-tree-v2:eca979f524661cbe400d22b90c7e3c305b32052e",
+    "status": "exact_historical_replay"
+  },
+  {
+    "assets": {
+      "REPORT.md": {
+        "bytes": 3604,
+        "path": "measurements/published/REPORT.md",
+        "sha256": "404d2c99233c7a74880f9c46f2266a055b3e8aa2e886624ba48d341be8bfbc29"
+      },
+      "execution.log": {
+        "bytes": 693,
+        "path": "measurements/published/execution.log",
+        "sha256": "3d6c5382b95f450086bfc35feaf72559e3dd8b1be23f355c8e2ed476e0bee6a9"
+      },
+      "observations.parquet": {
+        "bytes": 2266780,
+        "path": "measurements/published/observations.parquet",
+        "sha256": "85dc55bb6b178913d3a844f22d2e12ec1aec171dedec8e6e1d45375dad31cb6b"
+      },
+      "physical.parquet": {
+        "bytes": 7705,
+        "path": "measurements/published/physical.parquet",
+        "sha256": "2a1d79855396e8b20c6655f7930fc8a7b2f9ca83a0ca5f7b43771dd7bdf21298"
+      },
+      "repositories.parquet": {
+        "bytes": 3707,
+        "path": "measurements/published/repositories.parquet",
+        "sha256": "d6158cbb0679ac5bfe5939871d7645c31304af9c61a83ad2301b01bbb1a0d0e8"
+      },
+      "snapshot.parquet": {
+        "bytes": 4666,
+        "path": "measurements/published/snapshot.parquet",
+        "sha256": "ad09a485698af02da7ba807b88f81fc66438e4875d596656ba2dbc2c9ab6c7a9"
+      },
+      "summary.parquet": {
+        "bytes": 23496,
+        "path": "measurements/published/summary.parquet",
+        "sha256": "420c1c159d55e58eac30bde4b46ba7fb617c8ebade3b96f4f1457687745336c7"
+      }
+    },
+    "atlas_protocol": "atlas-composition-depth7-v1",
+    "base_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+    "cumulative_file_reach": null,
+    "date": "2026-09-29T03:33:53+00:00",
+    "domains": {
+      "file": {
+        "expansion_p90_by_depth": [
+          8.0,
+          10.75,
+          8.551724137931034,
+          9.0,
+          8.75,
+          8.68421052631579,
+          8.578125
+        ],
+        "extinction": 0.49919945105215,
+        "reach_p50": 0.0004266211604095563,
+        "reach_p90": 0.19117647058823528,
+        "reach_p90_by_depth": [
+          0.014705882352941176,
+          0.051470588235294115,
+          0.09641638225255973,
+          0.12329351535836178,
+          0.15808823529411764,
+          0.18515358361774745,
+          0.20220588235294118
+        ],
+        "recurrence_pooled": 4.601298017891598,
+        "survival_by_depth": [
+          0.7083333333333334,
+          0.625,
+          0.5648148148148148,
+          0.5339506172839507,
+          0.5149176954732511,
+          0.5032578875171467,
+          0.49559899405578417
+        ]
+      },
+      "symbol": {
+        "expansion_p90_by_depth": [
+          1.0,
+          14.0,
+          11.0,
+          9.5,
+          8.75,
+          8.678571428571429,
+          8.35
+        ],
+        "extinction": 0.6583562061604148,
+        "reach_p50": 0.0,
+        "reach_p90": 0.125,
+        "reach_p90_by_depth": [
+          0.003676470588235294,
+          0.014705882352941176,
+          0.02901023890784983,
+          0.04044117647058824,
+          0.06985294117647059,
+          0.10661764705882353,
+          0.1386518771331058
+        ],
+        "recurrence_pooled": 6.076441973592773,
+        "survival_by_depth": [
+          0.5833333333333334,
+          0.4444444444444444,
+          0.3888888888888889,
+          0.36419753086419754,
+          0.35030864197530864,
+          0.3436213991769547,
+          0.3378486511202561
+        ]
+      }
+    },
+    "fact_identity": "repository-facts-v2:51fd0342852e771b588edcd4ef89b105b57e8ec400741aa562c7fbabfb6c95a5",
+    "id": "published",
+    "inputs": {
+      "entities": {
+        "bytes": 101686,
+        "path": "inputs/published/entities.parquet",
+        "sha256": "6e81c086928f1217752cca17df52cd70dba5cb7466bb671e4a9d4b038d760586"
+      },
+      "metadata": {
+        "bytes": 3998,
+        "path": "inputs/published/metadata.parquet",
+        "sha256": "cf33c4071f16a4a1f63d5bced37364c07230cffbadb5b9c1264885894c0f4f83"
+      },
+      "physical_all_seeds": {
+        "bytes": 244847,
+        "path": "inputs/published/physical-all-seeds.parquet",
+        "sha256": "c687e03e499421c091af597f13666323daa70b53055a7eaa1dace838e36ef054"
+      },
+      "relations": {
+        "bytes": 32094,
+        "path": "inputs/published/relations.parquet",
+        "sha256": "b2c0aef9252049b5a4e7f86f031fa8465da581b6559f0b11da4d62bd60c18d7f"
+      }
+    },
+    "physical": {
+      "evaluations": 12882,
+      "logical_routes_per_evaluation": 4.072659524918491,
+      "median_seed_compression": 5.058904773954116,
+      "requests": 341184,
+      "reuse_fraction": 0.9622432470455824,
+      "reuses": 328302
+    },
+    "population": {
+      "calls_per_symbol": 1.2657849829351535,
+      "common_language_file_count": 168,
+      "common_supported_languages": [
+        "flix",
+        "java",
+        "starlark"
+      ],
+      "coverage": "partial semantic resolution; raw source-hash acquisition table unavailable",
+      "facts": 21403,
+      "files": 272,
+      "forward_relations_per_entity": 2.2951070336391437,
+      "imports_per_file": 2.547794117647059,
+      "languages": {
+        "flix": 109,
+        "java": 12,
+        "javascript": 12,
+        "starlark": 47,
+        "typescript": 92
+      },
+      "relations": {
+        "calls": 2967,
+        "defines": 2344,
+        "imports": 693,
+        "parent": 328
+      },
+      "source_directory_boundaries": [
+        "build",
+        "data",
+        "data/evaluation",
+        "experiments",
+        "experiments/atlas-families",
+        "experiments/atlas-families/src",
+        "experiments/atlas-families/src/Families",
+        "experiments/atlas-families/src/Families/Cluster",
+        "experiments/atlas-families/src/Families/Decision",
+        "experiments/atlas-families/src/Families/Edge",
+        "experiments/atlas-families/src/Families/Embedding",
+        "experiments/atlas-families/src/Families/Inventory",
+        "experiments/atlas-live-physical",
+        "experiments/atlas-location-export",
+        "experiments/atlas-parallelism",
+        "experiments/atlas-swe-explore",
+        "experiments/atlas-swe-explore/census",
+        "experiments/atlas-work-topology",
+        "experiments/swe-explore-js-ts-scale",
+        "src",
+        "src/Atlas",
+        "src/Atlas/Signature",
+        "src/Localization",
+        "src/Population",
+        "src/Radii",
+        "src/Repository",
+        "src/Repository/Location",
+        "src/ScientificTable",
+        "src/grit",
+        "src/native",
+        "src/native/grit",
+        "src/native/identity",
+        "src/native/inference",
+        "src/native/parquet",
+        "test",
+        "test/Applications",
+        "test/Engine",
+        "test/Kernel",
+        "test/World",
+        "test/build",
+        "web",
+        "web/atlas-live",
+        "web/atlas-live/app",
+        "web/atlas-live/app/src",
+        "web/atlas-live/app/src/frontier",
+        "web/atlas-live/app/test",
+        "web/atlas-live/deploy",
+        "web/atlas-live/e2e",
+        "web/atlas-live/e2e/src",
+        "web/atlas-live/e2e/test",
+        "web/atlas-live/projection",
+        "web/atlas-live/projection/src",
+        "web/atlas-live/projection/test",
+        "web/atlas-live/protocol",
+        "web/atlas-live/protocol/src",
+        "web/atlas-live/protocol/test"
+      ],
+      "source_directory_count": 56,
+      "symbols": 2344
+    },
+    "repository": "attuneflix",
+    "revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+    "series": "atlas-signature-swe-explore-v1",
+    "signature_protocol": "atlas-signature-swe-explore-v1",
+    "snapshot_id": "repository-snapshot-v1:6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a",
+    "source_binding": "published metadata and manifest agree; immutable world assets hash-match; preserved acquisition log names source revision; raw source-hash table unavailable; all 272 retained materialized source files SHA-match exact jj revision",
+    "source_tree_identity": "attuneflix-source-tree-v2:88f97599901df1be52ce8cb06f2a701c464cbbbe",
+    "source_witness": "historical-source-witnesses.json",
+    "status": "recomputed_signature_over_immutable_historical_facts"
+  }
+]

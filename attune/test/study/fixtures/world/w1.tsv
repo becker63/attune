@@ -1,4 +1,0 @@
-defines	Shop.flix	Shop.Receipt
-defines	Shop.flix	Shop.Pricing
-calls	Shop.Receipt.render	Shop.Pricing.total_cents
-imports	Checkout.flix	Shop.flix

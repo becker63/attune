@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 3199,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/control_signatures.bzl",
+    "physical_lines": 92,
+    "repository_path": "experiments/atlas-work-topology/control_signatures.bzl",
+    "sha256": "dcc8ec5ff241f29aefb428f878ecf0e52357fddc6a1fc6e32a52d276823410a6"
+  },
+  "program": "imports",
+  "root_revision": "73b870983147a3cff26052097adea5e979b84271",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

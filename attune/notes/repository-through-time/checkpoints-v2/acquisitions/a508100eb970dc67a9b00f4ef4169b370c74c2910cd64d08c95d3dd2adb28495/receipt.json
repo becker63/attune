@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 2868,
+    "language": "flix",
+    "path": "test/Applications/LocalizationTest.flix",
+    "physical_lines": 68,
+    "repository_path": "test/Applications/LocalizationTest.flix",
+    "sha256": "90c0e173df877848acda4956f5b3b019013560a947e808381cccfb55df9a6259"
+  },
+  "program": "calls",
+  "root_revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

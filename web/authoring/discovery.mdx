@@ -1,0 +1,270 @@
+<Page id="retrieval">
+
+<Sequence current="1" />
+
+# A bug report. Which file do you open?
+
+Styles and scripts disappear from Greenwood’s pages. There are **393 source files**. We want ten worth opening. Use AI to suggest files; use ordinary code to look up their connections.
+
+<Figure name="candidate-net" />
+
+Watch one file move: a model suggests it, a lookup finds who uses it, and another model judges it. Ordinary sorting puts that judgment to work.
+
+The helper, `resource-utils.js`, moves from **28th to tenth**. Those are recorded results, replayed here without calling a model. Finding likely files is called **localization**. Attune is our experiment in taking that job apart: which parts need a guess, which need a lookup, and which have we already done?
+
+## How do “missing styles” and “resource utils” meet?
+
+Matching words helps when the issue uses the same names as the code. But people describe symptoms, and files often name mechanisms.
+
+**Qwen** is the model we use to turn text into lists of numbers, called **embeddings** or vectors. We obtain one list for the issue and one for each file. Similar directions in those lists can bring differently worded texts together. That is a learned clue, not proof that the file needs changing.
+
+Once we have the numbers, sorting files is ordinary arithmetic. This is the actual Flix comparison:
+
+<FlixBlock name="cosine" />
+
+`dot` multiplies numbers in matching positions and adds them up. `norm` measures each list’s length. Dividing by both lengths compares direction rather than size. The `if` handles an all-zero list. This score is called **cosine similarity**; it needs no further model call.
+
+The first 32 files go to judgment. That is a spending limit, not a confidence threshold. File 33 could matter too. All 393 remain in the full ranking.
+
+## Ask the model once. Keep the numbers.
+
+A new issue needs its own vector. Unchanged source files can keep theirs. In the retained acquisition, 27,733 requested rows shared 10,555 distinct embedding inputs. The cold run recorded **$0.1409903** in provider charges; its replay made **zero provider requests**. Loading and comparing saved numbers still takes time.
+
+[Watch the requests—and the replay that avoids them →](#runtime)
+
+## Does the short list help?
+
+Across 85 historical issues, Qwen puts a required file in its first ten **73 times**. Jev with structural clues raises that to **78/85**. Finding *every* required file is harder: **47/85**. The difference matters when a fix touches eight files and we find only one.
+
+The larger Sol agent comparison takes a different route: it searches and reads the repository itself. Jev’s prepared question has a **78× shorter median measured wait**, and known model spend including cold Qwen acquisition is **28× smaller** than Sol’s API-price estimate. These compare different amounts of work; preparation is outside Jev’s request timer. [The benchmark puts the scores, costs and limitations together](#benchmark).
+
+That is the useful question behind Attune: how much work can we save while still finding the right files? Next, open the note that helped this helper move.
+
+[2. Atlas: who uses this file? →](#relationships)
+
+</Page>
+
+<Page id="effects">
+
+# Ask once. Continue when the answer arrives.
+
+To compare an issue with files, we first need numbers describing their text. Producing them may require a model on another computer. Using them is local arithmetic. Here is the handoff—with a saved answer standing in for the model.
+
+<Figure name="effect-handler" />
+
+That little handoff is the idea behind a Flix **effect**. The request says what is needed. A **handler** answers it. Here the answer is already available, so the handler can hand it straight back. Nothing goes over the network.
+
+## Here is the request
+
+This small teaching program is compiled and tested. `eff` introduces a request named `vector`: give it text, receive a list of numbers.
+
+<EffectCode part="request" />
+
+`vectorForIssue` asks for the issue’s numbers. The `\ Embedding` in its type tells Flix that it needs this effect. A caller cannot quietly pretend the request never happens: the compiler tracks that need through the program.
+
+## Here is the answer
+
+`run` starts the calculation. When it asks for a vector, this handler receives the request and a function called `continueWith`. Give that function the saved numbers, and the waiting calculation resumes.
+
+<EffectCode part="handler" />
+
+The test supplies two illustrative numbers and checks they come back unchanged. They are not Qwen measurements. Another handler could fetch an answer over the network; that handler would have to declare its own outside work too.
+
+This is handy for testing. The calculation can ask the same question while a test supplies the answer cheaply. The [Flix effect-system guide](https://doc.flix.dev/effect-system.html) explains the compiler’s checks. Effects expose work; they do not make it free, cached or parallel.
+
+## Where did the study call Qwen?
+
+In **Java**, through a hosted-model SDK. The helper saved vectors; Flix read them and ranked files. That acquisition code is preserved in the [complete study snapshot](https://github.com/becker63/attune/tree/c0ed1329b2008cc2af69cf2b81fbf07a2b4b568f). The example above supplies authored answers.
+
+<Figure name="embedding-boundary" />
+
+In one recorded Greenwood run, 393 source files and one issue became 352 distinct embedding inputs. Eleven hosted requests, plus local acquisition and writing, took about **92 seconds**. Once those numbers were saved, ranking needed no more inference.
+
+<details className="technical-reading">
+<summary>See the archived Flix file boundary</summary>
+
+<FlixBlock name="qwenRead" />
+
+`FileRead.read(path)` requests the saved contents; `runWithIO` performs that read. `\ IO` tells us this function touches the outside world. `Result.getWithDefault` returns an empty string on a read error. This wrapper reads a file; it does not call Qwen.
+
+</details>
+
+## A new issue does not erase the old work
+
+Change the issue below. The file vectors stay; the issue vector and ranking need new work. Change the embedding recipe instead, and the old vectors no longer answer the same request.
+
+<Figure name="reuse-boundary" />
+
+**Bazel**, the build system, tracks which steps depend on which inputs. It can reuse a completed step when its declared inputs and execution identity still match. For ranking, those include the issue vector, source-file vectors and candidate list. Effects do not declare those dependencies for Bazel; the build rule does.
+
+Saved vectors also record their model, recipe and exact input bytes. That is how we distinguish “we have this answer” from “we have some similar numbers.” A changed source file needs a new vector if its embedded input changes.
+
+There are two useful Flix ideas here. Effects let a program say **“I need an answer from outside.”** Datalog lets it ask **“what follows from the facts I already have?”** [Watch two imports produce a Datalog answer](#relationships), or [see how much repeated work we avoided](#runtime).
+
+## Run the idea
+
+In the current [Attune checkout](https://github.com/becker63/attune), run:
+
+```sh
+nix run
+```
+
+The offline walkthrough asks for vectors, supplies saved answers, and ranks two files. Start with [Main.flix](https://github.com/becker63/attune/blob/main/attune/src/Main.flix), then [Effects.flix](https://github.com/becker63/attune/blob/main/attune/src/Attune/Effects.flix). A missing answer stops the calculation. The vectors are authored examples; no model is called.
+
+`nix run .#test` checks the implementation. Flix describes requests and computes answers. Bazel schedules independent actions and reuses unchanged outputs.
+
+</Page>
+
+<Page id="extraction">
+
+# Turn a line of code into a row.
+
+Greenwood’s bundling code imports a helper. A person can read that line and point to the file it uses. We want to keep the same observation in a form a program can ask questions about.
+
+<Figure name="source-to-fact" />
+
+**Grit** recognizes the import’s source-code shape and captures the written name. **Flix** finds the actual target file and saves the relationship. The solid arrow means that target was accepted in this saved repository version.
+
+## Find this shape, whatever the names are
+
+Here is the actual Grit pattern:
+
+<GritBlock />
+
+The backticks describe source syntax. `$source` is a blank Grit fills with the module name; `as $import` captures the whole statement. `or` allows either shape. `log` records the match. It does not decide which file the name means.
+
+In this case the captured text is `'../lib/resource-utils.js'`. The `..` says to go up one folder from `lifecycles/bundle.js`, then into `lib`. Now we can check whether that target exists.
+
+## Keep only the connections we can justify
+
+<pre className="pattern-diagram">{`source text
+    |
+Grit: find the import, capture its name
+    |
+Java: carry the match and its source location
+    |
+Flix: find the target in this repository version
+    |
+    +-- found ------> save the relationship
+    '--- unresolved -> keep a refusal, not a guess`}</pre>
+
+The same pipeline reads three kinds of facts: a file **defines** a named function or other code item; a file **imports** another file; one named item **calls** another. Reverse questions read those same pairs backward. Finding “is imported by” does not need a second extraction pass.
+
+## Different languages, the same columns
+
+Ruby writes a relative `require`. JavaScript writes an `import`. Each needs its own source pattern and rules for finding targets. Once resolved, both become rows with the same columns:
+
+<Figure name="datalog-pipeline" />
+
+The **world** column keeps repository versions apart. Source locations let us check where a row came from. Downstream code can ask “which files share this dependency?” without learning Ruby or JavaScript syntax again. [That is where Datalog comes in](#relationships).
+
+## Sometimes the spelling defeats the reader
+
+Got imports `response.js`, but the retained file is `response.ts`. The source resolver tries the given name and appends possible endings. It does not replace `.js` with `.ts`. So this real dependency never becomes an accepted Imports row.
+
+<Figure name="missing-edge" />
+
+The dots mean **present in source, absent from Atlas’s facts**. Qwen and Jev still find both required files. Missing a connection limits the questions Atlas can answer; it does not make the file invisible to every method.
+
+<details className="technical-reading">
+<summary>The exact rule that misses the .js → .ts connection</summary>
+
+<FlixBlock name="importCandidates" />
+
+`base` is the normalized source name. `List.map` appends each suffix to it. `::` puts one item at the front of a list; `:::` joins lists. None of these operations replaces an existing extension.
+
+The native Grit matcher also records byte ranges—the positions of the matched text. Java carries these records into Flix, which checks source identity and resolves the target. The shared table format does not remove this language-specific work. The JavaScript pattern also understands JSX, JavaScript’s embedded markup syntax.
+
+</details>
+
+## A tiny answer can take a long time
+
+Now watch the recorded build. Each row is one repository version. Amber marks a running extraction process; the thin grey line shows the longer lifetime of its scheduled build step.
+
+<Figure name="extraction-timeline" />
+
+There are **92 extraction actions**, with process timings for **90**. The median process takes **93.8 seconds**: half finish faster, half slower. The mean is **344.6 seconds**. A few stragglers pull it up; the longest takes **42.5 minutes**, about **27× the median**.
+
+<Figure name="extraction-distribution" />
+
+The box holds the middle half, **62.6–279.8 seconds**. The eleven points beyond the upper whisker come from just four repository groups: FHIR/Sushi, ESLint, Obsidian Tasks and Carbon. Repeated versions are not independent repository families. The two slowest completed intervals are Obsidian Tasks, at 42.0 and 42.5 minutes.
+
+This timer covers **Grit, Java transport and Flix checks and resolution together**. We cannot honestly call all of it parsing. Theory, the later step that asks questions of the facts, has a separate **20.6-second median** over ninety process intervals.
+
+One smaller diagnostic did isolate a parser problem: a **325 KB TypeScript test file took 360.6 seconds**, yielded no accepted definitions, imports or calls, and produced 4,106 refusals. That case in the localization report is attributed to the pinned native parser. Small output, very large wait.
+
+<details className="technical-reading">
+<summary>What this timing record includes—and cannot tell us</summary>
+
+The build was partly cached and interrupted. It lasted 18,118.178 seconds and predates the exclusions that leave 85 eligible issues. Worlds `w41` and `w84` have no process interval; they are unknown, not zero. The distribution excludes those two missing observations.
+
+An action’s lifetime includes more than its process interval. We cannot split the remaining time reliably into queueing, transfer and orchestration, or split the process into its internal stages. Adding overlapping intervals measures work, not elapsed wall time. “Outlier” means exceeding the chart’s statistical cutoff; it does not by itself identify a parser bug.
+
+</details>
+
+Saving this work matters. A later Attune checkpoint reused extraction for **158 files and read only five afresh**. [Wall Time shows that reuse](#runtime). Once the facts exist, [Atlas can ask its small questions](#relationships).
+
+</Page>
+
+<Page id="localization">
+
+<Sequence current="3" />
+
+# The first file is right. What about the rest?
+
+Here are ten proposed files for a real code change. Each is a **candidate**. Its **rank** means “open this first, second, third…”—not “certainly correct.” Reveal the historical fix to see what the list missed.
+
+<Figure name="case-trajectories" />
+
+Finding one correct file can look convincing. But a fix that touches several files needs more than a good first guess. We check both: **did the first ten contain anything needed, and did they contain everything needed?**
+
+## What does Jev actually do?
+
+**Jev** is the model judging Qwen’s first 32 files. It receives the issue and a short record for each candidate, then answers Relevant, NotRelevant or Unknown. Flix puts the Relevant group first and keeps Qwen’s order inside each group.
+
+<FlixBlock name="promotion" />
+
+`Relevant` gets group 0; the others get group 1. The second part of the sorting key is the original Qwen rank. Nobody is deleted. Even an unchanged judgment can move down when other files move ahead of it. Unknown and failed observations do not receive promotion, but they are not negative judgments.
+
+## What difference does the extra note make?
+
+<Figure name="reading-branches" />
+
+**QJ and QS are alternatives over the same original Qwen list.** QJ gives Jev the issue, paths, original ranks and similarity scores. QS adds Atlas’s note: what a file defines, imports and is imported by, plus IDs of saved structural answers associated with its definitions.
+
+That note contains counts, up to six names per relationship family and up to eight distinct answer IDs. It contains neither source bodies nor a graph-navigation tool. A file below Qwen’s first 32 is not judged, even if a note happens to mention it.
+
+<details className="technical-reading">
+<summary>The two calls use the same starting list</summary>
+
+<FlixBlock name="qBranches" />
+
+Both calls use `q`. The separate lists `dq` and `dqs` hold basic and structural decisions. The historical fix is checked afterward; it is not supplied to the judge.
+
+</details>
+
+## Something is much easier than everything
+
+On 85 issues, Qwen finds at least one required file in its first ten **73 times**. Jev raises that to **77**. With structural clues, **78**. But that last condition finds *every* required file only **47 times**.
+
+<Figure name="population-gap" />
+
+Among the **44 multi-file issues**, QS finds something **41 times** and everything **ten times**. The gaps are actual unfinished localizations, even when the top answer looks excellent. [The benchmark compares every method and explains the scores](#benchmark).
+
+<Figure name="reading-marginal" />
+
+No issue loses its binary top-ten success in that paired comparison. Individual files still get worse, as Obsidian shows. A score that asks only “did we find anything?” can hide a lot.
+
+## Read what the judge was given
+
+Greenwood shows a helpful change: the helper’s answer becomes Relevant and all eight fixing files enter the top ten. Got shows a missing Atlas import even though retrieval finds both fixing files. The records below keep those cases beside the Obsidian regression.
+
+<Figure name="reading-traces" />
+
+We can see the note, the decision and the new rank. We cannot tell which individual clue caused that decision. The experiment changes the whole note at once.
+
+The [85-issue field](#field) keeps all tasks visible, including misses. Its labels are eligible paths changed in historical fixes—not every file someone might need to understand the bug. Most of this cohort is JavaScript and TypeScript, and several issues share a repository. These results are useful evidence, not a promise about every codebase.
+
+[What did these answers cost? →](#runtime)
+
+</Page>

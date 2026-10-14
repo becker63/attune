@@ -1,0 +1,70 @@
+[
+  {
+    "after": "cleaned",
+    "after_extinction": 0.5875648063433974,
+    "before": "baseline",
+    "before_extinction": 0.5940073193046661,
+    "common_seed_count": 8,
+    "domain": "file",
+    "seed_identities": [
+      "build/jextract_repository.bzl",
+      "build/src/AtlasSignatureTableTest.flix",
+      "build/src/RepositoryTableTest.flix",
+      "build/src/ScientificTableTest.flix",
+      "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+      "src/Radii.flix",
+      "src/Radii/Synthesize.flix",
+      "test/BUILD.bazel"
+    ],
+    "status": "descriptive matched-seed slice, not a replacement preregistered panel"
+  },
+  {
+    "after": "cleaned",
+    "after_extinction": 0.5023889397173935,
+    "before": "baseline",
+    "before_extinction": 0.4967978042086002,
+    "common_seed_count": 3,
+    "domain": "symbol",
+    "seed_identities": [
+      "src/Repository/Physical.flix\u0000calls\u00002132\u00002278",
+      "src/Repository/Structure.flix\u0000FileId\u0000114\u0000167",
+      "src/native/parquet/AttuneParquet.java\u0000awaitNativeRelease\u000012533\u000012766"
+    ],
+    "status": "descriptive matched-seed slice, not a replacement preregistered panel"
+  },
+  {
+    "after": "control",
+    "after_extinction": 0.5865736505032022,
+    "before": "cleaned",
+    "before_extinction": 0.5875648063433974,
+    "common_seed_count": 8,
+    "domain": "file",
+    "seed_identities": [
+      "build/jextract_repository.bzl",
+      "build/src/AtlasSignatureTableTest.flix",
+      "build/src/RepositoryTableTest.flix",
+      "build/src/ScientificTableTest.flix",
+      "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+      "src/Radii.flix",
+      "src/Radii/Synthesize.flix",
+      "test/BUILD.bazel"
+    ],
+    "status": "descriptive matched-seed slice, not a replacement preregistered panel"
+  },
+  {
+    "after": "control",
+    "after_extinction": 0.4982006709362611,
+    "before": "cleaned",
+    "before_extinction": 0.4982616651418115,
+    "common_seed_count": 5,
+    "domain": "symbol",
+    "seed_identities": [
+      "src/Atlas/Signature/Table.flix\u0000identityColumns\u00008753\u00009015",
+      "src/Localization/Sandwich.flix\u0000runWith\u00002869\u00003145",
+      "src/Radii/Evaluate.flix\u0000Forward\u0000857\u0000881",
+      "src/native/parquet/AttuneParquet.java\u0000awaitNativeRelease\u000012533\u000012766",
+      "test/ParityTest.flix\u0000physicalOne\u00004330\u00004755"
+    ],
+    "status": "descriptive matched-seed slice, not a replacement preregistered panel"
+  }
+]

@@ -1,0 +1,5 @@
+import %workspace%/attune/.bazelrc
+# Browser artifacts are distributed to visitors; never ship a debug Grit build.
+build --compilation_mode=opt
+# Large browser runtimes need more than the default 60-second CAS transfer window.
+build:remote --remote_timeout=180

@@ -1,0 +1,96 @@
+<Mechanism id="prior">
+
+Qwen turns an issue and candidate files into vectors. Flix compares those vectors and orders the files. The browser shows saved results; these controls do not run inference.
+
+<CodeWalk name="cosine" />
+
+<CodeWalk name="vectors" />
+
+### Break exact ties by path
+
+The same score need not mean the same file. This comparator keeps ordering deterministic: greater similarity first, then ascending path.
+
+<FlixBlock name="scoreOrder" />
+
+```text
+<file, score>
+    |
+    +-- unequal scores ==> larger score first
+    |
+    `-- equal scores ===> earlier path first
+```
+
+### Read the saved outcome
+
+Jev sees the first 32 candidates. It cannot promote a file that Qwen left below that boundary. This table contains historical results for the selected issue.
+
+<figure className="inline-graph" data-mini="ranks"></figure>
+
+<MechanismEvidence />
+
+</Mechanism>
+
+<Mechanism id="atlas">
+
+Atlas records files, symbols and resolved connections in a pinned source world. A typed expression asks one precise question about those connections.
+
+<MechanismEvidence />
+
+### Check the shared positions
+
+Every shared position must mean one kind of entity. This check rejects a position used as both a File and a Symbol.
+
+<FlixBlock name="domains" />
+
+<CodeWalk name="anchor" />
+
+### Give equivalent questions the same identity
+
+Role numbers are placeholders. Consistently renaming them must not create a new structural question. Canonicalization sorts, removes duplicates and renumbers the description before computing its identity.
+
+<FlixBlock name="canonical" />
+
+```text
+<same relations, renamed slots>
+                |
+                v
+           canonical
+                |
+                v
+       <one descriptor identity>
+```
+
+</Mechanism>
+
+<Mechanism id="jev">
+
+Jev judges Qwen’s first 32 candidates. The input contains the issue prefix, paths and retrieval fields; the structural condition adds retained relation summaries and template IDs. It contains no source bodies.
+
+```text
+<issue + Qwen top 32>
+    |
+    +-- QJ ==> path + retrieval fields
+    |
+    `-- QS ==> same fields + Atlas metadata
+                   |
+                   v
+        <Relevant / NotRelevant / Unknown>
+```
+
+### Turn a judgment into an ordering key
+
+Relevant gets group 0. Every other outcome gets group 1. The original rank is the second part of the key.
+
+<FlixBlock name="promotion" />
+
+<CodeWalk name="promote" />
+
+### Read the saved outcome
+
+The table shows historical judgments and ranks. Correct structure can still accompany a wrong relevance decision.
+
+<figure className="inline-graph" data-mini="ranks"></figure>
+
+<MechanismEvidence />
+
+</Mechanism>

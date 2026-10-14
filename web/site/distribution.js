@@ -1,0 +1,24 @@
+import * as Plot from './vendor/plot.js';
+const median=v=>{v.sort((a,b)=>a-b);const i=Math.floor(v.length/2);return v.length%2?v[i]:(v[i-1]+v[i])/2;};
+export function mountDistribution(root,tasks,context) {
+ const repos=[...new Set(tasks.map(t=>t.repository))].map(repository=>{
+  const cases=tasks.filter(t=>t.repository===repository), worlds=[...new Set(cases.map(t=>t.world))];
+  return {repository,files:median(worlds.map(w=>context.worlds[w].files)),cases};
+ }).sort((a,b)=>a.files-b.files||a.repository.localeCompare(b.repository)).map((r,i)=>({...r,position:i+1}));
+ const [q1,q3]=context.middle_half_files, fence=q3+1.5*(q3-q1), tail=repos.filter(r=>r.files>fence);
+ root.innerHTML=`<h1>Most repositories are small. A few stretch the scale.</h1><p class="intro">One square per repository, ordered by its median source-file count. Typical size: 240 files. The largest is about ${Math.round(repos.at(-1).files).toLocaleString()}.</p><div class="distribution-controls"><button data-scale="all" aria-pressed="true">All 22 repositories</button><button data-scale="middle" aria-pressed="false">Look closer at the smaller repositories</button></div><div class="distribution-plot"></div><p class="distribution-readout" aria-live="polite">Select a square to find that repository in the issue field.</p><div class="tail-list"><h3>The large-size tail</h3>${tail.map(r=>`<button data-repository="${r.repository}">${r.repository.split('/')[1]} <strong>${r.files.toLocaleString()} files</strong><span>${r.cases.length} issues · ${r.cases.filter(t=>t.inspected).length} inspected</span><span>Complete at top 10: Q ${r.cases.filter(t=>t.outcomes.Q==='#').length}/${r.cases.length} → QS ${r.cases.filter(t=>t.outcomes.QS==='#').length}/${r.cases.length}</span></button>`).join('')}</div><p class="metadata">Counts are medians over each repository’s eligible source snapshots, not whole GitHub checkouts. Amber squares exceed the upper-quartile + 1.5 × interquartile-range cutoff (${fence.toFixed(1)} files). Size alone does not establish localization difficulty or a shared architecture.</p>`;
+ let mode='all';
+ function select(r) {root.querySelector('.distribution-readout').textContent=`${r.repository}: ${r.files.toLocaleString()} files, ${r.cases.length} issues. Its row is highlighted below.`;document.querySelectorAll('.repo').forEach(row=>row.classList.toggle('distribution-selected',row.querySelector('.repo-name').title===r.repository));document.querySelector('.repo.distribution-selected')?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
+ function draw(){
+  const visible=mode==='all'?repos:repos.filter(r=>r.files<=fence), mount=root.querySelector('.distribution-plot');
+  const plot=Plot.plot({width:Math.max(280,mount.clientWidth),height:240,marginLeft:55,marginRight:20,style:{background:'transparent',color:'#b9a5a7',fontFamily:'monospace',fontSize:'11px'},x:{label:'Repositories, ordered from smallest to largest →',domain:[.5,22.5],ticks:[1,5,10,15,22]},y:{label:'Source files ↑',grid:true,domain:[0,mode==='all'?Math.ceil(repos.at(-1).files/100)*100:fence]},marks:[Plot.ruleY([240],{stroke:'#b0cfa4',strokeDasharray:'4,4'}),Plot.dot(visible,{x:'position',y:'files',symbol:'square',r:6,fill:r=>r.files>fence?'#dcb77e':'#f1e9d9',title:r=>`${r.repository}\n${r.files} admitted files · ${r.cases.length} eligible issues\nMedian file count over this repository’s represented snapshots.\nPanel: 22 repositories; snapshot counts and revisions are in data.json.\nSquare positions are sorted by size, not localization performance.`})]});
+  mount.replaceChildren(plot);
+  const dots=plot.querySelectorAll('[aria-label="dot"] path');
+  dots.forEach((node,i)=>{node.style.cursor='pointer';node.setAttribute('tabindex','0');node.setAttribute('role','button');node.setAttribute('aria-label',`${visible[i].repository}, ${visible[i].files} files`);node.addEventListener('click',()=>select(visible[i]));node.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(visible[i]);}});});
+  root.querySelectorAll('[data-scale]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.scale===mode));
+  if(mode==='middle')root.querySelector('.distribution-readout').textContent=`Zoomed to ${visible.length} repositories below ${fence.toFixed(1)} files. The ${tail.length} larger repositories remain listed below. Dashed line: median, 240 files.`;
+  else root.querySelector('.distribution-readout').textContent='All 22 repositories. Dashed line: median, 240 files. Select a square to find its issues below.';
+ }
+ root.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.dataset.scale){mode=b.dataset.scale;draw();}if(b?.dataset.repository)select(repos.find(r=>r.repository===b.dataset.repository));});
+ const observer=new ResizeObserver(draw);observer.observe(root.querySelector('.distribution-plot'));draw();return ()=>observer.disconnect();
+}

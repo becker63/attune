@@ -1,0 +1,34 @@
+<h1>Different work. Different waits.</h1>
+<p>Understanding a codebase involves several kinds of work: reading source, asking models, following relationships, and checking answers. Attune makes those steps explicit so we can measure them, schedule independent work, and keep answers that are still valid.</p>
+<section class="experiment"><header><h2>Five kinds of wait</h2><p>707 recorded operations · every dot is a measurement</p></header><figure class="evidence-figure" data-figure="wait-distributions"></figure></section>
+<p>The long tail matters. Source extraction took <strong>93.77 seconds at the median</strong>, but <strong>344.58 seconds on average</strong>; the slowest process took <strong>42.5 minutes</strong>. A small prepared judgment and a whole repository-inspection turn have different costs—and different timer boundaries.</p>
+<p>These distributions tell us where to investigate. They do not measure a scheduler’s speedup. <a href="#runtime">Explore recorded overlap, cold acquisition, and warm replay →</a></p>
+<h2>Ask for work. Decide how to perform it.</h2>
+<p>A calculation can ask for an embedding without deciding whether to call a provider or use a saved answer. An <strong>effect</strong> makes that request visible; a handler supplies the answer and the calculation continues.</p>
+<section class="experiment"><header><h3>Ask. Answer. Carry on.</h3><p>Compiled Flix teaching example · no live provider request</p></header><figure class="evidence-figure" data-figure="effect-handler"></figure></section>
+<p>Flix checks the requests; Bazel schedules the actions. A saved answer applies only to the same input, model, and recipe. <a href="#effects">Follow the handoff, then run it yourself →</a></p>
+<h2>Change the question. Keep the unaffected work.</h2>
+<pre>source files ──&gt; facts ──&gt; structural questions
+       └──────&gt; vectors ──&gt; candidate files ──&gt; judgment
+                                    ↑
+                              issue-specific input</pre>
+<p>Bazel declares which steps depend on which inputs. Unchanged artifacts can be reused; independent actions can run together through BuildBuddy. <a href="#runtime">Follow cold acquisition, warm replay, and incremental reuse →</a></p>
+<p>A separate historical AttuneFlix evaluation preserved outputs across <strong>61 JS/TS cases</strong>: <strong>4,301.12 seconds of sequential shard work</strong> became <strong>51.70 seconds of cold remote wall time</strong>, and the warm graph took <strong>0.153 seconds</strong>. This is offline evaluation and exact replay, not a live coding-agent speedup. <a href="https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale">Sealed measurements →</a></p>
+<h2>Qwen retrieval: 33× lower known model spend</h2>
+<p>Qwen’s recorded embedding acquisition cost <strong>$0.141</strong>, versus <strong>about $4.65 estimated</strong> for frontier-model repository inspection across 88 tasks. Adding structural context and Jev judgment cost <strong>$0.165—28× below that estimate</strong>.</p>
+<p>Qwen found a required file within ten on <strong>85.9%</strong> of 85 eligible issues, versus <strong>76.5%</strong> for the inspection arm. Sol was stronger at the first file and complete recovery. These workflows give models different work. The dollar comparison excludes computer costs; Sol’s subscription bill is unknown.</p>
+<p>Cold acquisition made <strong>351 embedding requests</strong>; unchanged warm replay made <strong>zero</strong>. Warm wall time was not measured. <a href="#benchmark">Explore the cost comparison →</a> · <a href="#runtime">Follow reuse →</a></p>
+<h2>Does the extra structure help find the right files?</h2>
+<p>Localization asks which existing files an issue’s reference fix touches. The retained SWE-rebench-V2 comparison scored <strong>85 eligible issues across 22 repository groups</strong>. Qwen orders candidates; Atlas adds structural context as post-processing; Jev judges the shortlist.</p>
+<section class="experiment"><header><h3>Follow recovery across the same issues</h3><p>Frozen localization results · top-one, top-ten, and required-file recovery</p></header><figure class="evidence-figure" data-figure="benchmark-recovery"></figure></section>
+<p>Top-one accuracy was <strong>41.2%</strong> for Qwen, <strong>57.6%</strong> with Jev reranking, and <strong>61.2%</strong> with structural context added to that prompt. Structure also made some fixes harder to recover. The final split contains only <strong>15 eligible issues</strong>; this is exploratory evidence.</p>
+<p><a href="#retrieval">Watch one issue move through all three stages →</a> · <a href="#localization">Inspect successes and regressions →</a> · <a href="#benchmark">Read populations, costs, and comparison limits →</a></p>
+<h2>Can several agents work in one worktree?</h2>
+<p>Coordination uses the same code connections as localization to divide work between agents in one checkout. Separate work can run in parallel; overlapping changes need coordination. The rules pass tests on authored examples. The original 32-pair study is unfinished. <a href="https://github.com/becker63/attune#coordination-dividing-work-between-agents">Read the parallelism experiment →</a></p>
+<h2>What changes when the task is review?</h2>
+<p>Could saved knowledge of a repository make review cheaper? ReviewBench tested that idea. A reviewer already starts with a code change and must find real defects and explain them; finding files became a smaller part of the job.</p>
+<p>In the corrected check of 24 reserved tasks, ordinary access produced <strong>18 valid findings</strong>, versus <strong>17</strong> with optional packets, counting final reviews and saved checkpoints. Across the pilot and later check, the packet tool refused all three calls. The setup did not show a cost-saving benefit. <a href="https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md#3-reviewbench-testing-the-economic-implication">Results, corrections, and resource accounting →</a></p>
+<h2>Small programs you can inspect</h2>
+<p>Files define functions, files import files, and functions call functions. Attune turns those relationships into typed questions with exact answer sets and source witnesses. In localization, that structure supplies context for judging a retrieved shortlist.</p>
+<p><a href="#relationships">Explore the relationships →</a> · <a href="#patterns">Try the historical bounded-query interface →</a></p>
+<p><a href="https://github.com/becker63/attune">Source code</a> · <a href="https://github.com/becker63/attune#readme">Technical README</a> · <a href="https://github.com/becker63/attune/tree/main/evidence">Frozen evidence</a> · <a href="https://becker63.digital/">Taylor Johnson’s portfolio</a></p>

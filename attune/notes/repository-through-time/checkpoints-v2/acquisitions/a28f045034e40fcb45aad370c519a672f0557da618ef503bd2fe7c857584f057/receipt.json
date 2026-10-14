@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 4422,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/round_topology.bzl",
+    "physical_lines": 123,
+    "repository_path": "experiments/atlas-work-topology/round_topology.bzl",
+    "sha256": "0465dd112658cd9e9119371dd01152107541841006680bbb4d41b43d6a84273d"
+  },
+  "program": "defines",
+  "root_revision": "c236a3aabfa13e5f36162e895d1ca4742f9730c0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

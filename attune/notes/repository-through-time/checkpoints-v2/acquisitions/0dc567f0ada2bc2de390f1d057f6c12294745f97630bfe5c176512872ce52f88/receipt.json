@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 2221,
+    "language": "starlark",
+    "path": "test/Applications/BUILD.bazel",
+    "physical_lines": 79,
+    "repository_path": "test/Applications/BUILD.bazel",
+    "sha256": "c4113c01fd9a3ff172a273b634e1f025538a61296340406bb4f75d7b39c2ca48"
+  },
+  "program": "defines",
+  "root_revision": "73b870983147a3cff26052097adea5e979b84271",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

@@ -1,0 +1,174 @@
+{
+  "world": {
+    "world": "w49",
+    "repository": "ProjectEvergreen/greenwood",
+    "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+    "files": "393"
+  },
+  "shop": {
+    "checkout.rb": {
+      "path": "/home/becker/projects/attune/attune/test/grit/fixtures/shop/checkout.rb",
+      "code": "# frozen_string_literal: true\n\nrequire_relative \"pricing\"\n\nmodule Shop\n  module Checkout\n    def self.free_shipping?(items:, threshold_cents: 5_000)\n      Pricing.total_cents(items) >= threshold_cents\n    end\n  end\nend\n"
+    },
+    "receipt.rb": {
+      "path": "/home/becker/projects/attune/attune/test/grit/fixtures/shop/receipt.rb",
+      "code": "# frozen_string_literal: true\n\nrequire_relative \"pricing\"\n\nmodule Shop\n  module Receipt\n    def self.render(customer:, items:)\n      cents = Pricing.total_cents(items)\n      dollars, remainder = cents.divmod(100)\n\n      format(\"Thanks, %s. Total: $%d.%02d\", customer, dollars, remainder)\n    end\n  end\nend\n"
+    },
+    "pricing.rb": {
+      "path": "/home/becker/projects/attune/attune/test/grit/fixtures/shop/pricing.rb",
+      "code": "# frozen_string_literal: true\n\nmodule Shop\n  module Pricing\n    # Keep prices in integer cents. Empty baskets total zero.\n    def self.total_cents(items)\n      items.sum do |item|\n        item.fetch(:quantity) * item.fetch(:unit_price_cents)\n      end\n    end\n  end\nend\n"
+    }
+  },
+  "examples": [
+    {
+      "id": "t7",
+      "question": "Which files are imported?",
+      "formula": "Target(s, b) :- Imports(s, a, b).",
+      "facts": [
+        [
+          "imports",
+          "packages/cli/src/commands/build.js",
+          "packages/cli/src/lib/resource-utils.js"
+        ],
+        [
+          "imports",
+          "packages/cli/src/commands/serve.js",
+          "packages/cli/src/lib/resource-utils.js"
+        ]
+      ],
+      "output": [
+        "t7",
+        "file:packages/cli/src/lib/resource-utils.js",
+        "file:packages/cli/src/lib/resource-utils.js"
+      ],
+      "world_rows": 56,
+      "projected_files": 56,
+      "worlds": 76,
+      "repositories": 21,
+      "total_rows": 9569
+    },
+    {
+      "id": "t77",
+      "question": "Who shares an import? Self-pairs allowed.",
+      "formula": "Consumer(s, a) :- Imports(s, a, b), Imports(s, c, b).",
+      "facts": [
+        [
+          "imports",
+          "packages/cli/src/commands/build.js",
+          "packages/cli/src/lib/resource-utils.js"
+        ],
+        [
+          "imports",
+          "packages/cli/src/commands/serve.js",
+          "packages/cli/src/lib/resource-utils.js"
+        ]
+      ],
+      "output": [
+        "t77",
+        "file:packages/cli/src/commands/build.js",
+        "file:packages/cli/src/commands/build.js"
+      ],
+      "world_rows": 191,
+      "projected_files": 191,
+      "worlds": 76,
+      "repositories": 21,
+      "total_rows": 14832
+    },
+    {
+      "id": "t53",
+      "question": "Who imports the file defining this symbol?",
+      "formula": "Consumer(s, c) :- DefinedIn(s, a, b), Imports(s, c, b).",
+      "facts": [
+        [
+          "defined_in",
+          "checkResourceExists",
+          "packages/cli/src/lib/resource-utils.js"
+        ],
+        [
+          "imports",
+          "packages/cli/src/commands/build.js",
+          "packages/cli/src/lib/resource-utils.js"
+        ]
+      ],
+      "output": [
+        "t53",
+        "file:packages/cli/src/commands/build.js",
+        "file:packages/cli/src/commands/build.js"
+      ],
+      "world_rows": 181,
+      "projected_files": 181,
+      "worlds": 74,
+      "repositories": 21,
+      "total_rows": 11342
+    }
+  ],
+  "javascript": {
+    "path": "packages/cli/src/lifecycles/bundle.js",
+    "line": 5,
+    "code": "import { checkResourceExists, mergeResponse, normalizePathnameForWindows } from '../lib/resource-utils.js';"
+  },
+  "composition": {
+    "symbol": "checkResourceExists",
+    "file": "packages/cli/src/lib/resource-utils.js",
+    "consumers": [
+      "packages/cli/src/commands/build.js",
+      "packages/cli/src/commands/serve.js",
+      "packages/cli/src/config/rollup.config.js",
+      "packages/cli/src/lib/node-modules-utils.js",
+      "packages/cli/src/lib/templating-utils.js",
+      "packages/cli/src/lifecycles/bundle.js",
+      "packages/cli/src/lifecycles/compile.js",
+      "packages/cli/src/lifecycles/config.js",
+      "packages/cli/src/lifecycles/context.js",
+      "packages/cli/src/lifecycles/copy.js",
+      "packages/cli/src/lifecycles/graph.js",
+      "packages/cli/src/lifecycles/prerender.js",
+      "packages/cli/src/lifecycles/serve.js",
+      "packages/cli/src/plugins/copy/plugin-copy-assets.js",
+      "packages/cli/src/plugins/copy/plugin-copy-favicon.js",
+      "packages/cli/src/plugins/copy/plugin-copy-robots.js",
+      "packages/cli/src/plugins/resource/plugin-node-modules.js",
+      "packages/cli/src/plugins/resource/plugin-source-maps.js",
+      "packages/cli/src/plugins/resource/plugin-standard-json.js",
+      "packages/cli/src/plugins/resource/plugin-static-router.js",
+      "packages/cli/src/plugins/resource/plugin-user-workspace.js",
+      "packages/cli/test/cases/serve.config.static-router/serve.config.static-router.spec.js"
+    ]
+  },
+  "payoff": {
+    "requests": {
+      "Q": "Candidate file path: packages/cli/src/lib/resource-utils.js (original Q rank 28, Q similarity 0.5930572000109635)",
+      "QS": "Candidate file path: packages/cli/src/lib/resource-utils.js (original Q rank 28, Q similarity 0.5930572000109635)\nRepository relations: defines 5 (checkResourceExists, mergeResponse, modelResource, normalizePathnameForWindows, resolveForRelativeUrl); imports 1 (packages/cli/src/lib/hashing-utils.js); imported_by 22 (packages/cli/src/commands/build.js, packages/cli/src/commands/serve.js, packages/cli/src/config/rollup.config.js, packages/cli/src/lib/node-modules-utils.js, packages/cli/src/lib/templating-utils.js, packages/cli/src/lifecycles/bundle.js, ...). Theory witnesses: t1, t13, t131, t137, t142, t144, t15, t155, ...."
+    },
+    "decisions": {
+      "Q": "Unknown",
+      "QS": "Relevant"
+    },
+    "candidate": {
+      "path": "packages/cli/src/lib/resource-utils.js",
+      "Q": 28,
+      "QJ": 28,
+      "QJ_judgment": "Unknown",
+      "QS": 10,
+      "QS_judgment": "Relevant"
+    }
+  },
+  "notes": {
+    "formulas": "Specialized Flix readings of frozen descriptors, not literal Theory source.",
+    "bindings": "Shown bindings are checked against retained input facts and output rows. Full internal bindings are not retained.",
+    "output": "One requested column is stored twice in the fixed two-column output format; count the row once."
+  },
+  "provenance": {
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/evidence.json": "59b933a96356ed57c838bb7379aee2e61a43c8e31c3ef19521c44ecb35433c3d",
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/atlas-story.json": "eba989800ace7ab7fb2ecaa69c300872841b8614d11cee49f209007c771818be",
+    "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w49/facts.tsv": "4c5f71ab9e8c33047736e1f84dc4cc6f415543bdbee54d6fa4c5a6cb5d166f17",
+    "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/theory_world_w49/witnesses.tsv": "d3949c476c838e3d4eb68eccc6b96b1377f21e82f6fba275710bbdf9edf675fe",
+    "/home/becker/projects/attune/attune/test/grit/fixtures/shop/checkout.rb": "8d6b4cb8419e2ffe73b49e7ab82bc44a3ac1ce84adf9d6295d91a8f7493b22cd",
+    "/home/becker/projects/attune/attune/test/grit/fixtures/shop/receipt.rb": "525e5c0af93f52d465695a0fecf00d6f42a4dbb6ef3d7f999af7a12a9b03411c",
+    "/home/becker/projects/attune/attune/test/grit/fixtures/shop/pricing.rb": "612c44548fe2bd84ecf49d2819661f8d612ea9991fd759bb98c66f93ca943df4",
+    "/home/becker/projects/attune/attune/test/docs/ReadmeCorrespondence.flix": "7fb2da641b8c44bd98372db26de6cff72b22d7c540307e24de708561b0f74cd8",
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/sources.json": "9c70cc66d5d4d52e333220fd7095f4bd53353625528f620d06b341fd99d0df71",
+    "/home/becker/projects/attune/attune/src/grit/imports/ruby.grit": "d4daf2bceb62f3c686e1242e30b3583e1fe1de89e0610be2222a217ac11573c2",
+    "/home/becker/projects/attune/attune/src/grit/imports/javascript.grit": "2d8ae48d4ec92f03994ac31f78a14cfce6061adb196bb3226601243211c0f1ed"
+  }
+}

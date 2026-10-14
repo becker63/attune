@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 4356,
+    "language": "java",
+    "path": "src/native/inference/AttuneEmbed.java",
+    "physical_lines": 103,
+    "repository_path": "src/native/inference/AttuneEmbed.java",
+    "sha256": "dd208c4602d93dc2b7a64829e47fe0ae37814fd188d0d2cd9e20c826e44ed475"
+  },
+  "program": "defines",
+  "root_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

@@ -1,0 +1,99 @@
+{
+  "adapter_changes": "repository/source/acquisition metadata properties, separate signature protocol label, dispatch to original acquisition/admission/world serialization; no composition, seed or reduction changes",
+  "compiler": {
+    "path": "/tmp/flix-0.76.1.jar",
+    "sha256": "b2ed2b7f49902e2dfe1b4f10e23d9a5cb085461e7e8c64909ca2b3abfa566e74"
+  },
+  "dependencies": {
+    "lib/external/0.jar": "0a09840c3b26111f89180d2cbf38408e85c1c003f73acebe7c926c1601c8e1f5",
+    "lib/external/1.jar": "f29b472de63cb936c25bcf50577f20155cf7a01a7bf6a0c226361f4b43b47c56",
+    "lib/external/10.jar": "2016b5fc368a0f7361aacb3b1f202604f65fd95b59e46ebcd445d7d18c37f72e",
+    "lib/external/11.jar": "2f9e716f498a806e411ca113d632bdf9189009900692960c48eefdd80ed5074c",
+    "lib/external/12.jar": "691843399f047751322b7a20724ed0c3facf67f00d5743df6369013fa53c9d2f",
+    "lib/external/13.jar": "3ff2ac0d903d3bdc0cd11d507b4d4ab509afdf34ee8c460f600f8dc9cb565ffd",
+    "lib/external/14.jar": "731ca8b217aa464c0bddf2c9e2aa713f39fa38fbb35f48657d9ddc0b3e022159",
+    "lib/external/15.jar": "1c52dd7ae36c58ce569541d285366e7e1d5e36626aff28fb8ed225cccfca1409",
+    "lib/external/16.jar": "a00a0861c47a127daa509f9fd7a400f683fc2b5c839e506acbde85d5d06ef4d1",
+    "lib/external/2.jar": "f471a31e861becd34c5db89fcaee9fe4dc6670eadbd52d10f8f6138e7e7c9159",
+    "lib/external/3.jar": "90f1870f0427a48c12bf370235fba5b7fa73aef264258e9cbc116151723e5f0a",
+    "lib/external/4.jar": "6cf790c1bdfbeaf1220bfcd6c67df8c6a4f465b33a295dff796d0f9c6fe1042b",
+    "lib/external/5.jar": "a7e3aa0ec75a8a108288e35253c32a5021ac9460de4182c8e8575f84880ea31d",
+    "lib/external/6.jar": "1deb78504f8be0270ab0dde0b93467a0e97ff2f5fa8dcb4ad397cb1b13db4372",
+    "lib/external/7.jar": "c44f31aee2ad61f9495f05262b23bb6e8ce3c1987155fa67257d4318323e4932",
+    "lib/external/8.jar": "0ce5a32c94fc1e880413879b315946f8aac32a17af3508717518c573d5aa0344",
+    "lib/external/9.jar": "4a2d3d0ae3cea30064e50f629dd6e107a106cb920a750b24e9bb4220a14188c9"
+  },
+  "jar": {
+    "path": "/tmp/attune-checkpoints-v2/instrument/artifact/instrument.jar",
+    "sha256": "0060199f72f8c75cff4b8b56f67b0020e583336d6cca4a8f40bdc1c7289ffa5c"
+  },
+  "java": {
+    "path": "/tmp/attuneflix-oracle-fab7e731/external/rules_java++toolchains+remotejdk25_linux_aarch64/bin/java",
+    "sha256": "9e0f158500d3426753cf0f036daca1f3bf7b0bb21b25bee859926f8b5e97eded"
+  },
+  "native": {
+    "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+    "coverage": "common supported Flix Java Starlark slice; Ruby fixtures and JS/TS excluded",
+    "flix_grammar": "78cff149b2e9897456f94844872353b5ee0ca93b",
+    "grit_revision": "c80b3026471b229f41b279c3eb0c162dcdacfdb1",
+    "native_sha256": "cdf4358cf36646308c339876f8d88c20d1500b07bf1eb7e6f228cca24dc3aeeb",
+    "queries": {
+      "calls/flix.grit": "551cf29438fcf07325fcdc8e198f1e0c6ab44531f3dfd091813953a454a12da5",
+      "calls/java.grit": "607f6c06bab22201fe06fc523ecd3f16936e32ec83b2f68809f3aefbe021389b",
+      "calls/javascript.grit": "4d77d225337651fb9d6b479d04589e64bc0b679c73ece4892d5ae8a678b71a30",
+      "calls/jsx.grit": "6778315ccb4fab253c0eab6602079078da3407552f6bd26cc101453267d9f4c6",
+      "calls/ruby.grit": "a0dc7a75242cca4f9394ac10bbe916c4667924efedd5085de6bf396bcb5942a2",
+      "calls/starlark.grit": "b8dd89c828f410b77db5af1e3797ea31861c3d8ecdee71e4c1164addba666e0d",
+      "calls/tsx.grit": "b8974c7b3b098df429db0cb9f34e50c1ac8d70b2b2dfe8fbdb1a5d70b3587723",
+      "calls/typescript.grit": "e84e1c3a5779bae714684dd7a1586fc59235f0aeb411c35fba8f84a385316a5a",
+      "defines/flix.grit": "7b598a2ae4eb4feb5f90a26216b2c7591f59c70cf66590db35e42d78ae4a6623",
+      "defines/java.grit": "102617be800418de0df9fbbed5c622728a0889b79f78c48553dbd38dcb7701b9",
+      "defines/javascript.grit": "f900274ac3946ac34f6b45f6b0d563fac419c3a18469bd10eebc10b4544ca3ae",
+      "defines/jsx.grit": "381f8ff92982d131e59429dd3ea480ac2b9de89125e09604421b4dd86627edf4",
+      "defines/ruby.grit": "90b9e488cada5705a635941578f3031b4ea5867d708ef3d4f01e1b0ada66c33b",
+      "defines/starlark.grit": "77801343abb4a4f73f5942a9e8bf0cdb658744f383b4d6da8cb92b3ba9ea17cf",
+      "defines/tsx.grit": "eb560f45914c3cbd7e3d3e58cc2051c55995cb38e32724e37c31e86dbf2dec14",
+      "defines/typescript.grit": "90694687a51de99b715fb55e59c53072bdad9cdced9b3b7c76a83b6c19fa576c",
+      "imports/flix.grit": "91324e1f100638717401d3307178278e8841ad0b7f0a47fa9aca755bd512ff72",
+      "imports/java.grit": "245ef61198093603d46be5399ba71800006f68cedde538ea9374e2f1313cfaf4",
+      "imports/javascript.grit": "2d8ae48d4ec92f03994ac31f78a14cfce6061adb196bb3226601243211c0f1ed",
+      "imports/jsx.grit": "bd7d241bd0b8f009455bac08705bf8cef5e94b1985d217709e5c03627b17cb82",
+      "imports/ruby.grit": "d4daf2bceb62f3c686e1242e30b3583e1fe1de89e0610be2222a217ac11573c2",
+      "imports/starlark.grit": "282d4f8170f74df4777882a75f31d1439394b0336339810fb7afcd56ca0f3e9a",
+      "imports/tsx.grit": "d29a731ca5a02bdb948db211376bfbdacb60bb07e27a6fd6b33b3e1b1e7b0671",
+      "imports/typescript.grit": "681edf9ffc137fe14b67a4ffc1d582a26557508799924ced210cfd973606e218"
+    },
+    "starlark_grammar": "a453dbf3ba433db0e5ec621a38a7e59d72e4dc69"
+  },
+  "runtime": "sequential local pinned JDK25, 1536 MiB cap; no Bazel owner or provider use",
+  "source_hashes": {
+    "src/AcquisitionDriver.flix": "688388687a1d6063327eb206b6a049ea0d0daed2cf0f5a6911c62aa5c2fe0088",
+    "src/AcquisitionFacts.flix": "d155db3d556abb0c4d9f4f05cfb478b7f04b09f772c44f8f9b4e23e6b4adec4a",
+    "src/Atlas.flix": "9a269f349ac45a078e86389c2f12f109d94f50ad7e8a22a491b4a14795cadffe",
+    "src/Atlas/Signature.flix": "2b5ac79776bf30d1e46caaaee8c44edefa038bd47c7b1d6cfb21baa8d6f92dfa",
+    "src/Atlas/Signature/Summary.flix": "88a8a9fed8624091ed2eaade450165767385089129b3630b1eb6a653560652b5",
+    "src/Atlas/Signature/Table.flix": "b98aeedae972223baffa9c9be5e9752328454883d76fb6aab069ab6d2cdc6193",
+    "src/ControlIdentity.flix": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+    "src/ControlMap.flix": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+    "src/ControlSignature.flix": "bc93012ed72ade0095a6c9eed0b7ba04191c021bbed691626986f485a0d091ba",
+    "src/Experiment.flix": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+    "src/Main.flix": "f8134bbb5ab31123c1b10521d3fd794467834856b97e800b634e0b94ebcbbccd",
+    "src/Radii.flix": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+    "src/Repository.flix": "d6d6251354face58934c855e252496fac327a0c09eaa18ee12b5cb75f06709ab",
+    "src/Repository/Acquire.flix": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384",
+    "src/Repository/Grit.flix": "1e0812b8e7ba1e5d48604b1a12e630ed4d24672083f7b779a535d1caa54189e4",
+    "src/Repository/Location.flix": "9706d1703f80d5764b22eac6209dad0ecb251c98e22368d35a57f87196046e20",
+    "src/Repository/Physical.flix": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+    "src/Repository/Structure.flix": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+    "src/Repository/Table.flix": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+    "src/ScientificIdentity.flix": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+    "src/ScientificTable.flix": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba",
+    "src/ScientificTable/Columns.flix": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731"
+  },
+  "unchanged_atlas_source": {
+    "src/Atlas.flix": true,
+    "src/Atlas/Signature.flix": true,
+    "src/Atlas/Signature/Summary.flix": true,
+    "src/Atlas/Signature/Table.flix": true
+  }
+}

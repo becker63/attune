@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 9768,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlMap.flix",
+    "physical_lines": 182,
+    "repository_path": "experiments/atlas-work-topology/ControlMap.flix",
+    "sha256": "63922ea9cd200ba5cb6c8092ef3c69a78e34e905403cb5aaa41790a89fdb7dc5"
+  },
+  "program": "imports",
+  "root_revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

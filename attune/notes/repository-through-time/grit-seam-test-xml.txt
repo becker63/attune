@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="test/grit/grit_ruby_test" tests="1" failures="0" errors="0">
+    <testcase name="test/grit/grit_ruby_test" status="run" duration="5" time="5"></testcase>
+      <system-out>
+Generated test.log (if the file is not UTF-8, then this may be unreadable):
+<![CDATA[exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //test/grit:grit_ruby_test
+-----------------------------------------------------------------------------
+Running 24 tests...
+
+   TEST  ambiguousReceiverStaysUnresolved?   PASS  ambiguousReceiverStaysUnresolved 246.1ms
+   TEST  computedRequireStaysUnresolved?   PASS  computedRequireStaysUnresolved 15.1ms
+   TEST  declaredFixturePopulationIsExact?   PASS  declaredFixturePopulationIsExact 787.5us
+   TEST  dynamicDispatchStaysUnresolved?   PASS  dynamicDispatchStaysUnresolved 39.7ms
+   TEST  earnedCoverageResistsForeignAndProposedDonation?   PASS  earnedCoverageResistsForeignAndProposedDonation 75.8ms
+   TEST  eightAdmittedSurfacesRunRealGrit?   PASS  eightAdmittedSurfacesRunRealGrit 55.5ms
+   TEST  everyInverseIsTheExactReversalOfItsForwardRelation?   PASS  everyInverseIsTheExactReversalOfItsForwardRelation 111.2ms
+   TEST  javascriptAndTypescriptFrontendsReportExactFactRanges?   PASS  javascriptAndTypescriptFrontendsReportExactFactRanges 17.3ms
+   TEST  malformedNativeRecordsAreClassified?   PASS  malformedNativeRecordsAreClassified 2.5ms
+   TEST  missingRequireStaysUnresolved?   PASS  missingRequireStaysUnresolved 11.8ms
+   TEST  nativeAndEditorPinsCorrespond?   PASS  nativeAndEditorPinsCorrespond 468.7us
+   TEST  nonAsciiSourceKeepsExactByteRanges?   PASS  nonAsciiSourceKeepsExactByteRanges 6.0ms
+   TEST  reopenedDeclarationStaysUnresolved?   PASS  reopenedDeclarationStaysUnresolved 48.4ms
+   TEST  retainedAmbiguousOwnerlessAndDynamicCallsAreDistinguished?   PASS  retainedAmbiguousOwnerlessAndDynamicCallsAreDistinguished 19.9ms
+   TEST  retainedCallsFallBackToUniqueRepositoryTarget?   PASS  retainedCallsFallBackToUniqueRepositoryTarget 5.7ms
+   TEST  retainedCallsUseNarrowestOwnerAndUniqueSameFileTarget?   PASS  retainedCallsUseNarrowestOwnerAndUniqueSameFileTarget 7.2ms
+   TEST  retainedImportsResolvePerLanguage?   PASS  retainedImportsResolvePerLanguage 160.9ms
+   TEST  rubyFrontendsReportExactFactRanges?   PASS  rubyFrontendsReportExactFactRanges 2.4ms
+   TEST  rubyInstanceMethodIsClassifiedAndOwnsItsCall?   PASS  rubyInstanceMethodIsClassifiedAndOwnsItsCall 15.9ms
+   TEST  rubyShopCallsResolveAndInvert?   PASS  rubyShopCallsResolveAndInvert 4.1ms
+   TEST  rubyShopDeclarationsCarryQualifiedIdentities?   PASS  rubyShopDeclarationsCarryQualifiedIdentities 1.9ms
+   TEST  rubyShopImportsResolveToAuthoredFiles?   PASS  rubyShopImportsResolveToAuthoredFiles 2.2ms
+   TEST  theWorldFactsAndEarnedCoverageBridgeIsExact?   PASS  theWorldFactsAndEarnedCoverageBridgeIsExact 3.4ms
+   TEST  unsupportedFileIsRefusedNotGuessed?   PASS  unsupportedFileIsRefusedNotGuessed 113.0us
+
+Passed: 24, Failed: 0. Skipped: 0. Elapsed: 857.3ms.]]>
+      </system-out>
+    </testsuite>
+</testsuites>

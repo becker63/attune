@@ -1,0 +1,5 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by org.apache.arrow.memory.util.MemoryUtil (file:/tmp/attune-checkpoints-v2/program-producer/artifact/program-producer.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.arrow.memory.util.MemoryUtil
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+ATLAS_PARALLELISM_ACQUIRE files=1 facts=60 symbols=0 defines=0 imports=0 calls=0 unresolved_imports=0 unresolved_calls=60

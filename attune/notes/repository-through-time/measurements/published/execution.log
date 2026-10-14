@@ -1,0 +1,5 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by org.apache.arrow.memory.util.MemoryUtil (file:/tmp/attuneflix-oracle-fab7e731/execroot/_main/bazel-out/aarch64-opt-exec-ST-cbdd3fe8ffb5/bin/experiments/atlas-swe-explore/signature_flix.project/artifact/signature_flix.project.jar)
+WARNING: Please consider reporting this to the maintainers of class org.apache.arrow.memory.util.MemoryUtil
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+ATLAS_SIGNATURE snapshot=repository-snapshot-v1:6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a seeds=16 observations=52464

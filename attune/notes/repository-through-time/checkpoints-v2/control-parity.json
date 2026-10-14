@@ -1,0 +1,13 @@
+{
+  "grit_rerun": false,
+  "ignored_metadata_fields": [
+    "fact_identity",
+    "signature_protocol",
+    "snapshot_id",
+    "source_tree_identity"
+  ],
+  "observations": 52464,
+  "original_fact_rows_exact": true,
+  "original_source_rows_exact": true,
+  "route_response_rows_equal_after_explicit_metadata_version_change": true
+}

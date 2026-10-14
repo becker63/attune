@@ -17,13 +17,8 @@ filegroup(
 java_library(
     name = "attune_grit",
     srcs = [
-        "AttuneGrit.java",
         "AttuneGritNative.java",
     ],
     javacopts = ["--release=22"],
     resources = ["//src/grit:programs"],
-    deps = [
-        "@attune_maven//:com_fasterxml_jackson_core_jackson_core",
-        "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
-    ],
 )

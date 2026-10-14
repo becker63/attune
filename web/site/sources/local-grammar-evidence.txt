@@ -1,0 +1,78 @@
+AttuneFlix research motivation: README.md:554-584
+SHA-256: dc221a541971bb28cf0481d4e2a2f5b7b7cda1d487c2c16c2c1304ad5b14feb4
+
+
+### Why repositories have local grammar
+
+Code is not random. Developers repeat names, layouts, call shapes, import
+directions, and ways of extending a system. A repository develops house rules.
+
+Three older results give this idea useful footing. [On the Naturalness of
+Software](https://doi.org/10.1109/ICSE.2012.6227135) found that human-written
+code is much more repetitive and predictable than the space of all possible
+programs. [On the Localness of
+Software](https://doi.org/10.1145/2635868.2635875) found that nearby code and
+the current project are even more predictable because they repeat their own
+choices. [The Plastic Surgery
+Hypothesis](https://doi.org/10.1145/2635868.2635898) found a related fact about
+change: much of the material needed for a change already exists in the program
+being changed.
+
+AttuneFlix turns that line of thought into a machine we can run:
+
+```text
+possible programs
+      |
+      | human software is repetitive
+      v
+small regular part of program space
+      |
+      | each repository repeats its own local choices
+      v
+repository-local grammar
+      |
+      | run the same complete finite Atlas language
+
+Separate two-revision study: experiments/atlas-parallelism/REPORT.md
+SHA-256: acf5026efc29ce785a99a02a72cb03c9a8402a24ad0ac95798d1c3486ea887ce
+
+
+| role | revision |
+|---|---|
+| preregistration | jj `xkoxvypo` / git `396d7a64` (amended once, pre-measurement, clearly labeled: round-3 budget ruling ~450 lines, gate < 4,800) |
+| preregistration amendment (v2, pre-measurement) | jj `myxlmvsq` / git `e0154f2b` ("amend the self-signature preregistration for v2 acquisition") |
+| baseline | git `bcfc126db7b7c7f535353ccc8afca44465903571` (recovered from VCS history, evaluated in isolated worktree `/tmp/attuneflix-baseline`) |
+| cleaned (after) | git `ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1` (the sealed instrument change; artifacts add no `.flix` files) |
+
+Both v1 and v2 measure the **same two revisions**: baseline
+`bcfc126…` (mission start, `main` checkpoint) and cleaned `ae2f5e68…` (the
+sealed v1 instrument change). The v2 experiment was not restarted from scratch;
+only the acquisition system changed. The v2 acquisition ran over both revisions
+materialized as isolated `git worktree`s (`/tmp/attuneflix-baseline`,
+`/tmp/attuneflix-cleaned`); the live worktree was never reset or mutated.
+
+
+
+### The four rows
+
+Identical metric definitions and identical region partition for all four rows;
+only the acquisition system and the revision differ. `class` labels the
+quantity's origin: **count** = plain count, **basis** = direct admitted-relation
+statistic, **atlas** = derived from actual Atlas output states. Reproduced by
+`bazel build //experiments/atlas-parallelism:four_rows --config=buildbuddy-rbe`
+(`four_rows.txt`, `four_rows.parquet`, `four_pairs.parquet`).
+
+| metric | class | baseline v1 | cleaned v1 | baseline v2 | cleaned v2 |
+|---|---|---|---|---|---|
+| tracked_files | count | 41 | 42 | 72 | 75 |
+| use_edges (M3) | basis | 123 | 141 | 90 | 125 |
+| cross_region_edge_ratio (M4) | basis | 0.813 | 0.816 | 0.867 | 0.888 |
+| median_file_blast (M5) | atlas | 24 | 28 | 18 | 28 |
+| p90_file_blast (M5) | atlas | 36 | 37 | 38 | 42 |
+| max_region_blast (M6) | atlas | 23 | 23 | 260.0 | 167.5 |
+| max_pair_jaccard (M7) | atlas | 0.974 | 1.000 | 0.949 | 0.976 |
+| high_overlap_pairs (M7, of 45) | atlas | 37 | 42 | 45 | 45 |
+| shared_hotspots (M8) | basis | 14 | 15 | 14 | 16 |
+| max_hotspot_pressure (M8) | basis | 6 | 6 | 7 | 7 |
+| independently_testable (M9) | basis | 3 | 3 | 3 | 4 |
+| min_region_coherence (E1) | basis | 0.000 | 0.000 | 0.000 | 0.000 |

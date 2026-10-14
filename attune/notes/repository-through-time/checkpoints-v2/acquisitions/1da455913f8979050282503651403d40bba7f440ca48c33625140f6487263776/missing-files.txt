@@ -1,0 +1,1 @@
+test/localization_embedding/localization_embedding.bzl

@@ -14,6 +14,5 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
         "//src:Attune/Study.flix",
-        "//src:Attune/Study/Metrics.flix",
     ],
 )

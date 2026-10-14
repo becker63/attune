@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 4862,
+    "language": "starlark",
+    "path": "test/localization_strict/BUILD.bazel",
+    "physical_lines": 122,
+    "repository_path": "attune/test/localization_strict/BUILD.bazel",
+    "sha256": "be75f25c9c72ba22739e20c07088a4172170118f221b7ae352d73ab0001ca5eb"
+  },
+  "program": "calls",
+  "root_revision": "c6b5bd7bb66c395eebb1d0c7d7e9fa0876e23f96",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

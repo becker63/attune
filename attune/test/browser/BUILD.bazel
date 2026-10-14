@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//platform/build:native.bzl", "native_flix_test")
+package(default_visibility = ["//visibility:public"])
+filegroup(name = "policy_files", srcs = glob(["**"]))
+java_binary(
+    name = "grit_probe",
+    srcs = ["GritProbe.java"],
+    main_class = "attune.test.GritProbe",
+    deps = ["//platform/tools/grit:attune_grit"],
+    jvm_flags = ["--enable-native-access=ALL-UNNAMED"],
+    data = ["//platform/support/grit:attune_grit_abi"],
+)
+native_flix_test(
+    name = "studio_law_test",
+    srcs = [
+        "StudioLaw.flix", "//src:Attune.flix", "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix", "//src:Attune/Effects.flix",
+        "//src:Attune/Repository.flix", "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Coverage.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)

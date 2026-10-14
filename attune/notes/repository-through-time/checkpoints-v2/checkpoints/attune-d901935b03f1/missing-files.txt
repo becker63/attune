@@ -1,0 +1,17 @@
+src/Attune/Apply.flix
+src/Attune/Envelope.flix
+src/Attune/Study.flix
+src/Attune/View.flix
+test/docs/BUILD.bazel
+test/docs/ReadmeCorrespondence.flix
+test/proposals/BUILD.bazel
+test/proposals/P09Views.flix
+test/seam/ParquetSeamTest.flix
+test/spine/BUILD.bazel
+test/spine/CoreApplyLaw.flix
+test/spine/CoreEvidenceLaw.flix
+test/spine/CoreIdentityLaw.flix
+test/spine/CoreMemoLaw.flix
+test/view/BUILD.bazel
+test/view/ProofViewLaw.flix
+test/view/SemanticViewLaw.flix

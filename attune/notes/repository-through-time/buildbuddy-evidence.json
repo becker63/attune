@@ -1,0 +1,1411 @@
+{
+  "signature": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"1c4ee58b-c072-4127-9957-6ce4758a795c\",\n      \"created_at_usec\": 1790236858424000,\n      \"updated_at_usec\": 1790236881670000,\n      \"created_at\": \"2026-09-24T08:00:58.424000+00:00\",\n      \"updated_at\": \"2026-09-24T08:01:21.670000+00:00\",\n      \"completed_at\": \"2026-09-24T08:01:21.670000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 23591000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 34,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"6\",\n        \"actionCacheMisses\": \"2\",\n        \"actionCacheUploads\": \"7\",\n        \"casCacheHits\": \"286\",\n        \"casCacheUploads\": \"28\",\n        \"totalDownloadSizeBytes\": \"797273282\",\n        \"totalUploadSizeBytes\": \"62382\",\n        \"totalDownloadTransferredSizeBytes\": \"409539252\",\n        \"totalUploadTransferredSizeBytes\": \"71181\",\n        \"totalDownloadUsec\": \"1782856\",\n        \"totalUploadUsec\": \"88245\",\n        \"downloadThroughputBytesPerSecond\": \"447188826\",\n        \"uploadThroughputBytesPerSecond\": \"706918\",\n        \"totalUncachedActionExecUsec\": \"464737\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"1c4ee58b-c072-4127-9957-6ce4758a795c\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"23591000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"34\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790236858424000\",\n        \"updatedAtUsec\": \"1790236881670000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"6\",\n          \"actionCacheMisses\": \"2\",\n          \"actionCacheUploads\": \"7\",\n          \"casCacheHits\": \"286\",\n          \"casCacheUploads\": \"28\",\n          \"totalDownloadSizeBytes\": \"797273282\",\n          \"totalUploadSizeBytes\": \"62382\",\n          \"totalDownloadTransferredSizeBytes\": \"409539252\",\n          \"totalUploadTransferredSizeBytes\": \"71181\",\n          \"totalDownloadUsec\": \"1782856\",\n          \"totalUploadUsec\": \"88245\",\n          \"downloadThroughputBytesPerSecond\": \"447188826\",\n          \"uploadThroughputBytesPerSecond\": \"706918\",\n          \"totalUncachedActionExecUsec\": \"464737\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"2601be7c-4ce2-41c9-9723-304b03adb989\",\n      \"created_at_usec\": 1790236966544000,\n      \"updated_at_usec\": 1790236986483000,\n      \"created_at\": \"2026-09-24T08:02:46.544000+00:00\",\n      \"updated_at\": \"2026-09-24T08:03:06.483000+00:00\",\n      \"completed_at\": \"2026-09-24T08:03:06.483000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 19360000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 38,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"35\",\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"3\",\n        \"casCacheHits\": \"150\",\n        \"casCacheUploads\": \"14\",\n        \"totalDownloadSizeBytes\": \"439628096\",\n        \"totalUploadSizeBytes\": \"38093\",\n        \"totalDownloadTransferredSizeBytes\": \"254743091\",\n        \"totalUploadTransferredSizeBytes\": \"42520\",\n        \"totalDownloadUsec\": \"1377442\",\n        \"totalUploadUsec\": \"15472\",\n        \"downloadThroughputBytesPerSecond\": \"319162691\",\n        \"uploadThroughputBytesPerSecond\": \"2462060\",\n        \"totalCachedActionExecUsec\": \"26578255\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"2601be7c-4ce2-41c9-9723-304b03adb989\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"19360000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"38\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790236966544000\",\n        \"updatedAtUsec\": \"1790236986483000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"35\",\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"3\",\n          \"casCacheHits\": \"150\",\n          \"casCacheUploads\": \"14\",\n          \"totalDownloadSizeBytes\": \"439628096\",\n          \"totalUploadSizeBytes\": \"38093\",\n          \"totalDownloadTransferredSizeBytes\": \"254743091\",\n          \"totalUploadTransferredSizeBytes\": \"42520\",\n          \"totalDownloadUsec\": \"1377442\",\n          \"totalUploadUsec\": \"15472\",\n          \"downloadThroughputBytesPerSecond\": \"319162691\",\n          \"uploadThroughputBytesPerSecond\": \"2462060\",\n          \"totalCachedActionExecUsec\": \"26578255\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"b81a27e1-f1fd-45ef-9151-33d6810a8367\",\n      \"created_at_usec\": 1790237067087000,\n      \"updated_at_usec\": 1790237092083000,\n      \"created_at\": \"2026-09-24T08:04:27.087000+00:00\",\n      \"updated_at\": \"2026-09-24T08:04:52.083000+00:00\",\n      \"completed_at\": \"2026-09-24T08:04:52.083000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 24084000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 5,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"3\",\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"4\",\n        \"casCacheHits\": \"147\",\n        \"casCacheUploads\": \"77\",\n        \"totalDownloadSizeBytes\": \"439619676\",\n        \"totalUploadSizeBytes\": \"85872574\",\n        \"totalDownloadTransferredSizeBytes\": \"254717521\",\n        \"totalUploadTransferredSizeBytes\": \"85366396\",\n        \"totalDownloadUsec\": \"1577102\",\n        \"totalUploadUsec\": \"3857035\",\n        \"downloadThroughputBytesPerSecond\": \"278751581\",\n        \"uploadThroughputBytesPerSecond\": \"22263882\",\n        \"totalUncachedActionExecUsec\": \"22092348\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"b81a27e1-f1fd-45ef-9151-33d6810a8367\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"24084000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"5\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790237067087000\",\n        \"updatedAtUsec\": \"1790237092083000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"3\",\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"4\",\n          \"casCacheHits\": \"147\",\n          \"casCacheUploads\": \"77\",\n          \"totalDownloadSizeBytes\": \"439619676\",\n          \"totalUploadSizeBytes\": \"85872574\",\n          \"totalDownloadTransferredSizeBytes\": \"254717521\",\n          \"totalUploadTransferredSizeBytes\": \"85366396\",\n          \"totalDownloadUsec\": \"1577102\",\n          \"totalUploadUsec\": \"3857035\",\n          \"downloadThroughputBytesPerSecond\": \"278751581\",\n          \"uploadThroughputBytesPerSecond\": \"22263882\",\n          \"totalUncachedActionExecUsec\": \"22092348\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"34724183-63b2-4472-a73f-dd0a4f2f7da9\",\n      \"created_at_usec\": 1790238354395000,\n      \"updated_at_usec\": 1790238367639000,\n      \"created_at\": \"2026-09-24T08:25:54.395000+00:00\",\n      \"updated_at\": \"2026-09-24T08:26:07.639000+00:00\",\n      \"completed_at\": \"2026-09-24T08:26:07.639000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 13568000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"1\",\n        \"casCacheHits\": \"147\",\n        \"casCacheUploads\": \"15\",\n        \"totalDownloadSizeBytes\": \"439618116\",\n        \"totalUploadSizeBytes\": \"50774\",\n        \"totalDownloadTransferredSizeBytes\": \"254712918\",\n        \"totalUploadTransferredSizeBytes\": \"50703\",\n        \"totalDownloadUsec\": \"1081346\",\n        \"totalUploadUsec\": \"14419\",\n        \"downloadThroughputBytesPerSecond\": \"406547132\",\n        \"uploadThroughputBytesPerSecond\": \"3521326\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"34724183-63b2-4472-a73f-dd0a4f2f7da9\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"13568000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790238354395000\",\n        \"updatedAtUsec\": \"1790238367639000\",\n        \"cacheStats\": {\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"1\",\n          \"casCacheHits\": \"147\",\n          \"casCacheUploads\": \"15\",\n          \"totalDownloadSizeBytes\": \"439618116\",\n          \"totalUploadSizeBytes\": \"50774\",\n          \"totalDownloadTransferredSizeBytes\": \"254712918\",\n          \"totalUploadTransferredSizeBytes\": \"50703\",\n          \"totalDownloadUsec\": \"1081346\",\n          \"totalUploadUsec\": \"14419\",\n          \"downloadThroughputBytesPerSecond\": \"406547132\",\n          \"uploadThroughputBytesPerSecond\": \"3521326\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"421b7014-06ef-40c6-ad36-0dfc00e04d37\",\n      \"created_at_usec\": 1790238385427000,\n      \"updated_at_usec\": 1790238393132000,\n      \"created_at\": \"2026-09-24T08:26:25.427000+00:00\",\n      \"updated_at\": \"2026-09-24T08:26:33.132000+00:00\",\n      \"completed_at\": \"2026-09-24T08:26:33.132000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 7040000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 0,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"4\",\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"3\",\n        \"casCacheHits\": \"151\",\n        \"casCacheUploads\": \"15\",\n        \"totalDownloadSizeBytes\": \"439695582\",\n        \"totalUploadSizeBytes\": \"23399\",\n        \"totalDownloadTransferredSizeBytes\": \"254720497\",\n        \"totalUploadTransferredSizeBytes\": \"27121\",\n        \"totalDownloadUsec\": \"1041074\",\n        \"totalUploadUsec\": \"15225\",\n        \"downloadThroughputBytesPerSecond\": \"422348057\",\n        \"uploadThroughputBytesPerSecond\": \"1536880\",\n        \"totalCachedActionExecUsec\": \"464737\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"421b7014-06ef-40c6-ad36-0dfc00e04d37\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"7040000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790238385427000\",\n        \"updatedAtUsec\": \"1790238393132000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"4\",\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"3\",\n          \"casCacheHits\": \"151\",\n          \"casCacheUploads\": \"15\",\n          \"totalDownloadSizeBytes\": \"439695582\",\n          \"totalUploadSizeBytes\": \"23399\",\n          \"totalDownloadTransferredSizeBytes\": \"254720497\",\n          \"totalUploadTransferredSizeBytes\": \"27121\",\n          \"totalDownloadUsec\": \"1041074\",\n          \"totalUploadUsec\": \"15225\",\n          \"downloadThroughputBytesPerSecond\": \"422348057\",\n          \"uploadThroughputBytesPerSecond\": \"1536880\",\n          \"totalCachedActionExecUsec\": \"464737\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"d16165c8-6bf8-485c-9426-40e96f44f04f\",\n      \"created_at_usec\": 1790238405168000,\n      \"updated_at_usec\": 1790238413763000,\n      \"created_at\": \"2026-09-24T08:26:45.168000+00:00\",\n      \"updated_at\": \"2026-09-24T08:26:53.763000+00:00\",\n      \"completed_at\": \"2026-09-24T08:26:53.763000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 7625000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 0,\n      \"cache_metrics\": {\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"1\",\n        \"casCacheHits\": \"147\",\n        \"casCacheUploads\": \"15\",\n        \"totalDownloadSizeBytes\": \"439618907\",\n        \"totalUploadSizeBytes\": \"21775\",\n        \"totalDownloadTransferredSizeBytes\": \"254713166\",\n        \"totalUploadTransferredSizeBytes\": \"21036\",\n        \"totalDownloadUsec\": \"1085119\",\n        \"totalUploadUsec\": \"13373\",\n        \"downloadThroughputBytesPerSecond\": \"405134282\",\n        \"uploadThroughputBytesPerSecond\": \"1628280\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"d16165c8-6bf8-485c-9426-40e96f44f04f\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"7625000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790238405168000\",\n        \"updatedAtUsec\": \"1790238413763000\",\n        \"cacheStats\": {\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"1\",\n          \"casCacheHits\": \"147\",\n          \"casCacheUploads\": \"15\",\n          \"totalDownloadSizeBytes\": \"439618907\",\n          \"totalUploadSizeBytes\": \"21775\",\n          \"totalDownloadTransferredSizeBytes\": \"254713166\",\n          \"totalUploadTransferredSizeBytes\": \"21036\",\n          \"totalDownloadUsec\": \"1085119\",\n          \"totalUploadUsec\": \"13373\",\n          \"downloadThroughputBytesPerSecond\": \"405134282\",\n          \"uploadThroughputBytesPerSecond\": \"1628280\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"39cd0f2e-a140-498d-9293-e764a29ec536\",\n      \"created_at_usec\": 1790238431389000,\n      \"updated_at_usec\": 1790238436063000,\n      \"created_at\": \"2026-09-24T08:27:11.389000+00:00\",\n      \"updated_at\": \"2026-09-24T08:27:16.063000+00:00\",\n      \"completed_at\": \"2026-09-24T08:27:16.063000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 3839000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 0,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"3\",\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"3\",\n        \"casCacheHits\": \"149\",\n        \"casCacheUploads\": \"15\",\n        \"totalDownloadSizeBytes\": \"439625481\",\n        \"totalUploadSizeBytes\": \"22044\",\n        \"totalDownloadTransferredSizeBytes\": \"254719400\",\n        \"totalUploadTransferredSizeBytes\": \"24498\",\n        \"totalDownloadUsec\": \"1138507\",\n        \"totalUploadUsec\": \"13376\",\n        \"downloadThroughputBytesPerSecond\": \"386142097\",\n        \"uploadThroughputBytesPerSecond\": \"1648026\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"39cd0f2e-a140-498d-9293-e764a29ec536\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"3839000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790238431389000\",\n        \"updatedAtUsec\": \"1790238436063000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"3\",\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"3\",\n          \"casCacheHits\": \"149\",\n          \"casCacheUploads\": \"15\",\n          \"totalDownloadSizeBytes\": \"439625481\",\n          \"totalUploadSizeBytes\": \"22044\",\n          \"totalDownloadTransferredSizeBytes\": \"254719400\",\n          \"totalUploadTransferredSizeBytes\": \"24498\",\n          \"totalDownloadUsec\": \"1138507\",\n          \"totalUploadUsec\": \"13376\",\n          \"downloadThroughputBytesPerSecond\": \"386142097\",\n          \"uploadThroughputBytesPerSecond\": \"1648026\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"46ff4c49-5859-40af-92c1-0b739293e331\",\n      \"created_at_usec\": 1790238446339000,\n      \"updated_at_usec\": 1790238467699000,\n      \"created_at\": \"2026-09-24T08:27:26.339000+00:00\",\n      \"updated_at\": \"2026-09-24T08:27:47.699000+00:00\",\n      \"completed_at\": \"2026-09-24T08:27:47.699000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 20398000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"3\",\n        \"actionCacheMisses\": \"1\",\n        \"actionCacheUploads\": \"4\",\n        \"casCacheHits\": \"218\",\n        \"casCacheUploads\": \"18\",\n        \"totalDownloadSizeBytes\": \"525475078\",\n        \"totalUploadSizeBytes\": \"2826118\",\n        \"totalDownloadTransferredSizeBytes\": \"340059082\",\n        \"totalUploadTransferredSizeBytes\": \"2453772\",\n        \"totalDownloadUsec\": \"4648565\",\n        \"totalUploadUsec\": \"160533\",\n        \"downloadThroughputBytesPerSecond\": \"113040277\",\n        \"uploadThroughputBytesPerSecond\": \"17604592\",\n        \"totalUncachedActionExecUsec\": \"14935628\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"46ff4c49-5859-40af-92c1-0b739293e331\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"20398000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790238446339000\",\n        \"updatedAtUsec\": \"1790238467699000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"3\",\n          \"actionCacheMisses\": \"1\",\n          \"actionCacheUploads\": \"4\",\n          \"casCacheHits\": \"218\",\n          \"casCacheUploads\": \"18\",\n          \"totalDownloadSizeBytes\": \"525475078\",\n          \"totalUploadSizeBytes\": \"2826118\",\n          \"totalDownloadTransferredSizeBytes\": \"340059082\",\n          \"totalUploadTransferredSizeBytes\": \"2453772\",\n          \"totalDownloadUsec\": \"4648565\",\n          \"totalUploadUsec\": \"160533\",\n          \"downloadThroughputBytesPerSecond\": \"113040277\",\n          \"uploadThroughputBytesPerSecond\": \"17604592\",\n          \"totalUncachedActionExecUsec\": \"14935628\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"a32ed874-6c11-47d1-ac77-42b2f9493ba1\",\n      \"created_at_usec\": 1790619663688000,\n      \"updated_at_usec\": 1790619690760000,\n      \"created_at\": \"2026-09-28T18:21:03.688000+00:00\",\n      \"updated_at\": \"2026-09-28T18:21:30.760000+00:00\",\n      \"completed_at\": \"2026-09-28T18:21:30.760000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 27276000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 20,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"6\",\n        \"actionCacheMisses\": \"2\",\n        \"actionCacheUploads\": \"8\",\n        \"casCacheHits\": \"394\",\n        \"casCacheUploads\": \"29\",\n        \"totalDownloadSizeBytes\": \"889296997\",\n        \"totalUploadSizeBytes\": \"3141451\",\n        \"totalDownloadTransferredSizeBytes\": \"495687433\",\n        \"totalUploadTransferredSizeBytes\": \"2652631\",\n        \"totalDownloadUsec\": \"4519049\",\n        \"totalUploadUsec\": \"248481\",\n        \"downloadThroughputBytesPerSecond\": \"196788527\",\n        \"uploadThroughputBytesPerSecond\": \"12642620\",\n        \"totalUncachedActionExecUsec\": \"17863057\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"a32ed874-6c11-47d1-ac77-42b2f9493ba1\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"27276000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"20\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790619663688000\",\n        \"updatedAtUsec\": \"1790619690760000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"6\",\n          \"actionCacheMisses\": \"2\",\n          \"actionCacheUploads\": \"8\",\n          \"casCacheHits\": \"394\",\n          \"casCacheUploads\": \"29\",\n          \"totalDownloadSizeBytes\": \"889296997\",\n          \"totalUploadSizeBytes\": \"3141451\",\n          \"totalDownloadTransferredSizeBytes\": \"495687433\",\n          \"totalUploadTransferredSizeBytes\": \"2652631\",\n          \"totalDownloadUsec\": \"4519049\",\n          \"totalUploadUsec\": \"248481\",\n          \"downloadThroughputBytesPerSecond\": \"196788527\",\n          \"uploadThroughputBytesPerSecond\": \"12642620\",\n          \"totalUncachedActionExecUsec\": \"17863057\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"4ad81c1c-259d-4764-960a-8265c3277a51\",\n      \"created_at_usec\": 1790814445021000,\n      \"updated_at_usec\": 1790814488837000,\n      \"created_at\": \"2026-10-01T00:27:25.021000+00:00\",\n      \"updated_at\": \"2026-10-01T00:28:08.837000+00:00\",\n      \"completed_at\": \"2026-10-01T00:28:08.837000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 27067000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-swe-explore:signature\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 45,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"6\",\n        \"actionCacheMisses\": \"2\",\n        \"actionCacheUploads\": \"4\",\n        \"casCacheHits\": \"367\",\n        \"casCacheUploads\": \"23\",\n        \"totalDownloadSizeBytes\": \"884146300\",\n        \"totalUploadSizeBytes\": \"3159546\",\n        \"totalDownloadTransferredSizeBytes\": \"495701091\",\n        \"totalUploadTransferredSizeBytes\": \"2661916\",\n        \"totalDownloadUsec\": \"1986366\",\n        \"totalUploadUsec\": \"186842\",\n        \"downloadThroughputBytesPerSecond\": \"445107447\",\n        \"uploadThroughputBytesPerSecond\": \"16910255\",\n        \"totalUncachedActionExecUsec\": \"16223987\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"4ad81c1c-259d-4764-960a-8265c3277a51\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"27067000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-swe-explore:signature\"\n        ],\n        \"actionCount\": \"45\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790814445021000\",\n        \"updatedAtUsec\": \"1790814488837000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"6\",\n          \"actionCacheMisses\": \"2\",\n          \"actionCacheUploads\": \"4\",\n          \"casCacheHits\": \"367\",\n          \"casCacheUploads\": \"23\",\n          \"totalDownloadSizeBytes\": \"884146300\",\n          \"totalUploadSizeBytes\": \"3159546\",\n          \"totalDownloadTransferredSizeBytes\": \"495701091\",\n          \"totalUploadTransferredSizeBytes\": \"2661916\",\n          \"totalDownloadUsec\": \"1986366\",\n          \"totalUploadUsec\": \"186842\",\n          \"downloadThroughputBytesPerSecond\": \"445107447\",\n          \"uploadThroughputBytesPerSecond\": \"16910255\",\n          \"totalUncachedActionExecUsec\": \"16223987\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+      }
+    ],
+    "structuredContent": {
+      "invocations": [
+        {
+          "invocation_id": "1c4ee58b-c072-4127-9957-6ce4758a795c",
+          "created_at_usec": 1790236858424000,
+          "updated_at_usec": 1790236881670000,
+          "created_at": "2026-09-24T08:00:58.424000+00:00",
+          "updated_at": "2026-09-24T08:01:21.670000+00:00",
+          "completed_at": "2026-09-24T08:01:21.670000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 23591000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 34,
+          "cache_metrics": {
+            "actionCacheHits": "6",
+            "actionCacheMisses": "2",
+            "actionCacheUploads": "7",
+            "casCacheHits": "286",
+            "casCacheUploads": "28",
+            "totalDownloadSizeBytes": "797273282",
+            "totalUploadSizeBytes": "62382",
+            "totalDownloadTransferredSizeBytes": "409539252",
+            "totalUploadTransferredSizeBytes": "71181",
+            "totalDownloadUsec": "1782856",
+            "totalUploadUsec": "88245",
+            "downloadThroughputBytesPerSecond": "447188826",
+            "uploadThroughputBytesPerSecond": "706918",
+            "totalUncachedActionExecUsec": "464737"
+          },
+          "raw_metadata": {
+            "invocationId": "1c4ee58b-c072-4127-9957-6ce4758a795c",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "23591000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "34",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790236858424000",
+            "updatedAtUsec": "1790236881670000",
+            "cacheStats": {
+              "actionCacheHits": "6",
+              "actionCacheMisses": "2",
+              "actionCacheUploads": "7",
+              "casCacheHits": "286",
+              "casCacheUploads": "28",
+              "totalDownloadSizeBytes": "797273282",
+              "totalUploadSizeBytes": "62382",
+              "totalDownloadTransferredSizeBytes": "409539252",
+              "totalUploadTransferredSizeBytes": "71181",
+              "totalDownloadUsec": "1782856",
+              "totalUploadUsec": "88245",
+              "downloadThroughputBytesPerSecond": "447188826",
+              "uploadThroughputBytesPerSecond": "706918",
+              "totalUncachedActionExecUsec": "464737"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "2601be7c-4ce2-41c9-9723-304b03adb989",
+          "created_at_usec": 1790236966544000,
+          "updated_at_usec": 1790236986483000,
+          "created_at": "2026-09-24T08:02:46.544000+00:00",
+          "updated_at": "2026-09-24T08:03:06.483000+00:00",
+          "completed_at": "2026-09-24T08:03:06.483000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 19360000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 38,
+          "cache_metrics": {
+            "actionCacheHits": "35",
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "3",
+            "casCacheHits": "150",
+            "casCacheUploads": "14",
+            "totalDownloadSizeBytes": "439628096",
+            "totalUploadSizeBytes": "38093",
+            "totalDownloadTransferredSizeBytes": "254743091",
+            "totalUploadTransferredSizeBytes": "42520",
+            "totalDownloadUsec": "1377442",
+            "totalUploadUsec": "15472",
+            "downloadThroughputBytesPerSecond": "319162691",
+            "uploadThroughputBytesPerSecond": "2462060",
+            "totalCachedActionExecUsec": "26578255"
+          },
+          "raw_metadata": {
+            "invocationId": "2601be7c-4ce2-41c9-9723-304b03adb989",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "19360000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "38",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790236966544000",
+            "updatedAtUsec": "1790236986483000",
+            "cacheStats": {
+              "actionCacheHits": "35",
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "3",
+              "casCacheHits": "150",
+              "casCacheUploads": "14",
+              "totalDownloadSizeBytes": "439628096",
+              "totalUploadSizeBytes": "38093",
+              "totalDownloadTransferredSizeBytes": "254743091",
+              "totalUploadTransferredSizeBytes": "42520",
+              "totalDownloadUsec": "1377442",
+              "totalUploadUsec": "15472",
+              "downloadThroughputBytesPerSecond": "319162691",
+              "uploadThroughputBytesPerSecond": "2462060",
+              "totalCachedActionExecUsec": "26578255"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "b81a27e1-f1fd-45ef-9151-33d6810a8367",
+          "created_at_usec": 1790237067087000,
+          "updated_at_usec": 1790237092083000,
+          "created_at": "2026-09-24T08:04:27.087000+00:00",
+          "updated_at": "2026-09-24T08:04:52.083000+00:00",
+          "completed_at": "2026-09-24T08:04:52.083000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "SUCCESS",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": true,
+          "termination": null,
+          "bazel_exit_code": "SUCCESS",
+          "duration_usec": 24084000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 5,
+          "cache_metrics": {
+            "actionCacheHits": "3",
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "4",
+            "casCacheHits": "147",
+            "casCacheUploads": "77",
+            "totalDownloadSizeBytes": "439619676",
+            "totalUploadSizeBytes": "85872574",
+            "totalDownloadTransferredSizeBytes": "254717521",
+            "totalUploadTransferredSizeBytes": "85366396",
+            "totalDownloadUsec": "1577102",
+            "totalUploadUsec": "3857035",
+            "downloadThroughputBytesPerSecond": "278751581",
+            "uploadThroughputBytesPerSecond": "22263882",
+            "totalUncachedActionExecUsec": "22092348"
+          },
+          "raw_metadata": {
+            "invocationId": "b81a27e1-f1fd-45ef-9151-33d6810a8367",
+            "success": true,
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "24084000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "5",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790237067087000",
+            "updatedAtUsec": "1790237092083000",
+            "cacheStats": {
+              "actionCacheHits": "3",
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "4",
+              "casCacheHits": "147",
+              "casCacheUploads": "77",
+              "totalDownloadSizeBytes": "439619676",
+              "totalUploadSizeBytes": "85872574",
+              "totalDownloadTransferredSizeBytes": "254717521",
+              "totalUploadTransferredSizeBytes": "85366396",
+              "totalDownloadUsec": "1577102",
+              "totalUploadUsec": "3857035",
+              "downloadThroughputBytesPerSecond": "278751581",
+              "uploadThroughputBytesPerSecond": "22263882",
+              "totalUncachedActionExecUsec": "22092348"
+            },
+            "attempt": "1",
+            "bazelExitCode": "SUCCESS"
+          }
+        },
+        {
+          "invocation_id": "34724183-63b2-4472-a73f-dd0a4f2f7da9",
+          "created_at_usec": 1790238354395000,
+          "updated_at_usec": 1790238367639000,
+          "created_at": "2026-09-24T08:25:54.395000+00:00",
+          "updated_at": "2026-09-24T08:26:07.639000+00:00",
+          "completed_at": "2026-09-24T08:26:07.639000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 13568000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 3,
+          "cache_metrics": {
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "1",
+            "casCacheHits": "147",
+            "casCacheUploads": "15",
+            "totalDownloadSizeBytes": "439618116",
+            "totalUploadSizeBytes": "50774",
+            "totalDownloadTransferredSizeBytes": "254712918",
+            "totalUploadTransferredSizeBytes": "50703",
+            "totalDownloadUsec": "1081346",
+            "totalUploadUsec": "14419",
+            "downloadThroughputBytesPerSecond": "406547132",
+            "uploadThroughputBytesPerSecond": "3521326"
+          },
+          "raw_metadata": {
+            "invocationId": "34724183-63b2-4472-a73f-dd0a4f2f7da9",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "13568000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "3",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790238354395000",
+            "updatedAtUsec": "1790238367639000",
+            "cacheStats": {
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "1",
+              "casCacheHits": "147",
+              "casCacheUploads": "15",
+              "totalDownloadSizeBytes": "439618116",
+              "totalUploadSizeBytes": "50774",
+              "totalDownloadTransferredSizeBytes": "254712918",
+              "totalUploadTransferredSizeBytes": "50703",
+              "totalDownloadUsec": "1081346",
+              "totalUploadUsec": "14419",
+              "downloadThroughputBytesPerSecond": "406547132",
+              "uploadThroughputBytesPerSecond": "3521326"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "421b7014-06ef-40c6-ad36-0dfc00e04d37",
+          "created_at_usec": 1790238385427000,
+          "updated_at_usec": 1790238393132000,
+          "created_at": "2026-09-24T08:26:25.427000+00:00",
+          "updated_at": "2026-09-24T08:26:33.132000+00:00",
+          "completed_at": "2026-09-24T08:26:33.132000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 7040000,
+          "command": "run",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 0,
+          "cache_metrics": {
+            "actionCacheHits": "4",
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "3",
+            "casCacheHits": "151",
+            "casCacheUploads": "15",
+            "totalDownloadSizeBytes": "439695582",
+            "totalUploadSizeBytes": "23399",
+            "totalDownloadTransferredSizeBytes": "254720497",
+            "totalUploadTransferredSizeBytes": "27121",
+            "totalDownloadUsec": "1041074",
+            "totalUploadUsec": "15225",
+            "downloadThroughputBytesPerSecond": "422348057",
+            "uploadThroughputBytesPerSecond": "1536880",
+            "totalCachedActionExecUsec": "464737"
+          },
+          "raw_metadata": {
+            "invocationId": "421b7014-06ef-40c6-ad36-0dfc00e04d37",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "7040000",
+            "command": "run",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790238385427000",
+            "updatedAtUsec": "1790238393132000",
+            "cacheStats": {
+              "actionCacheHits": "4",
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "3",
+              "casCacheHits": "151",
+              "casCacheUploads": "15",
+              "totalDownloadSizeBytes": "439695582",
+              "totalUploadSizeBytes": "23399",
+              "totalDownloadTransferredSizeBytes": "254720497",
+              "totalUploadTransferredSizeBytes": "27121",
+              "totalDownloadUsec": "1041074",
+              "totalUploadUsec": "15225",
+              "downloadThroughputBytesPerSecond": "422348057",
+              "uploadThroughputBytesPerSecond": "1536880",
+              "totalCachedActionExecUsec": "464737"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "d16165c8-6bf8-485c-9426-40e96f44f04f",
+          "created_at_usec": 1790238405168000,
+          "updated_at_usec": 1790238413763000,
+          "created_at": "2026-09-24T08:26:45.168000+00:00",
+          "updated_at": "2026-09-24T08:26:53.763000+00:00",
+          "completed_at": "2026-09-24T08:26:53.763000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 7625000,
+          "command": "run",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 0,
+          "cache_metrics": {
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "1",
+            "casCacheHits": "147",
+            "casCacheUploads": "15",
+            "totalDownloadSizeBytes": "439618907",
+            "totalUploadSizeBytes": "21775",
+            "totalDownloadTransferredSizeBytes": "254713166",
+            "totalUploadTransferredSizeBytes": "21036",
+            "totalDownloadUsec": "1085119",
+            "totalUploadUsec": "13373",
+            "downloadThroughputBytesPerSecond": "405134282",
+            "uploadThroughputBytesPerSecond": "1628280"
+          },
+          "raw_metadata": {
+            "invocationId": "d16165c8-6bf8-485c-9426-40e96f44f04f",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "7625000",
+            "command": "run",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790238405168000",
+            "updatedAtUsec": "1790238413763000",
+            "cacheStats": {
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "1",
+              "casCacheHits": "147",
+              "casCacheUploads": "15",
+              "totalDownloadSizeBytes": "439618907",
+              "totalUploadSizeBytes": "21775",
+              "totalDownloadTransferredSizeBytes": "254713166",
+              "totalUploadTransferredSizeBytes": "21036",
+              "totalDownloadUsec": "1085119",
+              "totalUploadUsec": "13373",
+              "downloadThroughputBytesPerSecond": "405134282",
+              "uploadThroughputBytesPerSecond": "1628280"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "39cd0f2e-a140-498d-9293-e764a29ec536",
+          "created_at_usec": 1790238431389000,
+          "updated_at_usec": 1790238436063000,
+          "created_at": "2026-09-24T08:27:11.389000+00:00",
+          "updated_at": "2026-09-24T08:27:16.063000+00:00",
+          "completed_at": "2026-09-24T08:27:16.063000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "FAILURE",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": false,
+          "termination": null,
+          "bazel_exit_code": "BUILD_FAILURE",
+          "duration_usec": 3839000,
+          "command": "run",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 0,
+          "cache_metrics": {
+            "actionCacheHits": "3",
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "3",
+            "casCacheHits": "149",
+            "casCacheUploads": "15",
+            "totalDownloadSizeBytes": "439625481",
+            "totalUploadSizeBytes": "22044",
+            "totalDownloadTransferredSizeBytes": "254719400",
+            "totalUploadTransferredSizeBytes": "24498",
+            "totalDownloadUsec": "1138507",
+            "totalUploadUsec": "13376",
+            "downloadThroughputBytesPerSecond": "386142097",
+            "uploadThroughputBytesPerSecond": "1648026"
+          },
+          "raw_metadata": {
+            "invocationId": "39cd0f2e-a140-498d-9293-e764a29ec536",
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "3839000",
+            "command": "run",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790238431389000",
+            "updatedAtUsec": "1790238436063000",
+            "cacheStats": {
+              "actionCacheHits": "3",
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "3",
+              "casCacheHits": "149",
+              "casCacheUploads": "15",
+              "totalDownloadSizeBytes": "439625481",
+              "totalUploadSizeBytes": "22044",
+              "totalDownloadTransferredSizeBytes": "254719400",
+              "totalUploadTransferredSizeBytes": "24498",
+              "totalDownloadUsec": "1138507",
+              "totalUploadUsec": "13376",
+              "downloadThroughputBytesPerSecond": "386142097",
+              "uploadThroughputBytesPerSecond": "1648026"
+            },
+            "attempt": "1",
+            "bazelExitCode": "BUILD_FAILURE"
+          }
+        },
+        {
+          "invocation_id": "46ff4c49-5859-40af-92c1-0b739293e331",
+          "created_at_usec": 1790238446339000,
+          "updated_at_usec": 1790238467699000,
+          "created_at": "2026-09-24T08:27:26.339000+00:00",
+          "updated_at": "2026-09-24T08:27:47.699000+00:00",
+          "completed_at": "2026-09-24T08:27:47.699000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "SUCCESS",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": true,
+          "termination": null,
+          "bazel_exit_code": "SUCCESS",
+          "duration_usec": 20398000,
+          "command": "run",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 3,
+          "cache_metrics": {
+            "actionCacheHits": "3",
+            "actionCacheMisses": "1",
+            "actionCacheUploads": "4",
+            "casCacheHits": "218",
+            "casCacheUploads": "18",
+            "totalDownloadSizeBytes": "525475078",
+            "totalUploadSizeBytes": "2826118",
+            "totalDownloadTransferredSizeBytes": "340059082",
+            "totalUploadTransferredSizeBytes": "2453772",
+            "totalDownloadUsec": "4648565",
+            "totalUploadUsec": "160533",
+            "downloadThroughputBytesPerSecond": "113040277",
+            "uploadThroughputBytesPerSecond": "17604592",
+            "totalUncachedActionExecUsec": "14935628"
+          },
+          "raw_metadata": {
+            "invocationId": "46ff4c49-5859-40af-92c1-0b739293e331",
+            "success": true,
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "20398000",
+            "command": "run",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "3",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790238446339000",
+            "updatedAtUsec": "1790238467699000",
+            "cacheStats": {
+              "actionCacheHits": "3",
+              "actionCacheMisses": "1",
+              "actionCacheUploads": "4",
+              "casCacheHits": "218",
+              "casCacheUploads": "18",
+              "totalDownloadSizeBytes": "525475078",
+              "totalUploadSizeBytes": "2826118",
+              "totalDownloadTransferredSizeBytes": "340059082",
+              "totalUploadTransferredSizeBytes": "2453772",
+              "totalDownloadUsec": "4648565",
+              "totalUploadUsec": "160533",
+              "downloadThroughputBytesPerSecond": "113040277",
+              "uploadThroughputBytesPerSecond": "17604592",
+              "totalUncachedActionExecUsec": "14935628"
+            },
+            "attempt": "1",
+            "bazelExitCode": "SUCCESS"
+          }
+        },
+        {
+          "invocation_id": "a32ed874-6c11-47d1-ac77-42b2f9493ba1",
+          "created_at_usec": 1790619663688000,
+          "updated_at_usec": 1790619690760000,
+          "created_at": "2026-09-28T18:21:03.688000+00:00",
+          "updated_at": "2026-09-28T18:21:30.760000+00:00",
+          "completed_at": "2026-09-28T18:21:30.760000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "SUCCESS",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": true,
+          "termination": null,
+          "bazel_exit_code": "SUCCESS",
+          "duration_usec": 27276000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 20,
+          "cache_metrics": {
+            "actionCacheHits": "6",
+            "actionCacheMisses": "2",
+            "actionCacheUploads": "8",
+            "casCacheHits": "394",
+            "casCacheUploads": "29",
+            "totalDownloadSizeBytes": "889296997",
+            "totalUploadSizeBytes": "3141451",
+            "totalDownloadTransferredSizeBytes": "495687433",
+            "totalUploadTransferredSizeBytes": "2652631",
+            "totalDownloadUsec": "4519049",
+            "totalUploadUsec": "248481",
+            "downloadThroughputBytesPerSecond": "196788527",
+            "uploadThroughputBytesPerSecond": "12642620",
+            "totalUncachedActionExecUsec": "17863057"
+          },
+          "raw_metadata": {
+            "invocationId": "a32ed874-6c11-47d1-ac77-42b2f9493ba1",
+            "success": true,
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "27276000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "20",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790619663688000",
+            "updatedAtUsec": "1790619690760000",
+            "cacheStats": {
+              "actionCacheHits": "6",
+              "actionCacheMisses": "2",
+              "actionCacheUploads": "8",
+              "casCacheHits": "394",
+              "casCacheUploads": "29",
+              "totalDownloadSizeBytes": "889296997",
+              "totalUploadSizeBytes": "3141451",
+              "totalDownloadTransferredSizeBytes": "495687433",
+              "totalUploadTransferredSizeBytes": "2652631",
+              "totalDownloadUsec": "4519049",
+              "totalUploadUsec": "248481",
+              "downloadThroughputBytesPerSecond": "196788527",
+              "uploadThroughputBytesPerSecond": "12642620",
+              "totalUncachedActionExecUsec": "17863057"
+            },
+            "attempt": "1",
+            "bazelExitCode": "SUCCESS"
+          }
+        },
+        {
+          "invocation_id": "4ad81c1c-259d-4764-960a-8265c3277a51",
+          "created_at_usec": 1790814445021000,
+          "updated_at_usec": 1790814488837000,
+          "created_at": "2026-10-01T00:27:25.021000+00:00",
+          "updated_at": "2026-10-01T00:28:08.837000+00:00",
+          "completed_at": "2026-10-01T00:28:08.837000+00:00",
+          "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+          "status": "SUCCESS",
+          "invocation_status": "COMPLETE_INVOCATION_STATUS",
+          "success": true,
+          "termination": null,
+          "bazel_exit_code": "SUCCESS",
+          "duration_usec": 27067000,
+          "command": "build",
+          "pattern": [
+            "//experiments/atlas-swe-explore:signature"
+          ],
+          "repository": null,
+          "commit_sha": null,
+          "branch": null,
+          "user": "becker",
+          "host": "nixos-btw",
+          "role": null,
+          "action_count": 45,
+          "cache_metrics": {
+            "actionCacheHits": "6",
+            "actionCacheMisses": "2",
+            "actionCacheUploads": "4",
+            "casCacheHits": "367",
+            "casCacheUploads": "23",
+            "totalDownloadSizeBytes": "884146300",
+            "totalUploadSizeBytes": "3159546",
+            "totalDownloadTransferredSizeBytes": "495701091",
+            "totalUploadTransferredSizeBytes": "2661916",
+            "totalDownloadUsec": "1986366",
+            "totalUploadUsec": "186842",
+            "downloadThroughputBytesPerSecond": "445107447",
+            "uploadThroughputBytesPerSecond": "16910255",
+            "totalUncachedActionExecUsec": "16223987"
+          },
+          "raw_metadata": {
+            "invocationId": "4ad81c1c-259d-4764-960a-8265c3277a51",
+            "success": true,
+            "user": "becker",
+            "host": "nixos-btw",
+            "durationUsec": "27067000",
+            "command": "build",
+            "pattern": [
+              "//experiments/atlas-swe-explore:signature"
+            ],
+            "actionCount": "45",
+            "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+            "createdAtUsec": "1790814445021000",
+            "updatedAtUsec": "1790814488837000",
+            "cacheStats": {
+              "actionCacheHits": "6",
+              "actionCacheMisses": "2",
+              "actionCacheUploads": "4",
+              "casCacheHits": "367",
+              "casCacheUploads": "23",
+              "totalDownloadSizeBytes": "884146300",
+              "totalUploadSizeBytes": "3159546",
+              "totalDownloadTransferredSizeBytes": "495701091",
+              "totalUploadTransferredSizeBytes": "2661916",
+              "totalDownloadUsec": "1986366",
+              "totalUploadUsec": "186842",
+              "downloadThroughputBytesPerSecond": "445107447",
+              "uploadThroughputBytesPerSecond": "16910255",
+              "totalUncachedActionExecUsec": "16223987"
+            },
+            "attempt": "1",
+            "bazelExitCode": "SUCCESS"
+          }
+        }
+      ],
+      "next_page_token": "",
+      "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+    },
+    "isError": false
+  },
+  "final": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"invocation\": [\n    {\n      \"id\": {\n        \"invocationId\": \"c6513144-0d03-400d-97ae-cde433c05d29\"\n      },\n      \"success\": true,\n      \"user\": \"becker\",\n      \"durationUsec\": \"45303000\",\n      \"host\": \"nixos-btw\",\n      \"command\": \"build\",\n      \"pattern\": \"//experiments/attune-final-topology:source_signatures\",\n      \"actionCount\": \"561\",\n      \"createdAtUsec\": \"1790983432336000\",\n      \"updatedAtUsec\": \"1790983476540000\",\n      \"workspaceStatus\": [\n        {\n          \"key\": \"BUILD_EMBED_LABEL\"\n        },\n        {\n          \"key\": \"BUILD_HOST\",\n          \"value\": \"nixos-btw\"\n        },\n        {\n          \"key\": \"BUILD_TIMESTAMP\",\n          \"value\": \"1790983432\"\n        },\n        {\n          \"key\": \"BUILD_USER\",\n          \"value\": \"becker\"\n        },\n        {\n          \"key\": \"FORMATTED_DATE\",\n          \"value\": \"2026 Oct 02 23 23 52 Fri\"\n        }\n      ],\n      \"bazelExitCode\": \"SUCCESS\",\n      \"artifacts\": [\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/observations.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/570217dc0798b12772778449ce53de3e33d27f0bb5840dc0aa578978c91c9f40/1332373\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/physical.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/9594d1d1846ae6e5a660e74cb33e318d242880fcef3cbfa4970ed71393dd9dec/7825\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/snapshots.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/83e1a83b9e7de2c52cb3c140f3cf2154d7a4224885c955ac1ed3263af1eb1d93/4866\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/summaries.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/6d691cd574ea1900a94fe125a07bc458e30dd44e326c00d7f2dd5ebd06cfaf90/21122\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/coverage.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/fdce1dcb4338e0e78366e55786f5d161a3dab91863d959525d0510ee5fc70e0b/4578\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/a_signature/reuse.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/7b6c832ba9de827b5cce75f96b4d8e5651043ff200027f0210fb74b7817dc2f1/3983\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/observations.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/6d71f12024babc2713743834b545a1e3101c77b87a864526ccc71ead0ef8f102/1354682\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/physical.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/a8e54f71d7a58d78eeeab360c40f8f66035034168f57da98c0f14fdc07fa845e/7961\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/snapshots.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/94d36fb9b560df6d01723e18f674fbc920dc5936ce5d689646a3119a57861337/4866\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/summaries.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/f9a6c5d552a27ebb5feb0b0a87aa04e93455557e0e7cfbbd04550c72f0d0b595/21250\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/coverage.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/f55a69e6f2cd359efb6f5d15bd5ab97e9192d651f869a3d008ea3881643a466e/5136\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/b_signature/reuse.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/51b1fb12caacd16c7cb63e9ccc6128a56498f83c1fcfed26b2ca8527937dce46/4069\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/observations.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/d5aacda5c7d9591b94bf8b4e4db10a29085850c844e6e03a61e2fc080d0c765d/1347220\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/physical.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/92c5031182ae369954c00ae77ccc17d0becbd8d9633f26c87bd4cbcace35208a/8013\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/snapshots.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/6ef0c4f2ec4c03b11e2e56d7120e25298968134027ead99b3a29df1f57af96d3/4866\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/summaries.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/127914f6eaeacc2c5bd1ef0d981ccc480cccb4a4bc61b60f8ed7497ab120f1cf/21218\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/coverage.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/8baf2391056ae6b0fcf459567093a76fa5afb895bf540da92a5e371dc37bd4dc/4978\"\n        },\n        {\n          \"name\": \"experiments/attune-final-topology/c_signature/reuse.parquet\",\n          \"uri\": \"bytestream://remote.buildbuddy.io/blobs/6ee81ea0b6a163bf701d8dbfed1d6ebea2da26fbf5e6e42c09e7fb04b802042e/4101\"\n        }\n      ],\n      \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\"\n    }\n  ]\n}"
+      }
+    ],
+    "structuredContent": {
+      "invocation": [
+        {
+          "id": {
+            "invocationId": "c6513144-0d03-400d-97ae-cde433c05d29"
+          },
+          "success": true,
+          "user": "becker",
+          "durationUsec": "45303000",
+          "host": "nixos-btw",
+          "command": "build",
+          "pattern": "//experiments/attune-final-topology:source_signatures",
+          "actionCount": "561",
+          "createdAtUsec": "1790983432336000",
+          "updatedAtUsec": "1790983476540000",
+          "workspaceStatus": [
+            {
+              "key": "BUILD_EMBED_LABEL"
+            },
+            {
+              "key": "BUILD_HOST",
+              "value": "nixos-btw"
+            },
+            {
+              "key": "BUILD_TIMESTAMP",
+              "value": "1790983432"
+            },
+            {
+              "key": "BUILD_USER",
+              "value": "becker"
+            },
+            {
+              "key": "FORMATTED_DATE",
+              "value": "2026 Oct 02 23 23 52 Fri"
+            }
+          ],
+          "bazelExitCode": "SUCCESS",
+          "artifacts": [
+            {
+              "name": "experiments/attune-final-topology/a_signature/observations.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/570217dc0798b12772778449ce53de3e33d27f0bb5840dc0aa578978c91c9f40/1332373"
+            },
+            {
+              "name": "experiments/attune-final-topology/a_signature/physical.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/9594d1d1846ae6e5a660e74cb33e318d242880fcef3cbfa4970ed71393dd9dec/7825"
+            },
+            {
+              "name": "experiments/attune-final-topology/a_signature/snapshots.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/83e1a83b9e7de2c52cb3c140f3cf2154d7a4224885c955ac1ed3263af1eb1d93/4866"
+            },
+            {
+              "name": "experiments/attune-final-topology/a_signature/summaries.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/6d691cd574ea1900a94fe125a07bc458e30dd44e326c00d7f2dd5ebd06cfaf90/21122"
+            },
+            {
+              "name": "experiments/attune-final-topology/a_signature/coverage.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/fdce1dcb4338e0e78366e55786f5d161a3dab91863d959525d0510ee5fc70e0b/4578"
+            },
+            {
+              "name": "experiments/attune-final-topology/a_signature/reuse.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/7b6c832ba9de827b5cce75f96b4d8e5651043ff200027f0210fb74b7817dc2f1/3983"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/observations.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/6d71f12024babc2713743834b545a1e3101c77b87a864526ccc71ead0ef8f102/1354682"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/physical.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/a8e54f71d7a58d78eeeab360c40f8f66035034168f57da98c0f14fdc07fa845e/7961"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/snapshots.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/94d36fb9b560df6d01723e18f674fbc920dc5936ce5d689646a3119a57861337/4866"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/summaries.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/f9a6c5d552a27ebb5feb0b0a87aa04e93455557e0e7cfbbd04550c72f0d0b595/21250"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/coverage.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/f55a69e6f2cd359efb6f5d15bd5ab97e9192d651f869a3d008ea3881643a466e/5136"
+            },
+            {
+              "name": "experiments/attune-final-topology/b_signature/reuse.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/51b1fb12caacd16c7cb63e9ccc6128a56498f83c1fcfed26b2ca8527937dce46/4069"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/observations.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/d5aacda5c7d9591b94bf8b4e4db10a29085850c844e6e03a61e2fc080d0c765d/1347220"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/physical.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/92c5031182ae369954c00ae77ccc17d0becbd8d9633f26c87bd4cbcace35208a/8013"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/snapshots.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/6ef0c4f2ec4c03b11e2e56d7120e25298968134027ead99b3a29df1f57af96d3/4866"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/summaries.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/127914f6eaeacc2c5bd1ef0d981ccc480cccb4a4bc61b60f8ed7497ab120f1cf/21218"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/coverage.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/8baf2391056ae6b0fcf459567093a76fa5afb895bf540da92a5e371dc37bd4dc/4978"
+            },
+            {
+              "name": "experiments/attune-final-topology/c_signature/reuse.parquet",
+              "uri": "bytestream://remote.buildbuddy.io/blobs/6ee81ea0b6a163bf701d8dbfed1d6ebea2da26fbf5e6e42c09e7fb04b802042e/4101"
+            }
+          ],
+          "invocationStatus": "COMPLETE_INVOCATION_STATUS"
+        }
+      ]
+    },
+    "isError": false
+  },
+  "searches": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"5297d97a-c726-4348-8a5c-8e57807cb903\",\n      \"created_at_usec\": 1790405975728000,\n      \"updated_at_usec\": 1790405979985000,\n      \"created_at\": \"2026-09-26T06:59:35.728000+00:00\",\n      \"updated_at\": \"2026-09-26T06:59:39.985000+00:00\",\n      \"completed_at\": \"2026-09-26T06:59:39.985000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 3480000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:compute_control_signatures\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 0,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"6690\",\n        \"totalUploadTransferredSizeBytes\": \"6741\",\n        \"totalUploadUsec\": \"1794\",\n        \"uploadThroughputBytesPerSecond\": \"3729096\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"5297d97a-c726-4348-8a5c-8e57807cb903\",\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"3480000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:compute_control_signatures\"\n        ],\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790405975728000\",\n        \"updatedAtUsec\": \"1790405979985000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"6690\",\n          \"totalUploadTransferredSizeBytes\": \"6741\",\n          \"totalUploadUsec\": \"1794\",\n          \"uploadThroughputBytesPerSecond\": \"3729096\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"bfab4aa4-8273-44ac-8516-2d9a1c89af39\",\n      \"created_at_usec\": 1790405987173000,\n      \"updated_at_usec\": 1790406010873000,\n      \"created_at\": \"2026-09-26T06:59:47.173000+00:00\",\n      \"updated_at\": \"2026-09-26T07:00:10.873000+00:00\",\n      \"completed_at\": \"2026-09-26T07:00:10.873000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 22781000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:compute_control_signatures\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 40,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"4\",\n        \"actionCacheMisses\": \"8\",\n        \"actionCacheUploads\": \"8\",\n        \"casCacheHits\": \"350\",\n        \"casCacheUploads\": \"33\",\n        \"totalDownloadSizeBytes\": \"882652295\",\n        \"totalUploadSizeBytes\": \"3617310\",\n        \"totalDownloadTransferredSizeBytes\": \"527421165\",\n        \"totalUploadTransferredSizeBytes\": \"3048113\",\n        \"totalDownloadUsec\": \"5887978\",\n        \"totalUploadUsec\": \"282297\",\n        \"downloadThroughputBytesPerSecond\": \"149907539\",\n        \"uploadThroughputBytesPerSecond\": \"12813844\",\n        \"totalUncachedActionExecUsec\": \"18525384\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"bfab4aa4-8273-44ac-8516-2d9a1c89af39\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"22781000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:compute_control_signatures\"\n        ],\n        \"actionCount\": \"40\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790405987173000\",\n        \"updatedAtUsec\": \"1790406010873000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"4\",\n          \"actionCacheMisses\": \"8\",\n          \"actionCacheUploads\": \"8\",\n          \"casCacheHits\": \"350\",\n          \"casCacheUploads\": \"33\",\n          \"totalDownloadSizeBytes\": \"882652295\",\n          \"totalUploadSizeBytes\": \"3617310\",\n          \"totalDownloadTransferredSizeBytes\": \"527421165\",\n          \"totalUploadTransferredSizeBytes\": \"3048113\",\n          \"totalDownloadUsec\": \"5887978\",\n          \"totalUploadUsec\": \"282297\",\n          \"downloadThroughputBytesPerSecond\": \"149907539\",\n          \"uploadThroughputBytesPerSecond\": \"12813844\",\n          \"totalUncachedActionExecUsec\": \"18525384\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"87e786c0-3efa-4e03-ba2e-b67ede96dcdb\",\n      \"created_at_usec\": 1790408887369000,\n      \"updated_at_usec\": 1790408893885000,\n      \"created_at\": \"2026-09-26T07:48:07.369000+00:00\",\n      \"updated_at\": \"2026-09-26T07:48:13.885000+00:00\",\n      \"completed_at\": \"2026-09-26T07:48:13.885000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 5811000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:compute_control_signatures\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 1,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"7967\",\n        \"totalUploadTransferredSizeBytes\": \"8027\",\n        \"totalUploadUsec\": \"1839\",\n        \"uploadThroughputBytesPerSecond\": \"4332245\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"87e786c0-3efa-4e03-ba2e-b67ede96dcdb\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"5811000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:compute_control_signatures\"\n        ],\n        \"actionCount\": \"1\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790408887369000\",\n        \"updatedAtUsec\": \"1790408893885000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"7967\",\n          \"totalUploadTransferredSizeBytes\": \"8027\",\n          \"totalUploadUsec\": \"1839\",\n          \"uploadThroughputBytesPerSecond\": \"4332245\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"b0226973-2caa-427a-9395-a43da7579160\",\n      \"created_at_usec\": 1790437661913000,\n      \"updated_at_usec\": 1790437673887000,\n      \"created_at\": \"2026-09-26T15:47:41.913000+00:00\",\n      \"updated_at\": \"2026-09-26T15:47:53.887000+00:00\",\n      \"completed_at\": \"2026-09-26T15:47:53.887000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 11247000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:compute_control_signatures\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 44,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"2\",\n        \"casCacheHits\": \"74\",\n        \"casCacheUploads\": \"2\",\n        \"totalDownloadSizeBytes\": \"87286569\",\n        \"totalUploadSizeBytes\": \"23921\",\n        \"totalDownloadTransferredSizeBytes\": \"86515928\",\n        \"totalUploadTransferredSizeBytes\": \"24086\",\n        \"totalDownloadUsec\": \"164502\",\n        \"totalUploadUsec\": \"1966\",\n        \"downloadThroughputBytesPerSecond\": \"530610989\",\n        \"uploadThroughputBytesPerSecond\": \"12167344\",\n        \"totalCachedActionExecUsec\": \"15333425\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"b0226973-2caa-427a-9395-a43da7579160\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"11247000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:compute_control_signatures\"\n        ],\n        \"actionCount\": \"44\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790437661913000\",\n        \"updatedAtUsec\": \"1790437673887000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"2\",\n          \"casCacheHits\": \"74\",\n          \"casCacheUploads\": \"2\",\n          \"totalDownloadSizeBytes\": \"87286569\",\n          \"totalUploadSizeBytes\": \"23921\",\n          \"totalDownloadTransferredSizeBytes\": \"86515928\",\n          \"totalUploadTransferredSizeBytes\": \"24086\",\n          \"totalDownloadUsec\": \"164502\",\n          \"totalUploadUsec\": \"1966\",\n          \"downloadThroughputBytesPerSecond\": \"530610989\",\n          \"uploadThroughputBytesPerSecond\": \"12167344\",\n          \"totalCachedActionExecUsec\": \"15333425\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "5297d97a-c726-4348-8a5c-8e57807cb903",
+              "created_at_usec": 1790405975728000,
+              "updated_at_usec": 1790405979985000,
+              "created_at": "2026-09-26T06:59:35.728000+00:00",
+              "updated_at": "2026-09-26T06:59:39.985000+00:00",
+              "completed_at": "2026-09-26T06:59:39.985000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": null,
+              "bazel_exit_code": "BUILD_FAILURE",
+              "duration_usec": 3480000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:compute_control_signatures"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 0,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "6690",
+                "totalUploadTransferredSizeBytes": "6741",
+                "totalUploadUsec": "1794",
+                "uploadThroughputBytesPerSecond": "3729096"
+              },
+              "raw_metadata": {
+                "invocationId": "5297d97a-c726-4348-8a5c-8e57807cb903",
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "3480000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:compute_control_signatures"
+                ],
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790405975728000",
+                "updatedAtUsec": "1790405979985000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "6690",
+                  "totalUploadTransferredSizeBytes": "6741",
+                  "totalUploadUsec": "1794",
+                  "uploadThroughputBytesPerSecond": "3729096"
+                },
+                "attempt": "1",
+                "bazelExitCode": "BUILD_FAILURE"
+              }
+            },
+            {
+              "invocation_id": "bfab4aa4-8273-44ac-8516-2d9a1c89af39",
+              "created_at_usec": 1790405987173000,
+              "updated_at_usec": 1790406010873000,
+              "created_at": "2026-09-26T06:59:47.173000+00:00",
+              "updated_at": "2026-09-26T07:00:10.873000+00:00",
+              "completed_at": "2026-09-26T07:00:10.873000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 22781000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:compute_control_signatures"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 40,
+              "cache_metrics": {
+                "actionCacheHits": "4",
+                "actionCacheMisses": "8",
+                "actionCacheUploads": "8",
+                "casCacheHits": "350",
+                "casCacheUploads": "33",
+                "totalDownloadSizeBytes": "882652295",
+                "totalUploadSizeBytes": "3617310",
+                "totalDownloadTransferredSizeBytes": "527421165",
+                "totalUploadTransferredSizeBytes": "3048113",
+                "totalDownloadUsec": "5887978",
+                "totalUploadUsec": "282297",
+                "downloadThroughputBytesPerSecond": "149907539",
+                "uploadThroughputBytesPerSecond": "12813844",
+                "totalUncachedActionExecUsec": "18525384"
+              },
+              "raw_metadata": {
+                "invocationId": "bfab4aa4-8273-44ac-8516-2d9a1c89af39",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "22781000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:compute_control_signatures"
+                ],
+                "actionCount": "40",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790405987173000",
+                "updatedAtUsec": "1790406010873000",
+                "cacheStats": {
+                  "actionCacheHits": "4",
+                  "actionCacheMisses": "8",
+                  "actionCacheUploads": "8",
+                  "casCacheHits": "350",
+                  "casCacheUploads": "33",
+                  "totalDownloadSizeBytes": "882652295",
+                  "totalUploadSizeBytes": "3617310",
+                  "totalDownloadTransferredSizeBytes": "527421165",
+                  "totalUploadTransferredSizeBytes": "3048113",
+                  "totalDownloadUsec": "5887978",
+                  "totalUploadUsec": "282297",
+                  "downloadThroughputBytesPerSecond": "149907539",
+                  "uploadThroughputBytesPerSecond": "12813844",
+                  "totalUncachedActionExecUsec": "18525384"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "87e786c0-3efa-4e03-ba2e-b67ede96dcdb",
+              "created_at_usec": 1790408887369000,
+              "updated_at_usec": 1790408893885000,
+              "created_at": "2026-09-26T07:48:07.369000+00:00",
+              "updated_at": "2026-09-26T07:48:13.885000+00:00",
+              "completed_at": "2026-09-26T07:48:13.885000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 5811000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:compute_control_signatures"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 1,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "7967",
+                "totalUploadTransferredSizeBytes": "8027",
+                "totalUploadUsec": "1839",
+                "uploadThroughputBytesPerSecond": "4332245"
+              },
+              "raw_metadata": {
+                "invocationId": "87e786c0-3efa-4e03-ba2e-b67ede96dcdb",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "5811000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:compute_control_signatures"
+                ],
+                "actionCount": "1",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790408887369000",
+                "updatedAtUsec": "1790408893885000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "7967",
+                  "totalUploadTransferredSizeBytes": "8027",
+                  "totalUploadUsec": "1839",
+                  "uploadThroughputBytesPerSecond": "4332245"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "b0226973-2caa-427a-9395-a43da7579160",
+              "created_at_usec": 1790437661913000,
+              "updated_at_usec": 1790437673887000,
+              "created_at": "2026-09-26T15:47:41.913000+00:00",
+              "updated_at": "2026-09-26T15:47:53.887000+00:00",
+              "completed_at": "2026-09-26T15:47:53.887000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 11247000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:compute_control_signatures"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 44,
+              "cache_metrics": {
+                "actionCacheHits": "2",
+                "casCacheHits": "74",
+                "casCacheUploads": "2",
+                "totalDownloadSizeBytes": "87286569",
+                "totalUploadSizeBytes": "23921",
+                "totalDownloadTransferredSizeBytes": "86515928",
+                "totalUploadTransferredSizeBytes": "24086",
+                "totalDownloadUsec": "164502",
+                "totalUploadUsec": "1966",
+                "downloadThroughputBytesPerSecond": "530610989",
+                "uploadThroughputBytesPerSecond": "12167344",
+                "totalCachedActionExecUsec": "15333425"
+              },
+              "raw_metadata": {
+                "invocationId": "b0226973-2caa-427a-9395-a43da7579160",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "11247000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:compute_control_signatures"
+                ],
+                "actionCount": "44",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790437661913000",
+                "updatedAtUsec": "1790437673887000",
+                "cacheStats": {
+                  "actionCacheHits": "2",
+                  "casCacheHits": "74",
+                  "casCacheUploads": "2",
+                  "totalDownloadSizeBytes": "87286569",
+                  "totalUploadSizeBytes": "23921",
+                  "totalDownloadTransferredSizeBytes": "86515928",
+                  "totalUploadTransferredSizeBytes": "24086",
+                  "totalDownloadUsec": "164502",
+                  "totalUploadUsec": "1966",
+                  "downloadThroughputBytesPerSecond": "530610989",
+                  "uploadThroughputBytesPerSecond": "12167344",
+                  "totalCachedActionExecUsec": "15333425"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"53be405b-b40b-45d4-b5a3-145f292bdb8b\",\n      \"created_at_usec\": 1790700473761000,\n      \"updated_at_usec\": 1790700567897000,\n      \"created_at\": \"2026-09-29T16:47:53.761000+00:00\",\n      \"updated_at\": \"2026-09-29T16:49:27.897000+00:00\",\n      \"completed_at\": \"2026-09-29T16:49:27.897000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 89355000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-live-self:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 2434,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"748\",\n        \"actionCacheMisses\": \"621\",\n        \"actionCacheUploads\": \"2\",\n        \"casCacheHits\": \"3250\",\n        \"casCacheUploads\": \"19\",\n        \"totalDownloadSizeBytes\": \"820322452\",\n        \"totalUploadSizeBytes\": \"5362306\",\n        \"totalDownloadTransferredSizeBytes\": \"547671893\",\n        \"totalUploadTransferredSizeBytes\": \"4779727\",\n        \"totalDownloadUsec\": \"13326434\",\n        \"totalUploadUsec\": \"6569373\",\n        \"downloadThroughputBytesPerSecond\": \"61556036\",\n        \"uploadThroughputBytesPerSecond\": \"816258\",\n        \"totalCachedActionExecUsec\": \"243006357\",\n        \"totalUncachedActionExecUsec\": \"20048581\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"53be405b-b40b-45d4-b5a3-145f292bdb8b\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"89355000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-live-self:acquire\"\n        ],\n        \"actionCount\": \"2434\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790700473761000\",\n        \"updatedAtUsec\": \"1790700567897000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"748\",\n          \"actionCacheMisses\": \"621\",\n          \"actionCacheUploads\": \"2\",\n          \"casCacheHits\": \"3250\",\n          \"casCacheUploads\": \"19\",\n          \"totalDownloadSizeBytes\": \"820322452\",\n          \"totalUploadSizeBytes\": \"5362306\",\n          \"totalDownloadTransferredSizeBytes\": \"547671893\",\n          \"totalUploadTransferredSizeBytes\": \"4779727\",\n          \"totalDownloadUsec\": \"13326434\",\n          \"totalUploadUsec\": \"6569373\",\n          \"downloadThroughputBytesPerSecond\": \"61556036\",\n          \"uploadThroughputBytesPerSecond\": \"816258\",\n          \"totalCachedActionExecUsec\": \"243006357\",\n          \"totalUncachedActionExecUsec\": \"20048581\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"f7446c91-9f80-4c49-b189-079e6787d6b5\",\n      \"created_at_usec\": 1790700602459000,\n      \"updated_at_usec\": 1790700604041000,\n      \"created_at\": \"2026-09-29T16:50:02.459000+00:00\",\n      \"updated_at\": \"2026-09-29T16:50:04.041000+00:00\",\n      \"completed_at\": \"2026-09-29T16:50:04.041000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 1375000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-live-self:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 2,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"6682\",\n        \"totalUploadTransferredSizeBytes\": \"6745\",\n        \"totalUploadUsec\": \"2581\",\n        \"uploadThroughputBytesPerSecond\": \"2588919\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"f7446c91-9f80-4c49-b189-079e6787d6b5\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"1375000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-live-self:acquire\"\n        ],\n        \"actionCount\": \"2\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790700602459000\",\n        \"updatedAtUsec\": \"1790700604041000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"6682\",\n          \"totalUploadTransferredSizeBytes\": \"6745\",\n          \"totalUploadUsec\": \"2581\",\n          \"uploadThroughputBytesPerSecond\": \"2588919\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "53be405b-b40b-45d4-b5a3-145f292bdb8b",
+              "created_at_usec": 1790700473761000,
+              "updated_at_usec": 1790700567897000,
+              "created_at": "2026-09-29T16:47:53.761000+00:00",
+              "updated_at": "2026-09-29T16:49:27.897000+00:00",
+              "completed_at": "2026-09-29T16:49:27.897000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 89355000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-live-self:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "becker",
+              "host": "nixos-btw",
+              "role": null,
+              "action_count": 2434,
+              "cache_metrics": {
+                "actionCacheHits": "748",
+                "actionCacheMisses": "621",
+                "actionCacheUploads": "2",
+                "casCacheHits": "3250",
+                "casCacheUploads": "19",
+                "totalDownloadSizeBytes": "820322452",
+                "totalUploadSizeBytes": "5362306",
+                "totalDownloadTransferredSizeBytes": "547671893",
+                "totalUploadTransferredSizeBytes": "4779727",
+                "totalDownloadUsec": "13326434",
+                "totalUploadUsec": "6569373",
+                "downloadThroughputBytesPerSecond": "61556036",
+                "uploadThroughputBytesPerSecond": "816258",
+                "totalCachedActionExecUsec": "243006357",
+                "totalUncachedActionExecUsec": "20048581"
+              },
+              "raw_metadata": {
+                "invocationId": "53be405b-b40b-45d4-b5a3-145f292bdb8b",
+                "success": true,
+                "user": "becker",
+                "host": "nixos-btw",
+                "durationUsec": "89355000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-live-self:acquire"
+                ],
+                "actionCount": "2434",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790700473761000",
+                "updatedAtUsec": "1790700567897000",
+                "cacheStats": {
+                  "actionCacheHits": "748",
+                  "actionCacheMisses": "621",
+                  "actionCacheUploads": "2",
+                  "casCacheHits": "3250",
+                  "casCacheUploads": "19",
+                  "totalDownloadSizeBytes": "820322452",
+                  "totalUploadSizeBytes": "5362306",
+                  "totalDownloadTransferredSizeBytes": "547671893",
+                  "totalUploadTransferredSizeBytes": "4779727",
+                  "totalDownloadUsec": "13326434",
+                  "totalUploadUsec": "6569373",
+                  "downloadThroughputBytesPerSecond": "61556036",
+                  "uploadThroughputBytesPerSecond": "816258",
+                  "totalCachedActionExecUsec": "243006357",
+                  "totalUncachedActionExecUsec": "20048581"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "f7446c91-9f80-4c49-b189-079e6787d6b5",
+              "created_at_usec": 1790700602459000,
+              "updated_at_usec": 1790700604041000,
+              "created_at": "2026-09-29T16:50:02.459000+00:00",
+              "updated_at": "2026-09-29T16:50:04.041000+00:00",
+              "completed_at": "2026-09-29T16:50:04.041000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 1375000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-live-self:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "becker",
+              "host": "nixos-btw",
+              "role": null,
+              "action_count": 2,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "6682",
+                "totalUploadTransferredSizeBytes": "6745",
+                "totalUploadUsec": "2581",
+                "uploadThroughputBytesPerSecond": "2588919"
+              },
+              "raw_metadata": {
+                "invocationId": "f7446c91-9f80-4c49-b189-079e6787d6b5",
+                "success": true,
+                "user": "becker",
+                "host": "nixos-btw",
+                "durationUsec": "1375000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-live-self:acquire"
+                ],
+                "actionCount": "2",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790700602459000",
+                "updatedAtUsec": "1790700604041000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "6682",
+                  "totalUploadTransferredSizeBytes": "6745",
+                  "totalUploadUsec": "2581",
+                  "uploadThroughputBytesPerSecond": "2588919"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"1748760c-76fc-439a-b4ac-1faae646f904\",\n      \"created_at_usec\": 1790654283444000,\n      \"updated_at_usec\": 1790654302702000,\n      \"created_at\": \"2026-09-29T03:58:03.444000+00:00\",\n      \"updated_at\": \"2026-09-29T03:58:22.702000+00:00\",\n      \"completed_at\": \"2026-09-29T03:58:22.702000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": \"interrupted\",\n      \"bazel_exit_code\": \"INTERRUPTED\",\n      \"duration_usec\": 17535000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-live-physical:all\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 18,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"42\",\n        \"actionCacheMisses\": \"18\",\n        \"actionCacheUploads\": \"30\",\n        \"casCacheHits\": \"2704\",\n        \"casCacheUploads\": \"44\",\n        \"totalDownloadSizeBytes\": \"5621317234\",\n        \"totalUploadSizeBytes\": \"56958\",\n        \"totalDownloadTransferredSizeBytes\": \"3081704100\",\n        \"totalUploadTransferredSizeBytes\": \"84509\",\n        \"totalDownloadUsec\": \"15163502\",\n        \"totalUploadUsec\": \"70370\",\n        \"downloadThroughputBytesPerSecond\": \"370713654\",\n        \"uploadThroughputBytesPerSecond\": \"809407\",\n        \"totalUncachedActionExecUsec\": \"15073335\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"1748760c-76fc-439a-b4ac-1faae646f904\",\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"17535000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-live-physical:all\"\n        ],\n        \"actionCount\": \"18\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790654283444000\",\n        \"updatedAtUsec\": \"1790654302702000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"42\",\n          \"actionCacheMisses\": \"18\",\n          \"actionCacheUploads\": \"30\",\n          \"casCacheHits\": \"2704\",\n          \"casCacheUploads\": \"44\",\n          \"totalDownloadSizeBytes\": \"5621317234\",\n          \"totalUploadSizeBytes\": \"56958\",\n          \"totalDownloadTransferredSizeBytes\": \"3081704100\",\n          \"totalUploadTransferredSizeBytes\": \"84509\",\n          \"totalDownloadUsec\": \"15163502\",\n          \"totalUploadUsec\": \"70370\",\n          \"downloadThroughputBytesPerSecond\": \"370713654\",\n          \"uploadThroughputBytesPerSecond\": \"809407\",\n          \"totalUncachedActionExecUsec\": \"15073335\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"INTERRUPTED\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "1748760c-76fc-439a-b4ac-1faae646f904",
+              "created_at_usec": 1790654283444000,
+              "updated_at_usec": 1790654302702000,
+              "created_at": "2026-09-29T03:58:03.444000+00:00",
+              "updated_at": "2026-09-29T03:58:22.702000+00:00",
+              "completed_at": "2026-09-29T03:58:22.702000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": "interrupted",
+              "bazel_exit_code": "INTERRUPTED",
+              "duration_usec": 17535000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-live-physical:all"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "becker",
+              "host": "nixos-btw",
+              "role": null,
+              "action_count": 18,
+              "cache_metrics": {
+                "actionCacheHits": "42",
+                "actionCacheMisses": "18",
+                "actionCacheUploads": "30",
+                "casCacheHits": "2704",
+                "casCacheUploads": "44",
+                "totalDownloadSizeBytes": "5621317234",
+                "totalUploadSizeBytes": "56958",
+                "totalDownloadTransferredSizeBytes": "3081704100",
+                "totalUploadTransferredSizeBytes": "84509",
+                "totalDownloadUsec": "15163502",
+                "totalUploadUsec": "70370",
+                "downloadThroughputBytesPerSecond": "370713654",
+                "uploadThroughputBytesPerSecond": "809407",
+                "totalUncachedActionExecUsec": "15073335"
+              },
+              "raw_metadata": {
+                "invocationId": "1748760c-76fc-439a-b4ac-1faae646f904",
+                "user": "becker",
+                "host": "nixos-btw",
+                "durationUsec": "17535000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-live-physical:all"
+                ],
+                "actionCount": "18",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790654283444000",
+                "updatedAtUsec": "1790654302702000",
+                "cacheStats": {
+                  "actionCacheHits": "42",
+                  "actionCacheMisses": "18",
+                  "actionCacheUploads": "30",
+                  "casCacheHits": "2704",
+                  "casCacheUploads": "44",
+                  "totalDownloadSizeBytes": "5621317234",
+                  "totalUploadSizeBytes": "56958",
+                  "totalDownloadTransferredSizeBytes": "3081704100",
+                  "totalUploadTransferredSizeBytes": "84509",
+                  "totalDownloadUsec": "15163502",
+                  "totalUploadUsec": "70370",
+                  "downloadThroughputBytesPerSecond": "370713654",
+                  "uploadThroughputBytesPerSecond": "809407",
+                  "totalUncachedActionExecUsec": "15073335"
+                },
+                "attempt": "1",
+                "bazelExitCode": "INTERRUPTED"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    }
+  ]
+}

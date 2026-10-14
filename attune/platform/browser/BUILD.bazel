@@ -1,0 +1,68 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load(":browser.bzl", "browser_wasm", "flix_library")
+
+package(default_visibility = ["//visibility:public"])
+filegroup(name = "policy_files", srcs = glob(["**"]))
+
+java_binary(
+    name = "compile_flix",
+    srcs = ["CompileFlix.java"],
+    main_class = "attune.browser.CompileFlix",
+    jvm_flags = ["-XX:ActiveProcessorCount=2", "-Xmx2g"],
+    deps = ["@flix_compiler//jar"],
+)
+java_binary(
+    name = "compile_wasm",
+    srcs = ["CompileWasm.java"],
+    main_class = "attune.browser.CompileWasm",
+    jvm_flags = ["-XX:ActiveProcessorCount=2", "-Xmx2g"],
+    deps = ["@browser_maven//:org_teavm_teavm_core", "@browser_maven//:org_teavm_teavm_tooling"],
+)
+java_library(name = "port", srcs = ["Port.java"])
+flix_library(
+    name = "library",
+    srcs = [
+        "Entry.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+    ],
+    deps = [":port", "//platform/tools/grit:attune_grit"],
+)
+java_library(
+    name = "entrypoint",
+    srcs = ["Browser.java", "TConcurrentLinkedQueue.java"],
+    deps = [":library", ":port", "@browser_maven//:org_teavm_teavm_jso"],
+)
+browser_wasm(
+    name = "wasm",
+    deps = [":entrypoint", "@browser_maven//:org_teavm_teavm_classlib"],
+)
+java_binary(name = "jvm", main_class = "Browser", runtime_deps = [":entrypoint"])
+
+load("@rules_rust_wasm_bindgen//:defs.bzl", "rust_wasm_bindgen", "rust_wasm_bindgen_toolchain")
+
+exports_files(["grit-Cargo.lock", "grit-cargo-bazel-lock.json"])
+
+rust_wasm_bindgen_toolchain(name = "bindgen_arm64_impl", wasm_bindgen_cli = "@bindgen_arm64//:cli")
+rust_wasm_bindgen_toolchain(name = "bindgen_amd64_impl", wasm_bindgen_cli = "@bindgen_amd64//:cli")
+toolchain(name = "bindgen_arm64", toolchain = ":bindgen_arm64_impl", toolchain_type = "@rules_rust_wasm_bindgen//:toolchain_type", exec_compatible_with = ["@platforms//cpu:aarch64", "@platforms//os:linux"])
+toolchain(name = "bindgen_amd64", toolchain = ":bindgen_amd64_impl", toolchain_type = "@rules_rust_wasm_bindgen//:toolchain_type", exec_compatible_with = ["@platforms//cpu:x86_64", "@platforms//os:linux"])
+
+rust_wasm_bindgen(
+    name = "grit_node",
+    wasm_file = "@grit_browser_source//crates/wasm-bindings:grit_wasm_bindings",
+    out_name = "grit",
+    target = "nodejs",
+)
+alias(name = "grit_parsers", actual = "@grit_browser_source//crates/wasm-bindings/wasm_parsers:parsers")
+filegroup(name = "grit_notices", srcs = [
+    "@grit_browser_source//:LICENSE",
+    "@grit_browser_source//vendor/web-tree-sitter:LICENSE",
+    "@grit_browser_source//:resources/language-metavariables/tree-sitter-typescript/LICENSE",
+    "@grit_browser_source//:resources/language-metavariables/tree-sitter-javascript/LICENSE",
+])
