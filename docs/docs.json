@@ -66,7 +66,9 @@
         "pages": [
           "reference/modules",
           "reference/metrics",
-          "reference/research"
+          "reference/research",
+          "reference/http",
+          "reference/platform"
         ]
       },
       {

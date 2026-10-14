@@ -1,0 +1,48 @@
+---
+title: "Studio HTTP reference"
+description: "The same-origin acquisition and inference contracts used by Studio."
+---
+
+These endpoints are internal Studio transport boundaries. Requests are JSON objects from the same origin, with an `Origin` matching the request host. They are not general-purpose public model proxies.
+
+## Source acquisition: POST /api/extraction
+
+| Operation | Request | Result |
+| --- | --- | --- |
+| `repository` | `url`, optional 40-character lowercase commit `revision` | Bounded public source inventory pinned to an immutable revision. |
+| `fixture` | Operation alone | Authored source, observations, extractor identity, and execution receipts. |
+| `files` | `repository`, `revision`, one or two `paths` | Verified source and relations, or per-file classified failures. |
+
+Repository URLs must be plain HTTPS GitHub owner/repository URLs. Branch/file URLs, credentials, ports, query strings, and fragments are refused. File identities contain a safe supported path and immutable commit. Tree/source verification remains server-owned.
+
+Request bodies are limited to 8 KiB. Per instance, the route admits at most eight active requests and 600 accepted requests per minute. Responses use `Cache-Control: no-store`; shared reuse occurs inside cached functions, not through response caching.
+
+A failed source read returns a source failure without invented text. A failed extraction can return verified source with an extraction or cache/runtime failure. Partial worlds must not admit relationships from those files.
+
+## Inference: GET /api/inference
+
+Returns embedding and JEv configuration availability as booleans. It does not return credentials or acquire a model answer.
+
+## Inference: POST /api/inference
+
+| Operation | Validation and behavior |
+| --- | --- |
+| `cache-fixture` | Fixed public fixture for cache tests; zero provider calls. |
+| `embeddings` | Exact model/recipe, 1–16 inputs, at most 128 KiB prepared UTF-8 input per batch; each input is at most 32,768 UTF-16 code units. |
+| `judgment` | Exact JEv model/recipe and bounded question, candidate source, paths, and relationships; private uncached acquisition. |
+
+Public embeddings include an immutable `publicFile` identity. The server verifies that the prepared input matches public source before any paid work. Inputs without that identity remain private and uncached. Questions and judgments never populate shared source caches.
+
+Provider observations retain vector, resolved model, usage availability, observation ID, creation time, and batch size. Shared lookup cannot establish whether a provider call occurred during the current request, so `providerCalls` can be null. Original usage is not a new-charge assertion.
+
+The route admits eight active requests and 180 requests per minute per instance; these limits are not global spending caps. Body limit is 1 MiB.
+
+## Failure responses
+
+Validation normally returns 400; same-origin failure 403; oversized body 413; unsupported content type 415; public-source mismatch 422; busy limits 429; unavailable provider configuration 503; transport failure 502. Provider secrets remain server-side.
+
+The [Studio chapter](/architecture/studio) explains identities, cache lifetimes, cancellation, and timing.
+
+## Sources
+
+[route.ts](https://github.com/becker63/attune/blob/d71e033/web/app/api/extraction/route.ts) · [route.ts](https://github.com/becker63/attune/blob/d71e033/web/app/api/inference/route.ts) · [http.ts](https://github.com/becker63/attune/blob/d71e033/web/server/http.ts) · [source.ts](https://github.com/becker63/attune/blob/d71e033/web/server/source.ts) · [inference.ts](https://github.com/becker63/attune/blob/d71e033/web/server/inference.ts)
