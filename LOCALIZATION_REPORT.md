@@ -114,6 +114,45 @@ the four deterministic arms are cumulative conditions, not independent features.
 Atlas is structural post-processing over retrieved candidates: it supplies
 inspectable evidence to the ranking calculation.
 
+### What these deterministic methods compute
+
+The four deterministic arms use **fixed, hand-written scoring rules**, not BM25.
+“Prior” means the starting score before structural evidence is added; it is not
+a learned probability. For every candidate file, the historical implementation:
+
+1. Lowercases the issue and file path, splits them into runs of letters, digits,
+   or underscores, discards tokens shorter than three characters, and removes
+   duplicates. It adds **one point per distinct issue token also present in the
+   path**. It does not search the file body, count repeated words, apply inverse
+   document frequency, or normalize by document length.
+2. Resolves issue tokens to **anchors**: a token must name exactly one declared
+   file basename (without its extension) or exactly one declared symbol under
+   the selected exact-name policy. Missing or ambiguous matches add nothing.
+   It adds **two points per anchor hosted by the candidate**: the named file
+   itself, or the file that defines the named symbol.
+3. In the facts arm, adds **one point per anchored file connected to the
+   candidate by a direct import**, in either direction. This bonus uses file
+   anchors; it does not first turn every symbol anchor into its owning file.
+4. In the Theory arm, also adds **one point per materialized structural witness
+   row connecting the candidate file to an anchor**. Here a witness is a result
+   of a bounded query over the extracted relationships, such as a typed
+   two-edge chain—not a model's explanation.
+
+The cumulative scores are `P = path matches`, `PA = P + anchor bonuses`,
+`PAF = PA + import bonuses`, and `PAD = PAF + witness bonuses`. Files sort by
+score descending, then path ascending for ties. The table above includes all four deterministic arms.
+All candidates remain in the ranking, including files with score zero.
+
+For example, in an **illustrative** repository, an issue mentioning `total`
+gives `src/total-utils.ts` one path-match point. If `total` names exactly one
+symbol, defined in `src/pricing.ts`, the anchors arm gives `pricing.ts` two
+points even though its path does not contain `total`. That is the extra
+mechanism behind “issue-to-code anchors.” These historical anchors are names
+resolved from issue text; later experiments also use “anchors” for Qwen's
+highest-ranked files, a different procedure.
+
+[Archived scoring implementation](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Study.flix#L2963).
+
 ### What improved—and what regressed
 
 Adding anchors improved the lexical prior. Extra deterministic structural scoring
@@ -199,6 +238,30 @@ The pilot has 20 once-only slots: 14 corrected-v2 streams and six preserved
 pre-fix attempts that were never rerun. Holdout has 48 observations and 59 blinded
 candidates: 15 final, 44 checkpoint. No task replacement or heldout tuning.
 
+### What the packet tool delivered
+
+A **packet** is our name for a precomputed, source-bearing response to a
+specific review question. It combines the changed entrypoints being reviewed,
+the review intent, supported contract/reachability cues, unresolved questions,
+and **actual source excerpts**. Each excerpt carries its repository world,
+base/head revision, path, inclusive line range, SHA-256, byte count, and coverage
+status. It is not just a list of graph edges or a generated summary.
+
+Mechanically, the packet condition had one extra tool, `attune_packet_operation`,
+while retaining the same ordinary source-reading tools as the plain condition.
+The reviewer requested a declared packet ID and a disclosure mode. The tool
+looked up the precomputed packet, checked its source identities and permissions,
+verified the excerpt bytes, and returned metadata plus source text in bounded
+pages, with a continuation cursor when necessary. `progressive` returned the
+packet's selected spans; `full-source` expanded to all declared regions of that
+changed world. `whole-file` and `region` allowed a particular declared file or
+line range to be read. Unsupported cues stayed absent and unanswered questions
+stayed explicit. The tool supplied evidence; the reviewer still had to decide
+whether the code contained a defect.
+
+[Archived record](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Study/EvidenceSubstrate.flix#L594) ·
+[Request schema and delivery](https://github.com/becker63/attune/blob/c0ed1329/attune/platform/dsh/tool/packet_tool.mjs).
+
 ### Corrected heldout results
 
 | View | Plain: valid / candidates | Packet: valid / candidates | Plain known recall | Packet known recall |
@@ -220,7 +283,8 @@ calls. The later denominator repair gives every micro recall view the same
 224-reference population. Earlier provisional values remain historical.
 
 **The treatment did not land.** Three packet calls across pilot and holdout were
-all refused; none was accepted. No packet-uptake or token-saving effect is claimed.
+all refused by the tool boundary; none was accepted or delivered. This is not a
+reviewer rejecting evidence after reading it. No packet-uptake or token-saving effect is claimed.
 The optional redesigned contrast was declined. The proposed 5×/10× efficiency
 targets remain unproven hypotheses. Corrected pilot final/checkpoint/inclusive
 valid counts were 4/5/9 (plain) and 7/4/11 (packet).

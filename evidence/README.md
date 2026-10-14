@@ -46,8 +46,13 @@ made no new embedding requests; its wall time was not measured.
 | [metrics.tsv](localization/metrics.tsv) | P, PA, PAF, PAD metrics, split populations, task-micro and repository-macro views. |
 | [contributions.tsv](localization/contributions.tsv) | Raw evidence contributions; counts are not prediction accuracy. |
 
-P is the lexical/path prior; PA adds issue-to-code anchors; PAF adds admitted
-facts/adjacency; PAD adds bounded Theory witnesses. These are cumulative arms.
+P counts distinct issue tokens that match file-path tokens; it is not BM25.
+PA adds two points for each uniquely resolved issue-name anchor hosted by a
+candidate file. PAF adds one point per directly import-adjacent anchored file.
+PAD adds one point per structural witness row connecting the candidate to an
+anchor. All use descending score, then ascending path for ties. These are
+cumulative arms, with fixed weights; [the method explanation](../LOCALIZATION_REPORT.md#what-these-deterministic-methods-compute)
+gives tokenization, anchor resolution, and an illustrative example.
 Gold is eligible existing modified/deleted JS/TS paths; new files and tests are
 excluded. Gold is evaluator-only, not a retriever input.
 
@@ -66,6 +71,15 @@ Macro rows average repository groups. Failures remain misses; ineligible tasks
 are excluded. Equal aggregates can conceal different gains and losses.
 
 ## ReviewBench files and corrections
+
+A **packet** is a precomputed evidence bundle returned by the R1-only
+`attune_packet_operation` tool: review intent and changed entrypoints, supported
+cues, unresolved questions, exact source-span identities, and actual source
+text. The tool validates declared identities and source bytes, pages the text,
+and offers expansion to declared full source. Both arms keep the same ordinary
+source-reading rights. [The mechanical explanation](../LOCALIZATION_REPORT.md#what-the-packet-tool-delivered)
+describes requests and delivery. The three refused calls were tool-boundary
+errors; no accepted packet was delivered.
 
 ReviewBench tested the economic implication of localization: could saved
 structural context reduce review work? Reviewers already have a diff, so the

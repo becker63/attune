@@ -9,15 +9,72 @@ Gold contains existing modified/deleted JS/TS paths, excluding new files and tes
 
 | Condition | Hit@1 | Hit@10 | Recall@10 | All files @10 |
 | --- | ---: | ---: | ---: | ---: |
-| Lexical/path prior | 11.8% | 35.3% | 23.4% | 16.5% |
-| Prior + anchors | 18.8% | 41.2% | 27.1% | 20.0% |
-| + admitted facts | 16.5% | 41.2% | 28.0% | 21.2% |
-| + bounded Theory | 12.9% | 41.2% | 27.2% | 21.2% |
+| P: issue/path token overlap | 11.8% | 35.3% | 23.4% | 16.5% |
+| PA: + exact-name anchor bonuses | 18.8% | 41.2% | 27.1% | 20.0% |
+| PAF: + direct-import bonuses | 16.5% | 41.2% | 28.0% | 21.2% |
+| PAD: + structural-witness bonuses | 12.9% | 41.2% | 27.2% | 21.2% |
 | Hosted Qwen retrieval | 41.2% | 85.9% | 64.0% | 44.7% |
 | Qwen + Jev | 57.6% | 90.6% | 72.0% | 52.9% |
 | Qwen + structure + Jev | 61.2% | 91.8% | 73.3% | 55.3% |
 
 All rows are task-micro on 85 eligible tasks. Deterministic arms are cumulative. Hit finds any required file; Recall averages recovered fractions; complete-file accuracy requires every required file.
+
+## What the deterministic rows actually compute
+
+The four deterministic arms use **fixed, hand-written scoring rules**, not BM25.
+“Prior” means the starting score before structural evidence is added; it is not
+a learned probability. For every candidate file, the historical implementation:
+
+1. Lowercases the issue and file path, splits them into runs of letters, digits,
+   or underscores, discards tokens shorter than three characters, and removes
+   duplicates. It adds **one point per distinct issue token also present in the
+   path**. It does not search the file body, count repeated words, apply inverse
+   document frequency, or normalize by document length.
+2. Resolves issue tokens to **anchors**: a token must name exactly one declared
+   file basename (without its extension) or exactly one declared symbol under
+   the selected exact-name policy. Missing or ambiguous matches add nothing.
+   It adds **two points per anchor hosted by the candidate**: the named file
+   itself, or the file that defines the named symbol.
+3. In the facts arm, adds **one point per anchored file connected to the
+   candidate by a direct import**, in either direction. This bonus uses file
+   anchors; it does not first turn every symbol anchor into its owning file.
+4. In the Theory arm, also adds **one point per materialized structural witness
+   row connecting the candidate file to an anchor**. Here a witness is a result
+   of a bounded query over the extracted relationships, such as a typed
+   two-edge chain.
+
+The cumulative scores are `P = path matches`, `PA = P + anchor bonuses`,
+`PAF = PA + import bonuses`, and `PAD = PAF + witness bonuses`. Files sort by
+score descending, then path ascending for ties. The table above includes all four deterministic arms.
+All candidates remain in the ranking, including files with score zero.
+
+For example, in an **illustrative** repository, an issue mentioning `total`
+gives `src/total-utils.ts` one path-match point. If `total` names exactly one
+symbol, defined in `src/pricing.ts`, the anchors arm gives `pricing.ts` two
+points even though its path does not contain `total`. That is the extra
+mechanism behind “issue-to-code anchors.” These historical anchors are names
+resolved from issue text; later experiments also use “anchors” for Qwen's
+highest-ranked files, a different procedure.
+
+### What “Theory” contributed in this experiment
+
+The archived experiment materialized a fixed family of typed single-edge and
+two-edge queries over `defines`, `defined_in`, `imports`, `imported_by`, `calls`,
+and `callers`. A query can, for example, follow a file to its declared symbols
+and then to their callees. Its output rows carry the query identity and the
+entities connected by that query. Ranking counts rows whose endpoints include
+both the candidate file and an issue anchor. It does not ask a language model
+to score those witnesses.
+
+Two candidate anchor policies were compared on the development split: exact
+symbol names, or exact names plus final dotted segments. Both had 19 top-ten
+hits on the 50 eligible development tasks; declared order selected
+`anchors-exact-name-v1`. The weights above were fixed; no BM25 parameters or
+learned ranking weights were fitted.
+
+These formulas explain the historical table. The current small `Theory` module
+and live Studio have separate implementations and should not be credited with
+these older measurements.
 
 ## What changed the direction
 
@@ -34,3 +91,5 @@ Five observations of the lexical judgments had modest top-ten effects and did no
 ## Sources
 
 [LOCALIZATION_REPORT.md](https://github.com/becker63/attune/blob/d71e033/LOCALIZATION_REPORT.md) · [metrics.tsv](https://github.com/becker63/attune/blob/d71e033/evidence/localization/metrics.tsv) · [tasks.tsv](https://github.com/becker63/attune/blob/d71e033/evidence/localization/tasks.tsv)
+
+[Historical scoring and anchors](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Study.flix#L2963) · [Historical Theory queries](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Theory.flix) · [Policy-selection record](https://github.com/becker63/attune/blob/e9731b82/LOCALIZATION_REPORT.md#L234).
