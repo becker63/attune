@@ -30,7 +30,9 @@ public final class NativeTester {
         for (Path file : files) {
             flix.addFile(file, SecurityContext.Unrestricted$.MODULE$);
         }
+        long compilationStart = System.nanoTime();
         Result<CompilationResult, scala.collection.immutable.List<CompilationMessage>> compiled = flix.compile();
+        System.err.println("attune_compile_ns=" + (System.nanoTime() - compilationStart));
         if (compiled instanceof Result.Err<CompilationResult, scala.collection.immutable.List<CompilationMessage>> failure) {
             String diagnostic = CompilationMessage.formatAll(failure.e(), Formatter.getDefault(), scala.Option.empty());
             if (!expected.isEmpty() && diagnostic.contains(expected)) {
@@ -51,7 +53,9 @@ public final class NativeTester {
                 System.err.println("the declared Flix application has no main");
                 return 2;
             }
+            long executionStart = System.nanoTime();
             program.main().get().apply(new String[0]);
+            System.err.println("attune_main_ns=" + (System.nanoTime() - executionStart));
             return 0;
         }
         Result<?, ?> tests = Tester.run(empty(), program, flix);

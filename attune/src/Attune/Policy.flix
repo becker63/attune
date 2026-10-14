@@ -18,7 +18,7 @@ pub mod Attune.Policy {
             "maven_install.json", "browser_maven_install.json", ".bazelrc", ".bazelversion", ".gitignore",
             ".bazelignore", "flake.nix", "flake.lock", "notes/BUILD.bazel", "notes/design.md"
         }) or List.exists(prefix -> String.startsWith(prefix = prefix, path),
-            List#{"src/", "test/", "example/", "platform/browser/", "platform/build/", "platform/tools/", "platform/support/", "platform/zed/"})
+            List#{"src/", "test/", "example/", "experiments/native_patterns/", "platform/browser/", "platform/build/", "platform/tools/", "platform/support/", "platform/zed/"})
 
     pub def protected(path: String): Bool =
         List.exists(part -> List.memberOf(part, List#{".git", ".jj", ".factory", "attuneflix"}) or
@@ -36,6 +36,8 @@ pub mod Attune.Policy {
         List.exists(suffix -> String.endsWith(suffix = suffix, path),
             List#{".py", ".pyc", ".sh", ".bash", ".go", ".js", ".mjs", ".ts", ".class", ".jar", ".so"})
             and not String.startsWith(prefix = "test/grit/fixtures/", path)
+            and not (String.startsWith(prefix = "experiments/native_patterns/tools/", path) and
+                (String.endsWith(suffix = ".py", path) or String.endsWith(suffix = ".sh", path)))
 
     /// No file content is necessary to decide these boundaries. Even a
     /// symlink pointing to a private file is classified without opening it.

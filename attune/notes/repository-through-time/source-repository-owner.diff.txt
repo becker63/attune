@@ -1,0 +1,175 @@
+diff --git a/attune/src/Attune/Grit.flix b/attune/src/Attune/Repository/Grit.flix
+rename from attune/src/Attune/Grit.flix
+rename to attune/src/Attune/Repository/Grit.flix
+index 36c691c1eb..4b92812e26 100644
+--- a/attune/src/Attune/Grit.flix
++++ b/attune/src/Attune/Repository/Grit.flix
+@@ -1,17 +1,18 @@
+-/// The canonical typed envelope over the pinned native Grit boundary.
++/// The canonical typed envelope over the pinned native Grit boundary: the wire
++/// projection of the Repository owner.
+ ///
+ /// Flix owns the meaning here: the admitted language vocabulary, deterministic
+ /// language detection, the one canonical fact shape, and the projection from
+-/// the native envelope into facts. The narrow JVM facade only copies the
+-/// versioned JSON the pinned engine returns into a canonical record stream; it
+-/// classifies nothing.
++/// the native envelope into facts. The narrow JVM facade in
++/// `//platform/tools/grit` only copies the versioned JSON the pinned engine
++/// returns into a canonical record stream; it classifies nothing.
+ ///
+ /// The fact shape is one shape for every language: a syntactic kind, a path, the
+ /// byte range of the match, the byte range of the logged value, and that value.
+ /// There are no per-language fact types. Identity assignment, conservative
+-/// resolution, admission and inverse derivation live in `Attune.Repository`,
+-/// one layer above this module.
+-pub mod Attune.Grit {
++/// resolution, admission and inverse derivation live in the parent
++/// `Attune.Repository` module, one step above this projection.
++pub mod Attune.Repository.Grit {
+ 
+     /// The admitted source languages: the seven retained surfaces plus the
+     /// approved bounded Ruby arm. Order is stable.
+@@ -177,7 +178,10 @@
+             case _ => Err(Error.Wire("native envelope does not begin with a version record"))
+         }
+ 
+-    /// One canonical record line.
++    /// One canonical record line. `RMalformed` is a non-blank line the canonical
++    /// grammar does not recognise: it is a classified failure, not a line to
++    /// skip silently, so a truncated or corrupted envelope can never collapse
++    /// into a complete empty evaluation.
+     enum Record {
+         case RVersion(Int32)
+         case RError(String, String)
+@@ -185,31 +189,33 @@
+         case RSpan(Span)
+         case RLog(Log)
+         case RDiagnostic(String)
++        case RMalformed
+     }
+ 
+-    /// Parse one record line, or report it as unparseable.
++    /// Parse one record line. A blank line is dropped; a non-blank line that is
++    /// not a canonical record is preserved as `RMalformed`.
+     def parseRecord(line: String): Option[Record] =
+         if (String.isEmpty(String.trim(line))) None
+         else match String.split(regex = "\t", line) {
+             case "version" :: version :: Nil =>
+                 match Int32.fromString(version) {
+                     case Some(value) => Some(Record.RVersion(value))
+-                    case None        => None
++                    case None        => Some(Record.RMalformed)
+                 }
+             case "error" :: kind :: message :: Nil => Some(Record.RError(unescape(kind), unescape(message)))
+             case "matched" :: value :: Nil         => Some(Record.RMatched(value == "true"))
+             case "match" :: path :: start :: end :: Nil =>
+                 match (Int32.fromString(start), Int32.fromString(end)) {
+                     case (Some(s), Some(e)) => Some(Record.RSpan({ path = unescape(path), startByte = s, endByte = e }))
+-                    case _                  => None
++                    case _                  => Some(Record.RMalformed)
+                 }
+             case "log" :: message :: start :: end :: Nil =>
+                 match (Int32.fromString(start), Int32.fromString(end)) {
+                     case (Some(s), Some(e)) => Some(Record.RLog({ message = unescape(message), startByte = s, endByte = e }))
+-                    case _                  => None
++                    case _                  => Some(Record.RMalformed)
+                 }
+             case "diagnostic" :: message :: Nil => Some(Record.RDiagnostic(unescape(message)))
+-            case _                              => None
++            case _                              => Some(Record.RMalformed)
+         }
+ 
+     /// Fold the record stream into one evaluation, preserving order.
+@@ -234,6 +240,7 @@
+             case Record.RLog(log)             => assemble(rest, matched, spans, log :: logs, diagnostics)
+             case Record.RDiagnostic(message)  => assemble(rest, matched, spans, logs, message :: diagnostics)
+             case Record.RVersion(_)           => Err(Error.Wire("duplicate version record"))
++            case Record.RMalformed            => Err(Error.Wire("native envelope carries an unparseable record"))
+         }
+     }
+ 
+@@ -253,12 +260,17 @@
+ 
+     // ---------------------------------------------------------------- facts
+ 
+-    /// The exact source text of one byte range.
+-    pub def substring(source: String, start: Int32, end: Int32): String =
+-        if (start < 0 or end < start or end > String.length(source))
++    /// The exact source text of one byte range. The native envelope reports byte
++    /// offsets, so the range is sliced from the source's UTF-8 bytes rather than
++    /// from its character sequence: a source that carries a multi-byte character
++    /// before the range must still yield exactly the text those bytes hold.
++    pub def substring(source: String, start: Int32, end: Int32): String = {
++        let bytes = String.toBytes(source);
++        if (start < 0 or end < start or end > Vector.length(bytes))
+             ""
+         else
+-            String.take(end - start, String.drop(start, source))
++            String.fromBytes(Vector.slice(start = start, end = end, bytes))
++    }
+ 
+     /// Project the native envelope into canonical facts for one source file.
+     /// Every logged range is bound to its smallest enclosing syntax match, so
+diff --git a/attune/src/Attune/Repository.flix b/attune/src/Attune/Repository.flix
+index 5fd2711f79..0a5688f588 100644
+--- a/attune/src/Attune/Repository.flix
++++ b/attune/src/Attune/Repository.flix
+@@ -43,7 +43,7 @@
+ 
+     import attune.grit.AttuneGrit
+ 
+-    use Attune.Grit
++    use Attune.Repository.Grit
+ 
+     // ---------------------------------------------------------------- refusals
+ 
+@@ -165,17 +165,10 @@
+     }
+ 
+     /// Sort and deduplicate a relation, so one admitted edge is recorded once.
++    /// The ordered pair key is unique per edge, so the standard distinct after
++    /// the sort is exactly the adjacent dedup, without a second hand-rolled walk.
+     def dedupSorted(edges: List[(String, String)]): List[(String, String)] =
+-        dedupAdjacent(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges), Nil)
+-
+-    def dedupAdjacent(sorted: List[(String, String)], acc: List[(String, String)]): List[(String, String)] =
+-        match sorted {
+-            case Nil => List.reverse(acc)
+-            case edge :: rest => match acc {
+-                case head :: _ if head == edge => dedupAdjacent(rest, acc)
+-                case _                         => dedupAdjacent(rest, edge :: acc)
+-            }
+-        }
++        List.distinct(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges))
+ 
+     /// The inverse of a relation is derived from that relation, once.
+     def invert(edges: List[(String, String)]): List[(String, String)] =
+@@ -194,8 +187,10 @@
+ 
+     // ------------------------------------------------------------ the frontend
+ 
+-    /// Run one admitted relation program over one source file.
+-    def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
++    /// Run one admitted relation program over one source file. This is the one
++    /// native route: `fileFacts` and every fixture that needs a single relation
++    /// go through it, rather than re-implementing the packaged program lookup.
++    pub def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
+         let languageName = Grit.name(language);
+         let programText = AttuneGrit.program(languageName, Grit.programName(program));
+         Grit.facts(id, source, AttuneGrit.evaluate(languageName, programText, id, source))
+@@ -360,12 +355,8 @@
+             if (countOfSymbol(declarations, d#symbol) > 1) Some(d#symbol) else None,
+             declarations))
+ 
+-    def dedupStrings(values: List[String]): List[String] = distinctSorted(List.sortBy(value -> value, values))
+-
+-    def distinctSorted(sorted: List[String]): List[String] = match sorted {
+-        case Nil => Nil
+-        case value :: rest => value :: distinctSorted(List.filter(other -> other != value, rest))
+-    }
++    def dedupStrings(values: List[String]): List[String] =
++        List.distinct(List.sortBy(value -> value, values))
+ 
+     // ------------------------------------------------------- Ruby import branch
+ 

@@ -17,7 +17,7 @@ import scala.jdk.javaapi.CollectionConverters;
 /** Export the pinned compiler's classes. No compiler or SDK goes in the result. */
 public final class CompileFlix {
     public static void main(String[] args) throws Exception {
-        var jars = Arrays.stream(args[1].split(":" )).map(Path::of).toList();
+        var jars = Arrays.stream(args[1].split(":" )).filter(path -> !path.isBlank()).map(Path::of).toList();
         var flix = new Flix(scala.collection.immutable.List$.MODULE$.empty(),
                 CollectionConverters.asScala(jars).toList());
         flix.setOptions(Options.Default());

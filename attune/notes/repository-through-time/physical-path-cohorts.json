@@ -1,0 +1,44 @@
+[
+  {
+    "path_cohort": "src/",
+    "seeds": 572,
+    "reuse_fraction": 0.968954757960104,
+    "median_compression": 5.66321243523316,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  },
+  {
+    "path_cohort": "web/",
+    "seeds": 728,
+    "reuse_fraction": 0.9575364316325206,
+    "median_compression": 3.8350877192982455,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  },
+  {
+    "path_cohort": "experiments/",
+    "seeds": 1103,
+    "reuse_fraction": 0.9593500051784896,
+    "median_compression": 3.9035714285714285,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  },
+  {
+    "path_cohort": "test/",
+    "seeds": 145,
+    "reuse_fraction": 0.9748782333650282,
+    "median_compression": 7.286666666666667,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  },
+  {
+    "path_cohort": "build/",
+    "seeds": 34,
+    "reuse_fraction": 0.983403124896554,
+    "median_compression": 9.146603641456583,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  },
+  {
+    "path_cohort": "other",
+    "seeds": 34,
+    "reuse_fraction": 0.9972028203515508,
+    "median_compression": 42.03846153846154,
+    "classification": "path cohort only; authored/mechanical ownership unverified"
+  }
+]

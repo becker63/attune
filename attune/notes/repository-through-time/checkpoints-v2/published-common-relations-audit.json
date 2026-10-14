@@ -1,0 +1,26 @@
+{
+  "purpose": "coverage audit only; common signature computed from genuine acquired facts and re-admission, not a filtered graph",
+  "relations": {
+    "defines": {
+      "original_full_available_edges": 2344,
+      "original_edges_wholly_on_common_paths": 1776,
+      "new_genuine_common_admission_edges": 1776,
+      "lost_edges": 0,
+      "gained_edges": 0
+    },
+    "imports": {
+      "original_full_available_edges": 693,
+      "original_edges_wholly_on_common_paths": 381,
+      "new_genuine_common_admission_edges": 381,
+      "lost_edges": 0,
+      "gained_edges": 0
+    },
+    "calls": {
+      "original_full_available_edges": 2967,
+      "original_edges_wholly_on_common_paths": 2280,
+      "new_genuine_common_admission_edges": 2329,
+      "lost_edges": 0,
+      "gained_edges": 49
+    }
+  }
+}

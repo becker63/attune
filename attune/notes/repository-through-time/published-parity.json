@@ -1,0 +1,6 @@
+{
+  "all_seed_physical_hash_exact": true,
+  "headlines_exact": true,
+  "input_hashes_exact": true,
+  "panel_to_all_seed_counters_exact": true
+}

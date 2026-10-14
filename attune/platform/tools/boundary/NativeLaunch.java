@@ -19,6 +19,11 @@ public final class NativeLaunch {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("inner")) {
+            if (property("attune.mode").equals("compiled")) {
+                Class.forName("Main").getMethod("main", String[].class)
+                    .invoke(null, (Object) new String[0]);
+                return;
+            }
             System.exit(NativeTester.run(paths("attune.jars"), paths("attune.tests"),
                     property("attune.mode").equals("run"), property("attune.expect").replace("_", " ")));
         }
@@ -79,6 +84,10 @@ public final class NativeLaunch {
             command.add("-Dattune.output=" + Path.of(property("attune.output")).toAbsolutePath());
         }
         List<String> classpath = new ArrayList<>();
+        // Exported Flix runtime classes precede the compiler's mock runtime.
+        if (mode.equals("compiled")) {
+            for (Path jar : jars) classpath.add(jar.toAbsolutePath().toString());
+        }
         for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
             classpath.add(Path.of(entry).toAbsolutePath().toString());
         }
@@ -89,7 +98,16 @@ public final class NativeLaunch {
         process.environment().clear();
         process.environment().putAll(java.util.Map.of("HOME", work.toString(),
                 "PATH", "/usr/bin:/bin", "LANG", "C.UTF-8"));
-        return process.start().waitFor();
+        Process child = process.start();
+        String limit = property("attune.timeoutSeconds");
+        long seconds = limit.isEmpty() ? 0 : Long.parseLong(limit);
+        if (seconds <= 0) return child.waitFor();
+        if (child.waitFor(seconds, java.util.concurrent.TimeUnit.SECONDS)) return child.exitValue();
+        child.descendants().forEach(ProcessHandle::destroyForcibly);
+        child.destroyForcibly();
+        child.waitFor();
+        System.err.println("ResourceLimited: declared action timeout " + seconds + " seconds");
+        return 124;
     }
 
     static Path resolve(String name) throws IOException {

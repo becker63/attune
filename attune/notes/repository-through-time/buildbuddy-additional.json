@@ -1,0 +1,1073 @@
+{
+  "acquisition": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"05991965-210a-443e-80be-94fbaaaa31ab\",\n      \"created_at_usec\": 1790369719830000,\n      \"updated_at_usec\": 1790369734564000,\n      \"created_at\": \"2026-09-25T20:55:19.830000+00:00\",\n      \"updated_at\": \"2026-09-25T20:55:34.564000+00:00\",\n      \"completed_at\": \"2026-09-25T20:55:34.564000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 13907000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-parallelism:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 629,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"597\",\n        \"actionCacheMisses\": \"8\",\n        \"actionCacheUploads\": \"7\",\n        \"casCacheHits\": \"867\",\n        \"casCacheUploads\": \"33\",\n        \"totalDownloadSizeBytes\": \"802978687\",\n        \"totalUploadSizeBytes\": \"653115\",\n        \"totalDownloadTransferredSizeBytes\": \"457724890\",\n        \"totalUploadTransferredSizeBytes\": \"656383\",\n        \"totalDownloadUsec\": \"11241975\",\n        \"totalUploadUsec\": \"333763\",\n        \"downloadThroughputBytesPerSecond\": \"71426834\",\n        \"uploadThroughputBytesPerSecond\": \"1956822\",\n        \"totalCachedActionExecUsec\": \"121961154\",\n        \"totalUncachedActionExecUsec\": \"431014\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"05991965-210a-443e-80be-94fbaaaa31ab\",\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"13907000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-parallelism:acquire\"\n        ],\n        \"actionCount\": \"629\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790369719830000\",\n        \"updatedAtUsec\": \"1790369734564000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"597\",\n          \"actionCacheMisses\": \"8\",\n          \"actionCacheUploads\": \"7\",\n          \"casCacheHits\": \"867\",\n          \"casCacheUploads\": \"33\",\n          \"totalDownloadSizeBytes\": \"802978687\",\n          \"totalUploadSizeBytes\": \"653115\",\n          \"totalDownloadTransferredSizeBytes\": \"457724890\",\n          \"totalUploadTransferredSizeBytes\": \"656383\",\n          \"totalDownloadUsec\": \"11241975\",\n          \"totalUploadUsec\": \"333763\",\n          \"downloadThroughputBytesPerSecond\": \"71426834\",\n          \"uploadThroughputBytesPerSecond\": \"1956822\",\n          \"totalCachedActionExecUsec\": \"121961154\",\n          \"totalUncachedActionExecUsec\": \"431014\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"8f1a5e29-5b10-493e-a790-19f1120ad516\",\n      \"created_at_usec\": 1790369754363000,\n      \"updated_at_usec\": 1790369779900000,\n      \"created_at\": \"2026-09-25T20:55:54.363000+00:00\",\n      \"updated_at\": \"2026-09-25T20:56:19.900000+00:00\",\n      \"completed_at\": \"2026-09-25T20:56:19.900000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 24787000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-parallelism:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"2\",\n        \"actionCacheMisses\": \"4\",\n        \"actionCacheUploads\": \"4\",\n        \"casCacheHits\": \"222\",\n        \"casCacheUploads\": \"21\",\n        \"totalDownloadSizeBytes\": \"525247989\",\n        \"totalUploadSizeBytes\": \"5435685\",\n        \"totalDownloadTransferredSizeBytes\": \"356558254\",\n        \"totalUploadTransferredSizeBytes\": \"4932234\",\n        \"totalDownloadUsec\": \"4549199\",\n        \"totalUploadUsec\": \"380127\",\n        \"downloadThroughputBytesPerSecond\": \"115459444\",\n        \"uploadThroughputBytesPerSecond\": \"14299655\",\n        \"totalUncachedActionExecUsec\": \"19148569\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"8f1a5e29-5b10-493e-a790-19f1120ad516\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"24787000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-parallelism:acquire\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790369754363000\",\n        \"updatedAtUsec\": \"1790369779900000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"2\",\n          \"actionCacheMisses\": \"4\",\n          \"actionCacheUploads\": \"4\",\n          \"casCacheHits\": \"222\",\n          \"casCacheUploads\": \"21\",\n          \"totalDownloadSizeBytes\": \"525247989\",\n          \"totalUploadSizeBytes\": \"5435685\",\n          \"totalDownloadTransferredSizeBytes\": \"356558254\",\n          \"totalUploadTransferredSizeBytes\": \"4932234\",\n          \"totalDownloadUsec\": \"4549199\",\n          \"totalUploadUsec\": \"380127\",\n          \"downloadThroughputBytesPerSecond\": \"115459444\",\n          \"uploadThroughputBytesPerSecond\": \"14299655\",\n          \"totalUncachedActionExecUsec\": \"19148569\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"48c0c2ed-a9a9-4be5-bb76-78cd9518a463\",\n      \"created_at_usec\": 1790369953468000,\n      \"updated_at_usec\": 1790369977365000,\n      \"created_at\": \"2026-09-25T20:59:13.468000+00:00\",\n      \"updated_at\": \"2026-09-25T20:59:37.365000+00:00\",\n      \"completed_at\": \"2026-09-25T20:59:37.365000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 23163000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-parallelism:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheMisses\": \"2\",\n        \"actionCacheUploads\": \"2\",\n        \"casCacheHits\": \"75\",\n        \"casCacheUploads\": \"20\",\n        \"totalDownloadSizeBytes\": \"86681600\",\n        \"totalUploadSizeBytes\": \"4424917\",\n        \"totalDownloadTransferredSizeBytes\": \"86046365\",\n        \"totalUploadTransferredSizeBytes\": \"3979069\",\n        \"totalDownloadUsec\": \"335582\",\n        \"totalUploadUsec\": \"308978\",\n        \"downloadThroughputBytesPerSecond\": \"258302292\",\n        \"uploadThroughputBytesPerSecond\": \"14321139\",\n        \"totalUncachedActionExecUsec\": \"18480449\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"48c0c2ed-a9a9-4be5-bb76-78cd9518a463\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"23163000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-parallelism:acquire\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790369953468000\",\n        \"updatedAtUsec\": \"1790369977365000\",\n        \"cacheStats\": {\n          \"actionCacheMisses\": \"2\",\n          \"actionCacheUploads\": \"2\",\n          \"casCacheHits\": \"75\",\n          \"casCacheUploads\": \"20\",\n          \"totalDownloadSizeBytes\": \"86681600\",\n          \"totalUploadSizeBytes\": \"4424917\",\n          \"totalDownloadTransferredSizeBytes\": \"86046365\",\n          \"totalUploadTransferredSizeBytes\": \"3979069\",\n          \"totalDownloadUsec\": \"335582\",\n          \"totalUploadUsec\": \"308978\",\n          \"downloadThroughputBytesPerSecond\": \"258302292\",\n          \"uploadThroughputBytesPerSecond\": \"14321139\",\n          \"totalUncachedActionExecUsec\": \"18480449\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "05991965-210a-443e-80be-94fbaaaa31ab",
+              "created_at_usec": 1790369719830000,
+              "updated_at_usec": 1790369734564000,
+              "created_at": "2026-09-25T20:55:19.830000+00:00",
+              "updated_at": "2026-09-25T20:55:34.564000+00:00",
+              "completed_at": "2026-09-25T20:55:34.564000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": null,
+              "bazel_exit_code": "BUILD_FAILURE",
+              "duration_usec": 13907000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-parallelism:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 629,
+              "cache_metrics": {
+                "actionCacheHits": "597",
+                "actionCacheMisses": "8",
+                "actionCacheUploads": "7",
+                "casCacheHits": "867",
+                "casCacheUploads": "33",
+                "totalDownloadSizeBytes": "802978687",
+                "totalUploadSizeBytes": "653115",
+                "totalDownloadTransferredSizeBytes": "457724890",
+                "totalUploadTransferredSizeBytes": "656383",
+                "totalDownloadUsec": "11241975",
+                "totalUploadUsec": "333763",
+                "downloadThroughputBytesPerSecond": "71426834",
+                "uploadThroughputBytesPerSecond": "1956822",
+                "totalCachedActionExecUsec": "121961154",
+                "totalUncachedActionExecUsec": "431014"
+              },
+              "raw_metadata": {
+                "invocationId": "05991965-210a-443e-80be-94fbaaaa31ab",
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "13907000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-parallelism:acquire"
+                ],
+                "actionCount": "629",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790369719830000",
+                "updatedAtUsec": "1790369734564000",
+                "cacheStats": {
+                  "actionCacheHits": "597",
+                  "actionCacheMisses": "8",
+                  "actionCacheUploads": "7",
+                  "casCacheHits": "867",
+                  "casCacheUploads": "33",
+                  "totalDownloadSizeBytes": "802978687",
+                  "totalUploadSizeBytes": "653115",
+                  "totalDownloadTransferredSizeBytes": "457724890",
+                  "totalUploadTransferredSizeBytes": "656383",
+                  "totalDownloadUsec": "11241975",
+                  "totalUploadUsec": "333763",
+                  "downloadThroughputBytesPerSecond": "71426834",
+                  "uploadThroughputBytesPerSecond": "1956822",
+                  "totalCachedActionExecUsec": "121961154",
+                  "totalUncachedActionExecUsec": "431014"
+                },
+                "attempt": "1",
+                "bazelExitCode": "BUILD_FAILURE"
+              }
+            },
+            {
+              "invocation_id": "8f1a5e29-5b10-493e-a790-19f1120ad516",
+              "created_at_usec": 1790369754363000,
+              "updated_at_usec": 1790369779900000,
+              "created_at": "2026-09-25T20:55:54.363000+00:00",
+              "updated_at": "2026-09-25T20:56:19.900000+00:00",
+              "completed_at": "2026-09-25T20:56:19.900000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 24787000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-parallelism:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 3,
+              "cache_metrics": {
+                "actionCacheHits": "2",
+                "actionCacheMisses": "4",
+                "actionCacheUploads": "4",
+                "casCacheHits": "222",
+                "casCacheUploads": "21",
+                "totalDownloadSizeBytes": "525247989",
+                "totalUploadSizeBytes": "5435685",
+                "totalDownloadTransferredSizeBytes": "356558254",
+                "totalUploadTransferredSizeBytes": "4932234",
+                "totalDownloadUsec": "4549199",
+                "totalUploadUsec": "380127",
+                "downloadThroughputBytesPerSecond": "115459444",
+                "uploadThroughputBytesPerSecond": "14299655",
+                "totalUncachedActionExecUsec": "19148569"
+              },
+              "raw_metadata": {
+                "invocationId": "8f1a5e29-5b10-493e-a790-19f1120ad516",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "24787000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-parallelism:acquire"
+                ],
+                "actionCount": "3",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790369754363000",
+                "updatedAtUsec": "1790369779900000",
+                "cacheStats": {
+                  "actionCacheHits": "2",
+                  "actionCacheMisses": "4",
+                  "actionCacheUploads": "4",
+                  "casCacheHits": "222",
+                  "casCacheUploads": "21",
+                  "totalDownloadSizeBytes": "525247989",
+                  "totalUploadSizeBytes": "5435685",
+                  "totalDownloadTransferredSizeBytes": "356558254",
+                  "totalUploadTransferredSizeBytes": "4932234",
+                  "totalDownloadUsec": "4549199",
+                  "totalUploadUsec": "380127",
+                  "downloadThroughputBytesPerSecond": "115459444",
+                  "uploadThroughputBytesPerSecond": "14299655",
+                  "totalUncachedActionExecUsec": "19148569"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "48c0c2ed-a9a9-4be5-bb76-78cd9518a463",
+              "created_at_usec": 1790369953468000,
+              "updated_at_usec": 1790369977365000,
+              "created_at": "2026-09-25T20:59:13.468000+00:00",
+              "updated_at": "2026-09-25T20:59:37.365000+00:00",
+              "completed_at": "2026-09-25T20:59:37.365000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 23163000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-parallelism:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 3,
+              "cache_metrics": {
+                "actionCacheMisses": "2",
+                "actionCacheUploads": "2",
+                "casCacheHits": "75",
+                "casCacheUploads": "20",
+                "totalDownloadSizeBytes": "86681600",
+                "totalUploadSizeBytes": "4424917",
+                "totalDownloadTransferredSizeBytes": "86046365",
+                "totalUploadTransferredSizeBytes": "3979069",
+                "totalDownloadUsec": "335582",
+                "totalUploadUsec": "308978",
+                "downloadThroughputBytesPerSecond": "258302292",
+                "uploadThroughputBytesPerSecond": "14321139",
+                "totalUncachedActionExecUsec": "18480449"
+              },
+              "raw_metadata": {
+                "invocationId": "48c0c2ed-a9a9-4be5-bb76-78cd9518a463",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "23163000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-parallelism:acquire"
+                ],
+                "actionCount": "3",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790369953468000",
+                "updatedAtUsec": "1790369977365000",
+                "cacheStats": {
+                  "actionCacheMisses": "2",
+                  "actionCacheUploads": "2",
+                  "casCacheHits": "75",
+                  "casCacheUploads": "20",
+                  "totalDownloadSizeBytes": "86681600",
+                  "totalUploadSizeBytes": "4424917",
+                  "totalDownloadTransferredSizeBytes": "86046365",
+                  "totalUploadTransferredSizeBytes": "3979069",
+                  "totalDownloadUsec": "335582",
+                  "totalUploadUsec": "308978",
+                  "downloadThroughputBytesPerSecond": "258302292",
+                  "uploadThroughputBytesPerSecond": "14321139",
+                  "totalUncachedActionExecUsec": "18480449"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"5ffdbe94-8acf-4d97-b79b-31794d04fb03\",\n      \"created_at_usec\": 1790404349161000,\n      \"updated_at_usec\": 1790404391645000,\n      \"created_at\": \"2026-09-26T06:32:29.161000+00:00\",\n      \"updated_at\": \"2026-09-26T06:33:11.645000+00:00\",\n      \"completed_at\": \"2026-09-26T06:33:11.645000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 41714000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 630,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"597\",\n        \"actionCacheMisses\": \"8\",\n        \"actionCacheUploads\": \"8\",\n        \"casCacheHits\": \"934\",\n        \"casCacheUploads\": \"28\",\n        \"totalDownloadSizeBytes\": \"889633822\",\n        \"totalUploadSizeBytes\": \"3425810\",\n        \"totalDownloadTransferredSizeBytes\": \"543765221\",\n        \"totalUploadTransferredSizeBytes\": \"3051417\",\n        \"totalDownloadUsec\": \"6987585\",\n        \"totalUploadUsec\": \"425592\",\n        \"downloadThroughputBytesPerSecond\": \"127316350\",\n        \"uploadThroughputBytesPerSecond\": \"8049516\",\n        \"totalCachedActionExecUsec\": \"121961154\",\n        \"totalUncachedActionExecUsec\": \"17191909\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"5ffdbe94-8acf-4d97-b79b-31794d04fb03\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"41714000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"630\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404349161000\",\n        \"updatedAtUsec\": \"1790404391645000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"597\",\n          \"actionCacheMisses\": \"8\",\n          \"actionCacheUploads\": \"8\",\n          \"casCacheHits\": \"934\",\n          \"casCacheUploads\": \"28\",\n          \"totalDownloadSizeBytes\": \"889633822\",\n          \"totalUploadSizeBytes\": \"3425810\",\n          \"totalDownloadTransferredSizeBytes\": \"543765221\",\n          \"totalUploadTransferredSizeBytes\": \"3051417\",\n          \"totalDownloadUsec\": \"6987585\",\n          \"totalUploadUsec\": \"425592\",\n          \"downloadThroughputBytesPerSecond\": \"127316350\",\n          \"uploadThroughputBytesPerSecond\": \"8049516\",\n          \"totalCachedActionExecUsec\": \"121961154\",\n          \"totalUncachedActionExecUsec\": \"17191909\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"53046032-621e-4cd1-89e8-27ad6342dda0\",\n      \"created_at_usec\": 1790404737753000,\n      \"updated_at_usec\": 1790404738796000,\n      \"created_at\": \"2026-09-26T06:38:57.753000+00:00\",\n      \"updated_at\": \"2026-09-26T06:38:58.796000+00:00\",\n      \"completed_at\": \"2026-09-26T06:38:58.796000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 290000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": null,\n      \"role\": null,\n      \"action_count\": 0,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"1\",\n        \"totalUploadSizeBytes\": \"2734\",\n        \"totalUploadTransferredSizeBytes\": \"2761\",\n        \"totalUploadUsec\": \"1078\",\n        \"uploadThroughputBytesPerSecond\": \"2536178\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"53046032-621e-4cd1-89e8-27ad6342dda0\",\n        \"user\": \"factory-user\",\n        \"durationUsec\": \"290000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404737753000\",\n        \"updatedAtUsec\": \"1790404738796000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"1\",\n          \"totalUploadSizeBytes\": \"2734\",\n          \"totalUploadTransferredSizeBytes\": \"2761\",\n          \"totalUploadUsec\": \"1078\",\n          \"uploadThroughputBytesPerSecond\": \"2536178\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"31783e7a-7818-40e5-b9cd-e1d1e2e330af\",\n      \"created_at_usec\": 1790404750119000,\n      \"updated_at_usec\": 1790404757806000,\n      \"created_at\": \"2026-09-26T06:39:10.119000+00:00\",\n      \"updated_at\": \"2026-09-26T06:39:17.806000+00:00\",\n      \"completed_at\": \"2026-09-26T06:39:17.806000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 7208000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 8,\n      \"cache_metrics\": {\n        \"actionCacheMisses\": \"2\",\n        \"actionCacheUploads\": \"1\",\n        \"casCacheHits\": \"6\",\n        \"casCacheUploads\": \"16\",\n        \"totalDownloadSizeBytes\": \"12023\",\n        \"totalUploadSizeBytes\": \"27826\",\n        \"totalDownloadTransferredSizeBytes\": \"3187\",\n        \"totalUploadTransferredSizeBytes\": \"24551\",\n        \"totalDownloadUsec\": \"5892\",\n        \"totalUploadUsec\": \"12657\",\n        \"downloadThroughputBytesPerSecond\": \"2040563\",\n        \"uploadThroughputBytesPerSecond\": \"2198467\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"31783e7a-7818-40e5-b9cd-e1d1e2e330af\",\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"7208000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"8\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404750119000\",\n        \"updatedAtUsec\": \"1790404757806000\",\n        \"cacheStats\": {\n          \"actionCacheMisses\": \"2\",\n          \"actionCacheUploads\": \"1\",\n          \"casCacheHits\": \"6\",\n          \"casCacheUploads\": \"16\",\n          \"totalDownloadSizeBytes\": \"12023\",\n          \"totalUploadSizeBytes\": \"27826\",\n          \"totalDownloadTransferredSizeBytes\": \"3187\",\n          \"totalUploadTransferredSizeBytes\": \"24551\",\n          \"totalDownloadUsec\": \"5892\",\n          \"totalUploadUsec\": \"12657\",\n          \"downloadThroughputBytesPerSecond\": \"2040563\",\n          \"uploadThroughputBytesPerSecond\": \"2198467\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"3844a164-7af2-47f1-9c2a-767b433e9da1\",\n      \"created_at_usec\": 1790404784951000,\n      \"updated_at_usec\": 1790404794706000,\n      \"created_at\": \"2026-09-26T06:39:44.951000+00:00\",\n      \"updated_at\": \"2026-09-26T06:39:54.706000+00:00\",\n      \"completed_at\": \"2026-09-26T06:39:54.706000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"FAILURE\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": false,\n      \"termination\": null,\n      \"bazel_exit_code\": \"BUILD_FAILURE\",\n      \"duration_usec\": 8951000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"2\",\n        \"actionCacheMisses\": \"4\",\n        \"actionCacheUploads\": \"3\",\n        \"casCacheHits\": \"152\",\n        \"casCacheUploads\": \"15\",\n        \"totalDownloadSizeBytes\": \"438661639\",\n        \"totalUploadSizeBytes\": \"26015\",\n        \"totalDownloadTransferredSizeBytes\": \"270596252\",\n        \"totalUploadTransferredSizeBytes\": \"27384\",\n        \"totalDownloadUsec\": \"3057389\",\n        \"totalUploadUsec\": \"14847\",\n        \"downloadThroughputBytesPerSecond\": \"143475900\",\n        \"uploadThroughputBytesPerSecond\": \"1752205\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"3844a164-7af2-47f1-9c2a-767b433e9da1\",\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"8951000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404784951000\",\n        \"updatedAtUsec\": \"1790404794706000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"2\",\n          \"actionCacheMisses\": \"4\",\n          \"actionCacheUploads\": \"3\",\n          \"casCacheHits\": \"152\",\n          \"casCacheUploads\": \"15\",\n          \"totalDownloadSizeBytes\": \"438661639\",\n          \"totalUploadSizeBytes\": \"26015\",\n          \"totalDownloadTransferredSizeBytes\": \"270596252\",\n          \"totalUploadTransferredSizeBytes\": \"27384\",\n          \"totalDownloadUsec\": \"3057389\",\n          \"totalUploadUsec\": \"14847\",\n          \"downloadThroughputBytesPerSecond\": \"143475900\",\n          \"uploadThroughputBytesPerSecond\": \"1752205\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"BUILD_FAILURE\"\n      }\n    },\n    {\n      \"invocation_id\": \"9199fda0-90b5-4275-acc6-b31714455c8f\",\n      \"created_at_usec\": 1790404804078000,\n      \"updated_at_usec\": 1790404832358000,\n      \"created_at\": \"2026-09-26T06:40:04.078000+00:00\",\n      \"updated_at\": \"2026-09-26T06:40:32.358000+00:00\",\n      \"completed_at\": \"2026-09-26T06:40:32.358000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 27445000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 3,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"2\",\n        \"actionCacheMisses\": \"4\",\n        \"actionCacheUploads\": \"4\",\n        \"casCacheHits\": \"223\",\n        \"casCacheUploads\": \"19\",\n        \"totalDownloadSizeBytes\": \"525350024\",\n        \"totalUploadSizeBytes\": \"2828655\",\n        \"totalDownloadTransferredSizeBytes\": \"356658348\",\n        \"totalUploadTransferredSizeBytes\": \"2444616\",\n        \"totalDownloadUsec\": \"5019930\",\n        \"totalUploadUsec\": \"234050\",\n        \"downloadThroughputBytesPerSecond\": \"104652858\",\n        \"uploadThroughputBytesPerSecond\": \"12085686\",\n        \"totalUncachedActionExecUsec\": \"21371751\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"9199fda0-90b5-4275-acc6-b31714455c8f\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"27445000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"3\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404804078000\",\n        \"updatedAtUsec\": \"1790404832358000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"2\",\n          \"actionCacheMisses\": \"4\",\n          \"actionCacheUploads\": \"4\",\n          \"casCacheHits\": \"223\",\n          \"casCacheUploads\": \"19\",\n          \"totalDownloadSizeBytes\": \"525350024\",\n          \"totalUploadSizeBytes\": \"2828655\",\n          \"totalDownloadTransferredSizeBytes\": \"356658348\",\n          \"totalUploadTransferredSizeBytes\": \"2444616\",\n          \"totalDownloadUsec\": \"5019930\",\n          \"totalUploadUsec\": \"234050\",\n          \"downloadThroughputBytesPerSecond\": \"104652858\",\n          \"uploadThroughputBytesPerSecond\": \"12085686\",\n          \"totalUncachedActionExecUsec\": \"21371751\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"d7484f64-545c-4f52-8c36-5d29ef7a36e5\",\n      \"created_at_usec\": 1790404837594000,\n      \"updated_at_usec\": 1790404838798000,\n      \"created_at\": \"2026-09-26T06:40:37.594000+00:00\",\n      \"updated_at\": \"2026-09-26T06:40:38.798000+00:00\",\n      \"completed_at\": \"2026-09-26T06:40:38.798000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 337000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 1,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"5366\",\n        \"totalUploadTransferredSizeBytes\": \"5408\",\n        \"totalUploadUsec\": \"2438\",\n        \"uploadThroughputBytesPerSecond\": \"2200984\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"d7484f64-545c-4f52-8c36-5d29ef7a36e5\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"337000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"1\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404837594000\",\n        \"updatedAtUsec\": \"1790404838798000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"5366\",\n          \"totalUploadTransferredSizeBytes\": \"5408\",\n          \"totalUploadUsec\": \"2438\",\n          \"uploadThroughputBytesPerSecond\": \"2200984\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"f833d687-bbaf-467f-b9c0-febfea4b4716\",\n      \"created_at_usec\": 1790404852158000,\n      \"updated_at_usec\": 1790404853364000,\n      \"created_at\": \"2026-09-26T06:40:52.158000+00:00\",\n      \"updated_at\": \"2026-09-26T06:40:53.364000+00:00\",\n      \"completed_at\": \"2026-09-26T06:40:53.364000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 404000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 2,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"5666\",\n        \"totalUploadTransferredSizeBytes\": \"5723\",\n        \"totalUploadUsec\": \"1674\",\n        \"uploadThroughputBytesPerSecond\": \"3384707\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"f833d687-bbaf-467f-b9c0-febfea4b4716\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"404000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"2\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404852158000\",\n        \"updatedAtUsec\": \"1790404853364000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"5666\",\n          \"totalUploadTransferredSizeBytes\": \"5723\",\n          \"totalUploadUsec\": \"1674\",\n          \"uploadThroughputBytesPerSecond\": \"3384707\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"aadf5ad9-407e-4d61-ba0f-335ffce4197f\",\n      \"created_at_usec\": 1790404895893000,\n      \"updated_at_usec\": 1790404897010000,\n      \"created_at\": \"2026-09-26T06:41:35.893000+00:00\",\n      \"updated_at\": \"2026-09-26T06:41:37.010000+00:00\",\n      \"completed_at\": \"2026-09-26T06:41:37.010000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 353000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 2,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"5576\",\n        \"totalUploadTransferredSizeBytes\": \"5633\",\n        \"totalUploadUsec\": \"2001\",\n        \"uploadThroughputBytesPerSecond\": \"2786606\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"aadf5ad9-407e-4d61-ba0f-335ffce4197f\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"353000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"2\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790404895893000\",\n        \"updatedAtUsec\": \"1790404897010000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"5576\",\n          \"totalUploadTransferredSizeBytes\": \"5633\",\n          \"totalUploadUsec\": \"2001\",\n          \"uploadThroughputBytesPerSecond\": \"2786606\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"4c117e3e-5b2c-4e42-8591-55e5a9794923\",\n      \"created_at_usec\": 1790405015182000,\n      \"updated_at_usec\": 1790405016328000,\n      \"created_at\": \"2026-09-26T06:43:35.182000+00:00\",\n      \"updated_at\": \"2026-09-26T06:43:36.328000+00:00\",\n      \"completed_at\": \"2026-09-26T06:43:36.328000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 291000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 2,\n      \"cache_metrics\": {\n        \"casCacheUploads\": \"2\",\n        \"totalUploadSizeBytes\": \"5688\",\n        \"totalUploadTransferredSizeBytes\": \"5745\",\n        \"totalUploadUsec\": \"2070\",\n        \"uploadThroughputBytesPerSecond\": \"2747826\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"4c117e3e-5b2c-4e42-8591-55e5a9794923\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"291000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"2\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790405015182000\",\n        \"updatedAtUsec\": \"1790405016328000\",\n        \"cacheStats\": {\n          \"casCacheUploads\": \"2\",\n          \"totalUploadSizeBytes\": \"5688\",\n          \"totalUploadTransferredSizeBytes\": \"5745\",\n          \"totalUploadUsec\": \"2070\",\n          \"uploadThroughputBytesPerSecond\": \"2747826\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    },\n    {\n      \"invocation_id\": \"8e459ded-bf35-4881-bac9-2a6a758027f1\",\n      \"created_at_usec\": 1790409093508000,\n      \"updated_at_usec\": 1790409099858000,\n      \"created_at\": \"2026-09-26T07:51:33.508000+00:00\",\n      \"updated_at\": \"2026-09-26T07:51:39.858000+00:00\",\n      \"completed_at\": \"2026-09-26T07:51:39.858000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 5479000,\n      \"command\": \"run\",\n      \"pattern\": [\n        \"//experiments/atlas-work-topology:acquire\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"factory-user\",\n      \"host\": \"attuneflix\",\n      \"role\": null,\n      \"action_count\": 594,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"593\",\n        \"casCacheHits\": \"593\",\n        \"casCacheUploads\": \"2\",\n        \"totalDownloadSizeBytes\": \"7662830\",\n        \"totalUploadSizeBytes\": \"608995\",\n        \"totalDownloadTransferredSizeBytes\": \"15547805\",\n        \"totalUploadTransferredSizeBytes\": \"612493\",\n        \"totalDownloadUsec\": \"1653790\",\n        \"totalUploadUsec\": \"186963\",\n        \"downloadThroughputBytesPerSecond\": \"4633496\",\n        \"uploadThroughputBytesPerSecond\": \"3257302\",\n        \"totalCachedActionExecUsec\": \"121961154\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"8e459ded-bf35-4881-bac9-2a6a758027f1\",\n        \"success\": true,\n        \"user\": \"factory-user\",\n        \"host\": \"attuneflix\",\n        \"durationUsec\": \"5479000\",\n        \"command\": \"run\",\n        \"pattern\": [\n          \"//experiments/atlas-work-topology:acquire\"\n        ],\n        \"actionCount\": \"594\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790409093508000\",\n        \"updatedAtUsec\": \"1790409099858000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"593\",\n          \"casCacheHits\": \"593\",\n          \"casCacheUploads\": \"2\",\n          \"totalDownloadSizeBytes\": \"7662830\",\n          \"totalUploadSizeBytes\": \"608995\",\n          \"totalDownloadTransferredSizeBytes\": \"15547805\",\n          \"totalUploadTransferredSizeBytes\": \"612493\",\n          \"totalDownloadUsec\": \"1653790\",\n          \"totalUploadUsec\": \"186963\",\n          \"downloadThroughputBytesPerSecond\": \"4633496\",\n          \"uploadThroughputBytesPerSecond\": \"3257302\",\n          \"totalCachedActionExecUsec\": \"121961154\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "5ffdbe94-8acf-4d97-b79b-31794d04fb03",
+              "created_at_usec": 1790404349161000,
+              "updated_at_usec": 1790404391645000,
+              "created_at": "2026-09-26T06:32:29.161000+00:00",
+              "updated_at": "2026-09-26T06:33:11.645000+00:00",
+              "completed_at": "2026-09-26T06:33:11.645000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 41714000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 630,
+              "cache_metrics": {
+                "actionCacheHits": "597",
+                "actionCacheMisses": "8",
+                "actionCacheUploads": "8",
+                "casCacheHits": "934",
+                "casCacheUploads": "28",
+                "totalDownloadSizeBytes": "889633822",
+                "totalUploadSizeBytes": "3425810",
+                "totalDownloadTransferredSizeBytes": "543765221",
+                "totalUploadTransferredSizeBytes": "3051417",
+                "totalDownloadUsec": "6987585",
+                "totalUploadUsec": "425592",
+                "downloadThroughputBytesPerSecond": "127316350",
+                "uploadThroughputBytesPerSecond": "8049516",
+                "totalCachedActionExecUsec": "121961154",
+                "totalUncachedActionExecUsec": "17191909"
+              },
+              "raw_metadata": {
+                "invocationId": "5ffdbe94-8acf-4d97-b79b-31794d04fb03",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "41714000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "630",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404349161000",
+                "updatedAtUsec": "1790404391645000",
+                "cacheStats": {
+                  "actionCacheHits": "597",
+                  "actionCacheMisses": "8",
+                  "actionCacheUploads": "8",
+                  "casCacheHits": "934",
+                  "casCacheUploads": "28",
+                  "totalDownloadSizeBytes": "889633822",
+                  "totalUploadSizeBytes": "3425810",
+                  "totalDownloadTransferredSizeBytes": "543765221",
+                  "totalUploadTransferredSizeBytes": "3051417",
+                  "totalDownloadUsec": "6987585",
+                  "totalUploadUsec": "425592",
+                  "downloadThroughputBytesPerSecond": "127316350",
+                  "uploadThroughputBytesPerSecond": "8049516",
+                  "totalCachedActionExecUsec": "121961154",
+                  "totalUncachedActionExecUsec": "17191909"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "53046032-621e-4cd1-89e8-27ad6342dda0",
+              "created_at_usec": 1790404737753000,
+              "updated_at_usec": 1790404738796000,
+              "created_at": "2026-09-26T06:38:57.753000+00:00",
+              "updated_at": "2026-09-26T06:38:58.796000+00:00",
+              "completed_at": "2026-09-26T06:38:58.796000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": null,
+              "bazel_exit_code": "BUILD_FAILURE",
+              "duration_usec": 290000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": null,
+              "role": null,
+              "action_count": 0,
+              "cache_metrics": {
+                "casCacheUploads": "1",
+                "totalUploadSizeBytes": "2734",
+                "totalUploadTransferredSizeBytes": "2761",
+                "totalUploadUsec": "1078",
+                "uploadThroughputBytesPerSecond": "2536178"
+              },
+              "raw_metadata": {
+                "invocationId": "53046032-621e-4cd1-89e8-27ad6342dda0",
+                "user": "factory-user",
+                "durationUsec": "290000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404737753000",
+                "updatedAtUsec": "1790404738796000",
+                "cacheStats": {
+                  "casCacheUploads": "1",
+                  "totalUploadSizeBytes": "2734",
+                  "totalUploadTransferredSizeBytes": "2761",
+                  "totalUploadUsec": "1078",
+                  "uploadThroughputBytesPerSecond": "2536178"
+                },
+                "attempt": "1",
+                "bazelExitCode": "BUILD_FAILURE"
+              }
+            },
+            {
+              "invocation_id": "31783e7a-7818-40e5-b9cd-e1d1e2e330af",
+              "created_at_usec": 1790404750119000,
+              "updated_at_usec": 1790404757806000,
+              "created_at": "2026-09-26T06:39:10.119000+00:00",
+              "updated_at": "2026-09-26T06:39:17.806000+00:00",
+              "completed_at": "2026-09-26T06:39:17.806000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": null,
+              "bazel_exit_code": "BUILD_FAILURE",
+              "duration_usec": 7208000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 8,
+              "cache_metrics": {
+                "actionCacheMisses": "2",
+                "actionCacheUploads": "1",
+                "casCacheHits": "6",
+                "casCacheUploads": "16",
+                "totalDownloadSizeBytes": "12023",
+                "totalUploadSizeBytes": "27826",
+                "totalDownloadTransferredSizeBytes": "3187",
+                "totalUploadTransferredSizeBytes": "24551",
+                "totalDownloadUsec": "5892",
+                "totalUploadUsec": "12657",
+                "downloadThroughputBytesPerSecond": "2040563",
+                "uploadThroughputBytesPerSecond": "2198467"
+              },
+              "raw_metadata": {
+                "invocationId": "31783e7a-7818-40e5-b9cd-e1d1e2e330af",
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "7208000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "8",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404750119000",
+                "updatedAtUsec": "1790404757806000",
+                "cacheStats": {
+                  "actionCacheMisses": "2",
+                  "actionCacheUploads": "1",
+                  "casCacheHits": "6",
+                  "casCacheUploads": "16",
+                  "totalDownloadSizeBytes": "12023",
+                  "totalUploadSizeBytes": "27826",
+                  "totalDownloadTransferredSizeBytes": "3187",
+                  "totalUploadTransferredSizeBytes": "24551",
+                  "totalDownloadUsec": "5892",
+                  "totalUploadUsec": "12657",
+                  "downloadThroughputBytesPerSecond": "2040563",
+                  "uploadThroughputBytesPerSecond": "2198467"
+                },
+                "attempt": "1",
+                "bazelExitCode": "BUILD_FAILURE"
+              }
+            },
+            {
+              "invocation_id": "3844a164-7af2-47f1-9c2a-767b433e9da1",
+              "created_at_usec": 1790404784951000,
+              "updated_at_usec": 1790404794706000,
+              "created_at": "2026-09-26T06:39:44.951000+00:00",
+              "updated_at": "2026-09-26T06:39:54.706000+00:00",
+              "completed_at": "2026-09-26T06:39:54.706000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "FAILURE",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": false,
+              "termination": null,
+              "bazel_exit_code": "BUILD_FAILURE",
+              "duration_usec": 8951000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 3,
+              "cache_metrics": {
+                "actionCacheHits": "2",
+                "actionCacheMisses": "4",
+                "actionCacheUploads": "3",
+                "casCacheHits": "152",
+                "casCacheUploads": "15",
+                "totalDownloadSizeBytes": "438661639",
+                "totalUploadSizeBytes": "26015",
+                "totalDownloadTransferredSizeBytes": "270596252",
+                "totalUploadTransferredSizeBytes": "27384",
+                "totalDownloadUsec": "3057389",
+                "totalUploadUsec": "14847",
+                "downloadThroughputBytesPerSecond": "143475900",
+                "uploadThroughputBytesPerSecond": "1752205"
+              },
+              "raw_metadata": {
+                "invocationId": "3844a164-7af2-47f1-9c2a-767b433e9da1",
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "8951000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "3",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404784951000",
+                "updatedAtUsec": "1790404794706000",
+                "cacheStats": {
+                  "actionCacheHits": "2",
+                  "actionCacheMisses": "4",
+                  "actionCacheUploads": "3",
+                  "casCacheHits": "152",
+                  "casCacheUploads": "15",
+                  "totalDownloadSizeBytes": "438661639",
+                  "totalUploadSizeBytes": "26015",
+                  "totalDownloadTransferredSizeBytes": "270596252",
+                  "totalUploadTransferredSizeBytes": "27384",
+                  "totalDownloadUsec": "3057389",
+                  "totalUploadUsec": "14847",
+                  "downloadThroughputBytesPerSecond": "143475900",
+                  "uploadThroughputBytesPerSecond": "1752205"
+                },
+                "attempt": "1",
+                "bazelExitCode": "BUILD_FAILURE"
+              }
+            },
+            {
+              "invocation_id": "9199fda0-90b5-4275-acc6-b31714455c8f",
+              "created_at_usec": 1790404804078000,
+              "updated_at_usec": 1790404832358000,
+              "created_at": "2026-09-26T06:40:04.078000+00:00",
+              "updated_at": "2026-09-26T06:40:32.358000+00:00",
+              "completed_at": "2026-09-26T06:40:32.358000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 27445000,
+              "command": "build",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 3,
+              "cache_metrics": {
+                "actionCacheHits": "2",
+                "actionCacheMisses": "4",
+                "actionCacheUploads": "4",
+                "casCacheHits": "223",
+                "casCacheUploads": "19",
+                "totalDownloadSizeBytes": "525350024",
+                "totalUploadSizeBytes": "2828655",
+                "totalDownloadTransferredSizeBytes": "356658348",
+                "totalUploadTransferredSizeBytes": "2444616",
+                "totalDownloadUsec": "5019930",
+                "totalUploadUsec": "234050",
+                "downloadThroughputBytesPerSecond": "104652858",
+                "uploadThroughputBytesPerSecond": "12085686",
+                "totalUncachedActionExecUsec": "21371751"
+              },
+              "raw_metadata": {
+                "invocationId": "9199fda0-90b5-4275-acc6-b31714455c8f",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "27445000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "3",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404804078000",
+                "updatedAtUsec": "1790404832358000",
+                "cacheStats": {
+                  "actionCacheHits": "2",
+                  "actionCacheMisses": "4",
+                  "actionCacheUploads": "4",
+                  "casCacheHits": "223",
+                  "casCacheUploads": "19",
+                  "totalDownloadSizeBytes": "525350024",
+                  "totalUploadSizeBytes": "2828655",
+                  "totalDownloadTransferredSizeBytes": "356658348",
+                  "totalUploadTransferredSizeBytes": "2444616",
+                  "totalDownloadUsec": "5019930",
+                  "totalUploadUsec": "234050",
+                  "downloadThroughputBytesPerSecond": "104652858",
+                  "uploadThroughputBytesPerSecond": "12085686",
+                  "totalUncachedActionExecUsec": "21371751"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "d7484f64-545c-4f52-8c36-5d29ef7a36e5",
+              "created_at_usec": 1790404837594000,
+              "updated_at_usec": 1790404838798000,
+              "created_at": "2026-09-26T06:40:37.594000+00:00",
+              "updated_at": "2026-09-26T06:40:38.798000+00:00",
+              "completed_at": "2026-09-26T06:40:38.798000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 337000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 1,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "5366",
+                "totalUploadTransferredSizeBytes": "5408",
+                "totalUploadUsec": "2438",
+                "uploadThroughputBytesPerSecond": "2200984"
+              },
+              "raw_metadata": {
+                "invocationId": "d7484f64-545c-4f52-8c36-5d29ef7a36e5",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "337000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "1",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404837594000",
+                "updatedAtUsec": "1790404838798000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "5366",
+                  "totalUploadTransferredSizeBytes": "5408",
+                  "totalUploadUsec": "2438",
+                  "uploadThroughputBytesPerSecond": "2200984"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "f833d687-bbaf-467f-b9c0-febfea4b4716",
+              "created_at_usec": 1790404852158000,
+              "updated_at_usec": 1790404853364000,
+              "created_at": "2026-09-26T06:40:52.158000+00:00",
+              "updated_at": "2026-09-26T06:40:53.364000+00:00",
+              "completed_at": "2026-09-26T06:40:53.364000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 404000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 2,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "5666",
+                "totalUploadTransferredSizeBytes": "5723",
+                "totalUploadUsec": "1674",
+                "uploadThroughputBytesPerSecond": "3384707"
+              },
+              "raw_metadata": {
+                "invocationId": "f833d687-bbaf-467f-b9c0-febfea4b4716",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "404000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "2",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404852158000",
+                "updatedAtUsec": "1790404853364000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "5666",
+                  "totalUploadTransferredSizeBytes": "5723",
+                  "totalUploadUsec": "1674",
+                  "uploadThroughputBytesPerSecond": "3384707"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "aadf5ad9-407e-4d61-ba0f-335ffce4197f",
+              "created_at_usec": 1790404895893000,
+              "updated_at_usec": 1790404897010000,
+              "created_at": "2026-09-26T06:41:35.893000+00:00",
+              "updated_at": "2026-09-26T06:41:37.010000+00:00",
+              "completed_at": "2026-09-26T06:41:37.010000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 353000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 2,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "5576",
+                "totalUploadTransferredSizeBytes": "5633",
+                "totalUploadUsec": "2001",
+                "uploadThroughputBytesPerSecond": "2786606"
+              },
+              "raw_metadata": {
+                "invocationId": "aadf5ad9-407e-4d61-ba0f-335ffce4197f",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "353000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "2",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790404895893000",
+                "updatedAtUsec": "1790404897010000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "5576",
+                  "totalUploadTransferredSizeBytes": "5633",
+                  "totalUploadUsec": "2001",
+                  "uploadThroughputBytesPerSecond": "2786606"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "4c117e3e-5b2c-4e42-8591-55e5a9794923",
+              "created_at_usec": 1790405015182000,
+              "updated_at_usec": 1790405016328000,
+              "created_at": "2026-09-26T06:43:35.182000+00:00",
+              "updated_at": "2026-09-26T06:43:36.328000+00:00",
+              "completed_at": "2026-09-26T06:43:36.328000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 291000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 2,
+              "cache_metrics": {
+                "casCacheUploads": "2",
+                "totalUploadSizeBytes": "5688",
+                "totalUploadTransferredSizeBytes": "5745",
+                "totalUploadUsec": "2070",
+                "uploadThroughputBytesPerSecond": "2747826"
+              },
+              "raw_metadata": {
+                "invocationId": "4c117e3e-5b2c-4e42-8591-55e5a9794923",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "291000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "2",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790405015182000",
+                "updatedAtUsec": "1790405016328000",
+                "cacheStats": {
+                  "casCacheUploads": "2",
+                  "totalUploadSizeBytes": "5688",
+                  "totalUploadTransferredSizeBytes": "5745",
+                  "totalUploadUsec": "2070",
+                  "uploadThroughputBytesPerSecond": "2747826"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            },
+            {
+              "invocation_id": "8e459ded-bf35-4881-bac9-2a6a758027f1",
+              "created_at_usec": 1790409093508000,
+              "updated_at_usec": 1790409099858000,
+              "created_at": "2026-09-26T07:51:33.508000+00:00",
+              "updated_at": "2026-09-26T07:51:39.858000+00:00",
+              "completed_at": "2026-09-26T07:51:39.858000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 5479000,
+              "command": "run",
+              "pattern": [
+                "//experiments/atlas-work-topology:acquire"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "factory-user",
+              "host": "attuneflix",
+              "role": null,
+              "action_count": 594,
+              "cache_metrics": {
+                "actionCacheHits": "593",
+                "casCacheHits": "593",
+                "casCacheUploads": "2",
+                "totalDownloadSizeBytes": "7662830",
+                "totalUploadSizeBytes": "608995",
+                "totalDownloadTransferredSizeBytes": "15547805",
+                "totalUploadTransferredSizeBytes": "612493",
+                "totalDownloadUsec": "1653790",
+                "totalUploadUsec": "186963",
+                "downloadThroughputBytesPerSecond": "4633496",
+                "uploadThroughputBytesPerSecond": "3257302",
+                "totalCachedActionExecUsec": "121961154"
+              },
+              "raw_metadata": {
+                "invocationId": "8e459ded-bf35-4881-bac9-2a6a758027f1",
+                "success": true,
+                "user": "factory-user",
+                "host": "attuneflix",
+                "durationUsec": "5479000",
+                "command": "run",
+                "pattern": [
+                  "//experiments/atlas-work-topology:acquire"
+                ],
+                "actionCount": "594",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790409093508000",
+                "updatedAtUsec": "1790409099858000",
+                "cacheStats": {
+                  "actionCacheHits": "593",
+                  "casCacheHits": "593",
+                  "casCacheUploads": "2",
+                  "totalDownloadSizeBytes": "7662830",
+                  "totalUploadSizeBytes": "608995",
+                  "totalDownloadTransferredSizeBytes": "15547805",
+                  "totalUploadTransferredSizeBytes": "612493",
+                  "totalDownloadUsec": "1653790",
+                  "totalUploadUsec": "186963",
+                  "downloadThroughputBytesPerSecond": "4633496",
+                  "uploadThroughputBytesPerSecond": "3257302",
+                  "totalCachedActionExecUsec": "121961154"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    }
+  ],
+  "localization": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"invocations\": [],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+      }
+    ],
+    "structuredContent": {
+      "invocations": [],
+      "next_page_token": "",
+      "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+    },
+    "isError": false
+  },
+  "more": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [\n    {\n      \"invocation_id\": \"c6513144-0d03-400d-97ae-cde433c05d29\",\n      \"created_at_usec\": 1790983432336000,\n      \"updated_at_usec\": 1790983476540000,\n      \"created_at\": \"2026-10-02T23:23:52.336000+00:00\",\n      \"updated_at\": \"2026-10-02T23:24:36.540000+00:00\",\n      \"completed_at\": \"2026-10-02T23:24:36.540000+00:00\",\n      \"completion_time_basis\": \"last provider update for complete invocation; exact build-finished time unavailable\",\n      \"status\": \"SUCCESS\",\n      \"invocation_status\": \"COMPLETE_INVOCATION_STATUS\",\n      \"success\": true,\n      \"termination\": null,\n      \"bazel_exit_code\": \"SUCCESS\",\n      \"duration_usec\": 45303000,\n      \"command\": \"build\",\n      \"pattern\": [\n        \"//experiments/attune-final-topology:source_signatures\"\n      ],\n      \"repository\": null,\n      \"commit_sha\": null,\n      \"branch\": null,\n      \"user\": \"becker\",\n      \"host\": \"nixos-btw\",\n      \"role\": null,\n      \"action_count\": 561,\n      \"cache_metrics\": {\n        \"actionCacheHits\": \"501\",\n        \"actionCacheMisses\": \"11\",\n        \"actionCacheUploads\": \"20\",\n        \"casCacheHits\": \"2123\",\n        \"casCacheUploads\": \"208\",\n        \"totalDownloadSizeBytes\": \"3752597878\",\n        \"totalUploadSizeBytes\": \"12215318\",\n        \"totalDownloadTransferredSizeBytes\": \"2027124914\",\n        \"totalUploadTransferredSizeBytes\": \"8258076\",\n        \"totalDownloadUsec\": \"18106657\",\n        \"totalUploadUsec\": \"2496835\",\n        \"downloadThroughputBytesPerSecond\": \"207249625\",\n        \"uploadThroughputBytesPerSecond\": \"4892320\",\n        \"totalCachedActionExecUsec\": \"224254890\",\n        \"totalUncachedActionExecUsec\": \"88989219\"\n      },\n      \"raw_metadata\": {\n        \"invocationId\": \"c6513144-0d03-400d-97ae-cde433c05d29\",\n        \"success\": true,\n        \"user\": \"becker\",\n        \"host\": \"nixos-btw\",\n        \"durationUsec\": \"45303000\",\n        \"command\": \"build\",\n        \"pattern\": [\n          \"//experiments/attune-final-topology:source_signatures\"\n        ],\n        \"actionCount\": \"561\",\n        \"invocationStatus\": \"COMPLETE_INVOCATION_STATUS\",\n        \"createdAtUsec\": \"1790983432336000\",\n        \"updatedAtUsec\": \"1790983476540000\",\n        \"cacheStats\": {\n          \"actionCacheHits\": \"501\",\n          \"actionCacheMisses\": \"11\",\n          \"actionCacheUploads\": \"20\",\n          \"casCacheHits\": \"2123\",\n          \"casCacheUploads\": \"208\",\n          \"totalDownloadSizeBytes\": \"3752597878\",\n          \"totalUploadSizeBytes\": \"12215318\",\n          \"totalDownloadTransferredSizeBytes\": \"2027124914\",\n          \"totalUploadTransferredSizeBytes\": \"8258076\",\n          \"totalDownloadUsec\": \"18106657\",\n          \"totalUploadUsec\": \"2496835\",\n          \"downloadThroughputBytesPerSecond\": \"207249625\",\n          \"uploadThroughputBytesPerSecond\": \"4892320\",\n          \"totalCachedActionExecUsec\": \"224254890\",\n          \"totalUncachedActionExecUsec\": \"88989219\"\n        },\n        \"attempt\": \"1\",\n        \"bazelExitCode\": \"SUCCESS\"\n      }\n    }\n  ],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [
+            {
+              "invocation_id": "c6513144-0d03-400d-97ae-cde433c05d29",
+              "created_at_usec": 1790983432336000,
+              "updated_at_usec": 1790983476540000,
+              "created_at": "2026-10-02T23:23:52.336000+00:00",
+              "updated_at": "2026-10-02T23:24:36.540000+00:00",
+              "completed_at": "2026-10-02T23:24:36.540000+00:00",
+              "completion_time_basis": "last provider update for complete invocation; exact build-finished time unavailable",
+              "status": "SUCCESS",
+              "invocation_status": "COMPLETE_INVOCATION_STATUS",
+              "success": true,
+              "termination": null,
+              "bazel_exit_code": "SUCCESS",
+              "duration_usec": 45303000,
+              "command": "build",
+              "pattern": [
+                "//experiments/attune-final-topology:source_signatures"
+              ],
+              "repository": null,
+              "commit_sha": null,
+              "branch": null,
+              "user": "becker",
+              "host": "nixos-btw",
+              "role": null,
+              "action_count": 561,
+              "cache_metrics": {
+                "actionCacheHits": "501",
+                "actionCacheMisses": "11",
+                "actionCacheUploads": "20",
+                "casCacheHits": "2123",
+                "casCacheUploads": "208",
+                "totalDownloadSizeBytes": "3752597878",
+                "totalUploadSizeBytes": "12215318",
+                "totalDownloadTransferredSizeBytes": "2027124914",
+                "totalUploadTransferredSizeBytes": "8258076",
+                "totalDownloadUsec": "18106657",
+                "totalUploadUsec": "2496835",
+                "downloadThroughputBytesPerSecond": "207249625",
+                "uploadThroughputBytesPerSecond": "4892320",
+                "totalCachedActionExecUsec": "224254890",
+                "totalUncachedActionExecUsec": "88989219"
+              },
+              "raw_metadata": {
+                "invocationId": "c6513144-0d03-400d-97ae-cde433c05d29",
+                "success": true,
+                "user": "becker",
+                "host": "nixos-btw",
+                "durationUsec": "45303000",
+                "command": "build",
+                "pattern": [
+                  "//experiments/attune-final-topology:source_signatures"
+                ],
+                "actionCount": "561",
+                "invocationStatus": "COMPLETE_INVOCATION_STATUS",
+                "createdAtUsec": "1790983432336000",
+                "updatedAtUsec": "1790983476540000",
+                "cacheStats": {
+                  "actionCacheHits": "501",
+                  "actionCacheMisses": "11",
+                  "actionCacheUploads": "20",
+                  "casCacheHits": "2123",
+                  "casCacheUploads": "208",
+                  "totalDownloadSizeBytes": "3752597878",
+                  "totalUploadSizeBytes": "12215318",
+                  "totalDownloadTransferredSizeBytes": "2027124914",
+                  "totalUploadTransferredSizeBytes": "8258076",
+                  "totalDownloadUsec": "18106657",
+                  "totalUploadUsec": "2496835",
+                  "downloadThroughputBytesPerSecond": "207249625",
+                  "uploadThroughputBytesPerSecond": "4892320",
+                  "totalCachedActionExecUsec": "224254890",
+                  "totalUncachedActionExecUsec": "88989219"
+                },
+                "attempt": "1",
+                "bazelExitCode": "SUCCESS"
+              }
+            }
+          ],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"invocations\": [],\n  \"next_page_token\": \"\",\n  \"provenance\": \"https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation\"\n}"
+          }
+        ],
+        "structuredContent": {
+          "invocations": [],
+          "next_page_token": "",
+          "provenance": "https://becker63.buildbuddy.io/rpc/BuildBuddyService/SearchInvocation"
+        },
+        "isError": false
+      }
+    }
+  ]
+}

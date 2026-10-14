@@ -1,0 +1,882 @@
+[
+  {
+    "bytes": 735,
+    "language": "starlark",
+    "path": "BUILD.bazel",
+    "physical_lines": 21,
+    "repository_path": "BUILD.bazel",
+    "sha256": "7dcb79c8a14a45a43526bd108dd9f2c1156b04074464ef7b53ae8f8e60b93e81"
+  },
+  {
+    "bytes": 4587,
+    "language": "starlark",
+    "path": "MODULE.bazel",
+    "physical_lines": 117,
+    "repository_path": "MODULE.bazel",
+    "sha256": "f923b28c17b04b9b21222446f4570bca5123d860f811e0464f36bc4c82056d9e"
+  },
+  {
+    "bytes": 295,
+    "language": "starlark",
+    "path": "build/BUILD.bazel",
+    "physical_lines": 11,
+    "repository_path": "build/BUILD.bazel",
+    "sha256": "f984427948cf7de013579b127e3b8b41fc856adc83890c95253a8a083c7c6d38"
+  },
+  {
+    "bytes": 14493,
+    "language": "starlark",
+    "path": "build/attune.bzl",
+    "physical_lines": 362,
+    "repository_path": "build/attune.bzl",
+    "sha256": "be1fb188a5bc7de61062d1c853ee4f513a4239bf78bfab27f0496388db8a04d3"
+  },
+  {
+    "bytes": 4943,
+    "language": "starlark",
+    "path": "build/flix.bzl",
+    "physical_lines": 159,
+    "repository_path": "build/flix.bzl",
+    "sha256": "e5d864d9b9e0484c5d2f5a4943451c50ab78965fc2622f4cdce11359bd1ad5e5"
+  },
+  {
+    "bytes": 31957,
+    "language": "starlark",
+    "path": "build/grit_repository.bzl",
+    "physical_lines": 786,
+    "repository_path": "build/grit_repository.bzl",
+    "sha256": "f756f50e178f8dfc84bca4abb86528b7e723a9f1a86f095a6a4449fdc3ad7df3"
+  },
+  {
+    "bytes": 2572,
+    "language": "starlark",
+    "path": "build/jextract.bzl",
+    "physical_lines": 71,
+    "repository_path": "build/jextract.bzl",
+    "sha256": "69bcf44ab87cb085983061e67a537dfcfe41fc19e4dde343ee8c196a2f30af79"
+  },
+  {
+    "bytes": 1458,
+    "language": "starlark",
+    "path": "build/jextract_repository.bzl",
+    "physical_lines": 48,
+    "repository_path": "build/jextract_repository.bzl",
+    "sha256": "7821b0d22dc469d6534a7f95707f810a5efa27c5c9503f9734c2e41496ecf31f"
+  },
+  {
+    "bytes": 725,
+    "language": "starlark",
+    "path": "data/evaluation/BUILD.bazel",
+    "physical_lines": 29,
+    "repository_path": "data/evaluation/BUILD.bazel",
+    "sha256": "e830335a29b6c457b6e3e963379fb9ca80ec5a4d4b28248409f0f020ac5c89c8"
+  },
+  {
+    "bytes": 178,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/AcquireMain.flix",
+    "physical_lines": 3,
+    "repository_path": "experiments/atlas-parallelism/AcquireMain.flix",
+    "sha256": "a7237e4648a07a97942bfc353c1de2c39d4e30849b764d6ca3219d21596a3dac"
+  },
+  {
+    "bytes": 6412,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/AcquisitionDriver.flix",
+    "physical_lines": 108,
+    "repository_path": "experiments/atlas-parallelism/AcquisitionDriver.flix",
+    "sha256": "688388687a1d6063327eb206b6a049ea0d0daed2cf0f5a6911c62aa5c2fe0088"
+  },
+  {
+    "bytes": 7685,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/AcquisitionFacts.flix",
+    "physical_lines": 157,
+    "repository_path": "experiments/atlas-parallelism/AcquisitionFacts.flix",
+    "sha256": "7d551a4616ab4fadfe4b7db258fb7ca0b94c2506ed6090cdbcd7336c8cfbf186"
+  },
+  {
+    "bytes": 10633,
+    "language": "starlark",
+    "path": "experiments/atlas-parallelism/BUILD.bazel",
+    "physical_lines": 321,
+    "repository_path": "experiments/atlas-parallelism/BUILD.bazel",
+    "sha256": "1cc9f944ddc7f64aedc04fac58f87280bd2fbe765ba6eb0073a44b032e4f6913"
+  },
+  {
+    "bytes": 120,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/Main.flix",
+    "physical_lines": 2,
+    "repository_path": "experiments/atlas-parallelism/Main.flix",
+    "sha256": "38858fb026f478d7421a72ab5948568f2bf4c38165d3ea024ce4fd615fa208c5"
+  },
+  {
+    "bytes": 36898,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/Parallelism.flix",
+    "physical_lines": 625,
+    "repository_path": "experiments/atlas-parallelism/Parallelism.flix",
+    "sha256": "7f777ab2ead4f00fbf11256dd1412a23fcaf823116cfffece53d953962f22784"
+  },
+  {
+    "bytes": 3156,
+    "language": "flix",
+    "path": "experiments/atlas-parallelism/Provenance.flix",
+    "physical_lines": 68,
+    "repository_path": "experiments/atlas-parallelism/Provenance.flix",
+    "sha256": "cf6f088461f0936f1cb2fdd3a2ac03d9d2d7e0cde0371e99f0b8173c9e3902e8"
+  },
+  {
+    "bytes": 7210,
+    "language": "starlark",
+    "path": "experiments/atlas-parallelism/parallelism.bzl",
+    "physical_lines": 193,
+    "repository_path": "experiments/atlas-parallelism/parallelism.bzl",
+    "sha256": "f7e49c07b4ed74646e92594520458277e61ff1aad469cc742b63ce04b76d5c3d"
+  },
+  {
+    "bytes": 3915,
+    "language": "flix",
+    "path": "experiments/atlas-swe-explore/Aggregate.flix",
+    "physical_lines": 67,
+    "repository_path": "experiments/atlas-swe-explore/Aggregate.flix",
+    "sha256": "a7bb2b6a68c8c562ed96544d1ad874bc673316b33526d7195c02e9f3a511abff"
+  },
+  {
+    "bytes": 5209,
+    "language": "starlark",
+    "path": "experiments/atlas-swe-explore/BUILD.bazel",
+    "physical_lines": 184,
+    "repository_path": "experiments/atlas-swe-explore/BUILD.bazel",
+    "sha256": "a21e170eb77651af4e42d0d580735405f23ac53b9cb9696ed6029d9d1cc121c6"
+  },
+  {
+    "bytes": 6190,
+    "language": "flix",
+    "path": "experiments/atlas-swe-explore/Main.flix",
+    "physical_lines": 137,
+    "repository_path": "experiments/atlas-swe-explore/Main.flix",
+    "sha256": "dd07412d819b0b8e3383fce2691d321a5d3ff6bf93e9c938796ba72e662f8a63"
+  },
+  {
+    "bytes": 18746,
+    "language": "flix",
+    "path": "experiments/atlas-swe-explore/Report.flix",
+    "physical_lines": 305,
+    "repository_path": "experiments/atlas-swe-explore/Report.flix",
+    "sha256": "8584b1e383073f7234757bb84db984e66dc01b86321d21c5f39f5a5c52a07fd7"
+  },
+  {
+    "bytes": 603,
+    "language": "flix",
+    "path": "experiments/atlas-swe-explore/Summary.flix",
+    "physical_lines": 12,
+    "repository_path": "experiments/atlas-swe-explore/Summary.flix",
+    "sha256": "3e86e768eda8bc10e1fa6f2e4f8316e6ce9053bd3cc46800ee64c114ca645711"
+  },
+  {
+    "bytes": 401,
+    "language": "starlark",
+    "path": "experiments/atlas-swe-explore/census/BUILD.bazel",
+    "physical_lines": 8,
+    "repository_path": "experiments/atlas-swe-explore/census/BUILD.bazel",
+    "sha256": "4eb46e2be99ffb40103a25edc4c950e16ffb44f51f6cc0fa03b69853d6823e4d"
+  },
+  {
+    "bytes": 11354,
+    "language": "starlark",
+    "path": "experiments/atlas-swe-explore/census/census.bzl",
+    "physical_lines": 161,
+    "repository_path": "experiments/atlas-swe-explore/census/census.bzl",
+    "sha256": "59e2ee530f1a8b3ee1c66e40d8859bf70684788879c3f747ff716ddeaf320896"
+  },
+  {
+    "bytes": 5399,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/BUILD.bazel",
+    "physical_lines": 121,
+    "repository_path": "experiments/atlas-work-topology/BUILD.bazel",
+    "sha256": "bd2c1b11ecf98547c7db4a914ad06b1b6eed7906339f2b332107a9579f820ba3"
+  },
+  {
+    "bytes": 5055,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlAcquisition.flix",
+    "physical_lines": 81,
+    "repository_path": "experiments/atlas-work-topology/ControlAcquisition.flix",
+    "sha256": "e18017331c9a14740bb57fafc5bf20f1daa9128d7ed218b148e612185dd35ec3"
+  },
+  {
+    "bytes": 12345,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlCoChange.flix",
+    "physical_lines": 233,
+    "repository_path": "experiments/atlas-work-topology/ControlCoChange.flix",
+    "sha256": "ba434f75ca455839be467a55b3f151f43cdb51a66fbda4bb2162d0d5929d44e1"
+  },
+  {
+    "bytes": 3585,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlIdentity.flix",
+    "physical_lines": 74,
+    "repository_path": "experiments/atlas-work-topology/ControlIdentity.flix",
+    "sha256": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56"
+  },
+  {
+    "bytes": 229,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlMain.flix",
+    "physical_lines": 4,
+    "repository_path": "experiments/atlas-work-topology/ControlMain.flix",
+    "sha256": "ccd570dfc3186d5a48733606b986b690be7761b01343743a60617ff21d715f19"
+  },
+  {
+    "bytes": 11234,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlMap.flix",
+    "physical_lines": 206,
+    "repository_path": "experiments/atlas-work-topology/ControlMap.flix",
+    "sha256": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7"
+  },
+  {
+    "bytes": 7069,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlMeasure.flix",
+    "physical_lines": 124,
+    "repository_path": "experiments/atlas-work-topology/ControlMeasure.flix",
+    "sha256": "86b63eceb014af9fde8eacd83a2f6fe50333cba602b4d54a09dd48d0637be8f5"
+  },
+  {
+    "bytes": 205,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlMeasureMain.flix",
+    "physical_lines": 3,
+    "repository_path": "experiments/atlas-work-topology/ControlMeasureMain.flix",
+    "sha256": "68787c534d5eadf2e8242105dc3ac7b8b2909661108c8f802101a913afd0beb3"
+  },
+  {
+    "bytes": 20477,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlSignature.flix",
+    "physical_lines": 389,
+    "repository_path": "experiments/atlas-work-topology/ControlSignature.flix",
+    "sha256": "345c33485bf56d058172105bc8500ba1d102a43255195c26119c4beab5d23679"
+  },
+  {
+    "bytes": 8734,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+    "physical_lines": 157,
+    "repository_path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+    "sha256": "0bdc998f252e07a6ed6e19285ed6dc35cdb85ef5d7ce7a393c4999a112ae86d8"
+  },
+  {
+    "bytes": 202,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlSignaturesMain.flix",
+    "physical_lines": 3,
+    "repository_path": "experiments/atlas-work-topology/ControlSignaturesMain.flix",
+    "sha256": "7112860b978f9df73a0534abe84f77081aa6029e8e27497a60fec84523427ba0"
+  },
+  {
+    "bytes": 15042,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlTopology.flix",
+    "physical_lines": 282,
+    "repository_path": "experiments/atlas-work-topology/ControlTopology.flix",
+    "sha256": "95a3fd447e93e8afe4271a017e19320476ad3e593ba60458cff6326c0390a23e"
+  },
+  {
+    "bytes": 8377,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlTopologyJson.flix",
+    "physical_lines": 165,
+    "repository_path": "experiments/atlas-work-topology/ControlTopologyJson.flix",
+    "sha256": "8cfd2b9bc2df79d880d704785b5b420a8b7ce1433e777e5fa040c30d2acae25c"
+  },
+  {
+    "bytes": 8302,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlTopologyTest.flix",
+    "physical_lines": 162,
+    "repository_path": "experiments/atlas-work-topology/ControlTopologyTest.flix",
+    "sha256": "494cf6652a0d195ff4b01347c8e6a9a77172d6643908dceca7ab03336c659739"
+  },
+  {
+    "bytes": 6948,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundIdentity.flix",
+    "physical_lines": 153,
+    "repository_path": "experiments/atlas-work-topology/RoundIdentity.flix",
+    "sha256": "4be83cb3b135fa923e699ed77b1f8ba498aed545da061b2f5fc09e06868dc5e2"
+  },
+  {
+    "bytes": 14107,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundJson.flix",
+    "physical_lines": 283,
+    "repository_path": "experiments/atlas-work-topology/RoundJson.flix",
+    "sha256": "3abd672ebda1953dd4d7bec749faa4d954e7bb2c0d346fa3fc15d45bbd09dec8"
+  },
+  {
+    "bytes": 9357,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundMeasure.flix",
+    "physical_lines": 165,
+    "repository_path": "experiments/atlas-work-topology/RoundMeasure.flix",
+    "sha256": "fa540e54e7ab0e64c93eba1bdfb043fe9758b5b74ad50e7aff68ad1abee0cd68"
+  },
+  {
+    "bytes": 199,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+    "physical_lines": 3,
+    "repository_path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+    "sha256": "379fb3caadd1da512736e92782cc561b3edc47ddc958d9a21fafcd985d7026d9"
+  },
+  {
+    "bytes": 12653,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundOracle.flix",
+    "physical_lines": 238,
+    "repository_path": "experiments/atlas-work-topology/RoundOracle.flix",
+    "sha256": "630f68fe4a80b326ea9983e567c3832bb12565972110dddd66ef67322a42ce3f"
+  },
+  {
+    "bytes": 12481,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundTest.flix",
+    "physical_lines": 221,
+    "repository_path": "experiments/atlas-work-topology/RoundTest.flix",
+    "sha256": "fd098243384ec9e1400979fc92115d4edafa0d4ce216281e698b3edae771ae50"
+  },
+  {
+    "bytes": 8578,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/RoundTopology.flix",
+    "physical_lines": 153,
+    "repository_path": "experiments/atlas-work-topology/RoundTopology.flix",
+    "sha256": "8d04536c2ae9278cfb4e5a4d4b1b6d58ce5305c648a878fed97b4312299e46d9"
+  },
+  {
+    "bytes": 3194,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/control_signatures.bzl",
+    "physical_lines": 92,
+    "repository_path": "experiments/atlas-work-topology/control_signatures.bzl",
+    "sha256": "39cbb12bc72c44ac2228dbc205cad44d89951b561e9ac5c8ba057fdf0204680b"
+  },
+  {
+    "bytes": 3195,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/round_topology.bzl",
+    "physical_lines": 98,
+    "repository_path": "experiments/atlas-work-topology/round_topology.bzl",
+    "sha256": "83fbdf62260157b754311e34d68b285019994b71249b6ff165b4298fd1fb5d98"
+  },
+  {
+    "bytes": 3117,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/topology.bzl",
+    "physical_lines": 94,
+    "repository_path": "experiments/atlas-work-topology/topology.bzl",
+    "sha256": "621829bde90a78ab2b064cb590c78033899b489b2935bfa9fe7751a57d83722d"
+  },
+  {
+    "bytes": 3109,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/work_topology.bzl",
+    "physical_lines": 87,
+    "repository_path": "experiments/atlas-work-topology/work_topology.bzl",
+    "sha256": "7cdb45843b27c532272ddae6b4857287a8a0931c0ceb660d20ce984e3baf466a"
+  },
+  {
+    "bytes": 452,
+    "language": "starlark",
+    "path": "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+    "physical_lines": 18,
+    "repository_path": "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+    "sha256": "ea93dca627447413600bc299f7e07fe004dbb8158dd1b9e9ec0983d72a2f3b06"
+  },
+  {
+    "bytes": 12974,
+    "language": "flix",
+    "path": "src/Atlas.flix",
+    "physical_lines": 285,
+    "repository_path": "src/Atlas.flix",
+    "sha256": "44ab7421a7e2c25238c9894c1f14cc900f5bd61defba1c7a7c44374a7c1853cf"
+  },
+  {
+    "bytes": 9521,
+    "language": "flix",
+    "path": "src/Atlas/Signature.flix",
+    "physical_lines": 215,
+    "repository_path": "src/Atlas/Signature.flix",
+    "sha256": "ac50c0e9cbcfb5ea94cc913ed6a36c78aba565b34eab4b2156d07ff17efbea34"
+  },
+  {
+    "bytes": 12281,
+    "language": "flix",
+    "path": "src/Atlas/Signature/Summary.flix",
+    "physical_lines": 230,
+    "repository_path": "src/Atlas/Signature/Summary.flix",
+    "sha256": "b5b202fac6253e2d2c4efd957e8c2b6a2ead2b92bf1ed876808584751d6997ac"
+  },
+  {
+    "bytes": 9018,
+    "language": "flix",
+    "path": "src/Atlas/Signature/Table.flix",
+    "physical_lines": 171,
+    "repository_path": "src/Atlas/Signature/Table.flix",
+    "sha256": "8bb6890424c2721cbf1adbfeb44c60185e387cd7e8cbcfb4c2e0d68bc58d2b81"
+  },
+  {
+    "bytes": 2165,
+    "language": "starlark",
+    "path": "src/BUILD.bazel",
+    "physical_lines": 52,
+    "repository_path": "src/BUILD.bazel",
+    "sha256": "25cee999406f2c199593c3de48cd37b10944abfe2b79dacc684645f97ea0e5be"
+  },
+  {
+    "bytes": 821,
+    "language": "flix",
+    "path": "src/Experiment.flix",
+    "physical_lines": 22,
+    "repository_path": "src/Experiment.flix",
+    "sha256": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc"
+  },
+  {
+    "bytes": 740,
+    "language": "flix",
+    "path": "src/Localization.flix",
+    "physical_lines": 32,
+    "repository_path": "src/Localization.flix",
+    "sha256": "cb9130d8e8c48219fb4f430cf6c0c1767d610b0565d0de110b02220876c3c573"
+  },
+  {
+    "bytes": 479,
+    "language": "flix",
+    "path": "src/Localization/IssueTable.flix",
+    "physical_lines": 13,
+    "repository_path": "src/Localization/IssueTable.flix",
+    "sha256": "fee92092ebfc204fe488feb52789cfb1927e38bf79e23c101014eac4ea67ff4c"
+  },
+  {
+    "bytes": 876,
+    "language": "flix",
+    "path": "src/Localization/PredictionTable.flix",
+    "physical_lines": 21,
+    "repository_path": "src/Localization/PredictionTable.flix",
+    "sha256": "1b682a8c852db1af8ac6e0b051e41eb8528e561d2a6836b2bb7f43bd9c124a48"
+  },
+  {
+    "bytes": 1526,
+    "language": "flix",
+    "path": "src/Localization/PriorTable.flix",
+    "physical_lines": 36,
+    "repository_path": "src/Localization/PriorTable.flix",
+    "sha256": "eb99e5a72e43e960ef39231ca44ea8501a55caf7b0669a2a25639244c7ec1bfb"
+  },
+  {
+    "bytes": 5685,
+    "language": "flix",
+    "path": "src/Localization/Sandwich.flix",
+    "physical_lines": 126,
+    "repository_path": "src/Localization/Sandwich.flix",
+    "sha256": "161f2a40dd548ca6463109d756224d3ab800af85f88dc3214ced5c78490322ec"
+  },
+  {
+    "bytes": 1074,
+    "language": "flix",
+    "path": "src/Population.flix",
+    "physical_lines": 38,
+    "repository_path": "src/Population.flix",
+    "sha256": "97c187aa23a3b64d76739cfbc6c824056663ddf20f120b0ba53e34bc425e6e8e"
+  },
+  {
+    "bytes": 6762,
+    "language": "flix",
+    "path": "src/Population/Table.flix",
+    "physical_lines": 131,
+    "repository_path": "src/Population/Table.flix",
+    "sha256": "02910d9a3011614ec7f25652b02556343deb5cf0df2d8237f4c1688c373d3fb4"
+  },
+  {
+    "bytes": 5759,
+    "language": "flix",
+    "path": "src/Radii.flix",
+    "physical_lines": 143,
+    "repository_path": "src/Radii.flix",
+    "sha256": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a"
+  },
+  {
+    "bytes": 15067,
+    "language": "flix",
+    "path": "src/Radii/Evaluate.flix",
+    "physical_lines": 337,
+    "repository_path": "src/Radii/Evaluate.flix",
+    "sha256": "a6d791620ea19dd2e1abf6a8e122022c95b2935bc0f248304cd9838e833bf76e"
+  },
+  {
+    "bytes": 1933,
+    "language": "flix",
+    "path": "src/Radii/Synthesize.flix",
+    "physical_lines": 42,
+    "repository_path": "src/Radii/Synthesize.flix",
+    "sha256": "7991cee7113c9cf2f6e75c3445b485b6277d2a2e10b9831074a5886198914b2c"
+  },
+  {
+    "bytes": 19355,
+    "language": "flix",
+    "path": "src/Repository.flix",
+    "physical_lines": 410,
+    "repository_path": "src/Repository.flix",
+    "sha256": "5ac2cb97d2e9ab1525f1e873ec8caeed31066ec38e01e8d7b92144a7f499dea3"
+  },
+  {
+    "bytes": 3135,
+    "language": "flix",
+    "path": "src/Repository/Acquire.flix",
+    "physical_lines": 70,
+    "repository_path": "src/Repository/Acquire.flix",
+    "sha256": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384"
+  },
+  {
+    "bytes": 11640,
+    "language": "flix",
+    "path": "src/Repository/Grit.flix",
+    "physical_lines": 277,
+    "repository_path": "src/Repository/Grit.flix",
+    "sha256": "0ea3521a6b871e5fa81d8daa80b8bf64e69e26bc617515dbcf2aa493f5e21185"
+  },
+  {
+    "bytes": 4264,
+    "language": "flix",
+    "path": "src/Repository/Physical.flix",
+    "physical_lines": 82,
+    "repository_path": "src/Repository/Physical.flix",
+    "sha256": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1"
+  },
+  {
+    "bytes": 9194,
+    "language": "flix",
+    "path": "src/Repository/Reference.flix",
+    "physical_lines": 130,
+    "repository_path": "src/Repository/Reference.flix",
+    "sha256": "1313988046d760af621068c03b44ea3e75ca7249134347a783d421cf66f5329c"
+  },
+  {
+    "bytes": 2705,
+    "language": "flix",
+    "path": "src/Repository/Structure.flix",
+    "physical_lines": 66,
+    "repository_path": "src/Repository/Structure.flix",
+    "sha256": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524"
+  },
+  {
+    "bytes": 18309,
+    "language": "flix",
+    "path": "src/Repository/Table.flix",
+    "physical_lines": 342,
+    "repository_path": "src/Repository/Table.flix",
+    "sha256": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d"
+  },
+  {
+    "bytes": 416,
+    "language": "flix",
+    "path": "src/ScientificIdentity.flix",
+    "physical_lines": 11,
+    "repository_path": "src/ScientificIdentity.flix",
+    "sha256": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a"
+  },
+  {
+    "bytes": 10496,
+    "language": "flix",
+    "path": "src/ScientificTable.flix",
+    "physical_lines": 234,
+    "repository_path": "src/ScientificTable.flix",
+    "sha256": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba"
+  },
+  {
+    "bytes": 1584,
+    "language": "flix",
+    "path": "src/ScientificTable/Columns.flix",
+    "physical_lines": 15,
+    "repository_path": "src/ScientificTable/Columns.flix",
+    "sha256": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731"
+  },
+  {
+    "bytes": 180,
+    "language": "starlark",
+    "path": "src/grit/BUILD.bazel",
+    "physical_lines": 9,
+    "repository_path": "src/grit/BUILD.bazel",
+    "sha256": "84168c5d3a597f147f97d0c24ebcf4bf7b44accc1aa965677774fdb6853b135e"
+  },
+  {
+    "bytes": 1288,
+    "language": "java",
+    "path": "src/native/grit/AttuneGrit.java",
+    "physical_lines": 28,
+    "repository_path": "src/native/grit/AttuneGrit.java",
+    "sha256": "ae579a676d2e41a003217d2fc71515408ad44600e885201f196f24efd139ef8f"
+  },
+  {
+    "bytes": 2990,
+    "language": "java",
+    "path": "src/native/grit/AttuneGritNative.java",
+    "physical_lines": 69,
+    "repository_path": "src/native/grit/AttuneGritNative.java",
+    "sha256": "6167bb138fdf375bbfdb1fad6e37a60574ed272e0f035c54d9f88651a3d8d977"
+  },
+  {
+    "bytes": 15763,
+    "language": "java",
+    "path": "src/native/grit/AttuneGritTest.java",
+    "physical_lines": 326,
+    "repository_path": "src/native/grit/AttuneGritTest.java",
+    "sha256": "ea909673089df8828d3ce139eb2ad4a4c29ccf548b5d68a15d233809e189887d"
+  },
+  {
+    "bytes": 2951,
+    "language": "starlark",
+    "path": "src/native/grit/BUILD.bazel",
+    "physical_lines": 102,
+    "repository_path": "src/native/grit/BUILD.bazel",
+    "sha256": "6e8ca38ef71a41f0afdc5aa9cf53d23330638bc833c7c8f5616da03c05c71b93"
+  },
+  {
+    "bytes": 726,
+    "language": "java",
+    "path": "src/native/identity/AttuneIdentity.java",
+    "physical_lines": 21,
+    "repository_path": "src/native/identity/AttuneIdentity.java",
+    "sha256": "5b6aed8f4be36c970819f9b26160b089e0f6859321a49c02849e39b19cc74c77"
+  },
+  {
+    "bytes": 396,
+    "language": "java",
+    "path": "src/native/identity/AttuneIdentityTest.java",
+    "physical_lines": 11,
+    "repository_path": "src/native/identity/AttuneIdentityTest.java",
+    "sha256": "abd2b94930fd61d766f8d3a415f7666d526e2b0dd77b8d46206a20614b9ef1eb"
+  },
+  {
+    "bytes": 462,
+    "language": "starlark",
+    "path": "src/native/identity/BUILD.bazel",
+    "physical_lines": 17,
+    "repository_path": "src/native/identity/BUILD.bazel",
+    "sha256": "cca6a3763740d25f06217488f8cc9e1adefc15b3bd8e6d8307a69c22b9ec8aad"
+  },
+  {
+    "bytes": 1989,
+    "language": "java",
+    "path": "src/native/inference/AttuneDecision.java",
+    "physical_lines": 48,
+    "repository_path": "src/native/inference/AttuneDecision.java",
+    "sha256": "5471672cfb5abfb99ad6568cc6035243cd7cd2cd9198cb474ee054600f93ce9e"
+  },
+  {
+    "bytes": 6489,
+    "language": "java",
+    "path": "src/native/inference/AttuneEmbed.java",
+    "physical_lines": 154,
+    "repository_path": "src/native/inference/AttuneEmbed.java",
+    "sha256": "020d062ee3c39461f5ac72fced4e7f50cc1aab9313f3e83985f6d2bffc7ec269"
+  },
+  {
+    "bytes": 1130,
+    "language": "java",
+    "path": "src/native/inference/AttuneInferenceTest.java",
+    "physical_lines": 27,
+    "repository_path": "src/native/inference/AttuneInferenceTest.java",
+    "sha256": "473be4d2d010d4a310b0025efa54fc67ed3711aaa09f61bdcc2b51f747afe510"
+  },
+  {
+    "bytes": 761,
+    "language": "starlark",
+    "path": "src/native/inference/BUILD.bazel",
+    "physical_lines": 28,
+    "repository_path": "src/native/inference/BUILD.bazel",
+    "sha256": "716ef8efa6cf88101ec8a979c5879626a9d4846ff534ba43df830daf72a30537"
+  },
+  {
+    "bytes": 2448,
+    "language": "java",
+    "path": "src/native/inference/OpenRouter.java",
+    "physical_lines": 64,
+    "repository_path": "src/native/inference/OpenRouter.java",
+    "sha256": "e9c1a89c90ec0361ea7f2fa33af733224c8458970ffec744127c7019860ec22d"
+  },
+  {
+    "bytes": 13312,
+    "language": "java",
+    "path": "src/native/parquet/AttuneParquet.java",
+    "physical_lines": 259,
+    "repository_path": "src/native/parquet/AttuneParquet.java",
+    "sha256": "924b41b6a17a414bbeef87440e3924764a8a0e6b47c4667b8a1b4cf91d811e76"
+  },
+  {
+    "bytes": 2133,
+    "language": "java",
+    "path": "src/native/parquet/AttuneParquetTest.java",
+    "physical_lines": 40,
+    "repository_path": "src/native/parquet/AttuneParquetTest.java",
+    "sha256": "20e3f149fd97974370bd3046c49fe7fb84e6fea419b5e6357a9bc81f41b0ea2a"
+  },
+  {
+    "bytes": 977,
+    "language": "starlark",
+    "path": "src/native/parquet/BUILD.bazel",
+    "physical_lines": 30,
+    "repository_path": "src/native/parquet/BUILD.bazel",
+    "sha256": "7a4f51192c6e73677883897bf077f70585539bd58b3c8a9437528ed940bd0195"
+  },
+  {
+    "bytes": 2216,
+    "language": "starlark",
+    "path": "test/Applications/BUILD.bazel",
+    "physical_lines": 79,
+    "repository_path": "test/Applications/BUILD.bazel",
+    "sha256": "6e72e76a442846a402376d016704de664ac7270a9af07a0a65d56c7135152d30"
+  },
+  {
+    "bytes": 681,
+    "language": "flix",
+    "path": "test/Applications/InferenceBoundaryTest.flix",
+    "physical_lines": 18,
+    "repository_path": "test/Applications/InferenceBoundaryTest.flix",
+    "sha256": "c66ddd2607749ccf54581c549339a376d197a40d476ad4d1684d594d1d6c2781"
+  },
+  {
+    "bytes": 2868,
+    "language": "flix",
+    "path": "test/Applications/LocalizationTest.flix",
+    "physical_lines": 68,
+    "repository_path": "test/Applications/LocalizationTest.flix",
+    "sha256": "90c0e173df877848acda4956f5b3b019013560a947e808381cccfb55df9a6259"
+  },
+  {
+    "bytes": 1761,
+    "language": "flix",
+    "path": "test/Applications/PopulationTableTest.flix",
+    "physical_lines": 41,
+    "repository_path": "test/Applications/PopulationTableTest.flix",
+    "sha256": "f61bbcb9f3ae55a51d604526bb8a78f2f43ba024e8adb3255aad09014d19c340"
+  },
+  {
+    "bytes": 2669,
+    "language": "starlark",
+    "path": "test/BUILD.bazel",
+    "physical_lines": 86,
+    "repository_path": "test/BUILD.bazel",
+    "sha256": "738fec7288ad83686592d87a0611b22d60f99d5f069fa60fd1ab1b10f7c227ee"
+  },
+  {
+    "bytes": 4809,
+    "language": "flix",
+    "path": "test/Engine/AtlasSignatureTableTest.flix",
+    "physical_lines": 104,
+    "repository_path": "test/Engine/AtlasSignatureTableTest.flix",
+    "sha256": "bc1695941cbea9e911b89e975cf5ed177e01f4dea30ff6d6289806362e78c772"
+  },
+  {
+    "bytes": 4398,
+    "language": "flix",
+    "path": "test/Engine/AtlasTest.flix",
+    "physical_lines": 101,
+    "repository_path": "test/Engine/AtlasTest.flix",
+    "sha256": "8df51e3e11ec666fd655dfe159d65f1bfbd28ecf30313eac67c7e230c524d3e0"
+  },
+  {
+    "bytes": 2330,
+    "language": "starlark",
+    "path": "test/Engine/BUILD.bazel",
+    "physical_lines": 84,
+    "repository_path": "test/Engine/BUILD.bazel",
+    "sha256": "8a4b08fe7c3424d3b77fd97458b39c083ae2ac3828d3357cc37bc6fcbe5d6848"
+  },
+  {
+    "bytes": 9304,
+    "language": "flix",
+    "path": "test/Engine/ParityTest.flix",
+    "physical_lines": 206,
+    "repository_path": "test/Engine/ParityTest.flix",
+    "sha256": "24e7efce3f1368e9952a2fdfda9adea78b6b11ecfcab6a3fb45e49fbea250923"
+  },
+  {
+    "bytes": 1326,
+    "language": "starlark",
+    "path": "test/Kernel/BUILD.bazel",
+    "physical_lines": 51,
+    "repository_path": "test/Kernel/BUILD.bazel",
+    "sha256": "0e3f2d11760d53848212ca6835becb1a5d26cae0fccf2384f48edda350b1e809"
+  },
+  {
+    "bytes": 269,
+    "language": "flix",
+    "path": "test/Kernel/IdentityTest.flix",
+    "physical_lines": 7,
+    "repository_path": "test/Kernel/IdentityTest.flix",
+    "sha256": "1c297a829f4257960f3c29f9002e48399e101e3d2318d9f282648ca4c06a565e"
+  },
+  {
+    "bytes": 1185,
+    "language": "flix",
+    "path": "test/Kernel/ScientificTableTest.flix",
+    "physical_lines": 17,
+    "repository_path": "test/Kernel/ScientificTableTest.flix",
+    "sha256": "fc8e8a37ea727913d3bd1d8c9a82cd350d13a5d741bffbc5b503643f7558de82"
+  },
+  {
+    "bytes": 18,
+    "language": "flix",
+    "path": "test/Repository.flix",
+    "physical_lines": 1,
+    "repository_path": "test/Repository.flix",
+    "sha256": "2eebfeaa923e3e798a305e28a78d8d2fa5532ad8db4f2de2645b52323d75b708"
+  },
+  {
+    "bytes": 933,
+    "language": "flix",
+    "path": "test/TestWorlds.flix",
+    "physical_lines": 23,
+    "repository_path": "test/TestWorlds.flix",
+    "sha256": "56c7163a7155e77d735bb8763f281b26daa865d7cf00e514cd346047353fff07"
+  },
+  {
+    "bytes": 2173,
+    "language": "starlark",
+    "path": "test/World/BUILD.bazel",
+    "physical_lines": 89,
+    "repository_path": "test/World/BUILD.bazel",
+    "sha256": "252cc25946ef74ad5a37b88d977275543f87295e196b170af10d462e266e4161"
+  },
+  {
+    "bytes": 8552,
+    "language": "flix",
+    "path": "test/World/GritAcquisitionTest.flix",
+    "physical_lines": 170,
+    "repository_path": "test/World/GritAcquisitionTest.flix",
+    "sha256": "751bec2f0f9e5582c4adae70337d3e7c790f29d713e60e0fab5d16d1070532b7"
+  },
+  {
+    "bytes": 1971,
+    "language": "flix",
+    "path": "test/World/RepositoryAdmissionTest.flix",
+    "physical_lines": 47,
+    "repository_path": "test/World/RepositoryAdmissionTest.flix",
+    "sha256": "e28816d7a2de24dc5e4aeb28aaf082ddb811834f24639bd1d06b4d4bbd4be30c"
+  },
+  {
+    "bytes": 3835,
+    "language": "flix",
+    "path": "test/World/RepositoryTableTest.flix",
+    "physical_lines": 87,
+    "repository_path": "test/World/RepositoryTableTest.flix",
+    "sha256": "170ace1ceac50a3ff6921a7ea85b253755e87f635dd27092eedc9564e06c73b8"
+  }
+]

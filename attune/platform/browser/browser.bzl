@@ -14,7 +14,7 @@ def _flix_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".jar")
     args = ctx.actions.args()
     args.add(out.path)
-    args.add_joined(jars, join_with = ":")
+    args.add(":".join([jar.path for jar in jars.to_list()]))
     args.add_all(ctx.files.srcs)
     ctx.actions.run(
         executable = ctx.executable._compiler,

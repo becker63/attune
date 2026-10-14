@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 4942,
+    "language": "flix",
+    "path": "test/embedding/EmbeddingLaw.flix",
+    "physical_lines": 98,
+    "repository_path": "attune/test/embedding/EmbeddingLaw.flix",
+    "sha256": "436712f64d203c8c75878fb4fb23330a8c30ed6c732af22dac661359a96aa14d"
+  },
+  "program": "defines",
+  "root_revision": "3d1ad9014f175f03e3b13fbe70872962779b7065",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

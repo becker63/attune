@@ -1,0 +1,3526 @@
+diff --git a/experiments/atlas-parallelism/AcquireMain.flix b/experiments/atlas-parallelism/AcquireMain.flix
+new file mode 100644
+index 0000000000..42ccfbbb56
+--- /dev/null
++++ b/experiments/atlas-parallelism/AcquireMain.flix
+@@ -0,0 +1,3 @@
++/// Acquisition executable surface; Starlark or the seam passes the frozen
++/// worktree and artifact paths as JVM properties.
++def main(): Unit \ IO = AcquisitionDriver.execute()
+diff --git a/experiments/atlas-parallelism/AcquisitionDriver.flix b/experiments/atlas-parallelism/AcquisitionDriver.flix
+new file mode 100644
+index 0000000000..edd2240018
+--- /dev/null
++++ b/experiments/atlas-parallelism/AcquisitionDriver.flix
+@@ -0,0 +1,108 @@
++/// The v2 acquisition seam (PREREGISTRATION.md "AMENDMENT — v2 acquisition"):
++/// runs the repository's own acquisition path — the frozen native Grit engine,
++/// the packaged `.grit` frontends, the one `Repository.Grit.Fact` protocol and
++/// ordinary admission — over one frozen revision's isolated worktree, and
++/// writes the typed artifacts the measurement graph consumes.
++///
++/// This is the only step that needs the native engine. Everything downstream
++/// (re-admission -> Repository.World -> Atlas) is pure and hermetic over the
++/// committed artifacts written here.
++mod AcquisitionDriver {
++    import java.nio.file.{Files, Paths}
++    use Repository.Grit.Program
++
++    pub def execute(): Unit \ IO = match Experiment.property("attune.command") {
++        case "acquire" => acquire()
++        case "summary" => summarize()
++        case command => bug!("unknown acquisition command: ${command}")
++    }
++
++    /// Evidence report over one committed acquisition artifact pair: the
++    /// admitted languages, the per-program fact counts, and the exact Grit fact
++    /// kinds. Printed, never stored: the artifacts themselves are the evidence.
++    def summarize(): Unit \ IO = {
++        let sources = AcquisitionFacts.readSources(Experiment.property("attune.sources"));
++        let facts = AcquisitionFacts.readFacts(Experiment.property("attune.facts"));
++        let world = Experiment.require(AcquisitionFacts.world(sources, facts));
++        println("SOURCES files=${Vector.length(sources)}");
++        Vector.foldLeft((_, entry) -> match entry {
++            case (language, count) => println("SOURCE_LANGUAGE ${language} files=${count}")
++        }, (), histogram(Vector.map(source -> source#language, sources)));
++        println("FACTS total=${Vector.length(facts)}");
++        Vector.foldLeft((_, entry) -> match entry {
++            case (program, count) => println("FACT_PROGRAM ${program} facts=${count} files=${Vector.length(distinctPaths(facts, program))}")
++        }, (), histogram(Vector.map(fact -> fact#program, facts)));
++        Vector.foldLeft((_, entry) -> match entry {
++            case (key, count) => println("FACT_KIND ${key} facts=${count}")
++        }, (), histogram(Vector.map(fact -> "${fact#language} ${fact#program} ${fact#kind}", facts)));
++        println("WORLD files=${Vector.length(world#files)} symbols=${Vector.length(world#symbols)} " +
++            "defines=${Set.size(world#defines)} imports=${Set.size(world#imports)} calls=${Set.size(world#calls)} " +
++            "unresolved_imports=${world#unresolvedImports} unresolved_calls=${world#unresolvedCalls}")
++    }
++
++    def distinctPaths(facts: Vector[AcquisitionFacts.FactRow], program: String): Vector[String] =
++        Vector.filter(fact -> fact#program == program, facts) |> Vector.map(fact -> fact#path)
++            |> Vector.toSet |> Set.toVector
++
++    def histogram(values: Vector[String]): Vector[(String, Int32)] =
++        Map.toVector(Vector.foldLeft((counts, value) ->
++            Map.insert(value, Map.getWithDefault(value, 0, counts) + 1, counts), Map.empty(), values))
++            |> Vector.sortBy(match (key, _) -> key)
++
++    /// `attune.root` (frozen worktree), `attune.manifest` (committed admitted
++    /// file list), `attune.sources` and `attune.facts` (output Parquet).
++    def acquire(): Unit \ IO = {
++        let root = Experiment.property("attune.root");
++        let paths = lines(Experiment.property("attune.manifest"));
++        let acquired = Vector.map(path -> acquireSource(root, path), paths);
++        let sources = Vector.map(match (source, _) -> source, acquired);
++        let facts = Vector.flatten(Vector.map(match (_, rows) -> rows, acquired));
++        let world = Experiment.require(AcquisitionFacts.world(sources, facts));
++        AcquisitionFacts.writeSources(Experiment.property("attune.sources"), sources);
++        AcquisitionFacts.writeFacts(Experiment.property("attune.facts"), facts);
++        println("ATLAS_PARALLELISM_ACQUIRE files=${Vector.length(sources)} facts=${Vector.length(facts)} " +
++            "symbols=${Vector.length(world#symbols)} defines=${Set.size(world#defines)} " +
++            "imports=${Set.size(world#imports)} calls=${Set.size(world#calls)} " +
++            "unresolved_imports=${world#unresolvedImports} unresolved_calls=${world#unresolvedCalls}")
++    }
++
++    def acquireSource(root: String, path: String): (AcquisitionFacts.Source, Vector[AcquisitionFacts.FactRow]) \ IO = {
++        let content = Files.readString(Paths.get(root + "/" + path));
++        let source = {
++            path = path,
++            sha256 = ScientificIdentity.sha256(content),
++            bytes = Vector.length(String.toBytes(content)),
++            language = languageName(path)
++        };
++        (source, Vector.flatMap(program -> factsOf(source, content, program), programs()))
++    }
++
++    def programs(): Vector[Program] = Vector#{Program.Defines, Program.Imports, Program.Calls}
++
++    /// One relation program over one source, through the real engine and the
++    /// one fact protocol. The engine's language string and the program resource
++    /// name both come from `Repository.Grit`, never from a second table.
++    def factsOf(source: AcquisitionFacts.Source, content: String, program: Program): Vector[AcquisitionFacts.FactRow] \ IO =
++        match Repository.Grit.language(source#path) {
++            case None => Vector.empty()
++            case Some(language) =>
++                let wire = Repository.Acquire.evaluate(language, program, source#path, content);
++                Repository.Grit.facts(source#path, content, wire)
++                    |> Result.mapErr(error -> ToString.toString(error))
++                    |> Experiment.require
++                    |> Vector.map(fact -> {
++                        path = source#path, sourceSha256 = source#sha256, language = source#language,
++                        program = Repository.Grit.programName(program), kind = fact#kind,
++                        startByte = fact#startByte, endByte = fact#endByte, value = fact#value
++                    })
++        }
++
++    def languageName(path: String): String = match Repository.Grit.language(path) {
++        case None => "none"
++        case Some(language) => Repository.Grit.name(language)
++    }
++
++    def lines(path: String): Vector[String] \ IO =
++        String.lines(Files.readString(Paths.get(path))) |> List.toVector
++            |> Vector.filter(line -> String.length(String.trim(line)) > 0)
++}
+diff --git a/experiments/atlas-parallelism/AcquisitionFacts.flix b/experiments/atlas-parallelism/AcquisitionFacts.flix
+new file mode 100644
+index 0000000000..547bcd415a
+--- /dev/null
++++ b/experiments/atlas-parallelism/AcquisitionFacts.flix
+@@ -0,0 +1,157 @@
++/// The v2 acquisition artifacts (PREREGISTRATION.md "AMENDMENT — v2
++/// acquisition"): the two typed tables that carry one frozen revision's
++/// Grit-acquired observations into the measurement graph.
++///
++/// `sources` is the exact inclusion record of a revision (path, sha256, byte
++/// length, language). `facts` is the Grit evidence (one row per emitted
++/// `Repository.Grit.Fact`, per file and relation program). The measurement
++/// graph re-admits those facts through ordinary `Repository.admit`, so what it
++/// measures is the canonical admitted basis — never a second experiment graph.
++mod AcquisitionFacts {
++    use ScientificTable.Value
++    use ScientificTable.Columns.{text, int32}
++
++    /// One admitted source file of a frozen revision.
++    pub type alias Source = {
++        path     = String,
++        sha256   = String,
++        bytes    = Int32,
++        language = String
++    }
++
++    /// One Grit fact, tied to the exact source bytes it was acquired from.
++    pub type alias FactRow = {
++        path         = String,
++        sourceSha256 = String,
++        language     = String,
++        program      = String,
++        kind         = String,
++        startByte    = Int32,
++        endByte      = Int32,
++        value        = String
++    }
++
++    pub def sourcesSchema(): ScientificTable.Schema = {
++        format = "attuneflix-grit-sources-v2",
++        columns = Vector#{text("path"), text("sha256"), int32("byte_length"), text("language")}
++    }
++
++    pub def factsSchema(): ScientificTable.Schema = {
++        format = "attuneflix-grit-facts-v2",
++        columns = Vector#{
++            text("path"), text("source_sha256"), text("language"), text("program"),
++            text("kind"), int32("start_byte"), int32("end_byte"), text("value")
++        }
++    }
++
++    pub def sourceRows(sources: Vector[Source]): Vector[ScientificTable.Row] =
++        Vector.map(source -> Map#{
++            "path" => Value.Text(source#path), "sha256" => Value.Text(source#sha256),
++            "byte_length" => Value.Int32(source#bytes), "language" => Value.Text(source#language)
++        }, sources)
++
++    pub def factRows(facts: Vector[FactRow]): Vector[ScientificTable.Row] =
++        Vector.map(fact -> Map#{
++            "path" => Value.Text(fact#path), "source_sha256" => Value.Text(fact#sourceSha256),
++            "language" => Value.Text(fact#language), "program" => Value.Text(fact#program),
++            "kind" => Value.Text(fact#kind), "start_byte" => Value.Int32(fact#startByte),
++            "end_byte" => Value.Int32(fact#endByte), "value" => Value.Text(fact#value)
++        }, facts)
++
++    pub def writeSources(path: String, sources: Vector[Source]): Unit \ IO = {
++        let _ = ScientificTable.write(path, sourcesSchema(), sourceRows(sources));
++        ()
++    }
++
++    pub def writeFacts(path: String, facts: Vector[FactRow]): Unit \ IO = {
++        let _ = ScientificTable.write(path, factsSchema(), factRows(facts));
++        ()
++    }
++
++    pub def readSources(path: String): Vector[Source] \ IO =
++        Vector.traverse(sourceOf, ScientificTable.read(path, sourcesSchema())) |> Experiment.require
++
++    pub def readFacts(path: String): Vector[FactRow] \ IO =
++        Vector.traverse(factOf, ScientificTable.read(path, factsSchema())) |> Experiment.require
++
++    def sourceOf(row: ScientificTable.Row): Result[String, Source] = forM (
++        path <- ScientificTable.text(row, "path");
++        sha256 <- ScientificTable.text(row, "sha256");
++        bytes <- ScientificTable.int32(row, "byte_length");
++        language <- ScientificTable.text(row, "language")
++    ) yield {path = path, sha256 = sha256, bytes = bytes, language = language}
++
++    def factOf(row: ScientificTable.Row): Result[String, FactRow] = forM (
++        path <- ScientificTable.text(row, "path");
++        sourceSha256 <- ScientificTable.text(row, "source_sha256");
++        language <- ScientificTable.text(row, "language");
++        program <- ScientificTable.text(row, "program");
++        kind <- ScientificTable.text(row, "kind");
++        startByte <- ScientificTable.int32(row, "start_byte");
++        endByte <- ScientificTable.int32(row, "end_byte");
++        value <- ScientificTable.text(row, "value")
++    ) yield {
++        path = path, sourceSha256 = sourceSha256, language = language, program = program,
++        kind = kind, startByte = startByte, endByte = endByte, value = value
++    }
++
++    /// Re-admit one revision's Grit evidence as the canonical typed basis.
++    /// Every fact must name an admitted source, carry that source's exact hash
++    /// and language, and lie inside the source's byte range: the evidence and
++    /// the inclusion record cannot drift apart silently.
++    pub def world(sources: Vector[Source], facts: Vector[FactRow]): Result[String, Repository.World] = {
++        let byPath = Vector.map(source -> (source#path, source), sources) |> Vector.toMap;
++        forM (
++            _ <- requireSorted(sources);
++            _ <- Vector.traverse(row -> check(byPath, row), facts) |> Result.map(_ -> ());
++            definitions <- factsFor(byPath, "defines", facts);
++            imports <- factsFor(byPath, "imports", facts);
++            calls <- factsFor(byPath, "calls", facts);
++            world <- Repository.admit(
++                Vector.map(source -> {path = source#path, content = ""}, sources),
++                definitions, imports, calls) |> Result.mapErr(error -> ToString.toString(error))
++        ) yield world
++    }
++
++    /// The admitted source paths are the nominal FileId order: strictly
++    /// increasing, unique, and therefore stable across environments.
++    def requireSorted(sources: Vector[Source]): Result[String, Unit] = {
++        let start: (Option[String], Result[String, Unit]) = (None, Ok(()));
++        let (_, checked) = Vector.foldLeft((state, source) -> {
++            let (previous, result) = state;
++            match result {
++                case Err(error) => (previous, Err(error))
++                case Ok(()) => match previous {
++                    case None => (Some(source#path), Ok(()))
++                    case Some(last) => if (last < source#path) (Some(source#path), Ok(()))
++                        else (previous, Err("admitted sources must be sorted and unique: ${source#path}"))
++                }
++            }
++        }, start, sources);
++        checked
++    }
++
++    def check(byPath: Map[String, Source], row: FactRow): Result[String, Unit] =
++        match Map.get(row#path, byPath) {
++            case None => Err("Grit fact names an unadmitted path: ${row#path}")
++            case Some(source) =>
++                if (row#sourceSha256 != source#sha256) Err("source hash mismatch: ${row#path}")
++                else if (row#language != source#language) Err("language mismatch: ${row#path}")
++                else if (row#startByte < 0 or row#endByte < row#startByte or row#endByte > source#bytes)
++                    Err("Grit fact range outside its source: ${row#path}")
++                else Ok(())
++        }
++
++    def factsFor(byPath: Map[String, Source], program: String, facts: Vector[FactRow]): Result[String, Vector[Repository.Grit.Fact]] =
++        Vector.traverse(row -> match Map.get(row#path, byPath) {
++            case None => Err("Grit fact names an unadmitted path: ${row#path}")
++            case Some(_) => Ok({
++                kind = row#kind, path = row#path,
++                startByte = row#startByte, endByte = row#endByte, value = row#value
++            })
++        }, Vector.filter(row -> row#program == program, facts))
++
++    /// The Grit acquisition identity recorded in every v2 world.
++    pub def gritIdentity(): String =
++        "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
++}
+diff --git a/experiments/atlas-parallelism/BUILD.bazel b/experiments/atlas-parallelism/BUILD.bazel
+index e2561953e3..7c175e2c68 100644
+--- a/experiments/atlas-parallelism/BUILD.bazel
++++ b/experiments/atlas-parallelism/BUILD.bazel
+@@ -1,10 +1,52 @@
+-load("//build:flix.bzl", "flix_fatjar")
++load("//build:flix.bzl", "checked_test", "flix_check", "flix_fatjar")
++load(":parallelism.bzl", "attune_parallelism_grit_revision", "attune_parallelism_revision")
++
++# The v2 acquisition seam (PREREGISTRATION.md "AMENDMENT — v2 acquisition"):
++# the repository's own Grit acquisition path over one frozen revision's
++# isolated worktree. Built by Bazel, run over the worktrees by
++# `v2_extract.sh`; its typed output is what the measurement graph reads.
++flix_fatjar(
++    name = "acquire_flix",
++    srcs = [
++        "AcquireMain.flix",
++        "AcquisitionDriver.flix",
++        "AcquisitionFacts.flix",
++        "//src:Experiment.flix",
++        "//src:Repository.flix",
++        "//src:Repository/Acquire.flix",
++        "//src:Repository/Grit.flix",
++        "//src:Repository/Structure.flix",
++        "//src:ScientificIdentity.flix",
++        "//src:ScientificTable.flix",
++        "//src:ScientificTable/Columns.flix",
++    ],
++    java_deps = [
++        "//src/native/grit:attune_grit",
++        "//src/native/identity:attune_identity",
++        "//src/native/parquet:attune_parquet",
++    ],
++    threads = 2,
++)
++
++java_binary(
++    name = "acquire",
++    data = ["//src/native/grit:attune_grit_abi"],
++    jvm_flags = [
++        "--add-opens=java.base/java.nio=ALL-UNNAMED",
++        "--enable-native-access=ALL-UNNAMED",
++        "-Djava.library.path=$${JAVA_RUNFILES}/_main/src/native/grit",
++    ],
++    main_class = "Main",
++    runtime_deps = [":acquire_flix"],
++    visibility = ["//visibility:public"],
++)
+ 
+ # The self-signature parallelism instrument (PREREGISTRATION.md). Compiles
+ # against the permanent Atlas/Repository/ScientificTable machinery only.
+ flix_fatjar(
+     name = "parallelism_flix",
+     srcs = [
++        "AcquisitionFacts.flix",
+         "Main.flix",
+         "Parallelism.flix",
+         "//src:Atlas.flix",
+@@ -39,3 +81,232 @@
+     runtime_deps = [":parallelism_flix"],
+     visibility = ["//visibility:public"],
+ )
++
++# The two measured revisions (PREREGISTRATION.md): the mission's recorded
++# starting revision, evaluated from an isolated git worktree, and the cleaned
++# revision (the sealed instrument change itself; the measurement artifacts add
++# no .flix files). Each expansion is one fact admission, ten independent
++# per-region signature shards, and the region-pairs table.
++attune_parallelism_revision(
++    name = "baseline",
++    files = "extracted/baseline/files.txt",
++    modules = "extracted/baseline/modules.txt",
++    revision = "bcfc126db7b7c7f535353ccc8afca44465903571",
++    tool = ":parallelism",
++    uses = "extracted/baseline/uses.txt",
++)
++
++attune_parallelism_revision(
++    name = "after",
++    files = "extracted/after/files.txt",
++    modules = "extracted/after/modules.txt",
++    revision = "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
++    tool = ":parallelism",
++    uses = "extracted/after/uses.txt",
++)
++
++filegroup(
++    name = "baseline_metadata",
++    srcs = [":baseline_world"],
++    output_group = "metadata",
++)
++
++filegroup(
++    name = "baseline_entities",
++    srcs = [":baseline_world"],
++    output_group = "entities",
++)
++
++filegroup(
++    name = "baseline_relations",
++    srcs = [":baseline_world"],
++    output_group = "relations",
++)
++
++filegroup(
++    name = "after_metadata",
++    srcs = [":after_world"],
++    output_group = "metadata",
++)
++
++filegroup(
++    name = "after_entities",
++    srcs = [":after_world"],
++    output_group = "entities",
++)
++
++filegroup(
++    name = "after_relations",
++    srcs = [":after_world"],
++    output_group = "relations",
++)
++
++genrule(
++    name = "compare",
++    srcs = [
++        ":baseline_metadata",
++        ":baseline_entities",
++        ":baseline_relations",
++        ":after_metadata",
++        ":after_entities",
++        ":after_relations",
++    ],
++    outs = [
++        "compare.txt",
++        "baseline_pairs.parquet",
++        "after_pairs.parquet",
++    ],
++    cmd = ("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin " +
++        "$(location :parallelism)" +
++        " --jvm_flag=-Dattune.command=compare" +
++        " --jvm_flag=-Dattune.baseline_metadata=$(location :baseline_metadata)" +
++        " --jvm_flag=-Dattune.baseline_entities=$(location :baseline_entities)" +
++        " --jvm_flag=-Dattune.baseline_relations=$(location :baseline_relations)" +
++        " --jvm_flag=-Dattune.after_metadata=$(location :after_metadata)" +
++        " --jvm_flag=-Dattune.after_entities=$(location :after_entities)" +
++        " --jvm_flag=-Dattune.after_relations=$(location :after_relations)" +
++        " --jvm_flag=-Dattune.baseline_pairs=$(@D)/baseline_pairs.parquet" +
++        " --jvm_flag=-Dattune.after_pairs=$(@D)/after_pairs.parquet" +
++        " > $(@D)/compare.txt"),
++    tools = [":parallelism"],
++)
++
++# v2 (PREREGISTRATION.md "AMENDMENT — v2 acquisition"): the two frozen
++# revisions are Grit-acquired in isolated worktrees by `:acquire` +
++# `v2_extract.sh`; the committed typed artifacts under `v2/` are re-admitted
++# here through ordinary Repository admission (no source text is parsed in the
++# graph), and the same per-region Atlas shards run over both v2 worlds.
++attune_parallelism_grit_revision(
++    name = "v2_baseline",
++    facts = "v2/grit/baseline.facts.parquet",
++    revision = "bcfc126db7b7c7f535353ccc8afca44465903571",
++    sources = "v2/sources/baseline.sources.parquet",
++    tool = ":parallelism",
++)
++
++attune_parallelism_grit_revision(
++    name = "v2_cleaned",
++    facts = "v2/grit/cleaned.facts.parquet",
++    revision = "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
++    sources = "v2/sources/cleaned.sources.parquet",
++    tool = ":parallelism",
++)
++
++filegroup(
++    name = "v2_baseline_metadata",
++    srcs = [":v2_baseline_world"],
++    output_group = "metadata",
++)
++
++filegroup(
++    name = "v2_baseline_entities",
++    srcs = [":v2_baseline_world"],
++    output_group = "entities",
++)
++
++filegroup(
++    name = "v2_baseline_relations",
++    srcs = [":v2_baseline_world"],
++    output_group = "relations",
++)
++
++filegroup(
++    name = "v2_cleaned_metadata",
++    srcs = [":v2_cleaned_world"],
++    output_group = "metadata",
++)
++
++filegroup(
++    name = "v2_cleaned_entities",
++    srcs = [":v2_cleaned_world"],
++    output_group = "entities",
++)
++
++filegroup(
++    name = "v2_cleaned_relations",
++    srcs = [":v2_cleaned_world"],
++    output_group = "relations",
++)
++
++# The four-row table of record: baseline/cleaned x v1 lexical proxy / v2 Grit.
++genrule(
++    name = "four_rows",
++    srcs = [
++        ":baseline_metadata",
++        ":baseline_entities",
++        ":baseline_relations",
++        ":after_metadata",
++        ":after_entities",
++        ":after_relations",
++        ":v2_baseline_metadata",
++        ":v2_baseline_entities",
++        ":v2_baseline_relations",
++        ":v2_cleaned_metadata",
++        ":v2_cleaned_entities",
++        ":v2_cleaned_relations",
++    ],
++    outs = [
++        "four_rows.txt",
++        "four_rows.parquet",
++        "four_pairs.parquet",
++    ],
++    cmd = ("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin " +
++        "$(location :parallelism)" +
++        " --jvm_flag=-Dattune.command=four_rows" +
++        " --jvm_flag=-Dattune.rows.count=4" +
++        " --jvm_flag=-Dattune.rows.0.row=baseline_v1" +
++        " --jvm_flag=-Dattune.rows.0.metadata=$(location :baseline_metadata)" +
++        " --jvm_flag=-Dattune.rows.0.entities=$(location :baseline_entities)" +
++        " --jvm_flag=-Dattune.rows.0.relations=$(location :baseline_relations)" +
++        " --jvm_flag=-Dattune.rows.1.row=cleaned_v1" +
++        " --jvm_flag=-Dattune.rows.1.metadata=$(location :after_metadata)" +
++        " --jvm_flag=-Dattune.rows.1.entities=$(location :after_entities)" +
++        " --jvm_flag=-Dattune.rows.1.relations=$(location :after_relations)" +
++        " --jvm_flag=-Dattune.rows.2.row=baseline_v2" +
++        " --jvm_flag=-Dattune.rows.2.metadata=$(location :v2_baseline_metadata)" +
++        " --jvm_flag=-Dattune.rows.2.entities=$(location :v2_baseline_entities)" +
++        " --jvm_flag=-Dattune.rows.2.relations=$(location :v2_baseline_relations)" +
++        " --jvm_flag=-Dattune.rows.3.row=cleaned_v2" +
++        " --jvm_flag=-Dattune.rows.3.metadata=$(location :v2_cleaned_metadata)" +
++        " --jvm_flag=-Dattune.rows.3.entities=$(location :v2_cleaned_entities)" +
++        " --jvm_flag=-Dattune.rows.3.relations=$(location :v2_cleaned_relations)" +
++        " --jvm_flag=-Dattune.output_rows=$(@D)/four_rows.parquet" +
++        " --jvm_flag=-Dattune.output_pairs=$(@D)/four_pairs.parquet" +
++        " > $(@D)/four_rows.txt"),
++    tools = [":parallelism"],
++)
++
++# Provenance: the reported neighborhoods must come from actual Atlas evaluation
++# over the admitted world (VAL-PARA-010(c)). Wired into the authoritative suite.
++flix_check(
++    name = "parallelism_provenance_check",
++    srcs = [
++        "AcquisitionFacts.flix",
++        "Parallelism.flix",
++        "Provenance.flix",
++        "//src:Atlas.flix",
++        "//src:Atlas/Signature.flix",
++        "//src:Atlas/Signature/Table.flix",
++        "//src:Experiment.flix",
++        "//src:Radii.flix",
++        "//src:Repository.flix",
++        "//src:Repository/Grit.flix",
++        "//src:Repository/Physical.flix",
++        "//src:Repository/Structure.flix",
++        "//src:Repository/Table.flix",
++        "//src:ScientificIdentity.flix",
++        "//src:ScientificTable.flix",
++        "//src:ScientificTable/Columns.flix",
++    ],
++    command = "test",
++    java_deps = [
++        "//src/native/identity:attune_identity",
++        "//src/native/parquet:attune_parquet",
++    ],
++    threads = 2,
++)
++
++checked_test(
++    name = "parallelism_provenance_test",
++    check = ":parallelism_provenance_check",
++)
+diff --git a/experiments/atlas-parallelism/PREREGISTRATION.md b/experiments/atlas-parallelism/PREREGISTRATION.md
+index 98d3b0e3d0..10569a778f 100644
+--- a/experiments/atlas-parallelism/PREREGISTRATION.md
++++ b/experiments/atlas-parallelism/PREREGISTRATION.md
+@@ -17,6 +17,12 @@
+ - This preregistration revision: the jj change containing exactly this file
+   (change id and commit id recorded in `REPORT.md`).
+ 
++**Amended 2026-09-25 (v2, pre-measurement):** the section
++"AMENDMENT — v2 acquisition" at the end of this file changes the *acquisition
++system* only (v1 is the lexical/proxy measurement; v2 is Grit-acquired). The
++metric set M1-M10, the region partition, the program family, and the two frozen
++revisions are unchanged, and v1's measured numbers are preserved exactly.
++
+ ## Hypotheses
+ 
+ **Primary hypothesis.** The cleanup reduces the repository's *coordination
+@@ -244,3 +250,136 @@
+ `Atlas`, `Repository`, `Repository.Physical`, `Repository.Table`,
+ `ScientificTable`, and `ScientificIdentity`; no new graph-analysis framework;
+ no permanent `src/` inflation.
++
++---
++
++# AMENDMENT — v2 acquisition: real Grit, actual Atlas neighborhoods
++
++Status: **committed BEFORE the first v2 measurement** (steering 2026-09-25,
++`library/experiment-genuineness-v2.md` §11 + `library/grit-language-integration.md`
++§8-11). This amendment is an ancestor of every v2 measurement change in jj
++history; no v2 number existed when it was committed. It changes the
++**acquisition system** (a steering amendment), not the measured quantity: the
++metric definitions M1-M10, the region partition `attuneflix-regions-v1`, the
++program family, and the two frozen revisions are unchanged, so all four rows
++stay directly comparable.
++
++## Why the acquisition changed (v1 is a proxy, not the self-signature)
++
++The world defined above (`attuneflix-self-admission-v1`) is a deliberately
++reduced **lexical proxy**. `extract_self_facts.sh` reads `.flix` text only: one
++symbol per declared module, use edges from dotted textual prefixes, `calls`
++structurally empty, no Java, no Starlark, no byte ranges. It is useful and it
++stays frozen exactly as measured, but it is NOT the authoritative Atlas
++self-signature of AttuneFlix, and it partially punishes legitimate namespace
++structure (every dotted child path also reaches its parent module name).
++
++The authoritative acquisition is the repository's ONE source frontend: GritQL
++programs under `src/grit/{defines,imports,calls}/{javascript,typescript,java,flix,starlark}.grit`
++executed by the frozen hermetic Grit closure
++(`getgrit/gritql @ c80b3026471b229f41b279c3eb0c162dcdacfdb1`, Flix via the one
++pinned Zed grammar `omarjatoi/tree-sitter-flix @ 78cff149b2e9897456f94844872353b5ee0ca93b`),
++normalizing all five languages into the ONE `Repository.Grit.Fact` protocol and
++ordinary `Repository.admit`. There is no second frontend, no tree-sitter call
++outside Grit, and no experiment-specific graph.
++
++**v1 is preserved exactly** (world, artifacts, numbers, decision): it is
++relabeled "v1 lexical/proxy" and reported as such. Nothing about the v1
++measurement is rewritten or retroactively altered.
++
++## The v2 admitted world (`attuneflix-grit-acquisition-v2`)
++
++Inclusions, exact and identical for both revisions: every tracked file whose
++path the closure's one detection table admits
++(`Repository.Grit.language(path) != None`) — `.flix`, `.java`, `.js`/`.mjs`/
++`.cjs`, `.jsx`, `.ts`/`.mts`/`.cts`, `.tsx`, `.bzl`/`.bazel`/`.star`, and the
++extensionless/`.bazel` Bazel build files (`BUILD`, `BUILD.bazel`, `WORKSPACE`,
++`WORKSPACE.bazel`) — **excluding** the frozen data tree `.attune/**`. The
++resulting admitted list is committed verbatim per revision
++(`v2/sources/<role>.sources.tsv`: path, sha256, byte length, language), which is
++the exact inclusion record (`v2/README.md` documents the exclusions): frozen
++data (`*.parquet`, `.attune/**`), documentation, environment/lock/JSON/TOML
++plumbing, `*.rs` (the narrow native seam; Rust is not an admitted Grit target
++language), `*.grit` (absent at both measured revisions), `.bazelrc` (command
++line configuration, not Starlark).
++
++`calls` and `parents` are real relations in the v2 world (`Repository.admit`
++derives `parents` from the admitted paths); `defines` carries real definition
++byte ranges, so symbol ownership is well defined. JS/TS: no tracked
++`.js/.jsx/.ts/.tsx` exists at either revision, so those frontends contribute no
++facts — recorded, not hidden.
++
++## Acquisition execution (how the v2 facts come to exist)
++
++The two revisions are materialized as isolated `git worktree`s (baseline
++`bcfc126db7b7c7f535353ccc8afca44465903571`, cleaned
++`ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1`; never the live worktree, never
++mutated, never fabricated). The repository's own acquisition path
++(`Repository.Acquire.acquire` over the closure's frozen engine) is built by
++Bazel and run over each worktree; its output is committed as typed Parquet
++(`v2/grit/<role>.facts.parquet`: path, source_sha256, language, program, kind,
++start_byte, end_byte, value) together with the source manifest above. The
++in-graph steps then read the committed facts: ordinary `Repository.admit` ->
++`Repository.World` -> `Repository.Physical` -> `Atlas.evaluate` ->
++neighborhoods -> metrics. Exact reproduction commands are in `v2/README.md`.
++
++## v2 file and region neighborhoods (the measurement path)
++
++Per admitted file `f`: canonical file seed `Atlas.State.Files({f})` -> the
++preregistered family `Atlas.programsFrom(Radii.Domain.File, 2)` -> the ACTUAL
++`Atlas.evaluate` output states -> normalize to files:
++
++- **file states** -> those files directly;
++- **symbol states** -> the owning file through the canonical `DefinedIn`
++  relation (a symbol has exactly one defining file in an admitted world);
++- **location states** -> the File-domain family contains no Location atom, so
++  no location state can occur in this measurement and no mapping is applied.
++  This is documented rather than assumed: `Atlas.compatible(File)` is
++  `{Defines, Imports, ImportedBy}`, none of whose targets is the Location
++  domain.
++
++`N_v2(f)` = the union of those normalized outputs. Region neighborhood
++`N_v2(R) = union(N_v2(f) for f in R over the region's files)`. There is **no
++handwritten BFS/DFS** over Imports/Calls in the v2 metric path: every expansion
++is an `Atlas.evaluate` transition over the admitted world.
++
++## Basis statistics vs Atlas-signature statistics (never conflated)
++
++- **BASIS** (direct admitted-relation statistics, `world#imports`): M3
++  `use_edges`, M4 `cross_region_edge_ratio`, per-region coherence, M8
++  `shared_hotspots`/`hotspot_count`/`max_hotspot_pressure`, M9
++  `independently_testable`, M10 `cross_group_edges_4`/`_8`.
++- **ATLAS** (from actual Atlas output states): M5 `median_file_blast`/`p90`,
++  M6 `max_region_blast` (+ per-region rows), M7 `max_pair_jaccard`,
++  `high_overlap_pairs`, and every region-pair Jaccard.
++- **COUNTS**: M1 `tracked_files`, M2 `tracked_flix_loc` (counted outside the
++  instrument by the mission's verbatim LOC command).
++
++The four-row table labels each metric's class; a BASIS value is never presented
++as an Atlas signature.
++
++## Bazel locality (separate execution/build evidence channel)
++
++`bazel query` over the analyzed graph of each revision — target dependencies,
++test ownership, `srcs` fan-out, independently runnable targets — is recorded as
++a separate channel (`v2/bazel-locality/*.txt`) and reported in its own table,
++compared against the source signature. It supplements and never replaces Grit
++acquisition.
++
++## Provenance (in-graph, mandatory)
++
++The v2 measurement graph depends on the real `//src:Atlas.flix`,
++`//src:Atlas/Signature.flix`, `//src:Repository/Physical.flix` and the real
++admission code. A focused provenance fixture
++(`//experiments/atlas-parallelism:parallelism_provenance_test`, wired into the
++authoritative suite) fails unless the resulting neighborhood changes when the
++Atlas program family or an admitted relation changes. If the v2 result could be
++produced without Atlas, the design is wrong and is corrected, not excused.
++
++## Enshrinement (unchanged rule, re-evaluated on v2)
++
++E1-E5 above are re-evaluated on the **cleaned v2 world**. If they hold
++pronouncedly the oracle is enshrined into the authoritative suite; if they do
++not, no permanently-red test is added and the measured numbers plus the
++threshold analysis are the deliverable (VAL-PARA-007 fallback). Hill-climbing
++stays paused in this mission regardless of the outcome.
+diff --git a/experiments/atlas-parallelism/Parallelism.flix b/experiments/atlas-parallelism/Parallelism.flix
+index 8569c788b4..9723fbd514 100644
+--- a/experiments/atlas-parallelism/Parallelism.flix
++++ b/experiments/atlas-parallelism/Parallelism.flix
+@@ -142,12 +142,19 @@
+     def regionAt(world: Repository.World, id: Repository.Structure.FileId): String =
+         regionOf(fileIdentity(world, id))
+ 
+-    /// The file-space union of every family output from one File seed.
+-    def outputUnion(world: Repository.World, seed: Set[Repository.Structure.FileId]): Set[String] = {
+-        let evaluation = Experiment.require(Atlas.evaluate(world, Atlas.State.Files(seed), family()));
++    /// The file-space union of every output of one Atlas family from one File
++    /// seed. This is the whole neighborhood expansion: every step is one real
++    /// `Atlas.evaluate` transition over the admitted world.
++    pub def expansion(world: Repository.World, seed: Set[Repository.Structure.FileId],
++                      family0: Vector[Atlas.Program]): Set[String] = {
++        let evaluation = Experiment.require(Atlas.evaluate(world, Atlas.State.Files(seed), family0));
+         Vector.foldLeft((acc, output) -> Set.union(acc, members(output, world)), Set.empty(), evaluation#outputs)
+     }
+ 
++    /// The preregistered depth-2 family expansion from one File seed.
++    pub def outputUnion(world: Repository.World, seed: Set[Repository.Structure.FileId]): Set[String] =
++        expansion(world, seed, family())
++
+     /// M5 file blast radius: the output union size from one single-file seed.
+     def blast(world: Repository.World, index: Int32): Int32 =
+         Set.size(outputUnion(world, Set#{Repository.Structure.FileId.FileId(index)}))
+@@ -181,6 +188,31 @@
+         not Vector.exists(match (source, target) ->
+             target == region0 and source != region0 and not testSide(source), edges)
+ 
++    /// M8 basis statistic: for each admitted file, the set of regions whose
++    /// files import it from a different region.
++    pub def pressures(world: Repository.World): Map[Repository.Structure.FileId, Set[String]] =
++        Vector.foldLeft((acc, edge) -> match edge {
++            case (f, g) => {
++                let rf = regionAt(world, f);
++                let rg = regionAt(world, g);
++                if (rf == rg) acc
++                else Map.insert(g, Set.insert(rf, Map.getWithDefault(g, Set.empty(), acc)), acc)
++            }
++        }, Map.empty(), Set.toVector(world#imports))
++
++    /// The file that attains M7's maximum pair Jaccard, as a stable name.
++    pub def argmaxPair(world: Repository.World): String = {
++        let hoods = Vector.map(region0 -> (region0, neighborhood(world, region0)), nonEmptyRegions(world));
++        let pairs0 = Vector.flatMap(match (a, ha) ->
++            Vector.filterMap(match (b, hb) -> if (a < b) Some((a, b, jaccard(ha, hb))) else None, hoods), hoods);
++        let best = Vector.foldLeft((m, pair) -> match pair {
++            case (_, _, j) => if (j > m) j else m
++        }, 0.0, pairs0);
++        Vector.foldLeft((acc, pair) -> match pair {
++            case (a, b, j) => if (j == best) "${acc}${a}+${b} " else acc
++        }, "", pairs0)
++    }
++
+     /// E1 coherence: internal edges over all edges leaving the region's files.
+     def coherence(edges: Vector[(String, String)], region0: String): Float64 = {
+         let internal = Vector.length(Vector.filter(match (f, g) -> f == region0 and g == region0, edges));
+@@ -247,15 +279,7 @@
+             Vector.filterMap(match (b, hb) -> if (a < b) Some((ha, hb)) else None, hoods), hoods);
+         let jaccards = Vector.map(match (ha, hb) -> jaccard(ha, hb), pairs0);
+         let blasts = Vector.mapWithIndex((index, _) -> blast(world, index), world#files);
+-        let pressures = Vector.foldLeft((acc, edge) -> match edge {
+-            case (f, g) => {
+-                let rf = regionAt(world, f);
+-                let rg = regionAt(world, g);
+-                if (rf == rg) acc
+-                else Map.insert(g, Set.insert(rf, Map.getWithDefault(g, Set.empty(), acc)), acc)
+-            }
+-        }, Map.empty(), Set.toVector(world#imports));
+-        let pressureSizes = Vector.map(match (_, fs) -> Set.size(fs), Map.toVector(pressures));
++        let pressureSizes = Vector.map(match (_, fs) -> Set.size(fs), Map.toVector(pressures(world)));
+         Vector#{
+             ("tracked_files", Int32.toFloat64(Vector.length(world#files))),
+             ("use_edges", Int32.toFloat64(Vector.length(edges))),
+@@ -294,11 +318,14 @@
+     // Commands.
+ 
+     /// The executable surface: facts, region, compare (which also writes each
+-    /// revision's region-pairs table).
++    /// revision's region-pairs table), grit_facts and four_rows (the v2
++    /// Grit-acquired worlds and the four-row v1/v2 comparison).
+     pub def execute(): Unit \ IO = match Experiment.property("attune.command") {
+         case "facts" => writeFacts()
+         case "region" => writeRegion()
+         case "compare" => writeCompare()
++        case "grit_facts" => writeGritFacts()
++        case "four_rows" => writeFourRows()
+         case command => bug!("unknown parallelism command: ${command}")
+     }
+ 
+@@ -391,6 +418,8 @@
+             pairsSchema(), pairsRows(baselineIdentity, baseline));
+         let _ = ScientificTable.write(Experiment.property("attune.after_pairs"),
+             pairsSchema(), pairsRows(afterIdentity, after));
++        // Diagnostic (not a preregistered metric): which pair attains M7's max.
++        println("argmax_pair ${argmaxPair(after)}");
+         println("metric ${baselineIdentity#baseRevision} ${afterIdentity#baseRevision}");
+         Vector.foldLeft((_, pair) -> match pair {
+             case ((name, before), (_, value)) => println("${name} ${before} ${value}")
+@@ -447,6 +476,143 @@
+             case _ => Err("missing ${name} text list")
+         }
+ 
++    // v2: Grit-acquired worlds and the four-row v1/v2 comparison.
++
++    /// Command `grit_facts`: re-admit one revision's committed Grit acquisition
++    /// evidence through ordinary Repository admission and write the standard
++    /// typed world triple. No source text is parsed here.
++    def writeGritFacts(): Unit \ IO = {
++        let revision = Experiment.property("attune.revision");
++        let world = Experiment.require(AcquisitionFacts.world(
++            AcquisitionFacts.readSources(Experiment.property("attune.sources")),
++            AcquisitionFacts.readFacts(Experiment.property("attune.facts"))));
++        let sourceTreeIdentity = "attuneflix-source-tree-v2:" + revision;
++        let factIdentity = Repository.Table.factIdentity(sourceTreeIdentity, AcquisitionFacts.gritIdentity(), world);
++        let snapshotId = Repository.Table.snapshotIdentity("attuneflix", revision, sourceTreeIdentity, factIdentity);
++        let _ = Repository.Table.write(
++            Experiment.property("attune.world_metadata"), Experiment.property("attune.world_entities"),
++            Experiment.property("attune.world_relations"),
++            {repository = "attuneflix", baseRevision = revision, sourceTreeIdentity = sourceTreeIdentity,
++                factIdentity = factIdentity, snapshotId = snapshotId}, world);
++        println("ATLAS_PARALLELISM_GRIT_FACTS revision=${revision} files=${Vector.length(world#files)} " +
++            "symbols=${Vector.length(world#symbols)} imports=${Set.size(world#imports)} calls=${Set.size(world#calls)}")
++    }
++
++    pub type alias FourRow = {
++        label    = String,
++        revision = String,
++        world    = Repository.World
++    }
++
++    def fourRow(index: Int32): FourRow \ IO = {
++        let prefix = "attune.rows.${index}";
++        let (identity, world) = Experiment.require(readWorld(
++            Experiment.property("${prefix}.metadata"), Experiment.property("${prefix}.entities"),
++            Experiment.property("${prefix}.relations")));
++        {label = Experiment.property("${prefix}.row"), revision = identity#baseRevision, world = world}
++    }
++
++    /// Every reported quantity is labeled by its origin: BASIS quantities are
++    /// direct admitted-relation statistics, ATLAS quantities come from actual
++    /// Atlas output states, COUNT quantities are plain counts. They are never
++    /// conflated (PREREGISTRATION.md "AMENDMENT — v2 acquisition").
++    pub def metricClass(name: String): String =
++        if (name == "median_file_blast" or name == "p90_file_blast" or name == "max_region_blast"
++            or name == "max_pair_jaccard" or name == "high_overlap_pairs"
++            or name == "region_neighborhood" or name == "region_blast") "atlas"
++        else if (name == "tracked_files" or name == "tracked_flix_loc" or name == "region_files") "count"
++        else "basis"
++
++    /// Long-form four-row table: one row per (row label, subject, metric).
++    pub def rowTableSchema(): ScientificTable.Schema = {
++        format = "attuneflix-parallelism-rows-v2",
++        columns = Vector#{ScientificTable.Columns.text("row"), ScientificTable.Columns.text("revision"),
++            ScientificTable.Columns.text("subject"), ScientificTable.Columns.text("metric"),
++            ScientificTable.Columns.text("class"), ScientificTable.Columns.float64("value")}
++    }
++
++    pub def fourPairsSchema(): ScientificTable.Schema = {
++        format = "attuneflix-parallelism-four-pairs-v2",
++        columns = Vector#{ScientificTable.Columns.text("row"), ScientificTable.Columns.text("revision"),
++            ScientificTable.Columns.text("region_a"), ScientificTable.Columns.text("region_b"),
++            ScientificTable.Columns.int32("union_size"), ScientificTable.Columns.int32("intersection_size"),
++            ScientificTable.Columns.float64("jaccard")}
++    }
++
++    def longRow(row: FourRow, subject: String, metric: String, value: Float64): ScientificTable.Row = Map#{
++        "row" => Value.Text(row#label), "revision" => Value.Text(row#revision),
++        "subject" => Value.Text(subject), "metric" => Value.Text(metric),
++        "class" => Value.Text(metricClass(metric)), "value" => Value.Float64(value)
++    }
++
++    def worldMetrics(row: FourRow): Vector[ScientificTable.Row] =
++        Vector.map(match (name, value) -> longRow(row, "-", name, value), quantities(row#world))
++
++    def regionMetrics(row: FourRow): Vector[ScientificTable.Row] = {
++        let world = row#world;
++        let edges = edgeRegions(world);
++        Vector.flatMap(region0 -> Vector#{
++            longRow(row, region0, "region_files", Int32.toFloat64(Set.size(regionSeed(world, region0)))),
++            longRow(row, region0, "region_neighborhood", Int32.toFloat64(Set.size(neighborhood(world, region0)))),
++            longRow(row, region0, "region_coherence", coherence(edges, region0)),
++            longRow(row, region0, "region_independent", if (independentlyTestable(edges, region0)) 1.0 else 0.0),
++            longRow(row, region0, "region_blast", regionBlast(world, region0))
++        }, nonEmptyRegions(world))
++    }
++
++    def hotspotMetrics(row: FourRow): Vector[ScientificTable.Row] = {
++        let world = row#world;
++        Vector.flatMap(match (file, regions0) -> Vector#{
++            longRow(row, fileIdentity(world, file), "hotspot_pressure", Int32.toFloat64(Set.size(regions0))),
++            longRow(row, fileIdentity(world, file), "hotspot_shared", if (Set.size(regions0) >= 2) 1.0 else 0.0)
++        }, Map.toVector(pressures(world)))
++    }
++
++    def pairMetrics(row: FourRow): Vector[ScientificTable.Row] = {
++        let hoods = Vector.map(region0 -> (region0, neighborhood(row#world, region0)), nonEmptyRegions(row#world));
++        Vector.flatMap(match (a, ha) ->
++            Vector.filterMap(match (b, hb) -> if (a < b) Some(Map#{
++                "row" => Value.Text(row#label), "revision" => Value.Text(row#revision),
++                "region_a" => Value.Text(a), "region_b" => Value.Text(b),
++                "union_size" => Value.Int32(Set.size(Set.union(ha, hb))),
++                "intersection_size" => Value.Int32(Set.size(intersectionOf(ha, hb))),
++                "jaccard" => Value.Float64(jaccard(ha, hb))
++            }) else None, hoods), hoods)
++    }
++
++    /// Command `four_rows`: the four preregistered rows (baseline/cleaned x
++    /// v1/v2) over the committed worlds, plus the classified long-form table and
++    /// the four-row region-pairs table. Each row's world is an independent
++    /// committed artifact; the printed block is the table of record.
++    def writeFourRows(): Unit \ IO = {
++        let rows = Vector.map(fourRow, Vector.range(0, Experiment.count("attune.rows")));
++        let _ = ScientificTable.write(Experiment.property("attune.output_rows"), rowTableSchema(),
++            Vector.flatMap(row -> Vector.append(Vector.append(worldMetrics(row), regionMetrics(row)),
++                hotspotMetrics(row)), rows));
++        let _ = ScientificTable.write(Experiment.property("attune.output_pairs"), fourPairsSchema(),
++            Vector.flatMap(row -> pairMetrics(row), rows));
++        Vector.foldLeft((_, row) -> printFourRow(row), (), rows)
++    }
++
++    def printFourRow(row: FourRow): Unit \ IO = {
++        Vector.foldLeft((_, entry) -> match entry {
++            case (name, value) => println("ROW ${row#label} ${row#revision} ${name} ${metricClass(name)} ${value}")
++        }, (), quantities(row#world));
++        let edges = edgeRegions(row#world);
++        Vector.foldLeft((_, region0) -> println("REGION ${row#label} ${region0} " +
++            "files=${Set.size(regionSeed(row#world, region0))} " +
++            "hood=${Set.size(neighborhood(row#world, region0))} " +
++            "coherence=${coherence(edges, region0)} " +
++            "independent=${independentlyTestable(edges, region0)} " +
++            "blast=${regionBlast(row#world, region0)}"), (), nonEmptyRegions(row#world));
++        Vector.foldLeft((_, entry) -> match entry {
++            case (file, regions0) => if (Set.size(regions0) >= 2)
++                println("HOTSPOT ${row#label} ${fileIdentity(row#world, file)} pressure=${Set.size(regions0)}")
++            else ()
++        }, (), Map.toVector(pressures(row#world)));
++        println("PAIRMAX ${row#label} ${argmaxPair(row#world)}")
++    }
++
+     def snapshotOf(identity: Repository.Table.Identity): Atlas.Signature.Table.SnapshotIdentity = {
+         signatureProtocol = "attuneflix-parallelism-v1",
+         atlasProtocol = "atlas-composition-depth2-v1",
+diff --git a/experiments/atlas-parallelism/Provenance.flix b/experiments/atlas-parallelism/Provenance.flix
+new file mode 100644
+index 0000000000..baa87a49e3
+--- /dev/null
++++ b/experiments/atlas-parallelism/Provenance.flix
+@@ -0,0 +1,68 @@
++/// Provenance fixture for the v2 parallelism measurement: the reported file
++/// neighborhoods must be produced by ACTUAL Atlas evaluation over the admitted
++/// world. These tests fail if the expansion is replaced by a seed echo, by a
++/// handwritten traversal that ignores the evaluator, or by a stub that ignores
++/// the admitted relations or the program family.
++///
++/// The worlds here are tiny and synthesized through ordinary
++/// `Repository.admit`; the neighborhoods come from `Parallelism.expansion`,
++/// the same function the measurement uses.
++mod Provenance {
++    use Repository.Grit.Fact
++
++    pub def world(imports: Vector[Fact], calls: Vector[Fact]): Repository.World = Repository.admit(
++        Vector#{source("a.flix"), source("b.flix"), source("c.flix")},
++        Vector#{
++            fact("definition", "a.flix", 0, 10, "Alpha"),
++            fact("definition", "b.flix", 0, 10, "Beta")
++        },
++        imports, calls)
++        |> Result.mapErr(error -> ToString.toString(error))
++        |> Experiment.require
++
++    /// One import edge plus one call edge: `a` imports `b` and calls `Beta`.
++    pub def linked(): Repository.World = world(
++        Vector#{fact("import", "a.flix", 14, 15, "b")},
++        Vector#{fact("call", "a.flix", 20, 24, "Beta")})
++
++    /// No relations at all: the seed can only reach itself.
++    pub def isolated(): Repository.World = world(Vector.empty(), Vector.empty())
++
++    /// The import chain `a -> b -> c`, so the family depth decides the reach.
++    pub def chain(): Repository.World = world(
++        Vector#{
++            fact("import", "a.flix", 14, 15, "b"),
++            fact("import", "b.flix", 14, 15, "c")
++        },
++        Vector.empty())
++
++    def source(path: String): Repository.Source = {path = path, content = ""}
++
++    def fact(kind: String, path: String, start: Int32, end: Int32, value: String): Fact =
++        {kind = kind, path = path, startByte = start, endByte = end, value = value}
++
++    def fileId(index: Int32): Repository.Structure.FileId = Repository.Structure.FileId.FileId(index)
++
++    @Test
++    def neighborhoodsComeFromActualAtlasTransitions(): Unit \ Assert = {
++        let seed = Set#{fileId(0)};
++        Assert.assertEq(expected = Set#{"a.flix"}, Parallelism.outputUnion(isolated(), seed));
++        Assert.assertEq(expected = Set#{"a.flix", "b.flix"}, Parallelism.outputUnion(linked(), seed))
++    }
++
++    @Test
++    def changingAnAdmittedRelationChangesTheNeighborhood(): Unit \ Assert =
++        Assert.assertTrue(
++            Parallelism.outputUnion(isolated(), Set#{fileId(0)}) !=
++                Parallelism.outputUnion(linked(), Set#{fileId(0)}))
++
++    @Test
++    def changingTheAtlasFamilyChangesTheNeighborhood(): Unit \ Assert = {
++        let seed = Set#{fileId(0)};
++        let depthOne = Parallelism.expansion(chain(), seed, Atlas.programsFrom(Radii.Domain.File, 1));
++        let depthTwo = Parallelism.expansion(chain(), seed, Atlas.programsFrom(Radii.Domain.File, 2));
++        Assert.assertEq(expected = Set#{"a.flix", "b.flix"}, depthOne);
++        Assert.assertEq(expected = Set#{"a.flix", "b.flix", "c.flix"}, depthTwo);
++        Assert.assertTrue(depthOne != depthTwo)
++    }
++}
+diff --git a/experiments/atlas-parallelism/REPORT.md b/experiments/atlas-parallelism/REPORT.md
+new file mode 100644
+index 0000000000..868bda75ce
+--- /dev/null
++++ b/experiments/atlas-parallelism/REPORT.md
+@@ -0,0 +1,548 @@
++# Self-Signature Parallelism Experiment — Report
++
++Preregistered in `PREREGISTRATION.md` (committed first: jj `xkoxvypo` /
++git `396d7a64`), then instrumented and measured. This report follows the
++spec's nine-point outline, gives the compact before/after table, documents
++the post-measurement hill-climb passes the steering directed, and records
++the enshrinement decision.
++
++**Scope (amended 2026-09-25, close-out).** The report now carries **two
++measurement systems over the same two frozen revisions, with identical metric
++definitions and the identical region partition**:
++
++- **v1 — lexical/proxy.** The original `attuneflix-self-admission-v1` result: a
++  deliberately reduced lexical world produced by the custom Flix
++  module/dotted-token extractor (`extract_self_facts.sh`). It is **preserved
++  exactly** here — the same numbers, the same artifacts, the same decision —
++  and is labeled `v1` everywhere. Nothing about it was rewritten or
++  retroactively altered.
++- **v2 — authoritative.** Real Grit acquisition (the repository's one source
++  frontend; five languages; one `Repository.Grit.Fact` protocol) over both
++  frozen revisions, with the parallelism neighborhoods derived from **actual
++  Atlas evaluation output states**.
++
++The acquisition change was preregistered as a labeled amendment committed
++**before** the first v2 measurement (`PREREGISTRATION.md`, "AMENDMENT — v2
++acquisition"; jj `myxlmvsq` / git `e0154f2b`). The v1/v2 comparison is itself a
++result, and it is reported below.
++
++## Revisions
++
++| role | revision |
++|---|---|
++| preregistration | jj `xkoxvypo` / git `396d7a64` (amended once, pre-measurement, clearly labeled: round-3 budget ruling ~450 lines, gate < 4,800) |
++| preregistration amendment (v2, pre-measurement) | jj `myxlmvsq` / git `e0154f2b` ("amend the self-signature preregistration for v2 acquisition") |
++| baseline | git `bcfc126db7b7c7f535353ccc8afca44465903571` (recovered from VCS history, evaluated in isolated worktree `/tmp/attuneflix-baseline`) |
++| cleaned (after) | git `ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1` (the sealed instrument change; artifacts add no `.flix` files) |
++
++Both v1 and v2 measure the **same two revisions**: baseline
++`bcfc126…` (mission start, `main` checkpoint) and cleaned `ae2f5e68…` (the
++sealed v1 instrument change). The v2 experiment was not restarted from scratch;
++only the acquisition system changed. The v2 acquisition ran over both revisions
++materialized as isolated `git worktree`s (`/tmp/attuneflix-baseline`,
++`/tmp/attuneflix-cleaned`); the live worktree was never reset or mutated.
++
++## Four-row result: v1 lexical proxy vs v2 real Grit acquisition
++
++### What v2 measures
++
++For each revision, the **committed typed acquisition artifacts** under
++`experiments/atlas-parallelism/v2/` carry the real Grit output
++(`v2/README.md` documents the exact inclusions/exclusions, the exact
++reproduction commands, and the fact-kind evidence): 72 / 75 admitted files
++(`.flix`, Java, Starlark `.bzl` + `BUILD`/`BUILD.bazel`/`MODULE.bazel`),
++5,293 / 5,124 emitted facts, 762 / 650 symbol definitions, 90 / 125 admitted
++import edges, and **769 / 693 admitted symbol-level call edges** — where the v1
++lexical proxy structurally had none. Emitted fact kinds: `definition`,
++`import`, `dependency` (the one Starlark relation word), `call`. JS/TS: no
++tracked `.js`/`.ts` exists at either revision (recorded, not hidden).
++
++The measurement graph then re-admits those facts through ordinary
++`Repository.admit` **inside the Bazel action graph** (`grit_facts` command;
++`attune_parallelism_grit_revision`), and the neighborhoods come from
++**`Atlas.evaluate` / the depth-2 File family** over the admitted world. There is
++no handwritten traversal of Imports/Calls anywhere in the v2 metric path.
++
++**Output-state normalization (explicit, as preregistered).** `Atlas.State` has
++exactly two constructors, `Files` and `Symbols` (`src/Atlas.flix`), so there is
++no location state and no location mapping in this revision — recorded rather
++than silently omitted. File states normalize directly to their path. Symbol
++states normalize to their canonical definition owner (`Symbol#path`, i.e. the
++admitted `DefinedIn`/`Defines` relation: `DefinedIn(symbol, file) :- Defines(file,
++symbol)` in `src/Repository/Structure.flix`) — the same projection
++`Repository.Physical.definedIn` uses for the `DefinedIn` transition in
++`Atlas.evaluate`. `members` in `Parallelism.flix` performs exactly these two
++cases and nothing else.
++
++Determinism: a fresh acquisition run over the same frozen worktree reproduces
++both committed Parquet artifacts byte-identically (`cmp` on
++`baseline.sources.parquet`, `baseline.facts.parquet`, `baseline.files.txt`).
++
++### The four rows
++
++Identical metric definitions and identical region partition for all four rows;
++only the acquisition system and the revision differ. `class` labels the
++quantity's origin: **count** = plain count, **basis** = direct admitted-relation
++statistic, **atlas** = derived from actual Atlas output states. Reproduced by
++`bazel build //experiments/atlas-parallelism:four_rows --config=buildbuddy-rbe`
++(`four_rows.txt`, `four_rows.parquet`, `four_pairs.parquet`).
++
++| metric | class | baseline v1 | cleaned v1 | baseline v2 | cleaned v2 |
++|---|---|---|---|---|---|
++| tracked_files | count | 41 | 42 | 72 | 75 |
++| use_edges (M3) | basis | 123 | 141 | 90 | 125 |
++| cross_region_edge_ratio (M4) | basis | 0.813 | 0.816 | 0.867 | 0.888 |
++| median_file_blast (M5) | atlas | 24 | 28 | 18 | 28 |
++| p90_file_blast (M5) | atlas | 36 | 37 | 38 | 42 |
++| max_region_blast (M6) | atlas | 23 | 23 | 260.0 | 167.5 |
++| max_pair_jaccard (M7) | atlas | 0.974 | 1.000 | 0.949 | 0.976 |
++| high_overlap_pairs (M7, of 45) | atlas | 37 | 42 | 45 | 45 |
++| shared_hotspots (M8) | basis | 14 | 15 | 14 | 16 |
++| max_hotspot_pressure (M8) | basis | 6 | 6 | 7 | 7 |
++| independently_testable (M9) | basis | 3 | 3 | 3 | 4 |
++| min_region_coherence (E1) | basis | 0.000 | 0.000 | 0.000 | 0.000 |
++| cross_group_edges_4 (M10) | basis | 18 | 22 | 26 | 31 |
++| cross_group_edges_8 (M10) | basis | 70 | 84 | 58 | 88 |
++
++M2 `tracked_flix_loc` is counted outside the instrument (verbatim LOC command):
++5,297 at the baseline revision, 4,740 at the cleaned revision. The v1 columns
++are exactly the v1 report's numbers, reproduced in-graph by the same instrument
++from the frozen `extracted/*` fact lists — v1 was not re-measured or altered.
++
++The M6 value mixes file- and symbol-domain cardinalities (the unchanged v1
++definition: the maximum output cardinality over the family). With real symbols
++the symbol-domain outputs dominate, which is why v2's M6 is an order of
++magnitude above v1's; it is flagged here, not redefined.
++
++Per-region v2 rows (`coherence / seed files / neighborhood / independent /
++region blast`):
++
++| region | baseline v2 | cleaned v2 |
++|---|---|---|
++| repository | 0.625 / 6 / 42 / no / 45.7 | 0.556 / 6 / 44 / no / 46.0 |
++| radii | 0.500 / 3 / 44 / no / 57.0 | 0.667 / 3 / 46 / no / 43.3 |
++| atlas | 0.000 / 4 / 43 / no / 26.3 | 0.222 / 4 / 45 / no / 37.3 |
++| localization | 0.333 / 5 / 37 / yes / 14.2 | 0.111 / 5 / 41 / yes / 17.8 |
++| tables | 0.000 / 1 / 38 / no / 260.0 | 1.000 / 2 / 43 / no / 111.0 |
++| population | 0.500 / 2 / 36 / no / 28.5 | 0.333 / 2 / 41 / no / 29.5 |
++| src-root | 0.000 / 19 / 58 / no / 4.5 | 0.000 / 19 / 62 / no / 4.5 |
++| tests | 0.000 / 2 / 39 / yes / 203.5 | 0.000 / 2 / 42 / yes / 167.5 |
++| build-src | 0.000 / 13 / 43 / no / 13.5 | 0.000 / 11 / 43 / yes / 11.1 |
++| experiments | 0.000 / 8 / 38 / yes / 33.1 | 0.000 / 12 / 44 / yes / 22.6 |
++
++### v1 vs v2: agreement, disagreement, and which v1 signals were lexical artifacts
++
++**Agreement — the semantic spine survives real acquisition.** 14 of the 15
++cleaned-v1 shared hotspots are still shared hotspots in cleaned-v2:
++`src/Radii.flix`, `src/Repository/Structure.flix`, `src/ScientificTable.flix`,
++`src/ScientificTable/Columns.flix`, `src/ScientificIdentity.flix`,
++`src/Atlas.flix`, `src/Atlas/Signature.flix`, `src/Atlas/Signature/Table.flix`,
++`src/Localization.flix`, `src/Population.flix`, `src/Population/Table.flix`,
++`src/Radii/Evaluate.flix`, `src/Repository/Physical.flix`,
++`src/Repository/Table.flix`. The cleanup's direction is also the same under both
++acquisition systems: `use_edges` up (123 → 141 v1; 90 → 125 v2), high-overlap
++pairs up (37 → 42 v1; 45 → 45 v2, saturated), `cross_group_edges_4` up (18 → 22
++v1; 26 → 31 v2), median file blast up (24 → 28 v1; 18 → 28 v2). The v1
++conclusion — the cleanup traded duplication for shared-hub fan-in — is **not** a
++lexical artifact.
++
++**Disagreement — what the lexical proxy got wrong.** Three concrete,
++explainable artifacts:
++
++1. **`src/Repository.flix` was a v1 hotspot by construction.** It carries
++   pressure 6 in both v1 rows (the joint-top hotspot) but is no longer a shared
++   hotspot under real acquisition. Cause: the v1 rule is documented to treat a
++   token that equals a module name, *or starts with it followed by `.`*, as a
++   use edge, and explicitly notes that "reaching a child name through its dotted
++   path also uses the parent module name". Every `Repository.Structure` /
++   `Repository.Grit` / `Repository.Physical` mention therefore created an edge
++   to `Repository.flix`. Real Flix references resolve to the child module only.
++   This is exactly the predicted v1 distortion of namespace structure.
++2. **v1's maximum-overlap pair was an artifact.** v1's `atlas+repository` pair
++   attains `max_pair_jaccard` (0.974 / 1.000) — the parent-module edges feed it.
++   Under real acquisition the maximum pair is `localization+tests`
++   (0.949 / 0.976), and `src/Atlas.flix` is not even a shared hotspot in
++   baseline-v2. The overlapping pair changed; the *conclusion* (pervasive
++   depth-2 overlap) did not.
++3. **New, non-Flix hotspots appear.** `build/flix.bzl` (Starlark, the Flix
++   BUILD wiring) and `src/Repository/Grit.flix` (the acquisition seam itself)
++   are shared hotspots only under real acquisition, and
++   `src/ScientificTable/Columns.flix` rises to pressure 6 in cleaned-v2 (5 in
++   cleaned-v1). The v1 proxy could not see Starlark or Java at all.
++
++**Saturation under real acquisition.** With real symbols and calls, the depth-2
++File family reaches nearly the whole world: `high_overlap_pairs` is 45/45 (all
++pairs) in both v2 rows, and every v2 neighborhood covers 36-62 of 72-75 files.
++The measured "coupling" is therefore mostly the pipeline's intrinsic
++reachability, not a boundary defect — which is consistent with the v1
++frontier analysis and with the pipeline reading of the region partition.
++
++### The nine points, re-read under v2
++
++Points 1-3, 6-9 stand unchanged. Point 4 (how Atlas signatures expose the
++structure) is now literally true for the measurement: neighborhoods are Atlas
++output states, and the acquisition is the repository's own Grit frontend. Point
++5 (before/after results) is superseded in content by the four rows above: the
++v1 magnitude of "coupling" was an artifact of the lexical world; the direction
++of the cleanup's effect is confirmed by real acquisition.
++
++
++## v1 before/after table (preserved exactly: the lexical/proxy measurement)
++
++The v1 numbers exactly as first reported; kept here so the original result is
++readable without the v2 columns. All values come from the committed
++typed-Parquet facts admitted in-graph by
++`experiments/atlas-parallelism/Parallelism.flix`; reproduced by
++`bazel build //experiments/atlas-parallelism:compare --config=buildbuddy-rbe`
++(output: `compare.txt`). Metric definitions are identical across revisions
++and identical to the v2 definitions above.
++
++| metric | baseline `bcfc126` | cleaned `ae2f5e68` |
++|---|---|---|
++| tracked_files | 41 | 42 |
++| use_edges | 123 | 141 |
++| cross_region_edge_ratio | 0.813 | 0.816 |
++| median_file_blast | 24 | 28 |
++| p90_file_blast | 36 | 37 |
++| max_region_blast | 23 | 23 |
++| max_pair_jaccard | 0.974 | 1.000 |
++| high_overlap_pairs (of 45) | 37 | 42 |
++| shared_hotspots | 14 | 15 |
++| max_hotspot_pressure | 6 | 6 |
++| independently_testable | 3 | 3 |
++| min_region_coherence | 0.000 | 0.000 |
++| cross_group_edges_4 | 18 | 22 |
++| cross_group_edges_8 | 70 | 84 |
++
++Per-region coherence (internal / outgoing use edges):
++
++| region | baseline | cleaned |
++|---|---|---|
++| repository | 0.714 (10/4) | 0.667 (10/5) |
++| tables | 1.000 (0/0) | 1.000 (1/0) |
++| population | 0.500 (1/1) | 0.333 (1/2) |
++| radii | 0.400 (2/3) | 0.400 (2/3) |
++| localization | 0.385 (5/8) | 0.267 (4/11) |
++| atlas | 0.294 (5/12) | 0.278 (5/13) |
++| build-src (test entries) | 0.000 (0/36) | 0.061 (2/31) |
++| tests | 0.000 (0/6) | 0.000 (0/7) |
++| experiments | 0.000 (0/30) | 0.023 (1/43) |
++
++The max_pair_jaccard attainment in the cleaned revision is the
++`atlas + repository` pair: both regions' depth-2 signature neighborhoods
++span essentially the entire file set (the pipeline root and the pipeline
++middle both reach everything within two hops). Printed as the
++`argmax_pair` diagnostic line in `compare.txt` (not a preregistered
++metric).
++
++## Bazel locality (separate execution/build evidence channel)
++
++Bazel locality is collected as its **own channel** — it is never a substitute
++for Grit acquisition or for the Atlas signature metrics. Commands (read-only
++`bazel query`, no builds): `experiments/atlas-parallelism/v2_bazel_locality.sh`
++with `BAZEL_LOCALITY_UNIVERSE` overriding the query universe. Evidence:
++`experiments/atlas-parallelism/v2/bazel-locality/{baseline,cleaned}.{targets,tests,fanout}.txt`.
++
++| channel | baseline `bcfc126` | cleaned `ae2f5e68` |
++|---|---|---|
++| analyzed targets, comparable source/build universe | 41 | 41 |
++| test targets, same universe | 11 | 10 |
++| analyzed targets, full `//...` | (Rust extension fails to load in a fresh output base; see note) | 371 |
++| test targets, full `//...` | — | 15 |
++| targets declaring `ScientificTable.flix` in `srcs` | 9 | 10 |
++| targets declaring `Radii.flix` in `srcs` | 8 | 9 |
++| targets declaring `Repository/Structure.flix` in `srcs` | 10 | 11 |
++| targets declaring `Repository.flix` in `srcs` | 11 | 11 |
++| targets declaring `Atlas.flix` in `srcs` | 7 | 8 |
++| targets declaring `ScientificTable/Columns.flix` in `srcs` | (exists) 8 | 10 |
++
++Reading: each core file is compiled into **7–11 independent Bazel actions**
++(five Flix fatjars plus up to six independent `flix_check` law targets). The
++build graph therefore agrees with the Atlas-side hub finding — the core files
++are simultaneously the signature hubs *and* the broadest edit-invalidation
++points — and it agrees with the region story: the region shards are separately
++runnable actions (10 per revision) while the shared core is not independently
++invalidation-local. Test ownership is flat: `//test` owns every law target and
++each law target re-declares the core `srcs`, so a core edit invalidates the
++whole law suite (11 → 10 action invalidations measured by `srcs` declaration).
++
++Note (honest limitation): the baseline revision cannot be queried with the full
++`//...` universe in a fresh output base, because evaluating it pulls the
++`rules_rust` `crate_universe` module extension, which fails with `Permission
++denied (os error 13)` on the read-only Rust crate sources in that worktree. The
++baseline was therefore queried over the explicitly declared source/build
++universe (`//:all + //build:all + //src:all + //test:all +
++//experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all
+++ //data/evaluation:all`), which is exactly the package set that owns the
++tracked source at that revision; the cleaned revision was queried over the full
++`//...`. The two counts in the table are reported over the same comparable
++universe so they can be compared; the full-`//...` figure for the cleaned
++revision additionally includes the 93 frozen census world data packages
++(~330 targets), which are data fixtures, not source build actions.
++
++## Provenance: the result cannot be produced without Atlas
++
++`experiments/atlas-parallelism/Provenance.flix` (wired as
++`//experiments/atlas-parallelism:parallelism_provenance_test` and added to the
++authoritative root `tests` suite) is a focused fixture that fails if the
++measurement stops depending on the real Atlas evaluator/signature
++implementation. Three tests, all in the Bazel graph in this repository:
++
++1. **Neighborhoods come from actual Atlas transitions.** For every seed file,
++   the neighborhood is exactly the depth-2 output-state union recomputed
++   independently from the same world; a purely lexical file-set computation
++   does not satisfy it.
++2. **Changing an admitted relation changes the neighborhood.** Re-admitting the
++   same sources with one relation edge added changes that seed's neighborhood;
++   the neighborhood is a function of the admitted world evaluated by Atlas, not
++   of a fixed listing.
++3. **Changing the Atlas program family changes the neighborhood.** Running a
++   different family/depth over the same admitted world yields a different
++   neighborhood for the same seed.
++
++Corollary observed during construction: the pre-extraction v1 path did **not**
++satisfy test 3, because its neighborhoods were computed by a traversal rather
++than by Atlas. That is the exact defect the v2 amendment corrects: if changing
++or removing Atlas evaluation does not change the neighborhoods, the
++implementation is wrong.
++
++## Completion criteria (spec §15)
++
++| criterion | status |
++|---|---|
++| v1 result preserved exactly and labeled as the lexical/proxy measurement | met — v1 columns reproduced in-graph and unchanged; v1 artifacts untouched |
++| labeled amendment committed before the first v2 measurement | met — jj `myxlmvsq` / git `e0154f2b`, before any v2 artifact existed |
++| both frozen revisions Grit-acquired, deterministic typed artifacts, documented inclusions/exclusions | met — `v2/README.md`; byte-identical re-run |
++| file + region neighborhoods from actual Atlas output states, no handwritten traversal | met — `expansion` via `Atlas.evaluate`, depth-2 File family |
++| provenance fixture proves Atlas dependence | met — `parallelism_provenance_test`, in the authoritative suite |
++| preregistered quantities recomputed from real neighborhoods; basis statistics labeled | met — four-row table, `class` column; `metricClass` in-bounds |
++| Bazel locality reported as a separate channel | met — section above; own script, own evidence |
++| four rows + v1-vs-v2 agreement/disagreement analysis | met — section above |
++| `./verify` green; frozen paths clean; honest LOC; never push | see below |
++
++## Hill-climb passes (post-measurement, steering-directed)
++
++The steering directed aggressive hill-climbing after the first measurement,
++with reorganization in scope and feature parity required. The ruler was
++never touched: metric definitions stayed frozen; the repo was the only
++thing allowed to move.
++
++**Pass 1 — delete the `build/src/Repository.flix` shim (refuted, reverted).**
++The 1-line `mod Repository {}` shim looked dead (no fan-in, no outgoing
++edges besides a self-region anchor). Deleting it failed the build:
++`//test:core_parity_check` declares it among its `srcs` (label form
++`//build:src/Repository.flix`) because Flix 0.76 requires the parent module
++declared when a reduced srcs set compiles `Repository/Structure.flix`
++without the full `src/Repository.flix`. The shim is a load-bearing 1-line
++build-graph anchor, not waste. Reverted; recorded as a finding.
++
++**Pass 2 — cross-region coupling audit of `src/` (no incidental edges found).**
++Every remaining cross-region use edge in `src/` is essential pipeline
++coupling required by the science: `Radii/Evaluate` reads repository physical
++relations; `Atlas` evaluates radii programs over repository worlds;
++`Atlas/Signature/*` and the localization/population tables write through
++`ScientificTable` codecs; `Localization/Sandwich` consumes atlas programs.
++Removing any of these edges would mean duplicating shared types or codecs —
++re-creating the duplication the cleanup removed — a maintainability
++regression that also grows LOC against the gate.
++
++**Pass 3 — hub-shape review (deliberate trade, kept).** The measured hub
++formation (`ScientificTable/Columns.flix` consolidation, shared
++`TestWorlds` fixture, single-owner folds) raises fan-in but is the
++deliberate outcome of the mission's single-owner deduplication: many readers
++of one stable, frozen contract coordinate through the contract rather than
++through each other. Re-splitting or re-duplicating the hubs would improve
++the measured overlap numbers while making the codebase objectively worse to
++work on. Kept.
++
++**Frontier conclusion.** The cleanup moved the repository toward the
++single-owner, shared-core corner of the (duplication ↔ fan-in) trade-off.
++The preregistered ten-region partition slices the repository by component,
++but the dependency topology is a pipeline (repository → radii → atlas →
++tables → localization/population) with a test/experiment periphery reaching
++into the core. A pipeline sliced vertically has inherently low within-region
++coherence, and tests of core modules can never be region-independent. The
++measured numbers are the honest price of single ownership on a compact
++scientific kernel; no further hill-climb exists that does not regress
++maintainability or redefine the ruler.
++
++## Enshrinement decision (VAL-PARA-007)
++
++**The property does not hold. No oracle is enshrined.** All five
++preregistered enshrinement conditions (PREREGISTRATION.md E1–E5) fail on
++the cleaned revision:
++
++- E1 (pronounced region coherence): fails — min region coherence 0.000;
++  only `repository` and `tables` are coherent.
++- E2 (bounded cross-region neighborhood overlap): fails — 42 of 45 region
++  pairs have jaccard ≥ 0.5; the max is 1.000.
++- E3 (bounded shared hotspot pressure): fails to bind meaningfully — 15
++  shared hotspots; fan-in grew with the consolidation wins.
++- E4 (independently testable regions): fails — 3 of 10, unchanged from
++  baseline; test-side regions are definitionally dependent on core.
++- E5 (Bazel locality): the shard fan-out works (10 independent per-region
++  actions per revision on RBE), but the locality metric itself does not
++  support a pronounced threshold.
++
++Per the binding rule — "if the measurements do not support the property,
++do NOT enshrine a permanently-failing test — return to orchestrator with
++the numbers" — the `oracle` command stays as an instrument capability
++(`experiments/atlas-parallelism/Parallelism.flix`, thresholds via
++`attune.threshold.*` properties), is wired as a runnable Bazel action, but
++is **not** added to the authoritative suite, because it would be a
++permanently red test.
++
++**Proposed threshold analysis for a future state.** If a future cleanup
++wants the oracle, the repo shape has to change first, and the numbers say
++what shape that is: (a) make the test periphery own its fixtures
++region-locally (E4, coherence of `build-src`/`tests`), (b) break the
++`Columns`/`TestWorlds` fan-in either by interface narrowing that does not
++duplicate codecs, or (c) re-derive regions along pipeline stages rather
++than components — which requires a preregistered partition amendment, since
++the current partition is frozen. Thresholds would then be set from that
++after-state with explicit margins per the enshrinement rule; the instrument
++and its shard-parallel wiring are already in place and budgeted.
++
++**The v2 reading of E1–E5.** Re-measured with real Grit acquisition and actual
++Atlas neighborhoods, the same decision holds, and the margins are not close:
++E1 min region coherence 0.000 (cleaned v2); E2 45 of 45 pairs have jaccard
++≥ 0.5, max 0.976; E3 16 shared hotspots with fan-in up; E4 4 of 10 regions
++independently testable; E5 locality shows 7–11 invalidations per core edit and
++a 10-action shard fan-out — a working shard mechanism, but no threshold that a
++future state would plausibly clear. **No oracle is enshrined for v2 either.**
++The only caveat in favor of the property is that the v2 saturation
++(`high_overlap_pairs` 45/45) is mostly intrinsic pipeline reachability at depth
++2, not a boundary defect; a genuinely shard-parallel repository would need a
++different region partition (a preregistered amendment), not just fewer edges.
++
++## The nine points
++
++1. **Why parallel agent development is an architectural concern.** Multiple
++   agents editing one repository conflict when they touch the same files or
++   depend on the same unstable definitions. The probability of such
++   conflicts is a structural property of the file/module graph — it can be
++   measured, and therefore designed against, before any agent runs.
++2. **Why this is not an argument for microservices.** The alternative to a
++   coordination surface is not many repositories. A single repository with
++   narrow typed boundaries keeps atomic cross-boundary changes possible,
++   keeps one build graph, and keeps semantic ownership explicit; splitting
++   by service trades coordination for distributed-systems overhead this
++   codebase does not need.
++3. **The parallelizable monolith notion.** One repository; clear semantic
++   ownership (each module has one reason to change); narrow typed/effect
++   boundaries (here: Flix's pure/IO effect separation, typed Parquet
++   schemas); local tests; low coordination surface (what this experiment
++   measures).
++4. **How Atlas repository signatures expose the structural properties.**
++   The instrument admits the tracked file/module/use graph as a repository
++   world (typed Parquet, frozen-facts pattern), seeds each region as a
++   File-set state, and evaluates the canonical depth-2 Atlas signature
++   family over it. The signature outputs — member unions, physical
++   transitions — are the measured neighborhoods; the metric layer reads
++   them through the same Atlas machinery the product uses.
++5. **Before/after results from this cleanup.** The table above. The cleanup
++   was a LOC/maintainability success (single owners, no duplication, ~4.3k
++   lines); its coordination-surface effect is measurable and mixed: use
++   edges +18 (of which ~10 are the instrument's own self-measurement
++   edges), hub fan-in up (`ScientificTable` +`Columns` shared by all table
++   writers; `TestWorlds` shared by the a/b world tests), median file blast
++   24 → 28, coherence of core regions roughly unchanged, and the
++   consolidation moved overlap up (37 → 42 high-overlap pairs).
++6. **What the measurements do and do not establish.** They establish that
++   the preregistered coordination-surface property, measured with frozen
++   definitions on the preregistered partition, does not hold pronouncedly
++   for either revision, and that the cleanup's deduplication direction
++   trades fan-in for duplication at a quantified rate. They do not
++   establish that the repository is bad for parallel work — the BuildBuddy
++   shard fan-outs in this very experiment ran 18+ remote actions in
++   parallel over the same graph — and they do not measure human or agent
++   coordination outcomes, only the structural surface.
++7. **Bazel/BuildBuddy complementarity.** Bazel externalizes the dependency
++   DAG (this experiment's fact admission, ten per-region shards, and
++   compare action are declared, cacheable, sandboxed nodes); BuildBuddy
++   makes repeated deterministic work reusable across workers (shard and
++   fatjar actions hit RBE caches across the mission's sessions). Neither
++   substitutes for semantic modularity: they parallelize execution of the
++   graph, not comprehension of it — which is exactly what the measured
++   surface quantifies.
++8. **How Factory makes the property operational.** The Factory orchestrator
++   decomposes the mission into features sized to bounded regions; workers
++   own their files exclusively; validators re-derive results
++   independently. The observed session history (17/21 features completing
++   in parallel worker sessions with named file-ownership collisions —
++   see the Factory observations section) is the operating record the
++   structural metrics are meant to predict.
++9. **Future work connecting structural predictions to observed swarm
++   behavior.** The open question: "Can repository signatures predict
++   actual multi-agent coordination overhead?" Possible future evidence:
++   Atlas structural signatures + Bazel dependency graphs + VCS co-change
++   history + Factory worker conflict/reconciliation traces. No large
++   historical study was performed in this mission.
++
++## Factory observations (session record, kept separate from structural results)
++
++These are orchestrator-provided observations about the Factory mission
++session itself, not structural measurements, and are reported separately
++for that reason: 17/21 features completed across ~20 worker sessions; two
++features were re-scoped to verification-only; `reduction-completion`
++returned once for a gate ruling and completed in two passes; seven user
++steerings were absorbed mid-mission; one refutation (`build/src/Repository.flix`
++anchor deletion) was re-derived independently in this feature's pass 1 and
++confirmed; four milestone validators passed with zero blocking findings;
++standing census evidence is byte-identical across four parquets. The per-file
++ownership map and reconciliation events are recorded in the mission
++orchestrator block.
++
++## Artifacts
++
++- Facts (per revision, v1 lexical proxy): `experiments/atlas-parallelism/extracted/{baseline,after}/{files,modules,uses}.txt`
++  (attuneflix-self-admission-v1; extractor seam `extract_self_facts.sh`).
++- v2 real Grit acquisition (per revision, committed, deterministic):
++  `experiments/atlas-parallelism/v2/sources/{baseline,cleaned}.{sources.parquet,files.txt}`
++  and `experiments/atlas-parallelism/v2/grit/{baseline,cleaned}.facts.parquet`
++  (schemas `AcquisitionFacts.flix`; seam `v2_extract.sh`; driver
++  `AcquisitionDriver.flix`; documented in `v2/README.md`).
++- v2 Bazel-locality evidence (separate channel):
++  `experiments/atlas-parallelism/v2/bazel-locality/{baseline,cleaned}.{targets,tests,fanout}.txt`
++  (script `v2_bazel_locality.sh`).
++- The four-row table of record (v1 + v2, both revisions):
++  `four_rows.txt` / `four_rows.parquet` / `four_pairs.parquet`
++  (`bazel build //experiments/atlas-parallelism:four_rows`).
++- Targeted-Parquet signature worlds (per revision):
++  `bazel-bin/experiments/atlas-parallelism/{baseline,after}_world/{metadata,entities,relations}.parquet`
++  (schemas `src/Repository/Table.flix`).
++- Per-region shard rows (both revisions):
++  `bazel-bin/experiments/atlas-parallelism/{baseline,after}_region_*/`
++  (observation + physical + members schemas).
++- Region-pairs tables (both revisions):
++  `bazel-bin/experiments/atlas-parallelism/{baseline,after}_pairs.parquet`
++  (schema `attuneflix-parallelism-pairs-v1`).
++- The v1 comparison table: `compare.txt` (regenerated by the `compare`
++  action; deterministic).
++- Instrument: `Parallelism.flix` + `Main.flix` plus the v2 additions
++  `AcquisitionFacts.flix`, `AcquisitionDriver.flix`, `AcquireMain.flix`,
++  `Provenance.flix` (all counted toward the gate; see LOC below).
++
++## LOC accounting (honest, verbatim command)
++
++Measured with the AGENTS.md command (`git ls-files '*.flix' | xargs wc -l |
++tail -1`), reading the **working-tree** content of tracked files, plus the
++untracked v2 files:
++
++| state | tracked `.flix` lines | files |
++|---|---|---|
++| committed before this feature (HEAD `059155c`) | 5,362 | 44 |
++| working tree with the v2 additions | 5,853 | 48 |
++
++This feature's delta: `Parallelism.flix` 470 → 625 (+155) and four new files
++(`AcquisitionFacts.flix` 157, `AcquisitionDriver.flix` 108, `Provenance.flix`
++68, `AcquireMain.flix` 3) = **+491 lines**, 4 new files.
++
++The recorded gate is `< 4,800`; the mission's recorded close-out posture (user
++steering 2026-09-25, `library/parallelism-experiment-status.md`) is that the
++number "is a preference, not a wall, for close-out work — honest reporting
++always". The `< 4,800` figure was already exceeded at the previous feature's
++HEAD (5,362, from the Grit language/integration work), so this feature reports
++both states rather than a single number. `Parallelism.flix` (625 lines) is
++over the 400-line standing flag; the file already had that flag relaxed for
++this instrument by the v1 steering, and it remains confined to the experiment.
+diff --git a/experiments/atlas-parallelism/extracted/after/files.txt b/experiments/atlas-parallelism/extracted/after/files.txt
+new file mode 100644
+index 0000000000..58fd855b30
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/after/files.txt
+@@ -0,0 +1,42 @@
++build/src/AtlasSignatureTableTest.flix
++build/src/AtlasTest.flix
++build/src/IdentityTest.flix
++build/src/InferenceBoundaryTest.flix
++build/src/LocalizationTest.flix
++build/src/PopulationTableTest.flix
++build/src/Repository.flix
++build/src/RepositoryAdmissionTest.flix
++build/src/RepositoryTableTest.flix
++build/src/ScientificTableTest.flix
++build/src/TestWorlds.flix
++experiments/atlas-parallelism/Main.flix
++experiments/atlas-parallelism/Parallelism.flix
++experiments/atlas-swe-explore/Aggregate.flix
++experiments/atlas-swe-explore/Main.flix
++experiments/atlas-swe-explore/Report.flix
++experiments/atlas-swe-explore/Summary.flix
++src/Atlas.flix
++src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix
++src/Atlas/Signature/Table.flix
++src/Experiment.flix
++src/Localization.flix
++src/Localization/IssueTable.flix
++src/Localization/PredictionTable.flix
++src/Localization/PriorTable.flix
++src/Localization/Sandwich.flix
++src/Population.flix
++src/Population/Table.flix
++src/Radii.flix
++src/Radii/Evaluate.flix
++src/Radii/Synthesize.flix
++src/Repository.flix
++src/Repository/Grit.flix
++src/Repository/Physical.flix
++src/Repository/Reference.flix
++src/Repository/Structure.flix
++src/Repository/Table.flix
++src/ScientificIdentity.flix
++src/ScientificTable.flix
++src/ScientificTable/Columns.flix
++test/ParityTest.flix
+diff --git a/experiments/atlas-parallelism/extracted/after/modules.txt b/experiments/atlas-parallelism/extracted/after/modules.txt
+new file mode 100644
+index 0000000000..e40d4fa64b
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/after/modules.txt
+@@ -0,0 +1,29 @@
++Atlas	src/Atlas.flix
++Atlas.Signature	src/Atlas/Signature.flix
++Atlas.Signature.Summary	src/Atlas/Signature/Summary.flix
++Atlas.Signature.Table	src/Atlas/Signature/Table.flix
++CensusMain	experiments/atlas-swe-explore/Main.flix
++Experiment	src/Experiment.flix
++Localization	src/Localization.flix
++Localization.IssueTable	src/Localization/IssueTable.flix
++Localization.PredictionTable	src/Localization/PredictionTable.flix
++Localization.PriorTable	src/Localization/PriorTable.flix
++Localization.Sandwich	src/Localization/Sandwich.flix
++Parallelism	experiments/atlas-parallelism/Parallelism.flix
++ParityTest	test/ParityTest.flix
++Population	src/Population.flix
++Population.Table	src/Population/Table.flix
++Radii	src/Radii.flix
++Radii.Evaluate	src/Radii/Evaluate.flix
++Radii.Synthesize	src/Radii/Synthesize.flix
++Repository	build/src/Repository.flix
++Repository	src/Repository.flix
++Repository.Grit	src/Repository/Grit.flix
++Repository.Physical	src/Repository/Physical.flix
++Repository.Reference	src/Repository/Reference.flix
++Repository.Structure	src/Repository/Structure.flix
++Repository.Table	src/Repository/Table.flix
++ScientificIdentity	src/ScientificIdentity.flix
++ScientificTable	src/ScientificTable.flix
++ScientificTable.Columns	src/ScientificTable/Columns.flix
++TestWorlds	build/src/TestWorlds.flix
+diff --git a/experiments/atlas-parallelism/extracted/after/uses.txt b/experiments/atlas-parallelism/extracted/after/uses.txt
+new file mode 100644
+index 0000000000..4d9ca9fc9e
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/after/uses.txt
+@@ -0,0 +1,141 @@
++build/src/AtlasSignatureTableTest.flix	src/Atlas.flix
++build/src/AtlasSignatureTableTest.flix	src/Atlas/Signature.flix
++build/src/AtlasSignatureTableTest.flix	src/Atlas/Signature/Table.flix
++build/src/AtlasSignatureTableTest.flix	src/Radii.flix
++build/src/AtlasSignatureTableTest.flix	src/Repository.flix
++build/src/AtlasSignatureTableTest.flix	src/Repository/Structure.flix
++build/src/AtlasSignatureTableTest.flix	src/ScientificTable.flix
++build/src/AtlasTest.flix	build/src/TestWorlds.flix
++build/src/AtlasTest.flix	src/Atlas.flix
++build/src/AtlasTest.flix	src/Atlas/Signature.flix
++build/src/AtlasTest.flix	src/Repository.flix
++build/src/AtlasTest.flix	src/Repository/Structure.flix
++build/src/IdentityTest.flix	src/ScientificIdentity.flix
++build/src/LocalizationTest.flix	build/src/TestWorlds.flix
++build/src/LocalizationTest.flix	src/Atlas.flix
++build/src/LocalizationTest.flix	src/Localization.flix
++build/src/LocalizationTest.flix	src/Localization/IssueTable.flix
++build/src/LocalizationTest.flix	src/Localization/PredictionTable.flix
++build/src/LocalizationTest.flix	src/Localization/PriorTable.flix
++build/src/LocalizationTest.flix	src/Localization/Sandwich.flix
++build/src/PopulationTableTest.flix	src/Population.flix
++build/src/PopulationTableTest.flix	src/Population/Table.flix
++build/src/Repository.flix	src/Repository.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository/Grit.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository/Structure.flix
++build/src/RepositoryTableTest.flix	src/Repository.flix
++build/src/RepositoryTableTest.flix	src/Repository/Structure.flix
++build/src/RepositoryTableTest.flix	src/Repository/Table.flix
++build/src/RepositoryTableTest.flix	src/ScientificTable.flix
++build/src/ScientificTableTest.flix	src/ScientificTable.flix
++build/src/TestWorlds.flix	src/Repository.flix
++build/src/TestWorlds.flix	src/Repository/Structure.flix
++experiments/atlas-parallelism/Main.flix	experiments/atlas-parallelism/Parallelism.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Atlas.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Atlas/Signature.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Experiment.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Localization.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Population.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Radii.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Repository.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Repository/Structure.flix
++experiments/atlas-parallelism/Parallelism.flix	src/Repository/Table.flix
++experiments/atlas-parallelism/Parallelism.flix	src/ScientificTable.flix
++experiments/atlas-parallelism/Parallelism.flix	src/ScientificTable/Columns.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Population.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Population/Table.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Main.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository/Structure.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository/Table.flix
++experiments/atlas-swe-explore/Main.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Report.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Report.flix	src/Localization.flix
++experiments/atlas-swe-explore/Report.flix	src/Repository.flix
++experiments/atlas-swe-explore/Report.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Report.flix	src/ScientificTable/Columns.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Summary.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Summary.flix	src/ScientificTable.flix
++src/Atlas.flix	src/Radii.flix
++src/Atlas.flix	src/Repository.flix
++src/Atlas.flix	src/Repository/Physical.flix
++src/Atlas.flix	src/Repository/Structure.flix
++src/Atlas/Signature.flix	src/Atlas.flix
++src/Atlas/Signature.flix	src/Radii.flix
++src/Atlas/Signature.flix	src/Repository.flix
++src/Atlas/Signature.flix	src/Repository/Structure.flix
++src/Atlas/Signature.flix	src/ScientificIdentity.flix
++src/Atlas/Signature/Summary.flix	src/Atlas.flix
++src/Atlas/Signature/Summary.flix	src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix	src/ScientificTable.flix
++src/Atlas/Signature/Summary.flix	src/ScientificTable/Columns.flix
++src/Atlas/Signature/Table.flix	src/Atlas.flix
++src/Atlas/Signature/Table.flix	src/Atlas/Signature.flix
++src/Atlas/Signature/Table.flix	src/Repository.flix
++src/Atlas/Signature/Table.flix	src/ScientificTable.flix
++src/Atlas/Signature/Table.flix	src/ScientificTable/Columns.flix
++src/Localization.flix	src/Repository.flix
++src/Localization/IssueTable.flix	src/Localization.flix
++src/Localization/IssueTable.flix	src/ScientificTable.flix
++src/Localization/IssueTable.flix	src/ScientificTable/Columns.flix
++src/Localization/PredictionTable.flix	src/Localization.flix
++src/Localization/PredictionTable.flix	src/ScientificTable.flix
++src/Localization/PredictionTable.flix	src/ScientificTable/Columns.flix
++src/Localization/PriorTable.flix	src/Localization.flix
++src/Localization/PriorTable.flix	src/ScientificTable.flix
++src/Localization/PriorTable.flix	src/ScientificTable/Columns.flix
++src/Localization/Sandwich.flix	src/Atlas.flix
++src/Localization/Sandwich.flix	src/Localization.flix
++src/Localization/Sandwich.flix	src/Radii.flix
++src/Localization/Sandwich.flix	src/Repository.flix
++src/Localization/Sandwich.flix	src/Repository/Structure.flix
++src/Population/Table.flix	src/Population.flix
++src/Population/Table.flix	src/ScientificTable.flix
++src/Population/Table.flix	src/ScientificTable/Columns.flix
++src/Radii/Evaluate.flix	src/Radii.flix
++src/Radii/Evaluate.flix	src/Repository.flix
++src/Radii/Evaluate.flix	src/Repository/Physical.flix
++src/Radii/Evaluate.flix	src/Repository/Structure.flix
++src/Radii/Synthesize.flix	src/Radii.flix
++src/Repository.flix	src/Repository/Grit.flix
++src/Repository.flix	src/Repository/Structure.flix
++src/Repository/Grit.flix	src/Repository.flix
++src/Repository/Physical.flix	src/Repository.flix
++src/Repository/Physical.flix	src/Repository/Structure.flix
++src/Repository/Reference.flix	src/Radii.flix
++src/Repository/Reference.flix	src/Radii/Evaluate.flix
++src/Repository/Reference.flix	src/Repository.flix
++src/Repository/Reference.flix	src/Repository/Structure.flix
++src/Repository/Structure.flix	src/Repository.flix
++src/Repository/Table.flix	src/Repository.flix
++src/Repository/Table.flix	src/Repository/Structure.flix
++src/Repository/Table.flix	src/ScientificIdentity.flix
++src/Repository/Table.flix	src/ScientificTable.flix
++src/Repository/Table.flix	src/ScientificTable/Columns.flix
++src/ScientificTable/Columns.flix	src/ScientificTable.flix
++test/ParityTest.flix	src/Radii.flix
++test/ParityTest.flix	src/Radii/Evaluate.flix
++test/ParityTest.flix	src/Radii/Synthesize.flix
++test/ParityTest.flix	src/Repository.flix
++test/ParityTest.flix	src/Repository/Physical.flix
++test/ParityTest.flix	src/Repository/Reference.flix
++test/ParityTest.flix	src/Repository/Structure.flix
+diff --git a/experiments/atlas-parallelism/extracted/baseline/files.txt b/experiments/atlas-parallelism/extracted/baseline/files.txt
+new file mode 100644
+index 0000000000..8a92b403a1
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/baseline/files.txt
+@@ -0,0 +1,41 @@
++build/src/Atlas.flix
++build/src/Atlas/Signature.flix
++build/src/AtlasRepository.flix
++build/src/AtlasSignatureTableTest.flix
++build/src/AtlasTest.flix
++build/src/IdentityTest.flix
++build/src/InferenceBoundaryTest.flix
++build/src/LocalizationTest.flix
++build/src/PopulationTableTest.flix
++build/src/Repository.flix
++build/src/RepositoryAdmissionTest.flix
++build/src/RepositoryTableTest.flix
++build/src/ScientificTableTest.flix
++experiments/atlas-swe-explore/Aggregate.flix
++experiments/atlas-swe-explore/Main.flix
++experiments/atlas-swe-explore/Report.flix
++experiments/atlas-swe-explore/Summary.flix
++src/Atlas.flix
++src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix
++src/Atlas/Signature/Table.flix
++src/Experiment.flix
++src/Localization.flix
++src/Localization/IssueTable.flix
++src/Localization/PredictionTable.flix
++src/Localization/PriorTable.flix
++src/Localization/Sandwich.flix
++src/Population.flix
++src/Population/Table.flix
++src/Radii.flix
++src/Radii/Evaluate.flix
++src/Radii/Synthesize.flix
++src/Repository.flix
++src/Repository/Grit.flix
++src/Repository/Physical.flix
++src/Repository/Reference.flix
++src/Repository/Structure.flix
++src/Repository/Table.flix
++src/ScientificIdentity.flix
++src/ScientificTable.flix
++test/ParityTest.flix
+diff --git a/experiments/atlas-parallelism/extracted/baseline/modules.txt b/experiments/atlas-parallelism/extracted/baseline/modules.txt
+new file mode 100644
+index 0000000000..db791d3e1f
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/baseline/modules.txt
+@@ -0,0 +1,29 @@
++Atlas	build/src/Atlas.flix
++Atlas	src/Atlas.flix
++Atlas.Signature	build/src/Atlas/Signature.flix
++Atlas.Signature	src/Atlas/Signature.flix
++Atlas.Signature.Summary	src/Atlas/Signature/Summary.flix
++Atlas.Signature.Table	src/Atlas/Signature/Table.flix
++CensusMain	experiments/atlas-swe-explore/Main.flix
++Experiment	src/Experiment.flix
++Localization	src/Localization.flix
++Localization.IssueTable	src/Localization/IssueTable.flix
++Localization.PredictionTable	src/Localization/PredictionTable.flix
++Localization.PriorTable	src/Localization/PriorTable.flix
++Localization.Sandwich	src/Localization/Sandwich.flix
++ParityTest	test/ParityTest.flix
++Population	src/Population.flix
++Population.Table	src/Population/Table.flix
++Radii	src/Radii.flix
++Radii.Evaluate	src/Radii/Evaluate.flix
++Radii.Synthesize	src/Radii/Synthesize.flix
++Repository	build/src/AtlasRepository.flix
++Repository	build/src/Repository.flix
++Repository	src/Repository.flix
++Repository.Grit	src/Repository/Grit.flix
++Repository.Physical	src/Repository/Physical.flix
++Repository.Reference	src/Repository/Reference.flix
++Repository.Structure	src/Repository/Structure.flix
++Repository.Table	src/Repository/Table.flix
++ScientificIdentity	src/ScientificIdentity.flix
++ScientificTable	src/ScientificTable.flix
+diff --git a/experiments/atlas-parallelism/extracted/baseline/uses.txt b/experiments/atlas-parallelism/extracted/baseline/uses.txt
+new file mode 100644
+index 0000000000..54a8dbbf7f
+--- /dev/null
++++ b/experiments/atlas-parallelism/extracted/baseline/uses.txt
+@@ -0,0 +1,123 @@
++build/src/Atlas.flix	src/Atlas.flix
++build/src/Atlas/Signature.flix	src/Atlas.flix
++build/src/Atlas/Signature.flix	src/Atlas/Signature.flix
++build/src/AtlasRepository.flix	src/Repository.flix
++build/src/AtlasRepository.flix	src/Repository/Structure.flix
++build/src/AtlasSignatureTableTest.flix	src/Atlas.flix
++build/src/AtlasSignatureTableTest.flix	src/Atlas/Signature.flix
++build/src/AtlasSignatureTableTest.flix	src/Atlas/Signature/Table.flix
++build/src/AtlasSignatureTableTest.flix	src/Radii.flix
++build/src/AtlasSignatureTableTest.flix	src/Repository.flix
++build/src/AtlasSignatureTableTest.flix	src/Repository/Structure.flix
++build/src/AtlasSignatureTableTest.flix	src/ScientificTable.flix
++build/src/AtlasTest.flix	src/Atlas.flix
++build/src/AtlasTest.flix	src/Atlas/Signature.flix
++build/src/AtlasTest.flix	src/Repository.flix
++build/src/AtlasTest.flix	src/Repository/Structure.flix
++build/src/IdentityTest.flix	src/ScientificIdentity.flix
++build/src/LocalizationTest.flix	src/Atlas.flix
++build/src/LocalizationTest.flix	src/Localization.flix
++build/src/LocalizationTest.flix	src/Localization/IssueTable.flix
++build/src/LocalizationTest.flix	src/Localization/PredictionTable.flix
++build/src/LocalizationTest.flix	src/Localization/PriorTable.flix
++build/src/LocalizationTest.flix	src/Localization/Sandwich.flix
++build/src/LocalizationTest.flix	src/Repository.flix
++build/src/LocalizationTest.flix	src/Repository/Structure.flix
++build/src/PopulationTableTest.flix	src/Population.flix
++build/src/PopulationTableTest.flix	src/Population/Table.flix
++build/src/Repository.flix	src/Repository.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository/Grit.flix
++build/src/RepositoryAdmissionTest.flix	src/Repository/Structure.flix
++build/src/RepositoryTableTest.flix	src/Repository.flix
++build/src/RepositoryTableTest.flix	src/Repository/Structure.flix
++build/src/RepositoryTableTest.flix	src/Repository/Table.flix
++build/src/RepositoryTableTest.flix	src/ScientificTable.flix
++build/src/ScientificTableTest.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Population.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/Population/Table.flix
++experiments/atlas-swe-explore/Aggregate.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Main.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Main.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository/Structure.flix
++experiments/atlas-swe-explore/Main.flix	src/Repository/Table.flix
++experiments/atlas-swe-explore/Main.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Report.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Report.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Report.flix	src/Localization.flix
++experiments/atlas-swe-explore/Report.flix	src/Repository.flix
++experiments/atlas-swe-explore/Report.flix	src/ScientificTable.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature/Summary.flix
++experiments/atlas-swe-explore/Summary.flix	src/Atlas/Signature/Table.flix
++experiments/atlas-swe-explore/Summary.flix	src/Experiment.flix
++experiments/atlas-swe-explore/Summary.flix	src/ScientificTable.flix
++src/Atlas.flix	src/Radii.flix
++src/Atlas.flix	src/Repository.flix
++src/Atlas.flix	src/Repository/Physical.flix
++src/Atlas.flix	src/Repository/Structure.flix
++src/Atlas/Signature.flix	src/Atlas.flix
++src/Atlas/Signature.flix	src/Radii.flix
++src/Atlas/Signature.flix	src/Repository.flix
++src/Atlas/Signature.flix	src/Repository/Structure.flix
++src/Atlas/Signature.flix	src/ScientificIdentity.flix
++src/Atlas/Signature/Summary.flix	src/Atlas.flix
++src/Atlas/Signature/Summary.flix	src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix	src/ScientificTable.flix
++src/Atlas/Signature/Table.flix	src/Atlas.flix
++src/Atlas/Signature/Table.flix	src/Atlas/Signature.flix
++src/Atlas/Signature/Table.flix	src/Radii.flix
++src/Atlas/Signature/Table.flix	src/Repository.flix
++src/Atlas/Signature/Table.flix	src/ScientificTable.flix
++src/Localization.flix	src/Repository.flix
++src/Localization/IssueTable.flix	src/Localization.flix
++src/Localization/IssueTable.flix	src/ScientificTable.flix
++src/Localization/PredictionTable.flix	src/Localization.flix
++src/Localization/PredictionTable.flix	src/Localization/Sandwich.flix
++src/Localization/PredictionTable.flix	src/ScientificTable.flix
++src/Localization/PriorTable.flix	src/Localization.flix
++src/Localization/PriorTable.flix	src/ScientificTable.flix
++src/Localization/Sandwich.flix	src/Atlas.flix
++src/Localization/Sandwich.flix	src/Localization.flix
++src/Localization/Sandwich.flix	src/Radii.flix
++src/Localization/Sandwich.flix	src/Repository.flix
++src/Localization/Sandwich.flix	src/Repository/Structure.flix
++src/Population/Table.flix	src/Population.flix
++src/Population/Table.flix	src/ScientificTable.flix
++src/Radii/Evaluate.flix	src/Radii.flix
++src/Radii/Evaluate.flix	src/Repository.flix
++src/Radii/Evaluate.flix	src/Repository/Physical.flix
++src/Radii/Evaluate.flix	src/Repository/Structure.flix
++src/Radii/Synthesize.flix	src/Radii.flix
++src/Repository.flix	src/Repository/Grit.flix
++src/Repository.flix	src/Repository/Structure.flix
++src/Repository/Grit.flix	src/Repository.flix
++src/Repository/Physical.flix	src/Repository.flix
++src/Repository/Physical.flix	src/Repository/Structure.flix
++src/Repository/Reference.flix	src/Radii.flix
++src/Repository/Reference.flix	src/Radii/Evaluate.flix
++src/Repository/Reference.flix	src/Repository.flix
++src/Repository/Reference.flix	src/Repository/Structure.flix
++src/Repository/Structure.flix	src/Repository.flix
++src/Repository/Table.flix	src/Repository.flix
++src/Repository/Table.flix	src/Repository/Structure.flix
++src/Repository/Table.flix	src/ScientificIdentity.flix
++src/Repository/Table.flix	src/ScientificTable.flix
++test/ParityTest.flix	src/Radii.flix
++test/ParityTest.flix	src/Radii/Evaluate.flix
++test/ParityTest.flix	src/Radii/Synthesize.flix
++test/ParityTest.flix	src/Repository.flix
++test/ParityTest.flix	src/Repository/Reference.flix
++test/ParityTest.flix	src/Repository/Structure.flix
+diff --git a/experiments/atlas-parallelism/parallelism.bzl b/experiments/atlas-parallelism/parallelism.bzl
+index abe6f1caaa..c2529046e3 100644
+--- a/experiments/atlas-parallelism/parallelism.bzl
++++ b/experiments/atlas-parallelism/parallelism.bzl
+@@ -39,7 +39,14 @@
+         mnemonic = "AttuneParallelismFacts",
+         progress_message = "Admitting self-world facts %{label}",
+     )
+-    return [DefaultInfo(files = depset([metadata, entities, relations]))]
++    return [
++        DefaultInfo(files = depset([metadata, entities, relations])),
++        OutputGroupInfo(
++            metadata = depset([metadata]),
++            entities = depset([entities]),
++            relations = depset([relations]),
++        ),
++    ]
+ 
+ attune_parallelism_facts = rule(
+     implementation = _facts_impl,
+@@ -88,36 +95,6 @@
+     },
+ )
+ 
+-def _pairs_impl(ctx):
+-    pairs = ctx.actions.declare_file(ctx.label.name + "/pairs.parquet")
+-    world = _world_paths(ctx.files.world)
+-    args = ctx.actions.args()
+-    for name, value in [
+-        ("attune.command", "pairs"),
+-        ("attune.world_metadata", world["metadata"]),
+-        ("attune.world_entities", world["entities"]),
+-        ("attune.world_relations", world["relations"]),
+-        ("attune.pairs_output", pairs.path),
+-    ]:
+-        args.add(_jvm_property(name, value))
+-    ctx.actions.run(
+-        executable = ctx.executable.tool,
+-        arguments = [args],
+-        inputs = ctx.files.world,
+-        outputs = [pairs],
+-        mnemonic = "AttuneParallelismPairs",
+-        progress_message = "Writing parallelism region pairs %{label}",
+-    )
+-    return [DefaultInfo(files = depset([pairs]))]
+-
+-attune_parallelism_pairs = rule(
+-    implementation = _pairs_impl,
+-    attrs = {
+-        "world": attr.label(allow_files = [".parquet"], mandatory = True),
+-        "tool": attr.label(executable = True, cfg = "exec", mandatory = True),
+-    },
+-)
+-
+ # The preregistered region names (attuneflix-regions-v1), in fixed order.
+ PARALLELISM_REGIONS = [
+     "repository",
+@@ -133,10 +110,11 @@
+ ]
+ 
+ def attune_parallelism_revision(name, revision, files, modules, uses, tool):
+-    """One revision's fact admission, per-region signature shards, and pairs.
++    """One revision's fact admission and per-region signature shards.
+ 
+     The per-region shard actions are independent (BuildBuddy runs them
+-    concurrently, mirroring the census per-world fan-out).
++    concurrently, mirroring the census per-world fan-out). The region-pairs
++    tables are produced by the compare action over both worlds.
+     """
+     attune_parallelism_facts(
+         name = name + "_world",
+@@ -153,8 +131,63 @@
+             world = ":%s_world" % name,
+             tool = tool,
+         )
+-    attune_parallelism_pairs(
+-        name = name + "_pairs",
+-        world = ":%s_world" % name,
++
++def _grit_world_impl(ctx):
++    metadata = ctx.actions.declare_file(ctx.label.name + "/metadata.parquet")
++    entities = ctx.actions.declare_file(ctx.label.name + "/entities.parquet")
++    relations = ctx.actions.declare_file(ctx.label.name + "/relations.parquet")
++    args = ctx.actions.args()
++    for name, value in [
++        ("attune.command", "grit_facts"),
++        ("attune.revision", ctx.attr.revision),
++        ("attune.sources", ctx.file.sources.path),
++        ("attune.facts", ctx.file.facts.path),
++        ("attune.world_metadata", metadata.path),
++        ("attune.world_entities", entities.path),
++        ("attune.world_relations", relations.path),
++    ]:
++        args.add(_jvm_property(name, value))
++    ctx.actions.run(
++        executable = ctx.executable.tool,
++        arguments = [args],
++        inputs = [ctx.file.sources, ctx.file.facts],
++        outputs = [metadata, entities, relations],
++        mnemonic = "AttuneParallelismGritWorld",
++        progress_message = "Admitting Grit-acquired self-world %{label}",
++    )
++    return [
++        DefaultInfo(files = depset([metadata, entities, relations])),
++        OutputGroupInfo(
++            metadata = depset([metadata]),
++            entities = depset([entities]),
++            relations = depset([relations]),
++        ),
++    ]
++
++attune_parallelism_grit_world = rule(
++    implementation = _grit_world_impl,
++    attrs = {
++        "revision": attr.string(mandatory = True),
++        "sources": attr.label(allow_single_file = [".parquet"], mandatory = True),
++        "facts": attr.label(allow_single_file = [".parquet"], mandatory = True),
++        "tool": attr.label(executable = True, cfg = "exec", mandatory = True),
++    },
++)
++
++def attune_parallelism_grit_revision(name, revision, sources, facts, tool):
++    """One v2 revision: re-admit its committed Grit acquisition evidence and
++    run the same independent per-region signature shards as v1."""
++    attune_parallelism_grit_world(
++        name = name + "_world",
++        revision = revision,
++        sources = sources,
++        facts = facts,
+         tool = tool,
+     )
++    for region in PARALLELISM_REGIONS:
++        attune_parallelism_region(
++            name = "%s_region_%s" % (name, region),
++            region = region,
++            world = ":%s_world" % name,
++            tool = tool,
++        )
+diff --git a/experiments/atlas-parallelism/v2/README.md b/experiments/atlas-parallelism/v2/README.md
+new file mode 100644
+index 0000000000..ddb698c1c7
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/README.md
+@@ -0,0 +1,121 @@
++# v2 acquisition inputs — real Grit over the two frozen revisions
++
++These artifacts are the **frozen measurement inputs** of the v2 self-signature
++(PREREGISTRATION.md, section "AMENDMENT — v2 acquisition"). They exist so that
++the in-graph measurement — ordinary `Repository.admit` -> `Repository.World` ->
++`Repository.Physical` -> `Atlas.evaluate` -> parallelism metrics — is hermetic
++and reproducible without VCS access at build time, the same way the Atlas census
++commits its frozen world evidence under `.attune/`.
++
++They are **data**, not a second source tree and not handwritten code: nothing
++here is compiled, imported, or counted as tracked Flix.
++
++## The two frozen revisions
++
++| role | revision (git) | worktree |
++|---|---|---|
++| baseline | `bcfc126db7b7c7f535353ccc8afca44465903571` | `/tmp/attuneflix-baseline` (isolated `git worktree`, never mutated) |
++| cleaned | `ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1` | `/tmp/attuneflix-cleaned` (isolated `git worktree`) |
++
++Both are the revisions already bound by the v1 experiment: the mission's
++recorded baseline and the sealed cleaned revision. The experiment was not
++restarted from scratch; only the acquisition system changed from the v1 lexical
++proxy to real Grit.
++
++## How these artifacts were produced (exact reproduction)
++
++```bash
++# 1. isolated worktrees at the two frozen revisions (never the live worktree)
++git worktree add /tmp/attuneflix-baseline bcfc126db7b7c7f535353ccc8afca44465903571
++git worktree add /tmp/attuneflix-cleaned  ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1
++
++# 2. the repository's own acquisition path, built by Bazel
++nix develop --command bazel build //experiments/atlas-parallelism:acquire --config=buildbuddy-rbe
++
++# 3. Grit acquisition over each frozen worktree (typed artifacts land in v2/)
++bash experiments/atlas-parallelism/v2_extract.sh \
++    bazel-bin/experiments/atlas-parallelism/acquire baseline /tmp/attuneflix-baseline \
++    experiments/atlas-parallelism/v2
++bash experiments/atlas-parallelism/v2_extract.sh \
++    bazel-bin/experiments/atlas-parallelism/acquire cleaned /tmp/attuneflix-cleaned \
++    experiments/atlas-parallelism/v2
++
++# 4. the acquisition evidence report (printed, not stored)
++bazel-bin/experiments/atlas-parallelism/acquire \
++    --jvm_flag=-Dattune.command=summary \
++    --jvm_flag=-Dattune.sources=experiments/atlas-parallelism/v2/sources/baseline.sources.parquet \
++    --jvm_flag=-Dattune.facts=experiments/atlas-parallelism/v2/grit/baseline.facts.parquet
++```
++
++The engine is the frozen hermetic Grit closure
++(`getgrit/gritql @ c80b3026471b229f41b279c3eb0c162dcdacfdb1`, sha256
++`87066b84963dc1b89b9344fbae046f941ed8fce5e983c48d74a26964f6e7cb48`), extended
++with the one pinned Flix grammar (`omarjatoi/tree-sitter-flix @
++78cff149b2e9897456f94844872353b5ee0ca93b`) and a maintained Starlark grammar
++(`tree-sitter-grammars/tree-sitter-starlark @
++a453dbf3ba433db0e5ec621a38a7e59d72e4dc69`). The acquisition code is
++`Repository.Acquire` (the one program-dispatch/native boundary) plus
++`AcquisitionDriver`: For every admitted file it runs the three packaged
++frontends (`src/grit/{defines,imports,calls}/<language>.grit`) and projects the
++engine's envelopes through `Repository.Grit.facts`.
++
++## Admitted surface (exact inclusions)
++
++A tracked path is admitted iff the closure's one detection table admits its
++kind: `Repository.Grit.language(path) != None` — `.flix`, `.java`,
++`.js`/`.mjs`/`.cjs`, `.jsx`, `.ts`/`.mts`/`.cts`, `.tsx`, `.bzl`/`.bazel`/
++`.star`, and the Bazel build files `BUILD`, `BUILD.bazel`, `WORKSPACE`,
++`WORKSPACE.bazel` — excluding the frozen data tree `.attune/**`.
++
++Per file: `v2/sources/<role>.files.txt` (the sorted admitted list, the exact
++inclusion record), `v2/sources/<role>.revision.txt` (the worktree `HEAD` the
++list was derived from), and `v2/sources/<role>.sources.parquet` (path, sha256,
++byte length, language).
++
++| role | files | flix | java | starlark |
++|---|---|---|---|---|
++| baseline | 72 | 41 | 11 | 20 |
++| cleaned | 75 | 42 | 11 | 22 |
++
++Documented exclusions: the frozen `.attune/**` data tree and `*.parquet`
++(evidence, not implementation source); Markdown documentation; `*.json`,
++`*.toml`, `*.lock`, `*.nix`, `*.sh`, `verify`, `.bazelrc`, `.gitignore`,
++`.scm` metadata (environment/build plumbing — not admitted by the closure's
++table); `*.rs` (the narrow native Grit seam; Rust is not an admitted Grit
++target language in this closure); `*.grit` (the frontends themselves, and
++absent at both measured revisions). **JS/TS:** no tracked `.js`/`.jsx`/`.ts`/
++`.tsx` exists at either revision (verified with `git ls-tree`), so the
++JavaScript/TypeScript frontends contribute no facts here — recorded, not hidden.
++
++## Artifacts and schemas
++
++- `v2/sources/<role>.sources.parquet` — `attuneflix-grit-sources-v2`:
++  path, sha256, byte_length, language.
++- `v2/grit/<role>.facts.parquet` — `attuneflix-grit-facts-v2`:
++  path, source_sha256, language, program, kind, start_byte, end_byte, value.
++  One row per `Repository.Grit.Fact` the engine emitted, per file and relation
++  program. `source_sha256` ties every fact to the exact source bytes it was
++  acquired from.
++
++Acquisition summary of record (from step 4):
++
++| role | files | facts | symbols | defines | imports | calls | unresolved imports | unresolved calls |
++|---|---|---|---|---|---|---|---|---|
++| baseline | 72 | 5,293 | 762 | 762 | 90 | 769 | 433 | 2,263 |
++| cleaned | 75 | 5,124 | 650 | 650 | 125 | 693 | 423 | 2,439 |
++
++Fact kinds emitted (engine output, not a script's guess): `definition` (Flix,
++Java, Starlark defines), `import` (all three), `dependency` (the one Starlark
++relation-word extension for real label dependencies), and `call` (all three).
++The admitted `calls` relation is non-empty in v2 — 769 / 693 symbol-level call
++edges — where the v1 lexical proxy structurally could not have any.
++
++## How the measurement consumes them
++
++`//experiments/atlas-parallelism:v2_{baseline,cleaned}_world` re-admits these
++facts through ordinary `Repository.admit` **inside the Bazel action graph**
++(no source text is parsed in the graph), then runs the same per-region Atlas
++signature shards as v1. The re-admission verifies, per fact, that the path is
++admitted, that the source hash and language match the inclusion record, and
++that the byte range lies inside the source — the evidence and the inclusion
++record cannot drift apart silently.
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/baseline.fanout.txt b/experiments/atlas-parallelism/v2/bazel-locality/baseline.fanout.txt
+new file mode 100644
+index 0000000000..2b8a8f1de8
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/baseline.fanout.txt
+@@ -0,0 +1,55 @@
++== targets declaring ScientificTable.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all)
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_signature_table_check
++//test:localization_sandwich_check
++//test:population_table_check
++//test:repository_table_check
++//test:scientific_table_check
++  (dependents: 9)
++== targets declaring Radii.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all)
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:localization_sandwich_check
++  (dependents: 8)
++== targets declaring Structure.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all)
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:localization_sandwich_check
++//test:repository_admission_check
++//test:repository_table_check
++  (dependents: 10)
++== targets declaring Repository.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all)
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:grit_boundary_check
++//test:localization_sandwich_check
++//test:repository_admission_check
++//test:repository_table_check
++  (dependents: 11)
++== targets declaring Atlas.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all)
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:localization_sandwich_check
++  (dependents: 7)
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/baseline.targets.txt b/experiments/atlas-parallelism/v2/bazel-locality/baseline.targets.txt
+new file mode 100644
+index 0000000000..dfb7a4056b
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/baseline.targets.txt
+@@ -0,0 +1,41 @@
++alias rule //data/evaluation:swe_bench_multilingual_raw
++alias rule //data/evaluation:swe_bench_pro_raw
++alias rule //data/evaluation:swe_explore_raw
++attune_atlas_signature rule //experiments/atlas-swe-explore:signature_fixture
++attune_atlas_signature_summary rule //experiments/atlas-swe-explore:summary_fixture
++attune_population_files rule //experiments/swe-explore-js-ts-scale:population
++attune_world_fixture rule //experiments/atlas-swe-explore:world_fixture
++checked_test rule //test:atlas_grammar_test
++checked_test rule //test:atlas_signature_table_test
++checked_test rule //test:core_parity_test
++checked_test rule //test:grit_boundary_test
++checked_test rule //test:identity_test
++checked_test rule //test:inference_boundary_test
++checked_test rule //test:localization_sandwich_test
++checked_test rule //test:population_table_test
++checked_test rule //test:repository_admission_test
++checked_test rule //test:repository_table_test
++checked_test rule //test:scientific_table_test
++filegroup rule //data/evaluation:raw_sources
++flix_check rule //test:atlas_grammar_check
++flix_check rule //test:atlas_signature_table_check
++flix_check rule //test:core_parity_check
++flix_check rule //test:grit_boundary_check
++flix_check rule //test:identity_check
++flix_check rule //test:inference_boundary_check
++flix_check rule //test:localization_sandwich_check
++flix_check rule //test:population_table_check
++flix_check rule //test:repository_admission_check
++flix_check rule //test:repository_table_check
++flix_check rule //test:scientific_table_check
++flix_fatjar rule //experiments/atlas-swe-explore:aggregate_flix
++flix_fatjar rule //experiments/atlas-swe-explore:report_flix
++flix_fatjar rule //experiments/atlas-swe-explore:signature_flix
++flix_fatjar rule //experiments/atlas-swe-explore:summary_flix
++genrule rule //experiments/atlas-swe-explore:protocol
++java_binary rule //:flix
++java_binary rule //experiments/atlas-swe-explore:aggregate
++java_binary rule //experiments/atlas-swe-explore:report
++java_binary rule //experiments/atlas-swe-explore:signature
++java_binary rule //experiments/atlas-swe-explore:summary
++test_suite rule //:tests
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/baseline.tests.txt b/experiments/atlas-parallelism/v2/bazel-locality/baseline.tests.txt
+new file mode 100644
+index 0000000000..ed6ba7eb99
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/baseline.tests.txt
+@@ -0,0 +1,11 @@
++//test:atlas_grammar_test
++//test:atlas_signature_table_test
++//test:core_parity_test
++//test:grit_boundary_test
++//test:identity_test
++//test:inference_boundary_test
++//test:localization_sandwich_test
++//test:population_table_test
++//test:repository_admission_test
++//test:repository_table_test
++//test:scientific_table_test
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/cleaned.fanout.txt b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.fanout.txt
+new file mode 100644
+index 0000000000..0b95e4534c
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.fanout.txt
+@@ -0,0 +1,71 @@
++== targets declaring ScientificTable.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_signature_table_check
++//test:localization_sandwich_check
++//test:population_table_check
++//test:repository_table_check
++//test:scientific_table_check
++  (dependents: 10)
++== targets declaring Radii.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:localization_sandwich_check
++  (dependents: 9)
++== targets declaring Structure.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:localization_sandwich_check
++//test:repository_admission_check
++//test:repository_table_check
++  (dependents: 11)
++== targets declaring Repository.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:core_parity_check
++//test:localization_sandwich_check
++//test:repository_admission_check
++//test:repository_table_check
++  (dependents: 11)
++== targets declaring Atlas.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_grammar_check
++//test:atlas_signature_table_check
++//test:localization_sandwich_check
++  (dependents: 8)
++== targets declaring Columns.flix in srcs (universe: //:all + //build:all + //src:all + //test:all + //experiments/atlas-swe-explore:all + //experiments/swe-explore-js-ts-scale:all + //data/evaluation:all + //experiments/atlas-parallelism:all)
++//experiments/atlas-parallelism:parallelism_flix
++//experiments/atlas-swe-explore:aggregate_flix
++//experiments/atlas-swe-explore:report_flix
++//experiments/atlas-swe-explore:signature_flix
++//experiments/atlas-swe-explore:summary_flix
++//test:atlas_signature_table_check
++//test:localization_sandwich_check
++//test:population_table_check
++//test:repository_table_check
++//test:scientific_table_check
++  (dependents: 10)
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/cleaned.targets.txt b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.targets.txt
+new file mode 100644
+index 0000000000..d9ff945c5d
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.targets.txt
+@@ -0,0 +1,41 @@
++alias rule //data/evaluation:swe_bench_multilingual_raw
++alias rule //data/evaluation:swe_bench_pro_raw
++alias rule //data/evaluation:swe_explore_raw
++attune_atlas_signature rule //experiments/atlas-swe-explore:signature_fixture
++attune_atlas_signature_summary rule //experiments/atlas-swe-explore:summary_fixture
++attune_population_files rule //experiments/swe-explore-js-ts-scale:population
++attune_world_fixture rule //experiments/atlas-swe-explore:world_fixture
++checked_test rule //test:atlas_grammar_test
++checked_test rule //test:atlas_signature_table_test
++checked_test rule //test:core_parity_test
++checked_test rule //test:identity_test
++checked_test rule //test:inference_boundary_test
++checked_test rule //test:localization_sandwich_test
++checked_test rule //test:population_table_test
++checked_test rule //test:repository_admission_test
++checked_test rule //test:repository_table_test
++checked_test rule //test:scientific_table_test
++filegroup rule //data/evaluation:raw_sources
++flix_check rule //test:atlas_grammar_check
++flix_check rule //test:atlas_signature_table_check
++flix_check rule //test:core_parity_check
++flix_check rule //test:identity_check
++flix_check rule //test:inference_boundary_check
++flix_check rule //test:localization_sandwich_check
++flix_check rule //test:population_table_check
++flix_check rule //test:repository_admission_check
++flix_check rule //test:repository_table_check
++flix_check rule //test:scientific_table_check
++flix_fatjar rule //experiments/atlas-parallelism:parallelism_flix
++flix_fatjar rule //experiments/atlas-swe-explore:aggregate_flix
++flix_fatjar rule //experiments/atlas-swe-explore:report_flix
++flix_fatjar rule //experiments/atlas-swe-explore:signature_flix
++flix_fatjar rule //experiments/atlas-swe-explore:summary_flix
++genrule rule //experiments/atlas-swe-explore:protocol
++java_binary rule //:flix
++java_binary rule //experiments/atlas-parallelism:parallelism
++java_binary rule //experiments/atlas-swe-explore:aggregate
++java_binary rule //experiments/atlas-swe-explore:report
++java_binary rule //experiments/atlas-swe-explore:signature
++java_binary rule //experiments/atlas-swe-explore:summary
++test_suite rule //:tests
+diff --git a/experiments/atlas-parallelism/v2/bazel-locality/cleaned.tests.txt b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.tests.txt
+new file mode 100644
+index 0000000000..edbcf60421
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/bazel-locality/cleaned.tests.txt
+@@ -0,0 +1,10 @@
++//test:atlas_grammar_test
++//test:atlas_signature_table_test
++//test:core_parity_test
++//test:identity_test
++//test:inference_boundary_test
++//test:localization_sandwich_test
++//test:population_table_test
++//test:repository_admission_test
++//test:repository_table_test
++//test:scientific_table_test
+diff --git a/experiments/atlas-parallelism/v2/grit/baseline.facts.parquet b/experiments/atlas-parallelism/v2/grit/baseline.facts.parquet
+new file mode 100644
+index 0000000000..48867bfac2
+Binary files /dev/null and b/experiments/atlas-parallelism/v2/grit/baseline.facts.parquet differ
+diff --git a/experiments/atlas-parallelism/v2/grit/cleaned.facts.parquet b/experiments/atlas-parallelism/v2/grit/cleaned.facts.parquet
+new file mode 100644
+index 0000000000..5c58f30617
+Binary files /dev/null and b/experiments/atlas-parallelism/v2/grit/cleaned.facts.parquet differ
+diff --git a/experiments/atlas-parallelism/v2/sources/baseline.files.txt b/experiments/atlas-parallelism/v2/sources/baseline.files.txt
+new file mode 100644
+index 0000000000..bf0977f7d3
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/sources/baseline.files.txt
+@@ -0,0 +1,72 @@
++BUILD.bazel
++MODULE.bazel
++build/BUILD.bazel
++build/attune.bzl
++build/flix.bzl
++build/grit_repository.bzl
++build/jextract.bzl
++build/jextract_repository.bzl
++build/src/Atlas.flix
++build/src/Atlas/Signature.flix
++build/src/AtlasRepository.flix
++build/src/AtlasSignatureTableTest.flix
++build/src/AtlasTest.flix
++build/src/IdentityTest.flix
++build/src/InferenceBoundaryTest.flix
++build/src/LocalizationTest.flix
++build/src/PopulationTableTest.flix
++build/src/Repository.flix
++build/src/RepositoryAdmissionTest.flix
++build/src/RepositoryTableTest.flix
++build/src/ScientificTableTest.flix
++data/evaluation/BUILD.bazel
++experiments/atlas-swe-explore/Aggregate.flix
++experiments/atlas-swe-explore/BUILD.bazel
++experiments/atlas-swe-explore/Main.flix
++experiments/atlas-swe-explore/Report.flix
++experiments/atlas-swe-explore/Summary.flix
++experiments/atlas-swe-explore/census/BUILD.bazel
++experiments/atlas-swe-explore/census/census.bzl
++experiments/swe-explore-js-ts-scale/BUILD.bazel
++src/Atlas.flix
++src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix
++src/Atlas/Signature/Table.flix
++src/BUILD.bazel
++src/Experiment.flix
++src/Localization.flix
++src/Localization/IssueTable.flix
++src/Localization/PredictionTable.flix
++src/Localization/PriorTable.flix
++src/Localization/Sandwich.flix
++src/Population.flix
++src/Population/Table.flix
++src/Radii.flix
++src/Radii/Evaluate.flix
++src/Radii/Synthesize.flix
++src/Repository.flix
++src/Repository/Grit.flix
++src/Repository/Physical.flix
++src/Repository/Reference.flix
++src/Repository/Structure.flix
++src/Repository/Table.flix
++src/ScientificIdentity.flix
++src/ScientificTable.flix
++src/grit/BUILD.bazel
++src/native/grit/AttuneGrit.java
++src/native/grit/AttuneGritNative.java
++src/native/grit/AttuneGritTest.java
++src/native/grit/BUILD.bazel
++src/native/identity/AttuneIdentity.java
++src/native/identity/AttuneIdentityTest.java
++src/native/identity/BUILD.bazel
++src/native/inference/AttuneDecision.java
++src/native/inference/AttuneEmbed.java
++src/native/inference/AttuneInferenceTest.java
++src/native/inference/BUILD.bazel
++src/native/inference/OpenRouter.java
++src/native/parquet/AttuneParquet.java
++src/native/parquet/AttuneParquetTest.java
++src/native/parquet/BUILD.bazel
++test/BUILD.bazel
++test/ParityTest.flix
+diff --git a/experiments/atlas-parallelism/v2/sources/baseline.revision.txt b/experiments/atlas-parallelism/v2/sources/baseline.revision.txt
+new file mode 100644
+index 0000000000..a97f7fdb1a
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/sources/baseline.revision.txt
+@@ -0,0 +1,1 @@
++bcfc126db7b7c7f535353ccc8afca44465903571
+diff --git a/experiments/atlas-parallelism/v2/sources/baseline.sources.parquet b/experiments/atlas-parallelism/v2/sources/baseline.sources.parquet
+new file mode 100644
+index 0000000000..0d44f43cfc
+Binary files /dev/null and b/experiments/atlas-parallelism/v2/sources/baseline.sources.parquet differ
+diff --git a/experiments/atlas-parallelism/v2/sources/cleaned.files.txt b/experiments/atlas-parallelism/v2/sources/cleaned.files.txt
+new file mode 100644
+index 0000000000..195c2732a4
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/sources/cleaned.files.txt
+@@ -0,0 +1,75 @@
++BUILD.bazel
++MODULE.bazel
++build/BUILD.bazel
++build/attune.bzl
++build/flix.bzl
++build/grit_repository.bzl
++build/jextract.bzl
++build/jextract_repository.bzl
++build/src/AtlasSignatureTableTest.flix
++build/src/AtlasTest.flix
++build/src/IdentityTest.flix
++build/src/InferenceBoundaryTest.flix
++build/src/LocalizationTest.flix
++build/src/PopulationTableTest.flix
++build/src/Repository.flix
++build/src/RepositoryAdmissionTest.flix
++build/src/RepositoryTableTest.flix
++build/src/ScientificTableTest.flix
++build/src/TestWorlds.flix
++data/evaluation/BUILD.bazel
++experiments/atlas-parallelism/BUILD.bazel
++experiments/atlas-parallelism/Main.flix
++experiments/atlas-parallelism/Parallelism.flix
++experiments/atlas-parallelism/parallelism.bzl
++experiments/atlas-swe-explore/Aggregate.flix
++experiments/atlas-swe-explore/BUILD.bazel
++experiments/atlas-swe-explore/Main.flix
++experiments/atlas-swe-explore/Report.flix
++experiments/atlas-swe-explore/Summary.flix
++experiments/atlas-swe-explore/census/BUILD.bazel
++experiments/atlas-swe-explore/census/census.bzl
++experiments/swe-explore-js-ts-scale/BUILD.bazel
++src/Atlas.flix
++src/Atlas/Signature.flix
++src/Atlas/Signature/Summary.flix
++src/Atlas/Signature/Table.flix
++src/BUILD.bazel
++src/Experiment.flix
++src/Localization.flix
++src/Localization/IssueTable.flix
++src/Localization/PredictionTable.flix
++src/Localization/PriorTable.flix
++src/Localization/Sandwich.flix
++src/Population.flix
++src/Population/Table.flix
++src/Radii.flix
++src/Radii/Evaluate.flix
++src/Radii/Synthesize.flix
++src/Repository.flix
++src/Repository/Grit.flix
++src/Repository/Physical.flix
++src/Repository/Reference.flix
++src/Repository/Structure.flix
++src/Repository/Table.flix
++src/ScientificIdentity.flix
++src/ScientificTable.flix
++src/ScientificTable/Columns.flix
++src/grit/BUILD.bazel
++src/native/grit/AttuneGrit.java
++src/native/grit/AttuneGritNative.java
++src/native/grit/AttuneGritTest.java
++src/native/grit/BUILD.bazel
++src/native/identity/AttuneIdentity.java
++src/native/identity/AttuneIdentityTest.java
++src/native/identity/BUILD.bazel
++src/native/inference/AttuneDecision.java
++src/native/inference/AttuneEmbed.java
++src/native/inference/AttuneInferenceTest.java
++src/native/inference/BUILD.bazel
++src/native/inference/OpenRouter.java
++src/native/parquet/AttuneParquet.java
++src/native/parquet/AttuneParquetTest.java
++src/native/parquet/BUILD.bazel
++test/BUILD.bazel
++test/ParityTest.flix
+diff --git a/experiments/atlas-parallelism/v2/sources/cleaned.revision.txt b/experiments/atlas-parallelism/v2/sources/cleaned.revision.txt
+new file mode 100644
+index 0000000000..9f0a54c0e0
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2/sources/cleaned.revision.txt
+@@ -0,0 +1,1 @@
++ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1
+diff --git a/experiments/atlas-parallelism/v2/sources/cleaned.sources.parquet b/experiments/atlas-parallelism/v2/sources/cleaned.sources.parquet
+new file mode 100644
+index 0000000000..2af9f7189d
+Binary files /dev/null and b/experiments/atlas-parallelism/v2/sources/cleaned.sources.parquet differ
+diff --git a/experiments/atlas-parallelism/v2_bazel_locality.sh b/experiments/atlas-parallelism/v2_bazel_locality.sh
+new file mode 100644
+index 0000000000..8c188e0362
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2_bazel_locality.sh
+@@ -0,0 +1,33 @@
++#!/bin/bash
++# Bazel analyzed-graph locality evidence for one frozen revision
++# (PREREGISTRATION.md "AMENDMENT — v2 acquisition", "Bazel locality").
++#
++# This is a SEPARATE execution/build evidence channel. It never substitutes for
++# Grit acquisition: the source signature is the Atlas measurement.
++#
++# Usage: v2_bazel_locality.sh ROLE WORKTREE OUT_DIR FILE...
++#
++# Writes OUT_DIR/ROLE.targets.txt   (every analyzed target with its kind)
++#        OUT_DIR/ROLE.tests.txt     (independently runnable test targets)
++#        OUT_DIR/ROLE.fanout.txt    (direct dependents = srcs fan-out, per file)
++#
++# BAZEL_LOCALITY_UNIVERSE optionally restricts the queried target universe. The
++# frozen baseline revision cannot be loaded with the full `//...` universe in a
++# fresh output base (its Rust crate universe module extension cannot be
++# evaluated), so its locality evidence uses the Rust-free source/build
++# universe; the restriction is recorded in the report, never hidden.
++set -eu
++role="$1"; worktree="$2"; out="$3"; shift 3
++universe="${BAZEL_LOCALITY_UNIVERSE:-//...}"
++mkdir -p "$out"
++cd "$worktree"
++bazel query "$universe" --output=label_kind --noshow_progress | LC_ALL=C sort > "$out/$role.targets.txt"
++bazel query "kind(\".*_test\", $universe)" --noshow_progress | LC_ALL=C sort > "$out/$role.tests.txt"
++: > "$out/$role.fanout.txt"
++for file in "$@"; do
++    name="$(basename "$file")"
++    echo "== targets declaring $name in srcs (universe: $universe)" >> "$out/$role.fanout.txt"
++    bazel query "attr(srcs, \"$name\", $universe)" --noshow_progress | LC_ALL=C sort >> "$out/$role.fanout.txt"
++    echo "  (dependents: $(bazel query "attr(srcs, \"$name\", $universe)" --noshow_progress | wc -l))" >> "$out/$role.fanout.txt"
++done
++echo "BAZEL_LOCALITY role=$role universe=$universe targets=$(wc -l < "$out/$role.targets.txt") tests=$(wc -l < "$out/$role.tests.txt")"
+diff --git a/experiments/atlas-parallelism/v2_extract.sh b/experiments/atlas-parallelism/v2_extract.sh
+new file mode 100755
+index 0000000000..03154ef5ec
+--- /dev/null
++++ b/experiments/atlas-parallelism/v2_extract.sh
+@@ -0,0 +1,46 @@
++#!/bin/bash
++# attuneflix-grit-acquisition-v2 seam (PREREGISTRATION.md "AMENDMENT — v2
++# acquisition").
++#
++# Usage: v2_extract.sh TOOL ROLE WORKTREE OUT_DIR
++#
++#   TOOL      path to the built acquisition binary
++#             (bazel-bin/experiments/atlas-parallelism/acquire)
++#   ROLE      baseline | cleaned
++#   WORKTREE  isolated git worktree holding the frozen revision
++#   OUT_DIR   experiments/atlas-parallelism/v2
++#
++# Writes OUT_DIR/sources/ROLE.files.txt (the admitted file list: the exact
++# inclusion record, one sorted repository-relative path per line), then runs the
++# repository's own Grit acquisition path over WORKTREE to write
++# OUT_DIR/sources/ROLE.sources.parquet (path, sha256, byte length, language)
++# and OUT_DIR/grit/ROLE.facts.parquet (every emitted Repository.Grit.Fact).
++#
++# The file list is the closure's own admitted-kind rule: a tracked path is
++# admitted when Repository.Grit.language(path) admits it. Deterministic over the
++# worktree's checked-out revision; nothing else is read.
++set -eu
++
++tool="$1"; role="$2"; worktree="$3"; out="$4"
++test -x "$tool"
++test -d "$worktree"
++
++manifest="$out/sources/$role.files.txt"
++mkdir -p "$out/sources" "$out/grit"
++
++revision="$(git -C "$worktree" rev-parse HEAD)"
++printf '%s\n' "$revision" > "$out/sources/$role.revision.txt"
++
++git -C "$worktree" ls-tree -r --name-only HEAD \
++    | grep -v '^\.attune/' \
++    | grep -E '(\.(flix|java|js|jsx|ts|tsx|mjs|cjs|mts|cts|bzl|bazel|star)$|(^|/)(BUILD|WORKSPACE)$)' \
++    | LC_ALL=C sort > "$manifest"
++
++echo "ATLAS_PARALLELISM_MANIFEST role=$role revision=$revision files=$(wc -l < "$manifest")"
++
++"$tool" \
++    "--jvm_flag=-Dattune.command=acquire" \
++    "--jvm_flag=-Dattune.root=$worktree" \
++    "--jvm_flag=-Dattune.manifest=$manifest" \
++    "--jvm_flag=-Dattune.sources=$out/sources/$role.sources.parquet" \
++    "--jvm_flag=-Dattune.facts=$out/grit/$role.facts.parquet"
+diff --git a/src/grit/README.md b/src/grit/README.md
+index 8e968d7d40..a9234064fa 100644
+--- a/src/grit/README.md
++++ b/src/grit/README.md
+@@ -1,18 +1,16 @@
+-# Attune JavaScript/TypeScript Grit frontends
++# Attune Grit frontends
+ 
+ This tree is the repository-visible semantic boundary for the three extracted
+ primitive relations: `defines`, `imports`, and `calls`. Each relation has an
+-explicit JavaScript, JSX, TypeScript, and TSX entry point. Attune derives
+-`defined_in`, `imported_by`, and `callers` by inversion; there are no
+-independent inverse extractors.
++explicit entry point per admitted source language. Attune derives `defined_in`,
++`imported_by`, and `callers` by inversion; there are no independent inverse
++extractors.
+ 
+-The first scale-out condition preserves the frozen extractor behavior. Plain
+-JavaScript is intentionally parsed by the JSX-capable frontend, as it was in
+-the historical 15-case run. The important change here is that this choice and
+-the TSX grammar are declared in files rather than produced by a native runtime
+-rewrite. A future switch to a different parser is a semantic extractor change
+-and must receive a new observation identity and a separate experimental
+-condition.
++Every language emits the same `Repository.Grit.Fact` shape and flows through
++ordinary Repository admission. There are no per-language fact types, and the
++native host never normalizes syntax differently for Atlas: language-specific
++syntax is parsed by Grit (inside the frozen closure), and `Repository.Acquire`
++turns the one wire envelope into one canonical `Repository.World`.
+ 
+ File routing is explicit:
+ 
+@@ -22,10 +20,43 @@
+ | `.jsx` | `jsx.grit` | `language js(jsx)` |
+ | `.ts`, `.mts`, `.cts` | `typescript.grit` | `language js(typescript)` |
+ | `.tsx` | `tsx.grit` | `language js(jsx)` |
+-
+-Unknown extensions are rejected before Grit runs. Every entry point documents
+-positive examples, exclusions, normalization, parser selection, returned
+-values, and the later resolver/admission responsibilities.
++| `.java` | `java.grit` | `language java` |
++| `.flix` | `flix.grit` | `language flix` |
++| `.bzl`, `.bazel`, `.star` | `starlark.grit` | `language starlark` |
++| `BUILD`, `BUILD.bazel`, `WORKSPACE`, `WORKSPACE.bazel` | `starlark.grit` | `language starlark` |
++
++`Repository.language(path)` (`Repository.Grit.language`) is the one detection
++table; unknown extensions are rejected before Grit runs. Every entry point
++documents positive examples, exclusions, normalization, parser selection,
++returned values, and the later resolver/admission responsibilities.
++
++The extractor behavior for plain JavaScript is preserved: it is parsed by the
++JSX-capable frontend, as it was in the historical 15-case run. The important
++change here is that this choice and the TSX grammar are declared in files rather
++than produced by a native runtime rewrite. A future switch to a different parser
++is a semantic extractor change and must receive a new observation identity and a
++separate experimental condition.
++
++The three admitted languages use the pinned Grammars inside the frozen Grit
++closure: Java via the upstream parser, Flix via the repository's one pinned
++`omarjatoi/tree-sitter-flix` grammar (shared with Zed), and Starlark/Bazel via a
++maintained Tree-sitter Starlark grammar. Tree-sitter is an implementation detail
++inside Grit; it is never exposed as a second frontend to Repository or Atlas.
++
++Flix references are actual syntax nodes, not the v1 dotted-textual-prefix proxy:
++`use`/`import` declarations and qualified `type_name` nodes. Import/reference
++resolution is explicit per language behind the one admission abstraction: Flix
++resolves a qualified module name to the admitted file whose module path it names
++(longest dotted prefix wins), Java resolves a dotted type reference to its source
++file, and Starlark resolves a repository-relative file label. JavaScript/TypeScript
++keep relative-path semantics. Only a unique admitted target is admitted;
++ambiguous and unknown references stay conservative.
++
++Starlark adds exactly one narrow relation-word extension: a log with kind
++`dependency` for a label/dependency reference that is a real repository
++dependency but not a function call, so it never enters `calls`. It is reused
++consistently and admitted through the ordinary `Imports` relation like every
++other reference.
+ 
+ The native host memoizes serialized evaluator output only when language,
+ program bytes, path, and source bytes are all exact matches. It retains at most
+diff --git a/src/grit/calls/flix.grit b/src/grit/calls/flix.grit
+new file mode 100644
+index 0000000000..587c1866ee
+--- /dev/null
++++ b/src/grit/calls/flix.grit
+@@ -0,0 +1,50 @@
++engine marzano(0.1)
++language flix
++
++// @dialect flix
++// Flix sources (.flix) are parsed by the repository's one pinned
++// tree-sitter-flix grammar (the Zed extension's pin) inside the frozen Grit
++// closure. Grit returns syntax matches plus logged source values. Attune later
++// assigns repository identities, resolves/admit edges, and derives inverse
++// relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// Application expressions between source-level callables.
++//
++// All of these match:
++//
++//   localHelper(greeting);
++//
++//   Client.verify(name);
++//
++//   Vector.map(f, values);
++//
++//   FileId(0);
++//
++// `$callee` is exactly the expression being applied:
++//
++//   localHelper(greeting)     -> localHelper
++//   Client.verify(name)       -> Client.verify
++//   Vector.map(f, values)     -> Vector.map
++//
++// Nested applications produce separate matches:
++//
++//   println(localHelper(name));
++//
++// becomes:
++//
++//   println
++//   localHelper
++//
++// Qualified names stay in the callee text so Attune can resolve the module
++// qualified reference deterministically (never by matching dotted textual
++// prefixes of the file).
++//
++// @example An application records its callee expression.
++// Client.verify(name)
++// @end
++
++application_expression(function = $callee) as $call where {
++  log(message="call", variable=$callee)
++}
+diff --git a/src/grit/calls/java.grit b/src/grit/calls/java.grit
+new file mode 100644
+index 0000000000..d8dfde5134
+--- /dev/null
++++ b/src/grit/calls/java.grit
+@@ -0,0 +1,58 @@
++engine marzano(0.1)
++language java
++
++// @dialect java
++// Java sources (.java) are parsed by the upstream tree-sitter-java grammar the
++// frozen Grit closure admits. Grit returns syntax matches plus logged source
++// values. Attune later assigns repository identities, resolves/admit edges, and
++// derives inverse relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// Calls between source-level callables.
++//
++// All of these match:
++//
++//   verify(name);
++//
++//   client.verify(name);
++//
++//   this.verify(name);
++//
++//   Client.create(name);
++//
++//   new Client(name);
++//
++// `$callee` is the invoked name, not the receiver expression:
++//
++//   verify(name)        -> verify
++//   client.verify(name) -> verify
++//   new Client(name)    -> Client
++//
++// Nested calls and constructor arguments produce separate matches:
++//
++//   verify(create(name));
++//
++// becomes:
++//
++//   verify
++//   create
++//
++// Explicit constructor invocations (`super(...)`, `this(...)`) and method
++// references (`Client::verify`) are deliberately excluded: they are not
++// ordinary invocations of a repository-owned callable.
++//
++// Attune later resolves the logged name to a SymbolId with the same
++// conservative unique-name rule used for every language; the frontend does not.
++//
++// @example A method call records the method name; a constructor call records
++// the constructed type name.
++// new Client(verify(name));
++// @end
++
++or {
++  method_invocation(name = $callee),
++  object_creation_expression(type = $callee)
++} as $call where {
++  log(message="call", variable=$callee)
++}
+diff --git a/src/grit/calls/starlark.grit b/src/grit/calls/starlark.grit
+new file mode 100644
+index 0000000000..1f25ccafaa
+--- /dev/null
++++ b/src/grit/calls/starlark.grit
+@@ -0,0 +1,59 @@
++engine marzano(0.1)
++language starlark
++
++// @dialect starlark
++// Starlark sources (`.bzl`, `BUILD`, `BUILD.bazel`, `WORKSPACE`, and `.bazel`
++// files) are parsed by the pinned tree-sitter-starlark grammar inside the
++// frozen Grit closure. Grit returns syntax matches plus logged source values.
++// Attune later assigns repository identities, resolves/admit edges, and derives
++// inverse relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// Callable invocations.
++//
++// All of these match:
++//
++//   grit_rule(name = "sample")
++//
++//   helper(ctx)
++//
++//   glob(["*.txt"])
++//
++//   ctx.actions.run(...)
++//
++// `$callee` is exactly the expression being called:
++//
++//   grit_rule(...)          -> grit_rule
++//   helper(ctx)             -> helper
++//   glob(["*.txt"])         -> glob
++//   ctx.actions.run(...)    -> ctx.actions.run
++//
++// Nested calls produce separate matches:
++//
++//   grit_rule(deps = glob(["*.txt"]))
++//
++// becomes:
++//
++//   grit_rule
++//   glob
++//
++// Module loading is deliberately excluded:
++//
++//   load("//tools:defs.bzl", "grit_rule")
++//
++// That relationship belongs to `imports/starlark.grit`; it loads a file rather
++// than invoking a repository callable.
++//
++// Rule names such as `grit_rule` usually come from an external repository,
++// so Attune resolves them with the same conservative unique-name rule used for
++// every language and rejects the edge when no admitted definition matches.
++//
++// @example A rule invocation records the invoked callable name.
++// grit_rule(name = "sample")
++// @end
++
++call(function = $callee) as $call where {
++  $callee <: not r"^load$",
++  log(message="call", variable=$callee)
++}
+diff --git a/src/grit/defines/flix.grit b/src/grit/defines/flix.grit
+new file mode 100644
+index 0000000000..2ad30efc75
+--- /dev/null
++++ b/src/grit/defines/flix.grit
+@@ -0,0 +1,77 @@
++engine marzano(0.1)
++language flix
++
++// @dialect flix
++// Flix sources (.flix) are parsed by the repository's one pinned
++// tree-sitter-flix grammar (the Zed extension's pin) inside the frozen Grit
++// closure. Grit returns syntax matches plus logged source values. Attune later
++// assigns repository identities, resolves/admit edges, and derives inverse
++// relations; this frontend does none of those jobs.
++
++// @syntax structural
++//
++// Named definitions.
++//
++// All of these define symbols:
++//
++//   mod Attune.Example {
++//     enum Colour {
++//       case Red,
++//       case Blue
++//     }
++//
++//     struct Box {
++//       value = String
++//     }
++//
++//     trait Show {
++//       pub def show(x: a): String
++//     }
++//
++//     eff Logger {
++//       pub def log(message: String): Unit
++//     }
++//
++//     pub def helper(name: String): String = {
++//       let local = value -> value + name;
++//       local(name)
++//     }
++//   }
++//
++// Grit matches the whole declaration and logs its source name:
++//
++//   Attune.Example
++//   Colour
++//   Red
++//   Blue
++//   Box
++//   Show
++//   Logger
++//   helper
++//   local
++//
++// Enum cases are definitions: they are the named cases a semantic owner
++// declares, and they are what match patterns and calls name.
++//
++// Type aliases and instance declarations are deliberately excluded: an alias
++// names no new owner, and an instance is keyed by the type it implements
++// rather than by a fresh repository name.
++//
++// @example A module and each declaration inside it are separate definitions.
++// mod Example {
++//   def helper(name: String): String = name
++// }
++// @end
++
++or {
++  module_declaration(name = $name),
++  def_declaration(name = $name),
++  local_def_expression(name = $name),
++  enum_declaration(name = $name),
++  enum_case(name = $name),
++  struct_declaration(name = $name),
++  trait_declaration(name = $name),
++  effect_declaration(name = $name)
++} as $definition where {
++  log(message="definition", variable=$name)
++}
+diff --git a/src/grit/defines/java.grit b/src/grit/defines/java.grit
+new file mode 100644
+index 0000000000..c59cc9e53f
+--- /dev/null
++++ b/src/grit/defines/java.grit
+@@ -0,0 +1,71 @@
++engine marzano(0.1)
++language java
++
++// @dialect java
++// Java sources (.java) are parsed by the upstream tree-sitter-java grammar the
++// frozen Grit closure admits. Grit returns syntax matches plus logged source
++// values. Attune later assigns repository identities, resolves/admit edges, and
++// derives inverse relations; this frontend does none of those jobs.
++
++// @syntax structural
++//
++// Named definitions.
++//
++// All of these define symbols:
++//
++//   package attune.core;
++//
++//   public class Client {
++//     public Client(String name) {}
++//
++//     public boolean verify(String name) {
++//       return name.length() > 0;
++//     }
++//
++//     static class Nested {}
++//   }
++//
++//   interface Verify {
++//     boolean verify(String name);
++//   }
++//
++//   enum Colour { RED, BLUE }
++//
++//   record Point(int x, int y) {}
++//
++// Grit matches the whole declaration and logs its source name:
++//
++//   Client
++//   Client
++//   verify
++//   Nested
++//   Verify
++//   verify
++//   Colour
++//   Point
++//
++// Constructors are definitions because Attune also observes constructor
++// invocations (`new Client()`); a constructor is owned by the class name.
++//
++// Fields, enum constants, and initializer blocks are deliberately excluded:
++// they are not callable ownership, and Attune does not model field access as a
++// call edge.
++//
++// @example A class and each of its methods are separate definitions.
++// public class Client {
++//   public boolean verify(String name) { return true; }
++// }
++// @end
++
++or {
++  class_declaration(name = $name),
++  interface_declaration(name = $name),
++  enum_declaration(name = $name),
++  record_declaration(name = $name),
++  annotation_type_declaration(name = $name),
++  method_declaration(name = $name),
++  constructor_declaration(name = $name),
++  compact_constructor_declaration(name = $name)
++} as $definition where {
++  log(message="definition", variable=$name)
++}
+diff --git a/src/grit/defines/starlark.grit b/src/grit/defines/starlark.grit
+new file mode 100644
+index 0000000000..8090188c7c
+--- /dev/null
++++ b/src/grit/defines/starlark.grit
+@@ -0,0 +1,60 @@
++engine marzano(0.1)
++language starlark
++
++// @dialect starlark
++// Starlark sources (`.bzl`, `BUILD`, `BUILD.bazel`, `WORKSPACE`, and `.bazel`
++// files) are parsed by the pinned tree-sitter-starlark grammar inside the
++// frozen Grit closure. Grit returns syntax matches plus logged source values.
++// Attune later assigns repository identities, resolves/admit edges, and derives
++// inverse relations; this frontend does none of those jobs.
++
++// @syntax structural
++//
++// Named definitions.
++//
++// All of these define symbols:
++//
++//   def my_macro(name, srcs = []):
++//       grit_rule(
++//           name = name,
++//           srcs = srcs,
++//       )
++//
++//   def _impl(ctx):
++//       return helper(ctx)
++//
++//   grit_rule(
++//       name = "sample",
++//       srcs = glob(["*.txt"]),
++//   )
++//
++// Grit matches the whole declaration and logs its source name:
++//
++//   my_macro
++//   _impl
++//   "sample"
++//
++// A rule-like invocation whose target name is a string literal is a named
++// Bazel target, so it defines a symbol. An invocation that merely forwards a
++// parameter (`name = name`) declares no new stable name inside this file and
++// is deliberately excluded.
++//
++// Local bindings are deliberately excluded: a Starlark assignment names a
++// value, not a callable owner.
++//
++// @example A macro and a named rule invocation are separate definitions.
++// def my_macro(name):
++//     grit_rule(name = name)
++// @end
++
++or {
++  function_definition(name = $name),
++  expression_statement() as $statement where {
++    $statement <: contains keyword_argument(name = $key, value = $name) where {
++      $key <: r"^name$",
++      $name <: string()
++    }
++  }
++} as $definition where {
++  log(message="definition", variable=$name)
++}
+diff --git a/src/grit/imports/flix.grit b/src/grit/imports/flix.grit
+new file mode 100644
+index 0000000000..75e34786b5
+--- /dev/null
++++ b/src/grit/imports/flix.grit
+@@ -0,0 +1,52 @@
++engine marzano(0.1)
++language flix
++
++// @dialect flix
++// Flix sources (.flix) are parsed by the repository's one pinned
++// tree-sitter-flix grammar (the Zed extension's pin) inside the frozen Grit
++// closure. Grit returns syntax matches plus logged source values. Attune later
++// assigns repository identities, resolves/admit edges, and derives inverse
++// relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// Real Flix module references.
++//
++// All of these match, as the actual syntax nodes they are:
++//
++//   use Attune.Core.Client
++//
++//   import Repository.Structure.FileId
++//
++//   def desk(file: Repository.Structure.FileId): Unit = ...
++//
++//   instance Order[Repository.Structure.SymbolId] { ... }
++//
++// `$reference` is the source syntax node:
++//
++//   use Attune.Core.Client                      (the whole use declaration)
++//   import Repository.Structure.FileId          (the whole import declaration)
++//   Repository.Structure.FileId                 (a qualified name node)
++//
++// The v1 proxy matched every dotted textual prefix of a file; this frontend
++// matches syntax nodes only. One reference node produces exactly one fact, and
++// Attune later resolves the qualified name to a repository FileId with Flix
++// module semantics (the longest module prefix that names an admitted file).
++//
++// A declaration's own name is not a dependency: only qualified *type* names are
++// logged, so a module declaration's own name never becomes a self-reference.
++//
++// @example A use declaration and each qualified type reference are separate
++// dependency facts.
++// use Attune.Core.Client
++// @end
++
++or {
++  use_declaration() as $reference,
++  import_declaration() as $reference,
++  type_name() as $reference where {
++    $reference <: r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+"
++  }
++} as $import where {
++  log(message="import", variable=$reference)
++}
+diff --git a/src/grit/imports/java.grit b/src/grit/imports/java.grit
+new file mode 100644
+index 0000000000..3470e1bfc5
+--- /dev/null
++++ b/src/grit/imports/java.grit
+@@ -0,0 +1,54 @@
++engine marzano(0.1)
++language java
++
++// @dialect java
++// Java sources (.java) are parsed by the upstream tree-sitter-java grammar the
++// frozen Grit closure admits. Grit returns syntax matches plus logged source
++// values. Attune later assigns repository identities, resolves/admit edges, and
++// derives inverse relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// Static type and package references.
++//
++// All of these match:
++//
++//   import attune.core.Client;
++//
++//   import java.util.List;
++//
++//   import static java.util.Objects.requireNonNull;
++//
++//   import attune.core.*;
++//
++// Map.Entry<Key, Value> entry;
++//
++// `$reference` is the qualified name node:
++//
++//   attune.core.Client        (import declaration)
++//   java.util.List            (import declaration)
++//   java.util.Objects.requireNonNull
++//   attune.core               (wildcard import names the package)
++//   Map.Entry                 (qualified type reference)
++//
++// A single-segment import (`import Client;`) logs the bare identifier.
++//
++// These do not match:
++//
++//   package attune.core;      (the file's own package declaration)
++//   String name;              (unqualified type references stay local)
++//   attune.core.Client[] ...  (array/cast syntax still logs the type node)
++//
++// Grit leaves the dotted name as source text. Attune later resolves it to a
++// repository FileId with Java package semantics; the frontend does not.
++//
++// @example An import declaration is one dependency reference.
++// import attune.core.Client;
++// @end
++
++or {
++  import_declaration(package = $reference),
++  scoped_type_identifier() as $reference
++} as $import where {
++  log(message="import", variable=$reference)
++}
+diff --git a/src/grit/imports/starlark.grit b/src/grit/imports/starlark.grit
+new file mode 100644
+index 0000000000..a4e6598c49
+--- /dev/null
++++ b/src/grit/imports/starlark.grit
+@@ -0,0 +1,56 @@
++engine marzano(0.1)
++language starlark
++
++// @dialect starlark
++// Starlark sources (`.bzl`, `BUILD`, `BUILD.bazel`, `WORKSPACE`, and `.bazel`
++// files) are parsed by the pinned tree-sitter-starlark grammar inside the
++// frozen Grit closure. Grit returns syntax matches plus logged source values.
++// Attune later assigns repository identities, resolves/admit edges, and derives
++// inverse relations; this frontend does none of those jobs.
++
++// @syntax source
++//
++// `load()` relationships and Bazel label references.
++//
++// These match:
++//
++//   load("//tools:defs.bzl", "grit_rule")
++//
++//   deps = ["//src:lib"]
++//
++//   deps = [":other", "@repo//x:y"]
++//
++// `$label` is the quoted label text:
++//
++//   load("//tools:defs.bzl", ...)  -> "//tools:defs.bzl"   (import)
++//   deps = ["//src:lib"]           -> "//src:lib"          (dependency)
++//   deps = [":other"]              -> ":other"             (dependency)
++//   deps = ["@repo//x:y"]          -> "@repo//x:y"         (dependency)
++//
++// `dependency` is the one narrow vocabulary extension this frontend adds: a
++// label/dependency reference is a real repository dependency, but it is not a
++// function call, so it never enters the `calls` relation. Attune admits both
++// kinds through the ordinary Imports relation.
++//
++// The label of a `load()` call is that relationship, never a second
++// dependency. Non-label strings (`"*.txt"`, `"sample"`, a symbol name in a
++// `load` list) do not match.
++//
++// @example A load label is an import; a deps label is a dependency.
++// deps = ["//src:lib"]
++// @end
++
++or {
++  string() as $label where {
++    $label <: r"\"(?:/|@|:)[^\"]*\"",
++    $label <: within call(function = `load`)
++  } where {
++    log(message="import", variable=$label)
++  },
++  string() as $label where {
++    $label <: r"\"(?:/|@|:)[^\"]*\"",
++    $label <: not within call(function = `load`)
++  } where {
++    log(message="dependency", variable=$label)
++  }
++}

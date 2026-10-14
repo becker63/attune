@@ -1,0 +1,7 @@
+{
+  "comparison_type": "coverage audit against preserved full world; no synthetic historical graph used",
+  "original_full_world_symbols_on_common_paths": 1776,
+  "new_common_world_symbols": 1776,
+  "lost_definitions": 0,
+  "gained_definitions": 0
+}

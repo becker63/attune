@@ -1,0 +1,2453 @@
+diff --git a/attune/src/Attune/Coverage.flix b/attune/src/Attune/Coverage.flix
+new file mode 100644
+index 0000000000..6686bb79a7
+--- /dev/null
++++ b/attune/src/Attune/Coverage.flix
+@@ -0,0 +1,117 @@
++/// The one canonical generic coverage, evidence and support vocabulary.
++///
++/// This is the shared core home for the values every later owner reuses: an
++/// exact acquisition scope carried with its world-bearing nominal facts, how
++/// much of that scope was actually observed, the witness/no-match/unknown/
++/// failure outcome, the observed/proposed status of one supporter, and the
++/// tri-state observation component.
++///
++/// The ownership direction is deliberate and acyclic. `Attune.Repository` earns
++/// acquisition completeness and supplies one nominal world-bearing facts /
++/// earned scoped coverage bridge. `Attune.Theory` consumes core values and a
++/// world's facts and never imports Study or View. `Attune.Study` consumes the
++/// structural artifacts. Nothing here reads a document, contacts a provider or
++/// decides a corpus verdict, and no arbitrary passed-in coverage state can
++/// substitute for acquisition evidence: a complete no-match needs `Complete`
++/// coverage, which only an owner that actually earned it may claim.
++pub mod Attune.Coverage {
++
++    use Attune.Envelope.{Atom, Fact, World}
++
++    /// How much of one scope's observation window was actually seen. `Complete`
++    /// is an honest claim that nothing else was observed; the others can never
++    /// support a complete no-match. It is the companion of this module, so it
++    /// stays the first declaration here.
++    pub enum Coverage with Eq, ToString {
++        case Complete
++        case Partial
++        case Missing
++        case Failure(String)
++    }
++
++    /// One exact acquisition scope: its world and the complete finite set of
++    /// facts acquired for it. The world is part of the scope's identity, so a
++    /// fact from another world can never donate a witness here.
++    pub type alias WorldFacts = { world = World, facts = List[Fact] }
++
++    /// The facts of one scope, carried with their world explicitly.
++    pub def scoped(world: World, facts: List[Fact]): WorldFacts = { world = world, facts = facts }
++
++    /// One logical outcome, distinct from an answer's emptiness.
++    pub enum Outcome with Eq, ToString {
++        case Witness
++        case NoMatch
++        case Unknown
++        case Failed
++    }
++
++    /// The stable outcome name.
++    pub def outcomeName(outcome: Outcome): String = match outcome {
++        case Outcome.Witness => "WITNESS"
++        case Outcome.NoMatch => "NO-MATCH"
++        case Outcome.Unknown => "UNKNOWN"
++        case Outcome.Failed  => "FAILED"
++    }
++
++    /// One scoped question: name an entity inside exactly one scope and ask one
++    /// directed atom about it.
++    pub type alias Query = { scope = World, subject = String, atom = Atom }
++
++    /// Resolve a scoped question against a coverage claim and the observed facts.
++    /// The scope is part of the match, so a fact from another scope is never
++    /// donated.
++    pub def observe(ask: Query, coverage: Coverage, facts: List[Fact]): Outcome = match coverage {
++        case Coverage.Failure(_) => Outcome.Failed
++        case Coverage.Complete  => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.NoMatch
++        case Coverage.Partial   => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.Unknown
++        case Coverage.Missing   => Outcome.Unknown
++    }
++
++    /// A witness is a fact of exactly this scope, subject and atom. The target is
++    /// the answer, not part of the question.
++    def hasWitness(ask: Query, facts: List[Fact]): Bool =
++        List.exists(fact ->
++            fact#world == ask#scope and fact#source == ask#subject and fact#atom == ask#atom, facts)
++
++    /// How one supporting entity was obtained. Observed evidence was measured;
++    /// Proposed evidence is a hypothesis, and only Observed evidence can meet an
++    /// observed guard.
++    pub enum Status with Eq {
++        case Observed
++        case Proposed
++    }
++
++    /// One piece of evidence: a shared scoped fact plus how it was obtained. The
++    /// supporting entity is the fact's own source and the fact's scope is part of
++    /// that identity, so a same-named entity in another scope is a different one.
++    pub type alias Support = { fact = Fact, status = Status }
++
++    /// The distinct observed entities that support `branch` in exactly `scope`.
++    /// The result dedupes by entity identity, so two derivations naming one
++    /// entity are one supporter and never two.
++    pub def witnesses(scope: World, branch: String, items: List[Support]): List[String] =
++        List.distinct(List.filterMap(item ->
++            if (item#fact#world == scope and item#fact#target == branch and item#status == Status.Observed)
++                Some(item#fact#source)
++            else None, items))
++
++    /// An explicit threshold over one sealed scope: it counts only observed
++    /// entities of exactly this scope and branch.
++    pub def meets(threshold: Int32, scope: World, branch: String, items: List[Support]): Bool =
++        List.length(witnesses(scope, branch, items)) >= threshold
++
++    /// The tri-state observation component, separate from any classified error.
++    /// A missing or failed observation is `Unmeasured`, never `ObservedFalse`.
++    pub enum Observation with Eq, ToString {
++        case ObservedTrue
++        case ObservedFalse
++        case Unmeasured
++    }
++
++    /// The stable observation name.
++    pub def observationName(observation: Observation): String = match observation {
++        case Observation.ObservedTrue  => "true"
++        case Observation.ObservedFalse => "false"
++        case Observation.Unmeasured    => "unmeasured"
++    }
++}
+diff --git a/attune/src/Attune/Policy.flix b/attune/src/Attune/Policy.flix
+index 3d91183cd3..70585b2b75 100644
+--- a/attune/src/Attune/Policy.flix
++++ b/attune/src/Attune/Policy.flix
+@@ -660,20 +660,20 @@
+     pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
+ 
+     /// The exact test portions whose reusable algorithms are policy-bearing
+-    /// semantics rather than assertions. P06 carries the descriptor safety check
+-    /// and the alpha-normalization identity (`safe`/`bound`/`identityKey` and the
+-    /// role renaming it depends on); P08 carries the typed prior/request/evidence
+-    /// contract and the `fromSeam`/`settle` decision semantics. The owner policy
+-    /// counts a semantic algorithm as cognitive under any placement, so the
+-    /// blanket `test/** -> Fixture` rule must not hide these two. The list is
+-    /// bounded and explicit — two named paths, not a general registry or lexer —
+-    /// and it holds exactly the test-placed semantics that `Attune.Theory` and
+-    /// `Attune.Study` have not absorbed yet, so it shrinks to empty when they do.
+-    /// The genuine `@Test` assertions and fixed fixture data in the same files
+-    /// are disclosed in `notes/design.md`; this accounting makes no per-function
+-    /// claim.
++    /// semantics rather than assertions. P06's descriptor safety check and
++    /// alpha-normalization identity (`safe`/`bound`/`identityKey` and the role
++    /// renaming it depends on) now live in `Attune.Theory`, so only P08 remains:
++    /// it carries the typed prior/request/evidence contract and the
++    /// `fromSeam`/`settle` decision semantics. The owner policy counts a semantic
++    /// algorithm as cognitive under any placement, so the blanket
++    /// `test/** -> Fixture` rule must not hide this one. The list is bounded and
++    /// explicit — one named path, not a general registry or lexer — and it holds
++    /// exactly the test-placed semantics that `Attune.Study` has not absorbed
++    /// yet, so it shrinks to empty when it does. The genuine `@Test` assertions
++    /// and fixed fixture data in the same file are disclosed in
++    /// `notes/design.md`; this accounting makes no per-function claim.
+     pub def isUnmigratedSemanticTest(path: String): Bool =
+-        path == "test/proposals/P06Descriptors.flix" or path == "test/proposals/P08Decisions.flix"
++        path == "test/proposals/P08Decisions.flix"
+ 
+     def isMechanicalPath(path: String): Bool =
+         hasPrefix("src/native/", path) or hasPrefix("platform/tools/", path)
+@@ -696,10 +696,11 @@
+         else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
+         else Ownership.Metadata
+ 
+-    /// The named components the accounting reports, in table order. `theory` is
+-    /// the not-yet-built sixth semantic owner and is expected to be zero until
+-    /// its own feature. `proposal-semantics` is the bounded pair of test-placed
+-    /// semantic portions that `Attune.Theory`/`Attune.Study` have not absorbed.
++    /// The named components the accounting reports, in table order. `core` holds
++    /// the shared envelope, application and the canonical generic
++    /// coverage/evidence/support values; `theory` is the sixth semantic owner.
++    /// `proposal-semantics` is the one remaining test-placed semantic portion
++    /// that `Attune.Study` has not absorbed yet.
+     pub def componentNames(): List[String] =
+         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
+             :: "frontends" :: "proposal-semantics" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
+@@ -711,8 +712,10 @@
+         else if (isBuildFile(path) or isRootMetadata(path) or hasPrefix("notes/", path)) "metadata"
+         else if (hasSuffix(".grit", path)) "frontends"
+         else if (path == "src/Attune/AsciiTree.flix") "ascii"
+-        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix") "core"
++        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix"
++            or path == "src/Attune/Coverage.flix") "core"
+         else if (hasPrefix("src/Attune/Repository", path)) "repository"
++        else if (path == "src/Attune/Theory.flix") "theory"
+         else if (path == "src/Attune/Study.flix") "study"
+         else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
+         else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
+diff --git a/attune/src/Attune/Repository.flix b/attune/src/Attune/Repository.flix
+index 0a5688f588..9625c5c7b3 100644
+--- a/attune/src/Attune/Repository.flix
++++ b/attune/src/Attune/Repository.flix
+@@ -43,6 +43,9 @@
+ 
+     import attune.grit.AttuneGrit
+ 
++    use Attune.Coverage
++    use Attune.Coverage.{Outcome, WorldFacts}
++    use Attune.Envelope.{Atom, Fact, World}
+     use Attune.Repository.Grit
+ 
+     // ---------------------------------------------------------------- refusals
+@@ -791,4 +794,47 @@
+             case Ok(edge)     => { edges = edge :: relation#edges, refusals = relation#refusals }
+             case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals }
+         }, emptyRelation(), entry#calls)
++
++    // -------------------------------------------- world facts and coverage
++
++    /// The one nominal world-bearing facts / earned scoped coverage bridge.
++    ///
++    /// Repository is the only owner that earns acquisition completeness, so it is
++    /// the only owner that may hand another owner a world-bearing fact set
++    /// together with a coverage claim for that exact scope. The facts are the six
++    /// core atoms over the admitted forward relations and the inverses derived
++    /// from them exactly once; the world is carried explicitly on every fact, so
++    /// a same-named entity in another world can never donate a witness.
++    pub def worldFacts(world: World, repository: Repository): List[Fact] =
++        List.map(pair -> worldEdge(world, Atom.Defines, pair), repository#defines)
++            ::: List.map(pair -> worldEdge(world, Atom.DefinedIn, pair), repository#definedIn)
++            ::: List.map(pair -> worldEdge(world, Atom.Imports, pair), repository#imports)
++            ::: List.map(pair -> worldEdge(world, Atom.ImportedBy, pair), repository#importedBy)
++            ::: List.map(pair -> worldEdge(world, Atom.Calls, pair), repository#calls)
++            ::: List.map(pair -> worldEdge(world, Atom.Callers, pair), repository#callers)
++
++    def worldEdge(world: World, atom: Atom, pair: (String, String)): Fact =
++        { world = world, source = firstOf(pair), atom = atom, target = secondOf(pair) }
++
++    /// The acquisition completeness this repository actually earned for its own
++    /// scope. `Complete` is claimed only when the whole declared world was
++    /// analyzed and every reference the extractor saw was admitted; any unresolved
++    /// reference leaves `Partial`, so a complete no-match can never be donated by
++    /// a scope that did not observe all of it.
++    pub def scopeCoverage(repository: Repository): Attune.Coverage.Coverage =
++        if (List.isEmpty(repository#refusals)) Attune.Coverage.Coverage.Complete
++        else Attune.Coverage.Coverage.Partial
++
++    /// The bridge as one value: the world-bearing nominal facts of an admitted
++    /// repository, carried with their world.
++    pub def scopedFacts(world: World, repository: Repository): WorldFacts =
++        { world = world, facts = worldFacts(world, repository) }
++
++    /// Resolve one scoped question against the coverage this repository earned,
++    /// never against a coverage claim supplied by the caller.
++    pub def ask(world: World, repository: Repository, subject: String, atom: Atom): Outcome =
++        Coverage.observe(
++            { scope = world, subject = subject, atom = atom },
++            scopeCoverage(repository),
++            worldFacts(world, repository))
+ }
+diff --git a/attune/src/Attune/Study.flix b/attune/src/Attune/Study.flix
+index 01f19c3348..c2e72c2eb7 100644
+--- a/attune/src/Attune/Study.flix
++++ b/attune/src/Attune/Study.flix
+@@ -1,104 +1,17 @@
+-/// Study's small typed evidence and artifact values.
+-///
+-/// Source facts, scoped observations, separately versioned static witnesses,
+-/// task declarations, predictions and execution observations are different typed
+-/// owners. A witness, a complete no-match, unknown and failure stay distinct; an
+-/// observation is `ObservedTrue`, `ObservedFalse` or `Unmeasured`, with a
+-/// classified error kept separate; and an artifact is identified by its declared
+-/// schema, producer and exact input rather than by its bytes. Nothing here reads
+-/// a document, contacts a provider or decides a corpus verdict.
++/// Study's small typed structural-artifact values.
++///
++/// Study consumes the structural artifacts of one world: the declared schema of
++/// a produced artifact, the artifact itself identified by schema, producer and
++/// exact input rather than by its bytes, a prediction input sealed off from
++/// gold, and an evaluator gold label. The generic coverage, evidence and support
++/// vocabulary Study used to carry now lives in its one canonical core home,
++/// `Attune.Coverage`, so Repository and Theory never have to import Study to
++/// describe coverage and no Repository -> Study -> Theory cycle can form.
++///
++/// Nothing here reads a document, contacts a provider or decides a corpus
++/// verdict.
+ pub mod Attune.Study {
+ 
+-    use Attune.Envelope.{Atom, Fact, World}
+-
+-    /// One logical outcome, distinct from an answer's emptiness.
+-    pub enum Outcome with Eq, ToString {
+-        case Witness
+-        case NoMatch
+-        case Unknown
+-        case Failed
+-    }
+-
+-    /// The stable outcome name.
+-    pub def outcomeName(outcome: Outcome): String = match outcome {
+-        case Outcome.Witness => "WITNESS"
+-        case Outcome.NoMatch => "NO-MATCH"
+-        case Outcome.Unknown => "UNKNOWN"
+-        case Outcome.Failed  => "FAILED"
+-    }
+-
+-    /// How much of one scope's observation window was actually seen. `Complete`
+-    /// is an honest claim that nothing else was observed; the others can never
+-    /// support a complete no-match.
+-    pub enum Coverage with Eq {
+-        case Complete
+-        case Partial
+-        case Missing
+-        case Failure(String)
+-    }
+-
+-    /// One scoped question: name an entity inside exactly one scope and ask one
+-    /// directed atom about it.
+-    pub type alias Query = { scope = World, subject = String, atom = Atom }
+-
+-    /// Resolve a scoped question against a coverage claim and the observed facts.
+-    /// The scope is part of the match, so a fact from another scope is never
+-    /// donated.
+-    pub def observe(ask: Query, coverage: Coverage, facts: List[Fact]): Outcome = match coverage {
+-        case Coverage.Failure(_) => Outcome.Failed
+-        case Coverage.Complete  => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.NoMatch
+-        case Coverage.Partial   => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.Unknown
+-        case Coverage.Missing   => Outcome.Unknown
+-    }
+-
+-    /// A witness is a fact of exactly this scope, subject and atom. The target is
+-    /// the answer, not part of the question.
+-    def hasWitness(ask: Query, facts: List[Fact]): Bool =
+-        List.exists(fact ->
+-            fact#world == ask#scope and fact#source == ask#subject and fact#atom == ask#atom, facts)
+-
+-    /// How one supporting entity was obtained. Observed evidence was measured;
+-    /// Proposed evidence is a hypothesis, and only Observed evidence can meet an
+-    /// observed guard.
+-    pub enum Status with Eq {
+-        case Observed
+-        case Proposed
+-    }
+-
+-    /// One piece of evidence: a shared scoped fact plus how it was obtained. The
+-    /// supporting entity is the fact's own source and the fact's scope is part of
+-    /// that identity, so a same-named entity in another scope is a different one.
+-    pub type alias Support = { fact = Fact, status = Status }
+-
+-    /// The distinct observed entities that support `branch` in exactly `scope`.
+-    /// The result dedupes by entity identity, so two derivations naming one
+-    /// entity are one supporter and never two.
+-    pub def witnesses(scope: World, branch: String, items: List[Support]): List[String] =
+-        List.distinct(List.filterMap(item ->
+-            if (item#fact#world == scope and item#fact#target == branch and item#status == Status.Observed)
+-                Some(item#fact#source)
+-            else None, items))
+-
+-    /// An explicit threshold over one sealed scope: it counts only observed
+-    /// entities of exactly this scope and branch.
+-    pub def meets(threshold: Int32, scope: World, branch: String, items: List[Support]): Bool =
+-        List.length(witnesses(scope, branch, items)) >= threshold
+-
+-    /// The tri-state observation component, separate from any classified error.
+-    /// A missing or failed observation is `Unmeasured`, never `ObservedFalse`.
+-    pub enum Observation with Eq, ToString {
+-        case ObservedTrue
+-        case ObservedFalse
+-        case Unmeasured
+-    }
+-
+-    /// The stable observation name.
+-    pub def observationName(observation: Observation): String = match observation {
+-        case Observation.ObservedTrue  => "true"
+-        case Observation.ObservedFalse => "false"
+-        case Observation.Unmeasured    => "unmeasured"
+-    }
+-
+     /// The declared schema of one produced artifact. Closed: an evaluator's gold
+     /// and a prediction input are different schemas, not interchangeable labels.
+     pub enum Schema with Eq, ToString {
+diff --git a/attune/src/Attune/Theory.flix b/attune/src/Attune/Theory.flix
+new file mode 100644
+index 0000000000..ca1bfb4180
+--- /dev/null
++++ b/attune/src/Attune/Theory.flix
+@@ -0,0 +1,798 @@
++/// Theory: bounded canonical descriptors lowered to fixed native Flix fragments.
++///
++/// Theory is the one owner of the admitted finite template family. It decides
++/// exactly three things and nothing else.
++///
++/// **Admission.** A descriptor carries one to three positive binary atoms over
++/// at most four typed role slots, at most two projected outputs and at most one
++/// bound inequality. A role's nominal domain is derived from the core atom
++/// signature table, so a role used as a file in one atom and as a symbol in
++/// another is unsafe and rejects. The positive atoms must be connected, no atom
++/// may name the same role twice, and every output and inequality role must be
++/// bound by a positive atom.
++///
++/// **Canonical identity.** Two descriptors name the same candidate exactly when
++/// one consistent renaming of their role slots makes the atom bodies, the bound
++/// inequality and the projected outputs equal. The canonical form is the least
++/// of the at most `maxRenamings()` renamings, so role spelling, conjunct body
++/// order and duplicate conjuncts normalize while a changed inequality, a
++/// reversed relation direction and a changed output role stay distinct. This is
++/// alpha-equivalence, not graph isomorphism and not logical equivalence.
++///
++/// **Lowering.** One deterministic population of at most `maxCandidates()`
++/// canonical candidates is sharded at about `shardSize()` descriptors per shard,
++/// at most `maxShards()` shards per world. A world's facts and one shard's
++/// descriptors become native `Edge` and `Desc` facts, and the fixed
++/// compiler-checked rule set below materializes anchor-free `Binding` and
++/// `Output` rows. Only the `Task` rule joins an application anchor, so a task or
++/// pair join never re-evaluates the structure. Candidate and world are part of
++/// every intermediate and result row, so no witness crosses a partition, and
++/// duplicate candidate ids can never union distinct descriptors.
++///
++/// Theory reads no document, contacts no provider, ranks no task and owns no
++/// verdict. It consumes core values and one world's facts through
++/// `Attune.Coverage` and never imports Study or View. There is no runtime rule
++/// text, no second evaluator and no search.
++pub mod Attune.Theory {
++
++    use Attune.Coverage.WorldFacts
++    use Attune.Envelope
++    use Attune.Envelope.{Atom, Domain, Fact, World}
++
++    // -------------------------------------------------------------- entities
++
++    /// One nominal-tagged entity inside a lowered fragment. The tag is derived
++    /// from the core atom signature table, so a file named `same` and a symbol
++    /// named `same` are different entities even though their payloads are equal.
++    pub enum Entity with Eq, Order, ToString, Hash {
++        case File(String)
++        case Symbol(String)
++    }
++
++    /// The stable display form of one tagged entity.
++    pub def entityText(entity: Entity): String = match entity {
++        case Entity.File(name)   => "file:" + name
++        case Entity.Symbol(name) => "symbol:" + name
++    }
++
++    /// The nominal domain a tagged entity belongs to.
++    pub def entityDomain(entity: Entity): Domain = match entity {
++        case Entity.File(_)   => Domain.Files
++        case Entity.Symbol(_) => Domain.Symbols
++    }
++
++    /// The tagged entity for one name in one domain.
++    pub def entityOf(name: String, domain: Domain): Entity = match domain {
++        case Domain.Files   => Entity.File(name)
++        case Domain.Symbols => Entity.Symbol(name)
++    }
++
++    // ----------------------------------------------------------- descriptors
++
++    /// One positive binary atom pattern over role slots. The relation carries its
++    /// own nominal domain signature, so the domains are never restated here.
++    pub type alias AtomPattern = { relation = Atom, subject = Int32, object = Int32 }
++
++    /// One candidate description: an ordered conjunction of positive binary atom
++    /// patterns, the bound inequalities between role slots, and the ordered
++    /// projected output slots. The descriptor has no head name; its identity is
++    /// exactly its structure.
++    pub type alias Descriptor = {
++        atoms   = List[AtomPattern],
++        denied  = List[(Int32, Int32)],
++        outputs = List[Int32]
++    }
++
++    /// One named candidate: a stable id and the descriptor it names.
++    pub type alias Candidate = { id = String, descriptor = Descriptor }
++
++    /// The declared bound on positive binary atoms.
++    pub def maxAtoms(): Int32 = 3
++
++    /// The declared bound on typed role slots.
++    pub def maxRoles(): Int32 = 4
++
++    /// The declared bound on projected output slots.
++    pub def maxOutputs(): Int32 = 2
++
++    /// The declared bound on bound inequalities.
++    pub def maxInequalities(): Int32 = 1
++
++    /// The declared bound on consistent role renamings canonicalization may use.
++    pub def maxRenamings(): Int32 = 24
++
++    /// The declared bound on canonical candidates in one deterministic population.
++    pub def maxCandidates(): Int32 = 256
++
++    /// The declared starting shard granularity.
++    pub def shardSize(): Int32 = 32
++
++    /// The declared bound on theory shards per world.
++    pub def maxShards(): Int32 = 8
++
++    // -------------------------------------------------------------- admission
++
++    /// True exactly when the descriptor is inside the admitted grammar.
++    pub def safe(candidate: Descriptor): Bool = {
++        let atoms = candidate#atoms;
++        let count = List.length(atoms);
++        count >= 1 and count <= maxAtoms()
++            and List.forAll(slotInRange, roleList(atoms))
++            and List.forAll(atom -> atom#subject != atom#object, atoms)
++            and connected(atoms)
++            and domainsConsistent(atoms)
++            and List.length(candidate#outputs) >= 1
++            and List.length(candidate#outputs) <= maxOutputs()
++            and List.length(List.distinct(candidate#outputs)) == List.length(candidate#outputs)
++            and List.forAll(output -> bound(output, atoms), candidate#outputs)
++            and List.length(candidate#denied) <= maxInequalities()
++            and List.forAll(pair -> match pair {
++                case (left, right) => left != right and bound(left, atoms) and bound(right, atoms)
++            }, candidate#denied)
++    }
++
++    def slotInRange(slot: Int32): Bool = slot >= 0 and slot < maxRoles()
++
++    /// True when some positive atom names this role slot.
++    pub def bound(role: Int32, atoms: List[AtomPattern]): Bool =
++        List.exists(atom -> atom#subject == role or atom#object == role, atoms)
++
++    /// The role slots a conjunction names, in first-appearance order.
++    def roleList(atoms: List[AtomPattern]): List[Int32] =
++        List.flatMap(atom -> atom#subject :: atom#object :: Nil, atoms)
++
++    /// Every named role is reachable from every other along the conjunction, so
++    /// the pattern is one connected structure rather than two disjoint ones.
++    def connected(atoms: List[AtomPattern]): Bool = {
++        let roles = List.distinct(roleList(atoms));
++        match roles {
++            case Nil        => false
++            case start :: _ => List.length(reachable(atoms, start :: Nil, Nil)) == List.length(roles)
++        }
++    }
++
++    def reachable(atoms: List[AtomPattern], pending: List[Int32], seen: List[Int32]): List[Int32] = match pending {
++        case Nil => seen
++        case role :: rest =>
++            let neighbours = List.filterMap(atom -> {
++                if (atom#subject == role and not List.memberOf(atom#object, seen)) Some(atom#object)
++                else if (atom#object == role and not List.memberOf(atom#subject, seen)) Some(atom#subject)
++                else None
++            }, atoms);
++            let fresh = List.filter(neighbour -> not List.memberOf(neighbour, rest), List.distinct(neighbours));
++            reachable(atoms, rest ::: fresh, role :: seen)
++    }
++
++    /// One role slot must mean one nominal domain. The domains come from the core
++    /// signature table, so an atom that reads a role as a file and an atom that
++    /// writes it as a symbol cannot be composed into one conjunction.
++    def domainsConsistent(atoms: List[AtomPattern]): Bool =
++        List.forAll(role -> List.length(List.distinct(domainsOf(role, atoms))) <= 1, List.distinct(roleList(atoms)))
++
++    def domainsOf(role: Int32, atoms: List[AtomPattern]): List[Domain] =
++        List.flatMap(atom ->
++            (if (atom#subject == role) Envelope.atomSource(atom#relation) :: Nil else Nil)
++                ::: (if (atom#object == role) Envelope.atomTarget(atom#relation) :: Nil else Nil),
++            atoms)
++
++    // ---------------------------------------------------- canonical identity
++
++    /// Every consistent renaming of the four role slots: exactly
++    /// `maxRenamings()` orderings, so canonicalization is bounded by the declared
++    /// 24 renamings and never becomes a search.
++    pub def renamings(): List[List[Int32]] = permutations(0 :: 1 :: 2 :: 3 :: Nil)
++
++    def permutations(values: List[Int32]): List[List[Int32]] = match values {
++        case Nil => Nil :: Nil
++        case _   => List.flatMap(value -> List.map(tail -> value :: tail, permutations(without(value, values))), values)
++    }
++
++    def without(value: Int32, values: List[Int32]): List[Int32] =
++        List.filter(other -> other != value, values)
++
++    /// The canonical descriptor: the least of the consistent renamings, with the
++    /// atoms sorted and de-duplicated and the roles renumbered by first
++    /// appearance.
++    pub def canonical(candidate: Descriptor): Descriptor =
++        match bestOption(candidate, renamings(), None) {
++            case None         => emptyDescriptor()
++            case Some(option) => renumber(renamed(candidate, option))
++        }
++
++    /// The canonical identity key. Two descriptors share it exactly when they are
++    /// the same candidate up to a consistent renaming of their role slots.
++    pub def identityKey(candidate: Descriptor): String = render(canonical(candidate))
++
++    /// The comparable canonical key of one descriptor form: its sorted atom body,
++    /// its ordered bound inequalities and its ordered output slots.
++    pub def render(candidate: Descriptor): String =
++        "atoms[" + List.join(";", List.map(renderAtom, candidate#atoms))
++            + "] denied[" + List.join(";", List.map(renderPair, candidate#denied))
++            + "] outputs[" + List.join(",", List.map(output -> "v" + Int32.toString(output), candidate#outputs)) + "]"
++
++    /// The canonical connected shape of a descriptor's positive atoms, as the
++    /// ordered role pairs the fixed lowering rules select on.
++    pub def shapeKey(candidate: Descriptor): String =
++        List.join(";", List.map(atom -> Int32.toString(atom#subject) + ">" + Int32.toString(atom#object), candidate#atoms))
++
++    /// The one empty descriptor, used only when a descriptor has no form at all.
++    pub def emptyDescriptor(): Descriptor = { atoms = Nil, denied = Nil, outputs = Nil }
++
++    def bestOption(candidate: Descriptor, options: List[List[Int32]], best: Option[List[Int32]]): Option[List[Int32]] =
++        match options {
++            case Nil => best
++            case option :: rest => match best {
++                case None => bestOption(candidate, rest, Some(option))
++                case Some(current) =>
++                    if (render(renamed(candidate, option)) < render(renamed(candidate, current)))
++                        bestOption(candidate, rest, Some(option))
++                    else bestOption(candidate, rest, best)
++            }
++        }
++
++    /// One descriptor under one consistent renaming: every role is rewritten, the
++    /// atoms are sorted and de-duplicated, each symmetric inequality is ordered,
++    /// and the output slots keep their declared order.
++    def renamed(candidate: Descriptor, option: List[Int32]): Descriptor = {
++        let atoms = List.sortBy(atomKey, List.map(atom -> {
++            relation = atom#relation,
++            subject = permuted(option, atom#subject),
++            object = permuted(option, atom#object)
++        }, candidate#atoms));
++        {
++            atoms = dedupPatterns(atoms, Nil),
++            denied = List.sort(List.distinct(List.map(pair -> match pair {
++                case (left, right) => ordered(permuted(option, left), permuted(option, right))
++            }, candidate#denied))),
++            outputs = List.map(output -> permuted(option, output), candidate#outputs)
++        }
++    }
++
++    /// The role slot one renaming assigns to a role index.
++    def permuted(option: List[Int32], index: Int32): Int32 = match List.drop(index, option) {
++        case head :: _ => head
++        case Nil       => index
++    }
++
++    /// Renumber the roles by first appearance in the already sorted atom list, so
++    /// every equivalent spelling lands on the same compact numbering.
++    def renumber(candidate: Descriptor): Descriptor = {
++        let mapping = numbering(roleList(candidate#atoms), Nil);
++        {
++            atoms = List.map(atom -> {
++                relation = atom#relation,
++                subject = mapped(mapping, atom#subject),
++                object = mapped(mapping, atom#object)
++            }, candidate#atoms),
++            denied = List.map(pair -> match pair {
++                case (left, right) => (mapped(mapping, left), mapped(mapping, right))
++            }, candidate#denied),
++            outputs = List.map(output -> mapped(mapping, output), candidate#outputs)
++        }
++    }
++
++    def numbering(roles: List[Int32], mapping: List[(Int32, Int32)]): List[(Int32, Int32)] = match roles {
++        case Nil => mapping
++        case role :: rest =>
++            if (List.exists(pair -> match pair { case (original, _) => original == role }, mapping))
++                numbering(rest, mapping)
++            else numbering(rest, mapping ::: ((role, List.length(mapping)) :: Nil))
++    }
++
++    def mapped(mapping: List[(Int32, Int32)], role: Int32): Int32 =
++        match List.find(pair -> match pair { case (original, _) => original == role }, mapping) {
++            case Some((_, canonical)) => canonical
++            case None                 => role
++        }
++
++    def dedupPatterns(atoms: List[AtomPattern], kept: List[AtomPattern]): List[AtomPattern] = match atoms {
++        case Nil => List.reverse(kept)
++        case atom :: rest =>
++            if (List.exists(other -> samePattern(other, atom), kept)) dedupPatterns(rest, kept)
++            else dedupPatterns(rest, atom :: kept)
++    }
++
++    def samePattern(left: AtomPattern, right: AtomPattern): Bool =
++        left#relation == right#relation and left#subject == right#subject and left#object == right#object
++
++    def ordered(left: Int32, right: Int32): (Int32, Int32) = if (left <= right) (left, right) else (right, left)
++
++    def atomKey(atom: AtomPattern): String =
++        Int32.toString(atom#subject) + "," + Int32.toString(atom#object) + " " + Envelope.atomName(atom#relation)
++
++    def renderAtom(atom: AtomPattern): String =
++        Envelope.atomName(atom#relation) + "(v" + Int32.toString(atom#subject) + ",v" + Int32.toString(atom#object) + ")"
++
++    def renderPair(pair: (Int32, Int32)): String = match pair {
++        case (left, right) => "v" + Int32.toString(left) + "!=v" + Int32.toString(right)
++    }
++
++    // ------------------------------------------------------------- population
++
++    /// The deterministic bounded candidate population and the bounded work it
++    /// refuses to hide: how many inputs were dropped, which candidate ids named
++    /// more than one distinct descriptor, and whether the declared
++    /// `maxCandidates()` bound truncated the population.
++    pub type alias Population = {
++        kept      = List[Candidate],
++        dropped   = Int32,
++        conflicts = List[String],
++        truncated = Bool
++    }
++
++    /// The deterministic bounded population: unsafe descriptors and duplicates
++    /// removed, one descriptor per candidate id, sorted by canonical identity.
++    pub def population(candidates: List[Candidate]): Population = {
++        let ordered = List.sortBy(candidate -> candidate#id, candidates);
++        let (conflicts, unique) = resolveIds(ordered, Nil, Nil, Nil);
++        let canonicalCandidates = List.map(candidate ->
++            { id = candidate#id, descriptor = canonical(candidate#descriptor) }, unique);
++        let admitted = List.filter(candidate -> safe(candidate#descriptor), canonicalCandidates);
++        let distinct = dedupIdentities(admitted, Nil, Nil);
++        let kept = List.sortBy(candidate -> identityKey(candidate#descriptor), distinct);
++        let bounded = List.take(maxCandidates(), kept);
++        {
++            kept = bounded,
++            dropped = List.length(candidates) - List.length(bounded),
++            conflicts = List.reverse(conflicts),
++            truncated = List.length(kept) > maxCandidates()
++        }
++    }
++
++    /// One candidate id names exactly one descriptor. A second candidate with the
++    /// same id and a different canonical identity is refused by name rather than
++    /// allowed to union two descriptors into one row set.
++    def resolveIds(
++        candidates: List[Candidate],
++        seen: List[(String, String)],
++        conflicts: List[String],
++        acc: List[Candidate]
++    ): (List[String], List[Candidate]) = match candidates {
++        case Nil => (conflicts, List.reverse(acc))
++        case candidate :: rest =>
++            let key = identityKey(candidate#descriptor);
++            match List.find(pair -> match pair { case (id, _) => id == candidate#id }, seen) {
++                case None => resolveIds(rest, (candidate#id, key) :: seen, conflicts, candidate :: acc)
++                case Some((_, existing)) =>
++                    if (existing == key) resolveIds(rest, seen, conflicts, acc)
++                    else resolveIds(rest, seen, candidate#id :: conflicts, acc)
++            }
++    }
++
++    def dedupIdentities(candidates: List[Candidate], seen: List[String], acc: List[Candidate]): List[Candidate] =
++        match candidates {
++            case Nil => List.reverse(acc)
++            case candidate :: rest =>
++                let key = identityKey(candidate#descriptor);
++                if (List.memberOf(key, seen)) dedupIdentities(rest, seen, acc)
++                else dedupIdentities(rest, key :: seen, candidate :: acc)
++        }
++
++    /// The bounded world-level shards of one population: at most `maxShards()`
++    /// shards of at most `shardSize()` descriptors each, with the excess recorded
++    /// rather than hidden.
++    pub type alias Shards = { shards = List[List[Candidate]], dropped = Int32, truncated = Bool }
++
++    /// Split one population into world-level shards at the declared granularity.
++    pub def shards(population: Population): Shards = {
++        let all = if (List.isEmpty(population#kept)) Nil else chunks(shardSize(), population#kept);
++        let bounded = List.take(maxShards(), all);
++        let total = List.foldLeft((count, shard) -> count + List.length(shard), 0, bounded);
++        { shards = bounded, dropped = List.length(population#kept) - total, truncated = List.length(all) > maxShards() }
++    }
++
++    def chunks(size: Int32, values: List[a]): List[List[a]] =
++        if (List.length(values) <= size) values :: Nil
++        else List.take(size, values) :: chunks(size, List.drop(size, values))
++
++    // --------------------------------------------------------------- lowering
++
++    /// The fixed native schema every world shard shares. `Edge` is the world's
++    /// nominal facts, `Desc` one canonical descriptor row per candidate,
++    /// `Binding` and `Output` the anchor-free structural rows, `Anchor` the
++    /// application anchors and `Task` the anchored join. Nothing here is a
++    /// runtime rule string.
++    pub type alias Schema = #{
++        Edge(World, Atom, Entity, Entity),
++        Desc(String, String, Atom, Atom, Atom, Bool, Int32, Int32, Int32, Int32),
++        Binding(String, World, Entity, Entity, Entity, Entity),
++        Output(String, World, Entity, Entity),
++        Anchor(World, Entity),
++        Task(String, World, Entity, Entity)
++    }
++
++    /// The world edges of one scope's nominal facts, each endpoint tagged by the
++    /// core atom signature table.
++    pub def edges(facts: List[Fact]): List[(World, Atom, Entity, Entity)] =
++        List.map(fact -> (
++            fact#world,
++            fact#atom,
++            entityOf(fact#source, Envelope.atomSource(fact#atom)),
++            entityOf(fact#target, Envelope.atomTarget(fact#atom))), facts)
++
++    /// One `Desc` row per candidate: the id, the canonical shape key, the three
++    /// relation slots, the one optional bound inequality and the two output
++    /// slots. A descriptor with no inequality carries `distinct = false`, and an
++    /// unused relation or output slot is padded; `safe` guarantees the padded
++    /// slots are never read.
++    pub def descriptors(candidates: List[Candidate]): List[(String, String, Atom, Atom, Atom, Bool, Int32, Int32, Int32, Int32)] =
++        List.map(descriptorRow, candidates)
++
++    def descriptorRow(candidate: Candidate): (String, String, Atom, Atom, Atom, Bool, Int32, Int32, Int32, Int32) = {
++        let descriptor = canonical(candidate#descriptor);
++        let relations = List.map(atom -> atom#relation, descriptor#atoms);
++        let (distinct, neq0, neq1) = match descriptor#denied {
++            case pair :: _ => match pair { case (left, right) => (true, left, right) }
++            case Nil       => (false, 0, 0)
++        };
++        (candidate#id, shapeKey(descriptor), at(0, relations), at(1, relations), at(2, relations),
++            distinct, neq0, neq1, outputAt(0, descriptor#outputs), outputAt(1, descriptor#outputs))
++    }
++
++    def at(index: Int32, relations: List[Atom]): Atom = match List.drop(index, relations) {
++        case head :: _ => head
++        case Nil       => Atom.Defines
++    }
++
++    /// The `index`-th projected output slot. A one-slot descriptor pads its
++    /// second slot with its first, so `Output` is always the pair the descriptor
++    /// declared and never an accidental reversed pair.
++    def outputAt(index: Int32, outputs: List[Int32]): Int32 = match List.drop(index, outputs) {
++        case head :: _ => head
++        case Nil       => match outputs {
++            case first :: _ => first
++            case Nil        => 0
++        }
++    }
++
++    /// Assemble one world shard's lowering: the scope's world-bearing facts, one
++    /// canonical descriptor row per candidate, and the application anchors.
++    pub def lower(world: WorldFacts, candidates: List[Candidate], anchors: List[(World, Entity)]): Schema =
++        inject edges(world#facts), descriptors(candidates), anchors into Edge/4, Desc/10, Anchor/2
++
++    /// The entity one role slot holds in a native binding. A slot no positive atom
++    /// occupies is padded with the binding's first entity; `safe` guarantees no
++    /// output or inequality role ever reads a padded slot.
++    pub def role(index: Int32, e0: Entity, e1: Entity, e2: Entity, e3: Entity): Entity = match index {
++        case 0 => e0
++        case 1 => e1
++        case 2 => e2
++        case _ => e3
++    }
++
++    /// The complete fixed lowering over the admitted family: one compiler-checked
++    /// rule per connected shape of one to three positive binary atoms over four
++    /// role slots, plus the projection and the anchored task rule. The shape is
++    /// data in `Desc`; each rule selects one shape by name, joins generic `Edge`
++    /// facts by relation value, and enforces the one bound inequality as a
++    /// per-role-pair guard whose free variables stay inside the compiler's
++    /// lifted-guard budget. There is no runtime rule text and no second evaluator.
++    pub def rules(): Schema = #{
++        // shape 0>1
++        Binding(c, w, e0, e1, e0, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            if (shape == "0>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1).
++
++        // shape 0>1;0>1
++        Binding(c, w, e0, e1, e0, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            if (shape == "0>1;0>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1).
++
++        // shape 0>1;0>2
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            if (shape == "0>1;0>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;1>0
++        Binding(c, w, e0, e1, e0, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e0),
++            if (shape == "0>1;1>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1).
++
++        // shape 0>1;1>2
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e2),
++            if (shape == "0>1;1>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;2>1
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e2, e1),
++            if (shape == "0>1;2>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>1;0>2
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            Edge(w, r2, e0, e2),
++            if (shape == "0>1;0>1;0>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>1;1>0
++        Binding(c, w, e0, e1, e0, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            Edge(w, r2, e1, e0),
++            if (shape == "0>1;0>1;1>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1).
++
++        // shape 0>1;0>1;1>2
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            Edge(w, r2, e1, e2),
++            if (shape == "0>1;0>1;1>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>1;2>0
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            Edge(w, r2, e2, e0),
++            if (shape == "0>1;0>1;2>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>1;2>1
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e1),
++            Edge(w, r2, e2, e1),
++            if (shape == "0>1;0>1;2>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>2;0>3
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e0, e3),
++            if (shape == "0>1;0>2;0>3"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;0>2;1>0
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e1, e0),
++            if (shape == "0>1;0>2;1>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>2;1>2
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e1, e2),
++            if (shape == "0>1;0>2;1>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;0>2;1>3
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e1, e3),
++            if (shape == "0>1;0>2;1>3"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;0>2;3>0
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e3, e0),
++            if (shape == "0>1;0>2;3>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;0>2;3>1
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e0, e2),
++            Edge(w, r2, e3, e1),
++            if (shape == "0>1;0>2;3>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;1>0;2>0
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e0),
++            Edge(w, r2, e2, e0),
++            if (shape == "0>1;1>0;2>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;1>2;2>0
++        Binding(c, w, e0, e1, e2, e0) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e2),
++            Edge(w, r2, e2, e0),
++            if (shape == "0>1;1>2;2>0"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2).
++
++        // shape 0>1;1>2;2>3
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e2),
++            Edge(w, r2, e2, e3),
++            if (shape == "0>1;1>2;2>3"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;1>2;3>1
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e2),
++            Edge(w, r2, e3, e1),
++            if (shape == "0>1;1>2;3>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;1>2;3>2
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e1, e2),
++            Edge(w, r2, e3, e2),
++            if (shape == "0>1;1>2;3>2"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape 0>1;2>1;3>1
++        Binding(c, w, e0, e1, e2, e3) :-
++            Desc(c, shape, r0, r1, r2, _, neq0, neq1, _, _),
++            Edge(w, r0, e0, e1),
++            Edge(w, r1, e2, e1),
++            Edge(w, r2, e3, e1),
++            if (shape == "0>1;2>1;3>1"),
++            if (neq0 != 0 or neq1 != 1 or e0 != e1),
++            if (neq0 != 0 or neq1 != 2 or e0 != e2),
++            if (neq0 != 0 or neq1 != 3 or e0 != e3),
++            if (neq0 != 1 or neq1 != 2 or e1 != e2),
++            if (neq0 != 1 or neq1 != 3 or e1 != e3),
++            if (neq0 != 2 or neq1 != 3 or e2 != e3).
++
++        // shape projection: the two declared output slots of one binding.
++        Output(c, w, role(out0, e0, e1, e2, e3), role(out1, e0, e1, e2, e3)) :-
++            Binding(c, w, e0, e1, e2, e3),
++            Desc(c, _, _, _, _, _, _, _, out0, out1).
++
++        // anchored application join: a task or pair context joins an anchor to an
++        // already materialized structural row and never re-evaluates the structure.
++        Task(c, w, x, y) :- Output(c, w, x, y), Anchor(w, x).
++    }
++
++    // ------------------------------------------------------------- accessors
++
++    /// One materialized structural binding: the candidate, the world and the four
++    /// role entities. Candidate and world are part of the row, so no witness
++    /// crosses a candidate, world or scope partition.
++    pub type alias Binding = {
++        candidate = String,
++        world     = World,
++        r0        = Entity,
++        r1        = Entity,
++        r2        = Entity,
++        r3        = Entity
++    }
++
++    /// One materialized projection row. A one-slot descriptor pads its second
++    /// projection slot with its first, so the descriptor's own output count stays
++    /// the authority on how many slots were projected.
++    pub type alias Witness = { candidate = String, world = World, x = Entity, y = Entity }
++
++    /// The anchor-free structural bindings of one world shard.
++    pub def bindings(world: WorldFacts, candidates: List[Candidate]): List[Binding] = {
++        let rows = query lower(world, candidates, Nil), rules()
++            select (c, w, a, b, d, e) from Binding(c, w, a, b, d, e);
++        List.map(row -> match row {
++            case (c, w, a, b, d, e) => { candidate = c, world = w, r0 = a, r1 = b, r2 = d, r3 = e }
++        }, Set.toList(Vector.toSet(rows)))
++    }
++
++    /// The anchor-free projected witnesses of one world shard.
++    pub def witnesses(world: WorldFacts, candidates: List[Candidate]): List[Witness] = {
++        let rows = query lower(world, candidates, Nil), rules()
++            select (c, w, x, y) from Output(c, w, x, y);
++        List.map(row -> match row {
++            case (c, w, x, y) => { candidate = c, world = w, x = x, y = y }
++        }, Set.toList(Vector.toSet(rows)))
++    }
++
++    /// The anchored task rows of one world shard: the same materialized structural
++    /// rows, joined to one application's anchors.
++    pub def tasks(world: WorldFacts, candidates: List[Candidate], anchors: List[(World, Entity)]): List[Witness] = {
++        let rows = query lower(world, candidates, anchors), rules()
++            select (c, w, x, y) from Task(c, w, x, y);
++        List.map(row -> match row {
++            case (c, w, x, y) => { candidate = c, world = w, x = x, y = y }
++        }, Set.toList(Vector.toSet(rows)))
++    }
++
++    /// One witness as a stable text line, for evidence and independent assertions.
++    pub def witnessText(witness: Witness): String =
++        witness#candidate + " " + worldText(witness#world) + " "
++            + entityText(witness#x) + " -> " + entityText(witness#y)
++
++    def worldText(world: World): String = match world {
++        case World.World(name) => name
++    }
++}
+diff --git a/attune/src/Attune/View.flix b/attune/src/Attune/View.flix
+index 5b4d744353..f8217589a8 100644
+--- a/attune/src/Attune/View.flix
++++ b/attune/src/Attune/View.flix
+@@ -20,7 +20,7 @@
+ 
+     use Attune.Envelope
+     use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
+-    use Attune.Study.{Outcome, outcomeName}
++    use Attune.Coverage.{Outcome, outcomeName}
+     use Attune.AsciiTree
+ 
+     // ------------------------------------------------------------ projections
+diff --git a/attune/src/BUILD.bazel b/attune/src/BUILD.bazel
+index 3b4277cd1e..75a058b7e6 100644
+--- a/attune/src/BUILD.bazel
++++ b/attune/src/BUILD.bazel
+@@ -36,6 +36,32 @@
+     ],
+ )
+ 
+-# The Repository owner: the native Grit wire projection under
+-# `Attune.Repository.Grit`, and the conservative identity, resolution,
+-# admission, derived inverses and named refusals under `Attune.Repository`.
++# The Repository owner's native Grit wire projection lives under
++# `Attune.Repository.Grit` and its conservative identity, resolution, admission,
++# derived inverses and named refusals under `Attune.Repository`; both are part of
++# this package's `policy_files` glob rather than a separate label, because a
++# target that needs the Repository owner declares the two sources it uses.
++
++# The one canonical generic coverage, evidence and support vocabulary. It is the
++# core home Repository earns coverage into and Theory consumes world facts from.
++filegroup(
++    name = "coverage",
++    srcs = [
++        "Attune.flix",
++        "Attune/Coverage.flix",
++        "Attune/Envelope.flix",
++    ],
++)
++
++# The Theory owner: bounded canonical descriptors, the fixed native lowering and
++# the world-shard witness rows. It consumes core values and a world's facts and
++# never imports Study or View.
++filegroup(
++    name = "theory",
++    srcs = [
++        "Attune.flix",
++        "Attune/Coverage.flix",
++        "Attune/Envelope.flix",
++        "Attune/Theory.flix",
++    ],
++)
+diff --git a/attune/test/docs/BUILD.bazel b/attune/test/docs/BUILD.bazel
+index b5fab87e1a..8cd3e84681 100644
+--- a/attune/test/docs/BUILD.bazel
++++ b/attune/test/docs/BUILD.bazel
+@@ -48,11 +48,11 @@
+         "ReadmeCorrespondence.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Docs.flix",
+         "//src:Attune/Envelope.flix",
+         "//src:Attune/Repository.flix",
+         "//src:Attune/Repository/Grit.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+     checkout_files = [
+diff --git a/attune/test/docs/ReadmeCorrespondence.flix b/attune/test/docs/ReadmeCorrespondence.flix
+index 2deb302e86..55ab2af2d5 100644
+--- a/attune/test/docs/ReadmeCorrespondence.flix
++++ b/attune/test/docs/ReadmeCorrespondence.flix
+@@ -5,7 +5,7 @@
+ use Attune.Envelope
+ use Attune.Envelope.{Atom, Domain, Fact, Frontier, World}
+ use Attune.Repository
+-use Attune.Study.{Outcome}
++use Attune.Coverage.{Outcome}
+ use Attune.View
+ 
+ /// The documentation correspondence fixture.
+diff --git a/attune/test/grit/BUILD.bazel b/attune/test/grit/BUILD.bazel
+index 036ce07e4c..3e1814eb5a 100644
+--- a/attune/test/grit/BUILD.bazel
++++ b/attune/test/grit/BUILD.bazel
+@@ -61,10 +61,10 @@
+     srcs = [
+         "GritSeamTest.flix",
+         "//src:Attune.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+         "//src:Attune/Repository.flix",
+         "//src:Attune/Repository/Grit.flix",
+-        "//src:Attune/Study.flix",
+     ],
+     declared_files = [
+         ":fixtures",
+diff --git a/attune/test/grit/GritSeamTest.flix b/attune/test/grit/GritSeamTest.flix
+index 55abfa1d70..555b8df08f 100644
+--- a/attune/test/grit/GritSeamTest.flix
++++ b/attune/test/grit/GritSeamTest.flix
+@@ -3,7 +3,7 @@
+ use Attune.Envelope
+ use Attune.Repository
+ use Attune.Repository.Grit
+-use Attune.Study
++use Attune.Coverage
+ 
+ /// Native `@Test` laws for the retained native Grit frontends and the approved
+ /// bounded Ruby arm.
+@@ -574,7 +574,7 @@
+         case (caller, target) => { world = scope, source = caller, atom = Envelope.Atom.Calls, target = target }
+     }, repository#calls)
+ 
+-def supportOf(facts: List[Envelope.Fact], status: Study.Status): List[Study.Support] =
++def supportOf(facts: List[Envelope.Fact], status: Coverage.Status): List[Coverage.Support] =
+     List.map(fact -> { fact = fact, status = status }, facts)
+ 
+ /// Earned scoped coverage over the real extraction. A positive witness survives
+@@ -588,18 +588,45 @@
+     Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total_cents", receipt));
+     let repository = admitted(shopFiles());
+     let facts = callFacts(repository, shopWorldName());
+-    let ask: Study.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+-    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(ask, Study.Coverage.Partial, facts));
+-    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(ask, Study.Coverage.Missing, Nil));
+-    Assert.assertEq(expected = Study.Outcome.Failed,
+-        Study.observe(ask, Study.Coverage.Failure("acquisition-error"), Nil));
+-    let foreign: Study.Query =
++    let ask: Coverage.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
++    Assert.assertEq(expected = Coverage.Outcome.Witness, Coverage.observe(ask, Coverage.Coverage.Partial, facts));
++    Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(ask, Coverage.Coverage.Missing, Nil));
++    Assert.assertEq(expected = Coverage.Outcome.Failed,
++        Coverage.observe(ask, Coverage.Coverage.Failure("acquisition-error"), Nil));
++    let foreign: Coverage.Query =
+         { scope = Envelope.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+-    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
+-    let support = supportOf(facts, Study.Status.Observed);
+-    Assert.assertEq(expected = 2, List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
++    Assert.assertEq(expected = Coverage.Outcome.NoMatch, Coverage.observe(foreign, Coverage.Coverage.Complete, facts));
++    let support = supportOf(facts, Coverage.Status.Observed);
++    Assert.assertEq(expected = 2, List.length(Coverage.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
+     Assert.assertEq(expected = 2,
+-        List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
++        List.length(Coverage.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
+     Assert.assertEq(expected = false,
+-        Study.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Study.Status.Proposed)))
++        Coverage.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Coverage.Status.Proposed)))
++}
++
++/// The one nominal world-bearing facts / earned scoped coverage bridge: the
++/// admitted shop repository supplies its world-bearing facts and the coverage it
++/// actually earned, and a scoped question resolves against that earned coverage
++/// rather than against a claim supplied by the caller.
++@Test
++def theWorldFactsAndEarnedCoverageBridgeIsExact(): Unit \ {Assert, IO} = {
++    let repository = admitted(shopFiles());
++    let world = shopWorldName();
++    let facts = Repository.worldFacts(world, repository);
++    Assert.assertEq(expected = true, List.forAll(fact -> fact#world == world, facts));
++    Assert.assertEq(expected = true, List.exists(fact ->
++        fact#atom == Envelope.Atom.Imports and fact#source == path("shop/receipt.rb")
++            and fact#target == path("shop/pricing.rb"), facts));
++    Assert.assertEq(expected = true, List.exists(fact ->
++        fact#atom == Envelope.Atom.ImportedBy and fact#source == path("shop/pricing.rb")
++            and fact#target == path("shop/receipt.rb"), facts));
++    // The shop has unresolved dynamic receivers, so the acquisition is partial;
++    // a complete no-match is never claimed from partial coverage.
++    Assert.assertEq(expected = Coverage.Coverage.Partial, Repository.scopeCoverage(repository));
++    Assert.assertEq(expected = Coverage.Outcome.Witness,
++        Repository.ask(world, repository, "Shop.Receipt.render", Envelope.Atom.Calls));
++    Assert.assertEq(expected = Coverage.Outcome.Unknown,
++        Repository.ask(world, repository, "Shop.Nothing.render", Envelope.Atom.Calls));
++    Assert.assertEq(expected = true,
++        List.length(Repository.scopedFacts(world, repository)#facts) == List.length(facts))
+ }
+diff --git a/attune/test/policy/AccountingLaw.flix b/attune/test/policy/AccountingLaw.flix
+index 5cbc62a196..3cddbc98b4 100644
+--- a/attune/test/policy/AccountingLaw.flix
++++ b/attune/test/policy/AccountingLaw.flix
+@@ -76,23 +76,33 @@
+ }
+ 
+ /// A blanket `test/** -> Fixture` rule must not hide reusable algorithms: the
+-/// two bounded test portions the independent review named (P06 descriptor
+-/// safety/alpha-normalization and P08 decision/evidence settlement) are
+-/// cognitive under any placement, while the other proposals, the core laws and
+-/// their fixed fixture data stay fixtures. This is the explicit bounded
+-/// classification, not a general registry.
++/// one bounded test portion the independent review named that a compact owner
++/// has not absorbed (P08 decision/evidence settlement) is cognitive under any
++/// placement, while the other proposals, the core laws and their fixed fixture
++/// data stay fixtures. The migrated P06 descriptor semantics now live in the
++/// `theory` component, so the bounded list shrank to its one remaining path.
+ @Test
+ def reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures(): Unit \ Assert = {
+-    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P06Descriptors.flix"));
+     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P08Decisions.flix"));
+-    Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P06Descriptors.flix"));
+     Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P08Decisions.flix"));
+-    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P05Datalog.flix"));
+     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P09Views.flix"));
+     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
+     Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
+ }
+ 
++/// The compact sixth semantic owner is classified as its own component, and the
++/// canonical generic coverage/evidence/support values live in `core`; both are
++/// cognitive under any placement.
++@Test
++def theoryAndCoverageAreTheirOwnCognitiveComponents(): Unit \ Assert = {
++    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Theory.flix"));
++    Assert.assertEq(expected = "theory", componentOf("src/Attune/Theory.flix"));
++    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Coverage.flix"));
++    Assert.assertEq(expected = "core", componentOf("src/Attune/Coverage.flix"));
++    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Study.flix"));
++    Assert.assertEq(expected = "study", componentOf("src/Attune/Study.flix"))
++}
++
+ /// The thresholds are the owner's engineering policy, published explicitly
+ /// rather than inferred.
+ @Test
+diff --git a/attune/test/proposals/BUILD.bazel b/attune/test/proposals/BUILD.bazel
+index 394348468e..1feea5531a 100644
+--- a/attune/test/proposals/BUILD.bazel
++++ b/attune/test/proposals/BUILD.bazel
+@@ -8,36 +8,14 @@
+     srcs = glob(["**"]),
+ )
+ 
+-# The remaining test-only proposal namespace. P05, P06, P08 and P09 stay here
+-# until their own compact features migrate them; P01-P04, P07 and P10 were
+-# consolidated into the compact core (`//test/spine:core_*_test`) and the real
+-# Parquet seam (`//test/seam:parquet_seam_test`), and their duplicate proposal
+-# implementations were removed rather than left beside the compact owners. The
+-# approved policy admits and counts this exact prefix (`test/proposals/`).
+-
+-# P05: native first-class Datalog composition. A parameterized fragment joins a
+-# second fragment on a shared scope/center role, rule-set union is not
+-# conjunction of answers, and an explicit candidate id isolates two candidates.
+-# Executed fixture.
+-native_flix_test(
+-    name = "p05_datalog_test",
+-    srcs = [
+-        "P05Datalog.flix",
+-        "//src:Attune.flix",
+-    ],
+-)
+-
+-# P06: finite canonical descriptors. The alpha-normal identity preserves a
+-# consistent renaming and breaks on inequality, direction and output-role
+-# changes; safe outputs and bounded role slots are validated. Executed fixture.
+-native_flix_test(
+-    name = "p06_descriptors_test",
+-    srcs = [
+-        "P06Descriptors.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/Envelope.flix",
+-    ],
+-)
++# The remaining test-only proposal namespace. P08 and P09 stay here until their
++# own compact features migrate them; P01-P04, P07 and P10 were consolidated into
++# the compact core (`//test/spine:core_*_test`) and the real Parquet seam
++# (`//test/seam:parquet_seam_test`), and P05 and P06 were consolidated into the
++# `Attune.Theory` owner (`//test/theory:theory_law_test`); their duplicate
++# proposal implementations were removed rather than left beside the compact
++# owners. The approved policy admits and counts this exact prefix
++# (`test/proposals/`).
+ 
+ # P08: prior and decision contracts. The approved LangChain4j seam is driven by
+ # a recorded fake transport; a decoded in-budget decision is chosen, a classified
+@@ -63,8 +41,8 @@
+         "P09Views.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+diff --git a/attune/test/proposals/P05Datalog.flix b/attune/test/proposals/P05Datalog.flix
+deleted file mode 100644
+index 4a8d2593bc..0000000000
+--- a/attune/test/proposals/P05Datalog.flix
++++ /dev/null
+@@ -1,155 +0,0 @@
+-/// P05 - native first-class Datalog composition.
+-///
+-/// Question. How do two native fragments actually join, and why is putting
+-/// their rules in one set not the same as requiring both?
+-///
+-///   world good:  receipt.rb  --imports--> pricing.rb
+-///                checkout.rb --imports--> pricing.rb
+-///
+-///   fragment pairRules(requireDistinct): two Imports join on a shared scope s
+-///                                       and a shared center
+-///     Pair(s, a, b, center) :- Imports(s, a, center), Imports(s, b, center)
+-///
+-///   fragment separatedRules(maxPeer): consumes Pair as an explicit shared role
+-///     Separated(s, a, b, center) :- Pair(...), Peer(s, a, b, n), n <= maxPeer
+-///
+-///   loose and strict Pair rules on one self-import fact Imports("one", r, p)
+-///     loose  -> {(receipt.rb, receipt.rb)}   [1 row]
+-///     strict -> {}                           [0 rows]
+-///     union  -> {(receipt.rb, receipt.rb)}   [1 row]
+-///     conjunction would be {}: union is NOT conjunction of answers
+-///
+-/// Proposition. A parameterized fragment is composed by a real shared-role
+-/// join, not by string substitution. Projection (`select`) and explicit
+-/// distinctness (`a != b`) are separate choices, and an explicit candidate id
+-/// keeps two candidates' rows from leaking into one another.
+-///
+-/// Vocabulary. The relation vocabulary here is deliberately tiny; the final
+-/// vocabulary stays open. Every fragment declares the same fixed public schema
+-/// with bounded role slots, which is the small lowering strategy: no runtime
+-/// rule text, no string DSL and no custom solver.
+-///
+-/// Enforcement. RUNTIME. The union, projection and isolation laws below are
+-/// executed native fixtures; the fragment arities, term types and shared schema
+-/// are checked by the compiler when this file compiles. No separate
+-/// compiler-negative fixture is added, so no static composition claim is made.
+-///
+-/// Open. Whether candidate isolation travels as an explicit id column or as
+-/// hygienic local predicates, and which relations survive, stay undecided.
+-
+-/// The one fixed public schema every fragment and fact set shares, so native
+-/// fragments compose. Unused predicates stay empty.
+-pub type alias ShopSchema = #{
+-    Imports(String, String, String),
+-    Peer(String, String, String, Int32),
+-    Pair(String, String, String, String),
+-    Separated(String, String, String, String),
+-    PairCand(String, String, String, String, String)
+-}
+-
+-/// The parameterized shared-center join. `requireDistinct` is an ordinary typed
+-/// parameter captured by the fragment; it only tightens the guard.
+-pub def pairRules(requireDistinct: Bool): ShopSchema = #{
+-    Pair(s, a, b, center) :-
+-        Imports(s, a, center),
+-        Imports(s, b, center),
+-        if (not requireDistinct or a != b).
+-}
+-
+-/// Both Pair rules in one set: this is rule-set union written as one fragment,
+-/// so it can be compared against the strict candidate on its own.
+-def unionPairRules(): ShopSchema = #{
+-    Pair(s, a, b, center) :- Imports(s, a, center), Imports(s, b, center).
+-    Pair(s, a, b, center) :- Imports(s, a, center), Imports(s, b, center), if (a != b).
+-}
+-
+-/// A second fragment that consumes `Pair` as an explicit shared role and adds a
+-/// bounded measured condition.
+-pub def separatedRules(maxPeer: Int32): ShopSchema = #{
+-    Separated(s, a, b, center) :-
+-        Pair(s, a, b, center),
+-        Peer(s, a, b, n),
+-        if (n <= maxPeer).
+-}
+-
+-/// Two candidates lowered to one fixed schema with an explicit candidate id
+-/// column, instead of two dynamically fabricated predicate names.
+-pub def candidateRules(): ShopSchema = #{
+-    PairCand("loose", s, a, b, center) :-
+-        Imports(s, a, center), Imports(s, b, center).
+-    PairCand("strict", s, a, b, center) :-
+-        Imports(s, a, center), Imports(s, b, center), if (a != b).
+-}
+-
+-/// The authored tiny world used by these fixtures.
+-def pairFacts(): ShopSchema = #{
+-    Imports("good", "receipt.rb", "pricing.rb").
+-    Imports("good", "checkout.rb", "pricing.rb").
+-    Peer("good", "receipt.rb", "checkout.rb", 0).
+-    Peer("good", "checkout.rb", "receipt.rb", 0).
+-}
+-
+-def oneSelfImport(): ShopSchema = #{
+-    Imports("one", "receipt.rb", "pricing.rb").
+-}
+-
+-/// Two parameterized fragments join on the shared scope/center role: every pair
+-/// row must also carry a measured peer row.
+-@Test
+-def fragmentsJoinOnASharedRole(): Unit \ Assert = {
+-    let pairs = query pairFacts(), pairRules(true) select (a, b) from Pair("good", a, b, "pricing.rb");
+-    Assert.assertEq(expected = Set#{("receipt.rb", "checkout.rb"), ("checkout.rb", "receipt.rb")},
+-        Vector.toSet(pairs));
+-    let joined = query pairFacts(), pairRules(true), separatedRules(0)
+-        select s from Separated(s, a, b, "pricing.rb");
+-    Assert.assertEq(expected = Set#{"good"}, Vector.toSet(joined))
+-}
+-
+-/// Rule-set union is not conjunction of answers: the strict candidate is empty
+-/// alone, but the loose rule answers once both rules share one set.
+-@Test
+-def unionOfRulesIsNotConjunction(): Unit \ Assert = {
+-    let loose = query oneSelfImport(), pairRules(false) select (a, b) from Pair("one", a, b, "pricing.rb");
+-    let strict = query oneSelfImport(), pairRules(true) select (a, b) from Pair("one", a, b, "pricing.rb");
+-    let union = query oneSelfImport(), unionPairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
+-    Assert.assertEq(expected = Set#{("receipt.rb", "receipt.rb")}, Vector.toSet(loose));
+-    Assert.assertTrue(Vector.isEmpty(strict));
+-    Assert.assertEq(expected = Vector.toSet(loose), Vector.toSet(union));
+-    Assert.assertEq(expected = false, Vector.toSet(union) == Vector.toSet(strict))
+-}
+-
+-/// Projection keeps the shared roles and drops the internal pair roles, while
+-/// the concrete assignment and the distinctness guard stay visible.
+-@Test
+-def projectionAndDistinctnessAreExplicit(): Unit \ Assert = {
+-    let centers = query pairFacts(), pairRules(true) select (s, center) from Pair(s, a, b, center);
+-    Assert.assertEq(expected = Set#{("good", "pricing.rb")}, Vector.toSet(centers));
+-    let assignments = query pairFacts(), pairRules(true) select (a, b) from Pair("good", a, b, "pricing.rb");
+-    Assert.assertEq(expected = 2, Vector.length(assignments))
+-}
+-
+-/// Two candidates evaluated together do not contaminate one another because the
+-/// candidate id is part of the shared intermediate; each result matches the
+-/// same candidate evaluated separately.
+-@Test
+-def candidatesDoNotLeakAcrossAnExplicitId(): Unit \ Assert = {
+-    let loose = query oneSelfImport(), candidateRules()
+-        select (a, b) from PairCand("loose", "one", a, b, "pricing.rb");
+-    let strict = query oneSelfImport(), candidateRules()
+-        select (a, b) from PairCand("strict", "one", a, b, "pricing.rb");
+-    let separateLoose = query oneSelfImport(), pairRules(false) select (a, b) from Pair("one", a, b, "pricing.rb");
+-    let separateStrict = query oneSelfImport(), pairRules(true) select (a, b) from Pair("one", a, b, "pricing.rb");
+-    Assert.assertEq(expected = Vector.toSet(separateLoose), Vector.toSet(loose));
+-    Assert.assertEq(expected = Vector.toSet(separateStrict), Vector.toSet(strict));
+-    Assert.assertTrue(Vector.isEmpty(strict))
+-}
+-
+-/// The counterexample to isolation: without the candidate id, one shared Pair
+-/// predicate lets the loose row answer the strict candidate too.
+-@Test
+-def aSharedPredicateLeaksBetweenCandidates(): Unit \ Assert = {
+-    let leaky = query oneSelfImport(), unionPairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
+-    let strictAlone = query oneSelfImport(), pairRules(true) select (a, b) from Pair("one", a, b, "pricing.rb");
+-    Assert.assertEq(expected = 1, Vector.length(leaky));
+-    Assert.assertTrue(Vector.isEmpty(strictAlone))
+-}
+diff --git a/attune/test/proposals/P06Descriptors.flix b/attune/test/proposals/P06Descriptors.flix
+deleted file mode 100644
+index 5d00e5de8c..0000000000
+--- a/attune/test/proposals/P06Descriptors.flix
++++ /dev/null
+@@ -1,179 +0,0 @@
+-use Attune.Envelope
+-use Attune.Envelope.{Atom}
+-
+-/// P06 - finite canonical descriptors.
+-///
+-/// Question. When do two tiny candidate descriptions name the same candidate?
+-///
+-///   descriptor = { atoms, inequalities, output slots }   (no head name)
+-///
+-///   a hand-enumerated family of three
+-///     d0  Imports(a -> center)                          one atom
+-///     d1  Imports(a -> center), Imports(b -> center)    an unnamed conjunction
+-///     d2  d1 plus a != b                                conjunction + inequality
+-///
+-///   Imports(a -> c)  ~  Imports(x -> y)     alpha-renaming   same
+-///   d1               vs d2                  inequality       different
+-///   Imports(a -> c)  vs ImportedBy(a -> c)  direction        different
+-///   outputs [a]      vs outputs [c]         output role      different
+-///
+-/// Proposition. A descriptor is identified by its alpha-normal form: variable
+-/// names are placeholders, so a consistent renaming preserves identity while a
+-/// changed inequality, a reversed relation direction and a changed output slot
+-/// do not. This is alpha-equivalence, not graph-isomorphism canonicalization.
+-/// Every output must be bound by a positive atom (safe) and the output slots
+-/// are bounded.
+-///
+-/// Vocabulary. Relation direction reuses `Attune.Envelope.Atom`; there is no
+-/// second atom catalog, no string DSL and no custom solver.
+-///
+-/// Enforcement. RUNTIME. `identityKey` and `safe` are ordinary typed functions;
+-/// the compiler checks the record shapes but cannot see alpha-equivalence. Every
+-/// law below is an executed native fixture. This is a tiny hand-written family,
+-/// not a production enumerator and not a search.
+-///
+-/// Open. Real search bounds, retained operators and census outcomes stay
+-/// undecided.
+-
+-/// One directed atom pattern over role-variable names.
+-pub type alias AtomPattern = { relation = Atom, subject = String, object = String }
+-
+-/// A tiny candidate description: an ordered conjunction of atom patterns, the
+-/// explicit inequalities between role variables, and the ordered output slots.
+-/// The descriptor has no name; its identity is exactly its structure.
+-pub type alias Descriptor = {
+-    atoms   = List[AtomPattern],
+-    denied  = List[(String, String)],
+-    outputs = List[String]
+-}
+-
+-/// The declared bound on output role slots.
+-pub def maxOutputSlots(): Int32 = 2
+-
+-def pattern(relation: Atom, subject: String, object: String): AtomPattern =
+-    { relation = relation, subject = subject, object = object }
+-
+-def descriptor(atoms: List[AtomPattern], denied: List[(String, String)], outputs: List[String]): Descriptor =
+-    { atoms = atoms, denied = denied, outputs = outputs }
+-
+-/// The unnamed conjunction on its own, for a direct expected-form assertion.
+-pub def unnamedConjunction(): Descriptor =
+-    descriptor(List#{ pattern(Atom.Imports, "left", "center"), pattern(Atom.Imports, "right", "center") },
+-        Nil, List#{"left", "right"})
+-
+-/// The hand-enumerable tiny family. Its middle member is the unnamed
+-/// conjunction: two atoms sharing one center and no head predicate name.
+-pub def family(): List[Descriptor] = List#{
+-    descriptor(List#{ pattern(Atom.Imports, "a", "center") }, Nil, List#{"a"}),
+-    unnamedConjunction(),
+-    descriptor(List#{ pattern(Atom.Imports, "a", "center"), pattern(Atom.Imports, "b", "center") },
+-        List#{("a", "b")}, List#{"a", "b"})
+-}
+-
+-/// Safety: at least one atom, a bounded number of distinct output slots, every
+-/// output bound by a positive atom, and every inequality variable bound too.
+-pub def safe(candidate: Descriptor): Bool =
+-    not List.isEmpty(candidate#atoms)
+-    and List.length(candidate#outputs) <= maxOutputSlots()
+-    and List.length(List.distinct(candidate#outputs)) == List.length(candidate#outputs)
+-    and List.forAll(output -> bound(output, candidate#atoms), candidate#outputs)
+-    and List.forAll(pair -> match pair {
+-        case (left, right) => bound(left, candidate#atoms) and bound(right, candidate#atoms)
+-    }, candidate#denied)
+-
+-def bound(name: String, atoms: List[AtomPattern]): Bool =
+-    List.exists(atom -> atom#subject == name or atom#object == name, atoms)
+-
+-/// The alpha-normal identity: name each variable by first appearance in the
+-/// atom order, rewrite every role, order each symmetric inequality, and print
+-/// one comparable key. Two descriptors share it exactly when they are the same
+-/// candidate up to a consistent renaming.
+-pub def identityKey(candidate: Descriptor): String = {
+-    let names = namesOf(candidate#atoms, Nil);
+-    let atoms = List.map(atom -> Envelope.atomName(atom#relation) + "(" + rename(names, atom#subject)
+-        + "," + rename(names, atom#object) + ")", candidate#atoms);
+-    let denied = List.sort(List.map(pair -> match pair {
+-        case (left, right) => ordered(rename(names, left), rename(names, right))
+-    }, candidate#denied));
+-    let deniedText = List.join(";", List.map(pair -> match pair { case (l, r) => l + "!=" + r }, denied));
+-    "atoms[" + List.join(";", atoms) + "] denied[" + deniedText + "] outputs["
+-        + List.join(",", List.map(output -> rename(names, output), candidate#outputs)) + "]"
+-}
+-
+-def namesOf(atoms: List[AtomPattern], acc: List[(String, String)]): List[(String, String)] = match atoms {
+-    case Nil => acc
+-    case atom :: rest => namesOf(rest, assign(assign(acc, atom#subject), atom#object))
+-}
+-
+-def assign(acc: List[(String, String)], name: String): List[(String, String)] =
+-    if (List.exists(pair -> match pair { case (original, _) => original == name }, acc)) acc
+-    else acc ::: (name, "v" + Int32.toString(List.length(acc))) :: Nil
+-
+-def rename(names: List[(String, String)], name: String): String =
+-    match List.find(pair -> match pair { case (original, _) => original == name }, names) {
+-        case Some((_, canonical)) => canonical
+-        case None                 => name
+-    }
+-
+-def ordered(left: String, right: String): (String, String) =
+-    if (left <= right) (left, right) else (right, left)
+-
+-/// The family is hand-enumerable: three members, and the middle one is an
+-/// unnamed conjunction of two atoms sharing one center.
+-@Test
+-def theTinyFamilyIsHandEnumerable(): Unit \ Assert = {
+-    Assert.assertEq(expected = 3, List.length(family()));
+-    Assert.assertEq(expected = List#{1, 2, 2}, List.sort(List.map(candidate -> List.length(candidate#atoms), family())));
+-    Assert.assertEq(expected = List#{0, 0, 1}, List.sort(List.map(candidate -> List.length(candidate#denied), family())));
+-    Assert.assertEq(expected = true,
+-        List.exists(candidate -> identityKey(candidate) == identityKey(unnamedConjunction()), family()));
+-    Assert.assertEq(expected = "atoms[imports(v0,v1);imports(v2,v1)] denied[] outputs[v0,v2]",
+-        identityKey(unnamedConjunction()))
+-}
+-
+-/// Alpha-renaming preserves identity: renaming every role consistently is the
+-/// same candidate, and the renamed form is still safe.
+-@Test
+-def alphaRenamingPreservesIdentity(): Unit \ Assert = {
+-    let renamed = descriptor(List#{ pattern(Atom.Imports, "x", "hub"), pattern(Atom.Imports, "y", "hub") },
+-        Nil, List#{"x", "y"});
+-    Assert.assertEq(expected = identityKey(unnamedConjunction()), identityKey(renamed));
+-    Assert.assertEq(expected = true, safe(renamed))
+-}
+-
+-/// A changed inequality is a different candidate, while the symmetric form of
+-/// the same inequality is the same candidate.
+-@Test
+-def anInequalityChangesIdentity(): Unit \ Assert = {
+-    let pairAtoms = List#{ pattern(Atom.Imports, "a", "center"), pattern(Atom.Imports, "b", "center") };
+-    let strict = descriptor(pairAtoms, List#{("a", "b")}, List#{"a", "b"});
+-    let flipped = descriptor(pairAtoms, List#{("b", "a")}, List#{"a", "b"});
+-    Assert.assertEq(expected = false, identityKey(strict) == identityKey(unnamedConjunction()));
+-    Assert.assertEq(expected = identityKey(strict), identityKey(flipped))
+-}
+-
+-/// Reversing the directed relation is a different candidate.
+-@Test
+-def aDirectionChangeBreaksIdentity(): Unit \ Assert = {
+-    let forward = descriptor(List#{ pattern(Atom.Imports, "a", "center") }, Nil, List#{"a"});
+-    let reverse = descriptor(List#{ pattern(Atom.ImportedBy, "a", "center") }, Nil, List#{"a"});
+-    Assert.assertEq(expected = false, identityKey(forward) == identityKey(reverse));
+-    Assert.assertEq(expected = "atoms[imports(v0,v1)] denied[] outputs[v0]", identityKey(forward));
+-    Assert.assertEq(expected = "atoms[imported_by(v0,v1)] denied[] outputs[v0]", identityKey(reverse))
+-}
+-
+-/// Changing which role is an output changes identity, and the safety check
+-/// catches an unbound output and an over-bounded slot.
+-@Test
+-def anOutputRoleChangeBreaksIdentityAndSafetyIsChecked(): Unit \ Assert = {
+-    let bySubject = descriptor(List#{ pattern(Atom.Imports, "a", "center") }, Nil, List#{"a"});
+-    let byObject = descriptor(List#{ pattern(Atom.Imports, "a", "center") }, Nil, List#{"center"});
+-    Assert.assertEq(expected = false, identityKey(bySubject) == identityKey(byObject));
+-    Assert.assertEq(expected = true, safe(bySubject));
+-    Assert.assertEq(expected = false,
+-        safe(descriptor(List#{ pattern(Atom.Imports, "a", "center") }, Nil, List#{"ghost"})));
+-    Assert.assertEq(expected = false, safe(descriptor(
+-        List#{ pattern(Atom.Imports, "a", "center"), pattern(Atom.Imports, "b", "center") },
+-        Nil, List#{"a", "b", "center"})));
+-    Assert.assertEq(expected = false, safe(descriptor(Nil, Nil, Nil)))
+-}
+diff --git a/attune/test/proposals/P09Views.flix b/attune/test/proposals/P09Views.flix
+index bd1ed79f96..80fd0ccd46 100644
+--- a/attune/test/proposals/P09Views.flix
++++ b/attune/test/proposals/P09Views.flix
+@@ -1,7 +1,7 @@
+ use Attune.Envelope
+ use Attune.Envelope.{Atom, Domain, Fact, World}
+ use Attune.AsciiTree
+-use Attune.Study.{Outcome}
++use Attune.Coverage.{Outcome}
+ use Attune.View
+ 
+ /// P09 - semantic views and diagram projection.
+diff --git a/attune/test/spine/BUILD.bazel b/attune/test/spine/BUILD.bazel
+index 806a74fd24..741adee674 100644
+--- a/attune/test/spine/BUILD.bazel
++++ b/attune/test/spine/BUILD.bazel
+@@ -101,6 +101,7 @@
+     srcs = [
+         "CoreEvidenceLaw.flix",
+         "//src:Attune.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+         "//src:Attune/Study.flix",
+     ],
+diff --git a/attune/test/spine/CoreEvidenceLaw.flix b/attune/test/spine/CoreEvidenceLaw.flix
+index 7d242f349d..14d73eb81a 100644
+--- a/attune/test/spine/CoreEvidenceLaw.flix
++++ b/attune/test/spine/CoreEvidenceLaw.flix
+@@ -1,4 +1,5 @@
+ use Attune.Envelope.{Atom, Fact, World}
++use Attune.Coverage
+ use Attune.Study
+ 
+ /// Native `@Test` laws for the typed evidence and artifact values (VAL-CORE-004).
+@@ -14,7 +15,7 @@
+ def fact(source: String, atom: Atom, target: String): Fact =
+     { world = w(), source = source, atom = atom, target = target }
+ 
+-def support(entity: String, branch: String, status: Study.Status): Study.Support =
++def support(entity: String, branch: String, status: Coverage.Status): Coverage.Support =
+     { fact = fact(entity, Atom.Calls, branch), status = status }
+ 
+ /// A positive match, a complete no-match, unknown and failure stay distinct.
+@@ -23,12 +24,12 @@
+     let facts = List#{ fact("pricing.rb", Atom.Defines, "Pricing") };
+     let own = { scope = w(), subject = "pricing.rb", atom = Atom.Defines };
+     let missing = { scope = w(), subject = "receipt.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(own, Study.Coverage.Complete, facts));
+-    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(missing, Study.Coverage.Complete, facts));
+-    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(missing, Study.Coverage.Partial, facts));
+-    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(own, Study.Coverage.Missing, Nil));
+-    Assert.assertEq(expected = Study.Outcome.Failed, Study.observe(own, Study.Coverage.Failure("acquisition-error"), Nil));
+-    Assert.assertEq(expected = false, Study.observe(missing, Study.Coverage.Missing, Nil) == Study.Outcome.NoMatch)
++    Assert.assertEq(expected = Coverage.Outcome.Witness, Coverage.observe(own, Coverage.Coverage.Complete, facts));
++    Assert.assertEq(expected = Coverage.Outcome.NoMatch, Coverage.observe(missing, Coverage.Coverage.Complete, facts));
++    Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(missing, Coverage.Coverage.Partial, facts));
++    Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(own, Coverage.Coverage.Missing, Nil));
++    Assert.assertEq(expected = Coverage.Outcome.Failed, Coverage.observe(own, Coverage.Coverage.Failure("acquisition-error"), Nil));
++    Assert.assertEq(expected = false, Coverage.observe(missing, Coverage.Coverage.Missing, Nil) == Coverage.Outcome.NoMatch)
+ }
+ 
+ /// A similarly named file in another scope cannot donate a witness.
+@@ -36,8 +37,8 @@
+ def aForeignScopeCannotDonateAWitness(): Unit \ Assert = {
+     let facts = List#{ fact("pricing.rb", Atom.Defines, "Pricing") };
+     let foreign = { scope = World.World("shop-v2"), subject = "pricing.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
+-    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(foreign, Study.Coverage.Partial, facts))
++    Assert.assertEq(expected = Coverage.Outcome.NoMatch, Coverage.observe(foreign, Coverage.Coverage.Complete, facts));
++    Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(foreign, Coverage.Coverage.Partial, facts))
+ }
+ 
+ /// Support counts distinct observed entities, never proof paths, and proposed
+@@ -45,24 +46,24 @@
+ @Test
+ def supportCountsDistinctEntitiesNotPaths(): Unit \ Assert = {
+     let items = List#{
+-        support("Pricing.total", "calls-pricing", Study.Status.Observed),
+-        support("Pricing.total", "calls-pricing", Study.Status.Observed),
+-        support("Pricing.rate", "calls-pricing", Study.Status.Observed)
++        support("Pricing.total", "calls-pricing", Coverage.Status.Observed),
++        support("Pricing.total", "calls-pricing", Coverage.Status.Observed),
++        support("Pricing.rate", "calls-pricing", Coverage.Status.Observed)
+     };
+     Assert.assertEq(expected = 3, List.length(List.filter(item -> item#fact#target == "calls-pricing", items)));
+-    Assert.assertEq(expected = 2, List.length(Study.witnesses(w(), "calls-pricing", items)));
+-    Assert.assertEq(expected = false, Study.meets(3, w(), "calls-pricing", items));
+-    Assert.assertEq(expected = false, Study.meets(1, w(), "calls-pricing",
+-        List#{ support("Pricing.total", "calls-pricing", Study.Status.Proposed) }))
++    Assert.assertEq(expected = 2, List.length(Coverage.witnesses(w(), "calls-pricing", items)));
++    Assert.assertEq(expected = false, Coverage.meets(3, w(), "calls-pricing", items));
++    Assert.assertEq(expected = false, Coverage.meets(1, w(), "calls-pricing",
++        List#{ support("Pricing.total", "calls-pricing", Coverage.Status.Proposed) }))
+ }
+ 
+ /// The tri-state observation is not a boolean: unmeasured is distinct from false.
+ @Test
+ def observationTriStateIsNotABoolean(): Unit \ Assert = {
+-    Assert.assertEq(expected = "true", Study.observationName(Study.Observation.ObservedTrue));
+-    Assert.assertEq(expected = "false", Study.observationName(Study.Observation.ObservedFalse));
+-    Assert.assertEq(expected = "unmeasured", Study.observationName(Study.Observation.Unmeasured));
+-    Assert.assertEq(expected = false, Study.Observation.Unmeasured == Study.Observation.ObservedFalse)
++    Assert.assertEq(expected = "true", Coverage.observationName(Coverage.Observation.ObservedTrue));
++    Assert.assertEq(expected = "false", Coverage.observationName(Coverage.Observation.ObservedFalse));
++    Assert.assertEq(expected = "unmeasured", Coverage.observationName(Coverage.Observation.Unmeasured));
++    Assert.assertEq(expected = false, Coverage.Observation.Unmeasured == Coverage.Observation.ObservedFalse)
+ }
+ 
+ /// An artifact is identified by schema, producer and exact input; a wrong schema
+diff --git a/attune/test/theory/BUILD.bazel b/attune/test/theory/BUILD.bazel
+new file mode 100644
+index 0000000000..2c988a185c
+--- /dev/null
++++ b/attune/test/theory/BUILD.bazel
+@@ -0,0 +1,24 @@
++load("//platform/build:native.bzl", "native_flix_test")
++
++package(default_visibility = ["//visibility:public"])
++
++# This package's contribution to the declared authored-source population.
++filegroup(
++    name = "policy_files",
++    srcs = glob(["**"]),
++)
++
++# VAL-THEORY-001..005: the admitted bounded descriptor grammar, bounded
++# canonicalization, the fixed native conjunction/guard/projection lowering,
++# candidate/world/scope isolation and the world-shared structural evaluation with
++# cheap application anchor joins.
++native_flix_test(
++    name = "theory_law_test",
++    srcs = [
++        "TheoryLaw.flix",
++        "//src:Attune.flix",
++        "//src:Attune/Coverage.flix",
++        "//src:Attune/Envelope.flix",
++        "//src:Attune/Theory.flix",
++    ],
++)
+diff --git a/attune/test/theory/TheoryLaw.flix b/attune/test/theory/TheoryLaw.flix
+new file mode 100644
+index 0000000000..0ae33500e9
+--- /dev/null
++++ b/attune/test/theory/TheoryLaw.flix
+@@ -0,0 +1,447 @@
++use Attune.Coverage
++use Attune.Envelope
++use Attune.Envelope.{Atom, Domain, Fact, World}
++use Attune.Theory
++
++/// Native laws for the bounded Theory owner (VAL-THEORY-001..005).
++///
++/// Every world is a small authored fact set, every descriptor is written out by
++/// hand or generated from an explicit shape table, and every expected witness is
++/// the one the authored facts must yield. The native lowering is the only
++/// evaluator: the fixed `Binding`/`Output`/`Task` rules the compiler checks are
++/// what produce the rows.
++
++def pattern(relation: Atom, subject: Int32, object: Int32): Theory.AtomPattern =
++    { relation = relation, subject = subject, object = object }
++
++def descriptor(atoms: List[Theory.AtomPattern], denied: List[(Int32, Int32)], outputs: List[Int32]): Theory.Descriptor =
++    { atoms = atoms, denied = denied, outputs = outputs }
++
++def candidate(id: String, d: Theory.Descriptor): Theory.Candidate = { id = id, descriptor = d }
++
++def edge(world: World, source: String, atom: Atom, target: String): Fact =
++    { world = world, source = source, atom = atom, target = target }
++
++// ------------------------------------------------------------- authored worlds
++
++/// The two-import conjunction: two files importing one shared centre.
++def pairConjunction(): Theory.Descriptor =
++    descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, Nil, 0 :: 2 :: Nil)
++
++/// The same conjunction with the one bound inequality: two distinct importers of
++/// one shared centre, so the two atoms can no longer both pick the same edge.
++def strictPair(): Theory.Descriptor =
++    descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, (0, 2) :: Nil, 0 :: 2 :: Nil)
++
++def shopWorld(): World = World.World("theory-shop")
++
++/// One world: two files importing the same centre, one file defining one symbol,
++/// and that symbol calling another.
++def shopFacts(): List[Fact] =
++    edge(shopWorld(), "receipt.rb", Atom.Imports, "pricing.rb")
++        :: edge(shopWorld(), "checkout.rb", Atom.Imports, "pricing.rb")
++        :: edge(shopWorld(), "receipt.rb", Atom.Defines, "Receipt")
++        :: edge(shopWorld(), "Receipt", Atom.Calls, "Pricing")
++        :: Nil
++
++def shop(): Coverage.WorldFacts = Coverage.scoped(shopWorld(), shopFacts())
++
++/// One self-import: the fact that a loose single-atom rule answers but a strict
++/// two-atom conjunction with an inequality does not.
++def selfWorld(): World = World.World("theory-self")
++
++def selfFacts(): List[Fact] = edge(selfWorld(), "one", Atom.Imports, "one") :: Nil
++
++def selfScope(): Coverage.WorldFacts = Coverage.scoped(selfWorld(), selfFacts())
++
++// --------------------------------------------------------------- shape table
++
++/// The 23 reachable connected shapes of one to three positive binary atoms over
++/// four role slots. A shape names its role wiring only; the relations are chosen
++/// so every role keeps one nominal domain, and a repeated role pair uses two
++/// distinct same-domain relations, because identical conjuncts normalize away.
++def shapes(): List[(String, List[(Atom, Int32, Int32)])] =
++    ("0>1", (Atom.Imports, 0, 1) :: Nil)
++        :: ("0>1;0>1", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: Nil)
++        :: ("0>1;0>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: Nil)
++        :: ("0>1;1>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: Nil)
++        :: ("0>1;1>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: Nil)
++        :: ("0>1;2>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: Nil)
++        :: ("0>1;0>1;0>2", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: Nil)
++        :: ("0>1;0>1;1>0", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: Nil)
++        :: ("0>1;0>1;1>2", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: Nil)
++        :: ("0>1;0>1;2>0", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 0) :: Nil)
++        :: ("0>1;0>1;2>1", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: Nil)
++        :: ("0>1;0>2;0>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 0, 3) :: Nil)
++        :: ("0>1;0>2;1>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 0) :: Nil)
++        :: ("0>1;0>2;1>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 2) :: Nil)
++        :: ("0>1;0>2;1>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 3) :: Nil)
++        :: ("0>1;0>2;3>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 3, 0) :: Nil)
++        :: ("0>1;0>2;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 3, 1) :: Nil)
++        :: ("0>1;1>0;2>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: (Atom.Imports, 2, 0) :: Nil)
++        :: ("0>1;1>2;2>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 2, 0) :: Nil)
++        :: ("0>1;1>2;2>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 2, 3) :: Nil)
++        :: ("0>1;1>2;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 3, 1) :: Nil)
++        :: ("0>1;1>2;3>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 3, 2) :: Nil)
++        :: ("0>1;2>1;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: (Atom.Imports, 3, 1) :: Nil)
++        :: Nil
++
++def shapeDescriptor(atoms: List[(Atom, Int32, Int32)]): Theory.Descriptor =
++    descriptor(List.map(atom -> match atom { case (relation, subject, object) => pattern(relation, subject, object) }, atoms),
++        Nil, 0 :: 1 :: Nil)
++
++/// A world that witnesses exactly one shape: one fact per positive atom, with a
++/// distinct entity per role. The canonical atoms decide the relation and roles,
++/// so the world matches the row the lowering stores.
++def shapeWorld(d: Theory.Descriptor): Coverage.WorldFacts = {
++    let world = World.World("shape");
++    Coverage.scoped(world, List.map(atom -> {
++        world = world,
++        source = "r" + Int32.toString(atom#subject),
++        target = "r" + Int32.toString(atom#object),
++        atom = atom#relation
++    }, Theory.canonical(d)#atoms))
++}
++
++/// One shape's outcome: is it admitted, does its canonical key match, and does
++/// its world yield the authored witness through the native schema.
++def shapeOutcome(entry: (String, List[(Atom, Int32, Int32)])): (Bool, Bool, Bool) =
++    match entry {
++        case (key, atoms) => {
++            let d = shapeDescriptor(atoms);
++            let rows = Theory.witnesses(shapeWorld(d), candidate("shape", d) :: Nil);
++            (Theory.safe(d),
++                Theory.shapeKey(Theory.canonical(d)) == key,
++                List.exists(row -> row#x == Theory.Entity.File("r0") and row#y == Theory.Entity.File("r1"), rows))
++        }
++    }
++
++// --------------------------------------------------------------- test helpers
++
++def witnessTexts(rows: List[Theory.Witness]): List[String] =
++    List.map(row -> Theory.witnessText(row), List.sortBy(row -> Theory.witnessText(row), rows))
++
++def anchoredRows(rows: List[Theory.Witness], entity: Theory.Entity): List[Theory.Witness] =
++    List.filter(row -> row#x == entity, rows)
++
++def indices(count: Int32): List[Int32] = indicesFrom(0, count, Nil)
++
++def indicesFrom(index: Int32, count: Int32, acc: List[Int32]): List[Int32] =
++    if (index >= count) List.reverse(acc) else indicesFrom(index + 1, count, index :: acc)
++
++// --------------------------------------------- deterministic population bounds
++
++def fileSourceRelations(): List[Atom] = Atom.Defines :: Atom.Imports :: Atom.ImportedBy :: Nil
++
++def symbolSourceRelations(): List[Atom] = Atom.DefinedIn :: Atom.Calls :: Atom.Callers :: Nil
++
++def followers(relation: Atom): List[Atom] =
++    if (Envelope.atomTarget(relation) == Domain.Files) fileSourceRelations() else symbolSourceRelations()
++
++def pickAtom(values: List[Atom], index: Int32): Atom = match List.drop(index, values) {
++    case head :: _ => head
++    case Nil       => Atom.Imports
++}
++
++def outputPairs(): List[List[Int32]] =
++    (0 :: Nil) :: (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (0 :: 1 :: Nil) :: (0 :: 2 :: Nil)
++        :: (0 :: 3 :: Nil) :: (1 :: 2 :: Nil) :: (1 :: 3 :: Nil) :: (2 :: 3 :: Nil) :: Nil
++
++def pickOutputs(index: Int32): List[Int32] = match List.drop(index, outputPairs()) {
++    case head :: _ => head
++    case Nil       => 0 :: Nil
++}
++
++/// One distinct admitted three-atom chain: the relation triple keeps every role
++/// in one nominal domain, and the output slots and the optional inequality vary
++/// the canonical identity.
++def chainCandidate(index: Int32): Theory.Candidate = {
++    let first = pickAtom(fileSourceRelations(), Int32.modulo(index, 3));
++    let second = pickAtom(followers(first), Int32.modulo(index / 3, 3));
++    let third = pickAtom(followers(second), Int32.modulo(index / 9, 3));
++    let denied = if (Int32.modulo(index / 270, 2) == 0) Nil else (0, 1) :: Nil;
++    candidate("c" + Int32.toString(index), descriptor(
++        pattern(first, 0, 1) :: pattern(second, 1, 2) :: pattern(third, 2, 3) :: Nil,
++        denied, pickOutputs(Int32.modulo(index / 27, 10))))
++}
++
++def manyCandidates(count: Int32): List[Theory.Candidate] =
++    List.map(index -> chainCandidate(index), indices(count))
++
++// ------------------------------------------------------------------ the laws
++
++/// The declared bounds are the policy the owner publishes.
++@Test
++def declaredBoundsArePublished(): Unit \ Assert = {
++    Assert.assertEq(expected = 3, Theory.maxAtoms());
++    Assert.assertEq(expected = 4, Theory.maxRoles());
++    Assert.assertEq(expected = 2, Theory.maxOutputs());
++    Assert.assertEq(expected = 1, Theory.maxInequalities());
++    Assert.assertEq(expected = 24, Theory.maxRenamings());
++    Assert.assertEq(expected = 256, Theory.maxCandidates());
++    Assert.assertEq(expected = 32, Theory.shardSize());
++    Assert.assertEq(expected = 8, Theory.maxShards())
++}
++
++/// Every reachable shape of one to three positive atoms over four roles is
++/// admitted, keeps its canonical key, and yields its authored witness through
++/// the compiler-checked native schema. The whole family, not three smoke
++/// templates.
++@Test
++def everyAdmittedShapeEvaluatesNatively(): Unit \ Assert = {
++    let outcomes = List.map(shapeOutcome, shapes());
++    Assert.assertEq(expected = 23, List.length(shapes()));
++    Assert.assertEq(expected = 23, List.length(List.filter(outcome -> match outcome {
++        case (admitted, keyed, witnessed) => admitted and keyed and witnessed
++    }, outcomes)));
++    Assert.assertEq(expected = 0, List.length(List.filter(outcome -> match outcome {
++        case (admitted, keyed, witnessed) => not (admitted and keyed and witnessed)
++    }, outcomes)))
++}
++
++/// An empty, over-bounded, disconnected, self-referential, domain-mismatched or
++/// unbound descriptor is refused explicitly; a valid one of the same family is
++/// admitted.
++@Test
++def unsafeDisconnectedAndOutOfBoundDescriptorsReject(): Unit \ Assert = {
++    Assert.assertEq(expected = false, Theory.safe(descriptor(Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 0, 2)
++            :: pattern(Atom.Imports, 0, 3) :: pattern(Atom.Imports, 1, 2) :: Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 3) :: Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 0) :: Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 4) :: Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 0, 2) :: Nil, Nil, 0 :: 1 :: 2 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 2 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 1) :: Nil, (0, 2) :: Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 0, 2) :: Nil, (0, 1) :: (0, 2) :: Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(pattern(Atom.Imports, 0, 1) :: Nil, (0, 0) :: Nil, 0 :: Nil)));
++    Assert.assertEq(expected = false, Theory.safe(descriptor(
++        pattern(Atom.Defines, 0, 1) :: pattern(Atom.Calls, 0, 1) :: Nil, Nil, 0 :: Nil)));
++    Assert.assertEq(expected = true, Theory.safe(pairConjunction()));
++    Assert.assertEq(expected = true, Theory.safe(descriptor(
++        pattern(Atom.Imports, 0, 1) :: Nil, (0, 1) :: Nil, 0 :: 1 :: Nil)))
++}
++
++/// Role spelling, conjunct body order and a duplicate conjunct normalize to one
++/// identity; a changed inequality, a reversed relation direction and a changed
++/// output role do not. This is alpha-equivalence, not logical equivalence.
++@Test
++def canonicalizationNormalizesOnlyRenamingAndBodyOrder(): Unit \ Assert = {
++    let pair = pairConjunction();
++    let renamed = descriptor(pattern(Atom.Imports, 1, 0) :: pattern(Atom.Imports, 2, 0) :: Nil, Nil, 1 :: 2 :: Nil);
++    let reordered = descriptor(pattern(Atom.Imports, 2, 1) :: pattern(Atom.Imports, 0, 1) :: Nil, Nil, 2 :: 0 :: Nil);
++    let duplicated = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1)
++        :: pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 2 :: Nil);
++    Assert.assertEq(expected = Theory.identityKey(pair), Theory.identityKey(renamed));
++    Assert.assertEq(expected = Theory.identityKey(pair), Theory.identityKey(reordered));
++    Assert.assertEq(expected = Theory.identityKey(pair), Theory.identityKey(duplicated));
++    Assert.assertEq(expected = "atoms[imports(v0,v1);imports(v2,v1)] denied[] outputs[v0,v2]",
++        Theory.identityKey(pair));
++    let strict = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, (0, 2) :: Nil, 0 :: 2 :: Nil);
++    let strictFlipped = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, (2, 0) :: Nil, 0 :: 2 :: Nil);
++    Assert.assertEq(expected = false, Theory.identityKey(strict) == Theory.identityKey(pair));
++    Assert.assertEq(expected = Theory.identityKey(strict), Theory.identityKey(strictFlipped));
++    let forward = descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: Nil);
++    let backwardRelation = descriptor(pattern(Atom.ImportedBy, 0, 1) :: Nil, Nil, 0 :: Nil);
++    let backwardRoles = descriptor(pattern(Atom.Imports, 1, 0) :: Nil, Nil, 0 :: Nil);
++    let byObject = descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 1 :: Nil);
++    Assert.assertEq(expected = false, Theory.identityKey(forward) == Theory.identityKey(backwardRelation));
++    Assert.assertEq(expected = false, Theory.identityKey(forward) == Theory.identityKey(backwardRoles));
++    Assert.assertEq(expected = false, Theory.identityKey(forward) == Theory.identityKey(byObject));
++    Assert.assertEq(expected = "atoms[imports(v0,v1)] denied[] outputs[v0]", Theory.identityKey(forward));
++    Assert.assertEq(expected = "atoms[imported_by(v0,v1)] denied[] outputs[v0]", Theory.identityKey(backwardRelation))
++}
++
++/// Canonicalization is bounded by the declared 24 consistent role renamings.
++@Test
++def canonicalizationIsBoundedByTwentyFourRenamings(): Unit \ Assert = {
++    Assert.assertEq(expected = 24, List.length(Theory.renamings()));
++    Assert.assertEq(expected = 24, Theory.maxRenamings())
++}
++
++/// A conjunction requires every conjunct: a single import answers while the
++/// two-atom conjunction that needs a define from the imported file does not.
++@Test
++def conjunctionRequiresEveryConjunct(): Unit \ Assert = {
++    let single = Theory.witnesses(shop(), candidate("imports", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil)) :: Nil);
++    let unmet = Theory.witnesses(shop(), candidate("both", descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Defines, 1, 2) :: Nil, Nil, 0 :: 2 :: Nil)) :: Nil);
++    let met = Theory.witnesses(shop(), candidate("met", descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Defines, 0, 2) :: Nil, Nil, 0 :: 2 :: Nil)) :: Nil);
++    Assert.assertEq(expected = 2, List.length(single));
++    Assert.assertEq(expected = 0, List.length(unmet));
++    Assert.assertEq(expected = 1, List.length(met));
++    Assert.assertEq(expected = true, List.exists(row ->
++        row#x == Theory.Entity.File("receipt.rb") and row#y == Theory.Entity.Symbol("Receipt"), met))
++}
++
++/// Rule-set union cannot substitute for conjunction: on one self-import the
++/// loose single-atom candidate answers, the strict two-atom candidate with an
++/// inequality is empty, and evaluating both together keeps the strict candidate
++/// empty rather than letting the loose rows answer it.
++@Test
++def unionOfRulesIsNotConjunction(): Unit \ Assert = {
++    let loose = candidate("loose", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil));
++    let strict = candidate("strict", descriptor(
++        pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 0, 2) :: Nil, (1, 2) :: Nil, 0 :: 1 :: Nil));
++    let looseRows = Theory.witnesses(selfScope(), loose :: Nil);
++    let strictRows = Theory.witnesses(selfScope(), strict :: Nil);
++    let both = Theory.witnesses(selfScope(), loose :: strict :: Nil);
++    Assert.assertEq(expected = 1, List.length(looseRows));
++    Assert.assertEq(expected = 0, List.length(strictRows));
++    Assert.assertEq(expected = 1, List.length(both));
++    Assert.assertEq(expected = true, List.forAll(row -> row#candidate == "loose", both))
++}
++
++/// The one bound inequality changes the expected rows: the same two-atom
++/// descriptor answers on a self-import without the inequality and is empty with
++/// it, while a genuinely two-distinct-role match stays.
++@Test
++def inequalityChangesTheExpectedRows(): Unit \ Assert = {
++    let withoutInequality = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, Nil, 0 :: 2 :: Nil);
++    let withInequality = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, (0, 2) :: Nil, 0 :: 2 :: Nil);
++    Assert.assertEq(expected = 1, List.length(Theory.witnesses(selfScope(), candidate("loose", withoutInequality) :: Nil)));
++    Assert.assertEq(expected = 0, List.length(Theory.witnesses(selfScope(), candidate("strict", withInequality) :: Nil)));
++    Assert.assertEq(expected = 2, List.length(Theory.witnesses(shop(), candidate("strict", withInequality) :: Nil)))
++}
++
++/// Projection chooses exactly the declared output slots: the subject pair, the
++/// object pair and the two-slot pair are different witness sets.
++@Test
++def projectionChoosesTheDeclaredOutputSlots(): Unit \ Assert = {
++    let bySubject = Theory.witnesses(shop(), candidate("s", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: Nil)) :: Nil);
++    let byObject = Theory.witnesses(shop(), candidate("o", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 1 :: Nil)) :: Nil);
++    let bothSlots = Theory.witnesses(shop(), candidate("b", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil)) :: Nil);
++    Assert.assertEq(expected = 2, List.length(bySubject));
++    Assert.assertEq(expected = 1, List.length(byObject));
++    Assert.assertEq(expected = 2, List.length(bothSlots));
++    Assert.assertEq(expected = true, List.forAll(row -> row#x == row#y, bySubject));
++    Assert.assertEq(expected = true, List.forAll(row -> row#x == Theory.Entity.File("pricing.rb"), byObject))
++}
++
++/// Two candidates evaluated together do not contaminate one another: every row
++/// carries its own candidate, and a file candidate never yields a symbol row.
++@Test
++def candidatesDoNotLeakAcrossTheirIds(): Unit \ Assert = {
++    let files = candidate("files", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil));
++    let symbols = candidate("symbols", descriptor(pattern(Atom.Calls, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil));
++    let separateFiles = Theory.witnesses(shop(), files :: Nil);
++    let separateSymbols = Theory.witnesses(shop(), symbols :: Nil);
++    let batch = Theory.witnesses(shop(), files :: symbols :: Nil);
++    Assert.assertEq(expected = witnessTexts(separateFiles ::: separateSymbols), witnessTexts(batch));
++    Assert.assertEq(expected = true, List.forAll(row -> row#candidate == "files", separateFiles));
++    Assert.assertEq(expected = true, List.forAll(row -> row#candidate == "symbols", separateSymbols));
++    Assert.assertEq(expected = 2, List.length(separateFiles));
++    Assert.assertEq(expected = 1, List.length(separateSymbols))
++}
++
++/// The world is part of every row: two worlds with a same-named entity yield
++/// their own witnesses and never donate across the scope.
++@Test
++def worldsDoNotLeakAcrossScopes(): Unit \ Assert = {
++    let pair = candidate("pair", strictPair());
++    let firstWorld = World.World("world-one");
++    let secondWorld = World.World("world-two");
++    let first = Coverage.scoped(firstWorld, edge(firstWorld, "shared", Atom.Imports, "hub")
++        :: edge(firstWorld, "other", Atom.Imports, "hub") :: Nil);
++    let second = Coverage.scoped(secondWorld, edge(secondWorld, "shared", Atom.Imports, "hub")
++        :: edge(secondWorld, "third", Atom.Imports, "hub") :: Nil);
++    let firstRows = Theory.witnesses(first, pair :: Nil);
++    let secondRows = Theory.witnesses(second, pair :: Nil);
++    Assert.assertEq(expected = 2, List.length(firstRows));
++    Assert.assertEq(expected = 2, List.length(secondRows));
++    Assert.assertEq(expected = true, List.forAll(row -> row#world == firstWorld, firstRows));
++    Assert.assertEq(expected = true, List.forAll(row -> row#world == secondWorld, secondRows));
++    Assert.assertEq(expected = true, List.exists(row -> row#y == Theory.Entity.File("other"), firstRows));
++    Assert.assertEq(expected = false, List.exists(row -> row#y == Theory.Entity.File("third"), firstRows));
++    Assert.assertEq(expected = true, List.exists(row -> row#y == Theory.Entity.File("third"), secondRows))
++}
++
++/// A duplicate candidate id naming two distinct descriptors is refused by name
++/// rather than allowed to union them; the same id naming the same descriptor
++/// deduplicates to one candidate.
++@Test
++def duplicateIdsCannotUnionDistinctDescriptors(): Unit \ Assert = {
++    let files = descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil);
++    let symbols = descriptor(pattern(Atom.Calls, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil);
++    let conflict = Theory.population(candidate("dup", files) :: candidate("dup", symbols) :: Nil);
++    Assert.assertEq(expected = "dup" :: Nil, conflict#conflicts);
++    Assert.assertEq(expected = 1, List.length(conflict#kept));
++    let consistent = Theory.population(candidate("dup", files) :: candidate("dup", files) :: Nil);
++    Assert.assertEq(expected = Nil, consistent#conflicts);
++    Assert.assertEq(expected = 1, List.length(consistent#kept));
++    Assert.assertEq(expected = true, List.exists(kept -> Theory.identityKey(kept#descriptor) == Theory.identityKey(files), consistent#kept))
++}
++
++/// Genuinely conjunctive same-partition witnesses remain: the two-import
++/// conjunction on one world keeps both distinct pairs.
++@Test
++def samePartitionConjunctiveWitnessesRemain(): Unit \ Assert = {
++    let rows = Theory.witnesses(shop(), candidate("pair", strictPair()) :: Nil);
++    Assert.assertEq(expected = 2, List.length(rows));
++    Assert.assertEq(expected = true, List.exists(row ->
++        row#x == Theory.Entity.File("receipt.rb") and row#y == Theory.Entity.File("checkout.rb"), rows));
++    Assert.assertEq(expected = true, List.exists(row ->
++        row#x == Theory.Entity.File("checkout.rb") and row#y == Theory.Entity.File("receipt.rb"), rows))
++}
++
++/// A batch of candidates equals the same candidates evaluated separately, so
++/// the candidate id is the only thing that keeps them apart.
++@Test
++def batchEqualsSeparateNativeEvaluation(): Unit \ Assert = {
++    let first = candidate("first", descriptor(pattern(Atom.Imports, 0, 1) :: Nil, Nil, 0 :: 1 :: Nil));
++    let second = candidate("second", descriptor(pattern(Atom.Imports, 2, 1) :: Nil, Nil, 0 :: 2 :: Nil));
++    let batch = Theory.witnesses(shop(), first :: second :: Nil);
++    let separate = Theory.witnesses(shop(), first :: Nil) ::: Theory.witnesses(shop(), second :: Nil);
++    Assert.assertEq(expected = witnessTexts(separate), witnessTexts(batch));
++    Assert.assertEq(expected = 2, List.length(Theory.witnesses(shop(), first :: Nil)));
++    Assert.assertEq(expected = 2, List.length(Theory.witnesses(shop(), second :: Nil)))
++}
++
++/// One exact world supplies materialized witnesses to multiple task contexts:
++/// the structural rows are identical whatever anchors are supplied, and each
++/// task context joins its own anchor to those already-materialized rows without
++/// re-evaluating the structure.
++@Test
++def sharedWorldWitnessesFeedCheapAnchorJoins(): Unit \ Assert = {
++    let candidates = candidate("pair", strictPair()) :: Nil;
++    let structural = Theory.witnesses(shop(), candidates);
++    let receiptTasks = Theory.tasks(shop(), candidates, (shopWorld(), Theory.Entity.File("receipt.rb")) :: Nil);
++    let checkoutTasks = Theory.tasks(shop(), candidates, (shopWorld(), Theory.Entity.File("checkout.rb")) :: Nil);
++    Assert.assertEq(expected = 2, List.length(structural));
++    Assert.assertEq(expected = witnessTexts(anchoredRows(structural, Theory.Entity.File("receipt.rb"))),
++        witnessTexts(receiptTasks));
++    Assert.assertEq(expected = witnessTexts(anchoredRows(structural, Theory.Entity.File("checkout.rb"))),
++        witnessTexts(checkoutTasks));
++    Assert.assertEq(expected = 1, List.length(receiptTasks));
++    Assert.assertEq(expected = 1, List.length(checkoutTasks));
++    Assert.assertEq(expected = 0, List.length(Theory.tasks(shop(), candidates, Nil)));
++    Assert.assertEq(expected = witnessTexts(structural), witnessTexts(Theory.witnesses(shop(), candidates)))
++}
++
++/// The population and shard bounds are recorded rather than hidden: at most 256
++/// canonical candidates, about 32 descriptors per shard and at most eight shards
++/// per world, with the excess counted.
++@Test
++def populationAndShardBoundsAreRecorded(): Unit \ Assert = {
++    let populated = Theory.population(manyCandidates(300));
++    Assert.assertEq(expected = 256, List.length(populated#kept));
++    Assert.assertEq(expected = 300 - 256, populated#dropped);
++    Assert.assertEq(expected = true, populated#truncated);
++    let sharded = Theory.shards(populated);
++    Assert.assertEq(expected = 8, List.length(sharded#shards));
++    Assert.assertEq(expected = 0, sharded#dropped);
++    Assert.assertEq(expected = false, sharded#truncated);
++    Assert.assertEq(expected = true, List.exists(shard -> List.length(shard) == 32, sharded#shards));
++    let large = { kept = manyCandidates(300), dropped = 0, conflicts = Nil, truncated = false };
++    let largeShards = Theory.shards(large);
++    Assert.assertEq(expected = 8, List.length(largeShards#shards));
++    Assert.assertEq(expected = 300 - 256, largeShards#dropped);
++    Assert.assertEq(expected = true, largeShards#truncated)
++}
+diff --git a/attune/test/view/BUILD.bazel b/attune/test/view/BUILD.bazel
+index cbf44e4ecd..5d5606302f 100644
+--- a/attune/test/view/BUILD.bazel
++++ b/attune/test/view/BUILD.bazel
+@@ -28,8 +28,8 @@
+         "RouteViewLaw.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -42,8 +42,8 @@
+         "GrammarLaw.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -56,8 +56,8 @@
+         "ProofViewLaw.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -70,8 +70,8 @@
+         "SemanticViewLaw.flix",
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
++        "//src:Attune/Coverage.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+diff --git a/attune/test/view/ProofViewLaw.flix b/attune/test/view/ProofViewLaw.flix
+index 63a6042f67..0892ee5aae 100644
+--- a/attune/test/view/ProofViewLaw.flix
++++ b/attune/test/view/ProofViewLaw.flix
+@@ -1,5 +1,5 @@
+ use Attune.AsciiTree
+-use Attune.Study.{Outcome, outcomeName}
++use Attune.Coverage.{Outcome, outcomeName}
+ use Attune.View
+ 
+ /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.

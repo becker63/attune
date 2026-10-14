@@ -1,0 +1,83 @@
+[
+  {
+    "name": "control",
+    "revision": "eca979f524661cbe400d22b90c7e3c305b32052e",
+    "source_files": 81,
+    "facts": 6254,
+    "source_mismatches": [],
+    "invalid_facts": [],
+    "source_manifest_sha256": "262589b59bfb8938d95a05740646a4563852b07983db4e23c77078e567091a88",
+    "facts_sha256": "c9a7974388b023970bbf721c13837f71b896d74d8f9476044135bbdde301b26a",
+    "languages": {
+      "starlark": 22,
+      "flix": 48,
+      "java": 11
+    },
+    "fact_kinds": {
+      "starlark:definition": 141,
+      "starlark:dependency": 493,
+      "starlark:call": 508,
+      "flix:definition": 609,
+      "flix:import": 338,
+      "flix:call": 3423,
+      "starlark:import": 16,
+      "java:definition": 66,
+      "java:import": 90,
+      "java:call": 570
+    }
+  },
+  {
+    "name": "baseline",
+    "revision": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "source_files": 72,
+    "facts": 5293,
+    "source_mismatches": [],
+    "invalid_facts": [],
+    "source_manifest_sha256": "1ab3ad23854c7581d3dd1801ee457cf0bb743e03243b92b8fcfd9079c3587364",
+    "facts_sha256": "bd27f51451f4d6ddb60f374ea79bc2d98468c4618bd5a909e1f4b72004cb2742",
+    "languages": {
+      "starlark": 20,
+      "flix": 41,
+      "java": 11
+    },
+    "fact_kinds": {
+      "starlark:definition": 102,
+      "starlark:dependency": 363,
+      "starlark:call": 401,
+      "flix:definition": 595,
+      "flix:import": 342,
+      "flix:call": 2827,
+      "starlark:import": 14,
+      "java:definition": 65,
+      "java:import": 90,
+      "java:call": 494
+    }
+  },
+  {
+    "name": "cleaned",
+    "revision": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "source_files": 75,
+    "facts": 5124,
+    "source_mismatches": [],
+    "invalid_facts": [],
+    "source_manifest_sha256": "f93f5454584f9e9484e536739acf06c2480f190a61811c94109bbf4c71bc19e3",
+    "facts_sha256": "463e067844ca9b72cb4240be18aa1845d7821c9224ab4f1bb6ccd27faa88e43f",
+    "languages": {
+      "starlark": 22,
+      "flix": 42,
+      "java": 11
+    },
+    "fact_kinds": {
+      "starlark:definition": 105,
+      "starlark:dependency": 402,
+      "starlark:call": 424,
+      "flix:definition": 480,
+      "flix:import": 301,
+      "flix:call": 2748,
+      "starlark:import": 15,
+      "java:definition": 65,
+      "java:import": 90,
+      "java:call": 494
+    }
+  }
+]

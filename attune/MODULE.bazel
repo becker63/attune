@@ -160,3 +160,8 @@ http_archive(
     build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
 )
 register_toolchains("//platform/browser:bindgen_arm64", "//platform/browser:bindgen_amd64")
+
+# Optional, retained science inputs. Ordinary library tests need no corpus.
+# Campaign commands override this empty repository with the frozen input bundle.
+campaign_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+campaign_repository(name = "native_campaign_inputs", path = "experiments/native_patterns/data")

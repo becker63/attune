@@ -1,0 +1,2347 @@
+{
+  "repository": "attuneflix",
+  "revision": "10f3a212d0c4d10a6c06a8f1570b0e2dd284c920",
+  "status": "newly_extracted_historical_snapshot",
+  "source_tree_identity": "attuneflix-checkpoint-common-source-v1:10f3a212d0c4d10a6c06a8f1570b0e2dd284c920:fb2afc9e890a73bf329970c4f317947635ede49f63ff4ce8e0c0eaef8d700c9e",
+  "acquisition_identity": "checkpoint-acquisition-basis-v1:d674138e0ba582b2f3003833c6a6086687eff6f14120a8c2d0829d357b8c4b11",
+  "acquisition_origins": [
+    "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls",
+    "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+  ],
+  "evaluator_sha256": "0060199f72f8c75cff4b8b56f67b0020e583336d6cca4a8f40bdc1c7289ffa5c",
+  "source_files": 110,
+  "facts": 9011,
+  "fresh_files": 4,
+  "reused_files": 110,
+  "source_verification_mismatches": 0,
+  "invalid_facts": 0,
+  "metadata": {
+    "repository": "attuneflix",
+    "base_revision": "10f3a212d0c4d10a6c06a8f1570b0e2dd284c920",
+    "source_tree_identity": "attuneflix-checkpoint-common-source-v1:10f3a212d0c4d10a6c06a8f1570b0e2dd284c920:fb2afc9e890a73bf329970c4f317947635ede49f63ff4ce8e0c0eaef8d700c9e",
+    "fact_identity": "repository-facts-v2:77618b27ae15f397613284c4e6cf48ca3dc9e0980eecb4c4d08757cc953b48ca",
+    "snapshot_id": "repository-snapshot-v1:50e1fe0495ae191f08dc82ae5be6f826e4d67ae27e8f20edd9af9441f35c1c4a",
+    "file_count": 110,
+    "symbol_count": 1162,
+    "defines_count": 1162,
+    "imports_count": 219,
+    "calls_count": 1462,
+    "parent_count": 138,
+    "unresolved_imports": 694,
+    "unresolved_calls": 4197
+  },
+  "observations": 52464,
+  "source_exclusions": [],
+  "reuse_provenance": [
+    {
+      "path": "BUILD.bazel",
+      "source_sha256": "7dcb79c8a14a45a43526bd108dd9f2c1156b04074464ef7b53ae8f8e60b93e81",
+      "program": "defines",
+      "facts_from": "program-acquisitions/692ada1ddb37d0539f65776d9970ce6b97f6321878efb75f770ffcef1101bb11",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "BUILD.bazel",
+      "source_sha256": "7dcb79c8a14a45a43526bd108dd9f2c1156b04074464ef7b53ae8f8e60b93e81",
+      "program": "imports",
+      "facts_from": "program-acquisitions/2d868fe1292ad71344a298cc4d6b1e8da85b89cc6443975c22249358b70baa41",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "BUILD.bazel",
+      "source_sha256": "7dcb79c8a14a45a43526bd108dd9f2c1156b04074464ef7b53ae8f8e60b93e81",
+      "program": "calls",
+      "facts_from": "program-acquisitions/f8ab483a489dea85462da693131cbbd27560dc18ad2ef98babd3ac0b8ded896d",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "MODULE.bazel",
+      "source_sha256": "f923b28c17b04b9b21222446f4570bca5123d860f811e0464f36bc4c82056d9e",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "MODULE.bazel",
+      "source_sha256": "f923b28c17b04b9b21222446f4570bca5123d860f811e0464f36bc4c82056d9e",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "MODULE.bazel",
+      "source_sha256": "f923b28c17b04b9b21222446f4570bca5123d860f811e0464f36bc4c82056d9e",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/BUILD.bazel",
+      "source_sha256": "f984427948cf7de013579b127e3b8b41fc856adc83890c95253a8a083c7c6d38",
+      "program": "defines",
+      "facts_from": "program-acquisitions/dd2951300377ec5f9420da055bf69795655dd1a48c5781a06497b3f64b5dd2a1",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "build/BUILD.bazel",
+      "source_sha256": "f984427948cf7de013579b127e3b8b41fc856adc83890c95253a8a083c7c6d38",
+      "program": "imports",
+      "facts_from": "program-acquisitions/25ed67a935308e45aaaae6256432976c6981ac214157d00e9c1435b2ac30dfce",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "build/BUILD.bazel",
+      "source_sha256": "f984427948cf7de013579b127e3b8b41fc856adc83890c95253a8a083c7c6d38",
+      "program": "calls",
+      "facts_from": "program-acquisitions/4584376f3b347b488573f33709bea83a28da16ec27d3d0352a9a415328543e1f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "build/attune.bzl",
+      "source_sha256": "be1fb188a5bc7de61062d1c853ee4f513a4239bf78bfab27f0496388db8a04d3",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/attune.bzl",
+      "source_sha256": "be1fb188a5bc7de61062d1c853ee4f513a4239bf78bfab27f0496388db8a04d3",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/attune.bzl",
+      "source_sha256": "be1fb188a5bc7de61062d1c853ee4f513a4239bf78bfab27f0496388db8a04d3",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/flix.bzl",
+      "source_sha256": "e5d864d9b9e0484c5d2f5a4943451c50ab78965fc2622f4cdce11359bd1ad5e5",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/flix.bzl",
+      "source_sha256": "e5d864d9b9e0484c5d2f5a4943451c50ab78965fc2622f4cdce11359bd1ad5e5",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/flix.bzl",
+      "source_sha256": "e5d864d9b9e0484c5d2f5a4943451c50ab78965fc2622f4cdce11359bd1ad5e5",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/grit_repository.bzl",
+      "source_sha256": "f756f50e178f8dfc84bca4abb86528b7e723a9f1a86f095a6a4449fdc3ad7df3",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/grit_repository.bzl",
+      "source_sha256": "f756f50e178f8dfc84bca4abb86528b7e723a9f1a86f095a6a4449fdc3ad7df3",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/grit_repository.bzl",
+      "source_sha256": "f756f50e178f8dfc84bca4abb86528b7e723a9f1a86f095a6a4449fdc3ad7df3",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract.bzl",
+      "source_sha256": "69bcf44ab87cb085983061e67a537dfcfe41fc19e4dde343ee8c196a2f30af79",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract.bzl",
+      "source_sha256": "69bcf44ab87cb085983061e67a537dfcfe41fc19e4dde343ee8c196a2f30af79",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract.bzl",
+      "source_sha256": "69bcf44ab87cb085983061e67a537dfcfe41fc19e4dde343ee8c196a2f30af79",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract_repository.bzl",
+      "source_sha256": "7821b0d22dc469d6534a7f95707f810a5efa27c5c9503f9734c2e41496ecf31f",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract_repository.bzl",
+      "source_sha256": "7821b0d22dc469d6534a7f95707f810a5efa27c5c9503f9734c2e41496ecf31f",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "build/jextract_repository.bzl",
+      "source_sha256": "7821b0d22dc469d6534a7f95707f810a5efa27c5c9503f9734c2e41496ecf31f",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "data/evaluation/BUILD.bazel",
+      "source_sha256": "e830335a29b6c457b6e3e963379fb9ca80ec5a4d4b28248409f0f020ac5c89c8",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "data/evaluation/BUILD.bazel",
+      "source_sha256": "e830335a29b6c457b6e3e963379fb9ca80ec5a4d4b28248409f0f020ac5c89c8",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "data/evaluation/BUILD.bazel",
+      "source_sha256": "e830335a29b6c457b6e3e963379fb9ca80ec5a4d4b28248409f0f020ac5c89c8",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquireMain.flix",
+      "source_sha256": "a7237e4648a07a97942bfc353c1de2c39d4e30849b764d6ca3219d21596a3dac",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquireMain.flix",
+      "source_sha256": "a7237e4648a07a97942bfc353c1de2c39d4e30849b764d6ca3219d21596a3dac",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquireMain.flix",
+      "source_sha256": "a7237e4648a07a97942bfc353c1de2c39d4e30849b764d6ca3219d21596a3dac",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionDriver.flix",
+      "source_sha256": "688388687a1d6063327eb206b6a049ea0d0daed2cf0f5a6911c62aa5c2fe0088",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionDriver.flix",
+      "source_sha256": "688388687a1d6063327eb206b6a049ea0d0daed2cf0f5a6911c62aa5c2fe0088",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionDriver.flix",
+      "source_sha256": "688388687a1d6063327eb206b6a049ea0d0daed2cf0f5a6911c62aa5c2fe0088",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionFacts.flix",
+      "source_sha256": "7d551a4616ab4fadfe4b7db258fb7ca0b94c2506ed6090cdbcd7336c8cfbf186",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionFacts.flix",
+      "source_sha256": "7d551a4616ab4fadfe4b7db258fb7ca0b94c2506ed6090cdbcd7336c8cfbf186",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/AcquisitionFacts.flix",
+      "source_sha256": "7d551a4616ab4fadfe4b7db258fb7ca0b94c2506ed6090cdbcd7336c8cfbf186",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/BUILD.bazel",
+      "source_sha256": "1cc9f944ddc7f64aedc04fac58f87280bd2fbe765ba6eb0073a44b032e4f6913",
+      "program": "defines",
+      "facts_from": "program-acquisitions/e3931515340011d55c57c3b5969462d3fd5e4f52f00a3b29e774dca4f0c8e827",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-parallelism/BUILD.bazel",
+      "source_sha256": "1cc9f944ddc7f64aedc04fac58f87280bd2fbe765ba6eb0073a44b032e4f6913",
+      "program": "imports",
+      "facts_from": "program-acquisitions/e9a98ddd1b3af9b5a002f5b3021518f47788b4023820c5376184108fd46dd46e",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-parallelism/BUILD.bazel",
+      "source_sha256": "1cc9f944ddc7f64aedc04fac58f87280bd2fbe765ba6eb0073a44b032e4f6913",
+      "program": "calls",
+      "facts_from": "program-acquisitions/f4921756d98c76cd704300abbbe6def85106a0f21318f5346d3fb04411178abf",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Main.flix",
+      "source_sha256": "38858fb026f478d7421a72ab5948568f2bf4c38165d3ea024ce4fd615fa208c5",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Main.flix",
+      "source_sha256": "38858fb026f478d7421a72ab5948568f2bf4c38165d3ea024ce4fd615fa208c5",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Main.flix",
+      "source_sha256": "38858fb026f478d7421a72ab5948568f2bf4c38165d3ea024ce4fd615fa208c5",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Parallelism.flix",
+      "source_sha256": "7f777ab2ead4f00fbf11256dd1412a23fcaf823116cfffece53d953962f22784",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Parallelism.flix",
+      "source_sha256": "7f777ab2ead4f00fbf11256dd1412a23fcaf823116cfffece53d953962f22784",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Parallelism.flix",
+      "source_sha256": "7f777ab2ead4f00fbf11256dd1412a23fcaf823116cfffece53d953962f22784",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Provenance.flix",
+      "source_sha256": "cf6f088461f0936f1cb2fdd3a2ac03d9d2d7e0cde0371e99f0b8173c9e3902e8",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Provenance.flix",
+      "source_sha256": "cf6f088461f0936f1cb2fdd3a2ac03d9d2d7e0cde0371e99f0b8173c9e3902e8",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/Provenance.flix",
+      "source_sha256": "cf6f088461f0936f1cb2fdd3a2ac03d9d2d7e0cde0371e99f0b8173c9e3902e8",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/parallelism.bzl",
+      "source_sha256": "f7e49c07b4ed74646e92594520458277e61ff1aad469cc742b63ce04b76d5c3d",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/parallelism.bzl",
+      "source_sha256": "f7e49c07b4ed74646e92594520458277e61ff1aad469cc742b63ce04b76d5c3d",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-parallelism/parallelism.bzl",
+      "source_sha256": "f7e49c07b4ed74646e92594520458277e61ff1aad469cc742b63ce04b76d5c3d",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Aggregate.flix",
+      "source_sha256": "a7bb2b6a68c8c562ed96544d1ad874bc673316b33526d7195c02e9f3a511abff",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Aggregate.flix",
+      "source_sha256": "a7bb2b6a68c8c562ed96544d1ad874bc673316b33526d7195c02e9f3a511abff",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Aggregate.flix",
+      "source_sha256": "a7bb2b6a68c8c562ed96544d1ad874bc673316b33526d7195c02e9f3a511abff",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/BUILD.bazel",
+      "source_sha256": "a21e170eb77651af4e42d0d580735405f23ac53b9cb9696ed6029d9d1cc121c6",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/BUILD.bazel",
+      "source_sha256": "a21e170eb77651af4e42d0d580735405f23ac53b9cb9696ed6029d9d1cc121c6",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/BUILD.bazel",
+      "source_sha256": "a21e170eb77651af4e42d0d580735405f23ac53b9cb9696ed6029d9d1cc121c6",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Main.flix",
+      "source_sha256": "dd07412d819b0b8e3383fce2691d321a5d3ff6bf93e9c938796ba72e662f8a63",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Main.flix",
+      "source_sha256": "dd07412d819b0b8e3383fce2691d321a5d3ff6bf93e9c938796ba72e662f8a63",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Main.flix",
+      "source_sha256": "dd07412d819b0b8e3383fce2691d321a5d3ff6bf93e9c938796ba72e662f8a63",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Report.flix",
+      "source_sha256": "8584b1e383073f7234757bb84db984e66dc01b86321d21c5f39f5a5c52a07fd7",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Report.flix",
+      "source_sha256": "8584b1e383073f7234757bb84db984e66dc01b86321d21c5f39f5a5c52a07fd7",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Report.flix",
+      "source_sha256": "8584b1e383073f7234757bb84db984e66dc01b86321d21c5f39f5a5c52a07fd7",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Summary.flix",
+      "source_sha256": "3e86e768eda8bc10e1fa6f2e4f8316e6ce9053bd3cc46800ee64c114ca645711",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Summary.flix",
+      "source_sha256": "3e86e768eda8bc10e1fa6f2e4f8316e6ce9053bd3cc46800ee64c114ca645711",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/Summary.flix",
+      "source_sha256": "3e86e768eda8bc10e1fa6f2e4f8316e6ce9053bd3cc46800ee64c114ca645711",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/BUILD.bazel",
+      "source_sha256": "4eb46e2be99ffb40103a25edc4c950e16ffb44f51f6cc0fa03b69853d6823e4d",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/BUILD.bazel",
+      "source_sha256": "4eb46e2be99ffb40103a25edc4c950e16ffb44f51f6cc0fa03b69853d6823e4d",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/BUILD.bazel",
+      "source_sha256": "4eb46e2be99ffb40103a25edc4c950e16ffb44f51f6cc0fa03b69853d6823e4d",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/census.bzl",
+      "source_sha256": "59e2ee530f1a8b3ee1c66e40d8859bf70684788879c3f747ff716ddeaf320896",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/census.bzl",
+      "source_sha256": "59e2ee530f1a8b3ee1c66e40d8859bf70684788879c3f747ff716ddeaf320896",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-swe-explore/census/census.bzl",
+      "source_sha256": "59e2ee530f1a8b3ee1c66e40d8859bf70684788879c3f747ff716ddeaf320896",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/atlas-work-topology/BUILD.bazel",
+      "source_sha256": "bd2c1b11ecf98547c7db4a914ad06b1b6eed7906339f2b332107a9579f820ba3",
+      "program": "defines",
+      "facts_from": "program-acquisitions/edc087590ddf8ecc7453f3f952558362a134e2c1c3a9a938e7fe99c32d5bc905",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/BUILD.bazel",
+      "source_sha256": "bd2c1b11ecf98547c7db4a914ad06b1b6eed7906339f2b332107a9579f820ba3",
+      "program": "imports",
+      "facts_from": "program-acquisitions/c571d1bf77d161aa4c0b168dd0b2cc717319a42d4b5271e7e59a7da30e2d24da",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/BUILD.bazel",
+      "source_sha256": "bd2c1b11ecf98547c7db4a914ad06b1b6eed7906339f2b332107a9579f820ba3",
+      "program": "calls",
+      "facts_from": "program-acquisitions/ebc5a79adc438d05d6f8e844f11884666d63c5dcfa370ceafd197368a0dcaffe",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlAcquisition.flix",
+      "source_sha256": "e18017331c9a14740bb57fafc5bf20f1daa9128d7ed218b148e612185dd35ec3",
+      "program": "defines",
+      "facts_from": "program-acquisitions/2f11f20a51c87ffdf29f915e3b3134ef298ff9aed9046fdcbe83e65f07fca75f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlAcquisition.flix",
+      "source_sha256": "e18017331c9a14740bb57fafc5bf20f1daa9128d7ed218b148e612185dd35ec3",
+      "program": "imports",
+      "facts_from": "program-acquisitions/b691bdb10a6618ef570e3b015dc0063862500fb2867b4d27805b0ff8871d1d23",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlAcquisition.flix",
+      "source_sha256": "e18017331c9a14740bb57fafc5bf20f1daa9128d7ed218b148e612185dd35ec3",
+      "program": "calls",
+      "facts_from": "program-acquisitions/3deb7a737b181ce62f063786f819c91376fd9a7a7daba7a6397ad19a557c6b51",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlCoChange.flix",
+      "source_sha256": "ba434f75ca455839be467a55b3f151f43cdb51a66fbda4bb2162d0d5929d44e1",
+      "program": "defines",
+      "facts_from": "program-acquisitions/c3d29e979aa5daafe37da479bec49d4c7e81a7a2d56617eaac99cf049aeef1a2",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlCoChange.flix",
+      "source_sha256": "ba434f75ca455839be467a55b3f151f43cdb51a66fbda4bb2162d0d5929d44e1",
+      "program": "imports",
+      "facts_from": "program-acquisitions/8db4b327c3c7c6db75f52c76b2bc9a14704c1d67951384060bbc68adb4177135",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlCoChange.flix",
+      "source_sha256": "ba434f75ca455839be467a55b3f151f43cdb51a66fbda4bb2162d0d5929d44e1",
+      "program": "calls",
+      "facts_from": "program-acquisitions/2be140b79ddc05cc8ff5294857175658c93927642558c79a3a7a77b06b99068e",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlIdentity.flix",
+      "source_sha256": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+      "program": "defines",
+      "facts_from": "program-acquisitions/59ab7f108300dc0dd61d670e4eff1d58aa0bad6909f2e8926bb2d77ce5a05006",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlIdentity.flix",
+      "source_sha256": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+      "program": "imports",
+      "facts_from": "program-acquisitions/3a683ab610ad8ae50636396fc1e913ef956a7e03316ea93e43ed826c22935da2",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlIdentity.flix",
+      "source_sha256": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+      "program": "calls",
+      "facts_from": "program-acquisitions/9a115f9fe3946a1802e4082a22b6649e594e7a70f438cb2967d9fcaef934df06",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMain.flix",
+      "source_sha256": "ccd570dfc3186d5a48733606b986b690be7761b01343743a60617ff21d715f19",
+      "program": "defines",
+      "facts_from": "program-acquisitions/3a263e2173a855085dbc0591f6e2b9b18d85ee4fc48c8446ae3983def132a567",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMain.flix",
+      "source_sha256": "ccd570dfc3186d5a48733606b986b690be7761b01343743a60617ff21d715f19",
+      "program": "imports",
+      "facts_from": "program-acquisitions/e8e98f81a561b6ddb973210ea33bd8837151acff0c1bf7e36108eabfdccc597e",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMain.flix",
+      "source_sha256": "ccd570dfc3186d5a48733606b986b690be7761b01343743a60617ff21d715f19",
+      "program": "calls",
+      "facts_from": "program-acquisitions/18203a69cc074b661add9414569d3887d606a3cd960a8472719034164b15c6b2",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMap.flix",
+      "source_sha256": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+      "program": "defines",
+      "facts_from": "program-acquisitions/dfb8fbd5b0aba5387cefa1126691f72f0a82ac3fdf20c96bf328596c3b31817d",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMap.flix",
+      "source_sha256": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+      "program": "imports",
+      "facts_from": "program-acquisitions/3aa560caa2b3f943e50fc5eb857b0b06d2087c707fb07e5449a9e6334b91a5ad",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMap.flix",
+      "source_sha256": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+      "program": "calls",
+      "facts_from": "program-acquisitions/2fcd41a3e4b1c77c3c079550a73a590ba8822897e5f18804185f8a1dc427fde7",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasure.flix",
+      "source_sha256": "86b63eceb014af9fde8eacd83a2f6fe50333cba602b4d54a09dd48d0637be8f5",
+      "program": "defines",
+      "facts_from": "program-acquisitions/9bc6b99c429d16608849d10b7c5c4c1fbab9b84a484c69ebc2fb784e2f8b0938",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasure.flix",
+      "source_sha256": "86b63eceb014af9fde8eacd83a2f6fe50333cba602b4d54a09dd48d0637be8f5",
+      "program": "imports",
+      "facts_from": "program-acquisitions/5261e47f37fdd49e1b1877d49e8c2669490893d5f2ca23b672b332ca957a4bb5",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasure.flix",
+      "source_sha256": "86b63eceb014af9fde8eacd83a2f6fe50333cba602b4d54a09dd48d0637be8f5",
+      "program": "calls",
+      "facts_from": "program-acquisitions/4b4b5671a8e90e47e2c3b1c589f07ab353b47ff5d94afe7a835c09e276b726bb",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasureMain.flix",
+      "source_sha256": "68787c534d5eadf2e8242105dc3ac7b8b2909661108c8f802101a913afd0beb3",
+      "program": "defines",
+      "facts_from": "program-acquisitions/756c2c3504e141443b23978497830071244983673a56e42736489d6e3d6dc305",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasureMain.flix",
+      "source_sha256": "68787c534d5eadf2e8242105dc3ac7b8b2909661108c8f802101a913afd0beb3",
+      "program": "imports",
+      "facts_from": "program-acquisitions/e4487e5ed53a0892586194f4868bce1153069dbb0e673497538e5353c28b10aa",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlMeasureMain.flix",
+      "source_sha256": "68787c534d5eadf2e8242105dc3ac7b8b2909661108c8f802101a913afd0beb3",
+      "program": "calls",
+      "facts_from": "program-acquisitions/867fa708c67ddd040fa84e7b5626973f490483bf53d871d329833cefdee3713c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignature.flix",
+      "source_sha256": "345c33485bf56d058172105bc8500ba1d102a43255195c26119c4beab5d23679",
+      "program": "defines",
+      "facts_from": "program-acquisitions/d64671d75eb7b2d10e1276f3bda79a8cf3131056b320f3ce0d199ec8e5fe6be1",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignature.flix",
+      "source_sha256": "345c33485bf56d058172105bc8500ba1d102a43255195c26119c4beab5d23679",
+      "program": "imports",
+      "facts_from": "program-acquisitions/a7d3be918f291f6c1dd263b28bdf5ddb0990926fbb4c9efaf2201530e6fee207",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignature.flix",
+      "source_sha256": "345c33485bf56d058172105bc8500ba1d102a43255195c26119c4beab5d23679",
+      "program": "calls",
+      "facts_from": "program-acquisitions/11ebee56ec1ec8ea48ea20ec182aa3a311b8d9807058a2136955d51bc9328da7",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+      "source_sha256": "0bdc998f252e07a6ed6e19285ed6dc35cdb85ef5d7ce7a393c4999a112ae86d8",
+      "program": "defines",
+      "facts_from": "program-acquisitions/777283244a7e4d4868597a7e12d884d3b8e6967ab4e75fd7c3d6c87334f9109f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+      "source_sha256": "0bdc998f252e07a6ed6e19285ed6dc35cdb85ef5d7ce7a393c4999a112ae86d8",
+      "program": "imports",
+      "facts_from": "program-acquisitions/f8b57d5023bcdfe28af48f552fe95a131726bfaa3871ab67aa533de97616be28",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+      "source_sha256": "0bdc998f252e07a6ed6e19285ed6dc35cdb85ef5d7ce7a393c4999a112ae86d8",
+      "program": "calls",
+      "facts_from": "program-acquisitions/13f5da96c8741046dbe2abf79c574ff533d17ff3cf1941edee0b30604a11f0c3",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignaturesMain.flix",
+      "source_sha256": "7112860b978f9df73a0534abe84f77081aa6029e8e27497a60fec84523427ba0",
+      "program": "defines",
+      "facts_from": "program-acquisitions/31ce214e0d891784f6522445877a8f91136d3a8cbc141ba66e678777fd233353",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignaturesMain.flix",
+      "source_sha256": "7112860b978f9df73a0534abe84f77081aa6029e8e27497a60fec84523427ba0",
+      "program": "imports",
+      "facts_from": "program-acquisitions/90c44f49a69b55729434121beeb11ef733fbb6971223bb39636e293cd5ad7ab5",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlSignaturesMain.flix",
+      "source_sha256": "7112860b978f9df73a0534abe84f77081aa6029e8e27497a60fec84523427ba0",
+      "program": "calls",
+      "facts_from": "program-acquisitions/3f4a884d00e7357774f970c9b1fae621177a1149b48a76220893791a0b66b005",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopology.flix",
+      "source_sha256": "95a3fd447e93e8afe4271a017e19320476ad3e593ba60458cff6326c0390a23e",
+      "program": "defines",
+      "facts_from": "program-acquisitions/a6e434d104f4e94bc594102c9aca84388a13bb1eda4e67a1a865773763a889e8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopology.flix",
+      "source_sha256": "95a3fd447e93e8afe4271a017e19320476ad3e593ba60458cff6326c0390a23e",
+      "program": "imports",
+      "facts_from": "program-acquisitions/c090cbf0bc950019e21363f0b9156d0b68a944030fc4c6e686776a339ae30f59",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopology.flix",
+      "source_sha256": "95a3fd447e93e8afe4271a017e19320476ad3e593ba60458cff6326c0390a23e",
+      "program": "calls",
+      "facts_from": "program-acquisitions/7c1e4422fefd485ca57e4269408cc72c3cb8e5fed2d7f9c9e8372b07d42fe14f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyJson.flix",
+      "source_sha256": "8cfd2b9bc2df79d880d704785b5b420a8b7ce1433e777e5fa040c30d2acae25c",
+      "program": "defines",
+      "facts_from": "program-acquisitions/ea642ba4623348320495c30e16f8d405e37b71d46e2ebd9a97c6c5c5cfdbc031",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyJson.flix",
+      "source_sha256": "8cfd2b9bc2df79d880d704785b5b420a8b7ce1433e777e5fa040c30d2acae25c",
+      "program": "imports",
+      "facts_from": "program-acquisitions/34beeb188bc3c4bb0b40106acc1f9db82576d763e5d2920e8c41d343ab334ef8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyJson.flix",
+      "source_sha256": "8cfd2b9bc2df79d880d704785b5b420a8b7ce1433e777e5fa040c30d2acae25c",
+      "program": "calls",
+      "facts_from": "program-acquisitions/913ed6d2581b8d17445e68204b80a69d021dde4c1caac0e98442bdeaf9c56d5c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyTest.flix",
+      "source_sha256": "494cf6652a0d195ff4b01347c8e6a9a77172d6643908dceca7ab03336c659739",
+      "program": "defines",
+      "facts_from": "program-acquisitions/28a75421a2f2bbb0e7e4331068871115a9c2e72b4ec135900651cec77ac30676",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyTest.flix",
+      "source_sha256": "494cf6652a0d195ff4b01347c8e6a9a77172d6643908dceca7ab03336c659739",
+      "program": "imports",
+      "facts_from": "program-acquisitions/8fa4ab3618a4a67acd8f3f75b8e84441a67fbab39300d49662f1ed43955eb73b",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/ControlTopologyTest.flix",
+      "source_sha256": "494cf6652a0d195ff4b01347c8e6a9a77172d6643908dceca7ab03336c659739",
+      "program": "calls",
+      "facts_from": "program-acquisitions/fa59f8f53879e7adcd25043e8bc9d7145596aff25a1e88c92f8de19940baed9c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundIdentity.flix",
+      "source_sha256": "4be83cb3b135fa923e699ed77b1f8ba498aed545da061b2f5fc09e06868dc5e2",
+      "program": "defines",
+      "facts_from": "program-acquisitions/6cd06ee3c988293ffa13b9287f76804411f8cbe7b072369fb6448c2a3dc4d63d",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundIdentity.flix",
+      "source_sha256": "4be83cb3b135fa923e699ed77b1f8ba498aed545da061b2f5fc09e06868dc5e2",
+      "program": "imports",
+      "facts_from": "program-acquisitions/919a1b5e330f49395f3b375f8f0e25e424201916c66051b86facc0777cc3c73c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundIdentity.flix",
+      "source_sha256": "4be83cb3b135fa923e699ed77b1f8ba498aed545da061b2f5fc09e06868dc5e2",
+      "program": "calls",
+      "facts_from": "program-acquisitions/78a0d4343a834a74eea12beb945671047204802616f9af79b84359ab788119ef",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundJson.flix",
+      "source_sha256": "3abd672ebda1953dd4d7bec749faa4d954e7bb2c0d346fa3fc15d45bbd09dec8",
+      "program": "defines",
+      "facts_from": "program-acquisitions/16c0a3fc3cdf8a4b9799591d7eeb7adc920102d7f7a90e68bfe1f7ed0e9e0e0b",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundJson.flix",
+      "source_sha256": "3abd672ebda1953dd4d7bec749faa4d954e7bb2c0d346fa3fc15d45bbd09dec8",
+      "program": "imports",
+      "facts_from": "program-acquisitions/e4972a2b97c2928aacd94f952ef07d3a4c161bedd19116846acaafa204a578d4",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundJson.flix",
+      "source_sha256": "3abd672ebda1953dd4d7bec749faa4d954e7bb2c0d346fa3fc15d45bbd09dec8",
+      "program": "calls",
+      "facts_from": "program-acquisitions/665ae767b3c8e7ef212476a3731bca8fa86b43a5e22b21c5e61f3c8f7163d27f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasure.flix",
+      "source_sha256": "fa540e54e7ab0e64c93eba1bdfb043fe9758b5b74ad50e7aff68ad1abee0cd68",
+      "program": "defines",
+      "facts_from": "program-acquisitions/9cc456541b2dec1bdf408ad2685ff9199ecc4bc43c12abc8a0d840798d6af9ac",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasure.flix",
+      "source_sha256": "fa540e54e7ab0e64c93eba1bdfb043fe9758b5b74ad50e7aff68ad1abee0cd68",
+      "program": "imports",
+      "facts_from": "program-acquisitions/f13da4f2a24cdaddf745588d1c759af4ba9176aac645c07a7659707761534055",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasure.flix",
+      "source_sha256": "fa540e54e7ab0e64c93eba1bdfb043fe9758b5b74ad50e7aff68ad1abee0cd68",
+      "program": "calls",
+      "facts_from": "program-acquisitions/dd9082d9233a6ee56ac3b4cbee60f38cc03f1d520fd1698d3b41fc3dd6680a76",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+      "source_sha256": "379fb3caadd1da512736e92782cc561b3edc47ddc958d9a21fafcd985d7026d9",
+      "program": "defines",
+      "facts_from": "program-acquisitions/bb9c3ed6434692e36ada1cf7c60e6f536a9f53fb95be7a79e69b1ceef5f4ac88",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+      "source_sha256": "379fb3caadd1da512736e92782cc561b3edc47ddc958d9a21fafcd985d7026d9",
+      "program": "imports",
+      "facts_from": "program-acquisitions/6101c4377095072c9343107a3a2708fab93cbabbb18cb50005bc554c5a4e71b8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundMeasureMain.flix",
+      "source_sha256": "379fb3caadd1da512736e92782cc561b3edc47ddc958d9a21fafcd985d7026d9",
+      "program": "calls",
+      "facts_from": "program-acquisitions/1ff9a6cfff29bdfd3528189a79a016aefda6d2c2eb5a4a5b6f7c57fe201aa421",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundOracle.flix",
+      "source_sha256": "630f68fe4a80b326ea9983e567c3832bb12565972110dddd66ef67322a42ce3f",
+      "program": "defines",
+      "facts_from": "program-acquisitions/de04db14258c3c9c10acdcb70bd921869520123305133f4643907038fba4e639",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundOracle.flix",
+      "source_sha256": "630f68fe4a80b326ea9983e567c3832bb12565972110dddd66ef67322a42ce3f",
+      "program": "imports",
+      "facts_from": "program-acquisitions/a0881d6cf575b865838eb066aa2b66f53b42e0e3bd5963aafaa782730a029c56",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundOracle.flix",
+      "source_sha256": "630f68fe4a80b326ea9983e567c3832bb12565972110dddd66ef67322a42ce3f",
+      "program": "calls",
+      "facts_from": "program-acquisitions/83d8a44297488871ffcf2d29a3b1604f3a0016c3d481787fd4f033346e1d789b",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTest.flix",
+      "source_sha256": "fd098243384ec9e1400979fc92115d4edafa0d4ce216281e698b3edae771ae50",
+      "program": "defines",
+      "facts_from": "program-acquisitions/d3508b155e4bed29146f9fa7085e7c63f0723b954e7ad46226a9fe798d13a892",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTest.flix",
+      "source_sha256": "fd098243384ec9e1400979fc92115d4edafa0d4ce216281e698b3edae771ae50",
+      "program": "imports",
+      "facts_from": "program-acquisitions/9a69e8137034b10cdce10f4135f11bb71fba78752fead1d89dea6b38e232de6a",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTest.flix",
+      "source_sha256": "fd098243384ec9e1400979fc92115d4edafa0d4ce216281e698b3edae771ae50",
+      "program": "calls",
+      "facts_from": "program-acquisitions/27eabc97ce78a0516de5ae1018002a9fa7c9ba40281e31b6db6b3634f72a8120",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTopology.flix",
+      "source_sha256": "8d04536c2ae9278cfb4e5a4d4b1b6d58ce5305c648a878fed97b4312299e46d9",
+      "program": "defines",
+      "facts_from": "program-acquisitions/c1ffc0899c03b4403281db8619b162657105082aace7d3eb791d5c28b3d76f91",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTopology.flix",
+      "source_sha256": "8d04536c2ae9278cfb4e5a4d4b1b6d58ce5305c648a878fed97b4312299e46d9",
+      "program": "imports",
+      "facts_from": "program-acquisitions/f0cb5db447e47f7185fc7b167cdc8c4d52cdc34637189cf56f64790a0efa8ed6",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/RoundTopology.flix",
+      "source_sha256": "8d04536c2ae9278cfb4e5a4d4b1b6d58ce5305c648a878fed97b4312299e46d9",
+      "program": "calls",
+      "facts_from": "program-acquisitions/1d55e97a266dbe04b285e8509310d087f48b7c255f0839a6e402343007d70a10",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/control_signatures.bzl",
+      "source_sha256": "39cbb12bc72c44ac2228dbc205cad44d89951b561e9ac5c8ba057fdf0204680b",
+      "program": "defines",
+      "facts_from": "program-acquisitions/3107a59c7903066331665af84310800ebcb42fce65f648426776f98cd57dec69",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/control_signatures.bzl",
+      "source_sha256": "39cbb12bc72c44ac2228dbc205cad44d89951b561e9ac5c8ba057fdf0204680b",
+      "program": "imports",
+      "facts_from": "program-acquisitions/a1933e020bb52d241bd87bd81df9db1d699556cd564662a14489f0716f4004a2",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/control_signatures.bzl",
+      "source_sha256": "39cbb12bc72c44ac2228dbc205cad44d89951b561e9ac5c8ba057fdf0204680b",
+      "program": "calls",
+      "facts_from": "program-acquisitions/ebaac45f2d487eaab3e985b16546cb7466afcd923b78886ac5a838e4e24b17b6",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/round_topology.bzl",
+      "source_sha256": "83fbdf62260157b754311e34d68b285019994b71249b6ff165b4298fd1fb5d98",
+      "program": "defines",
+      "facts_from": "program-acquisitions/2dffc16a51ee5d3ff0107e2b5e060e792f64ceec8bf15de89408e399781b9a78",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/round_topology.bzl",
+      "source_sha256": "83fbdf62260157b754311e34d68b285019994b71249b6ff165b4298fd1fb5d98",
+      "program": "imports",
+      "facts_from": "program-acquisitions/97e7586e59f7e15e80434b5eed24437e0460c782b919a380689eb401d01c14a5",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/round_topology.bzl",
+      "source_sha256": "83fbdf62260157b754311e34d68b285019994b71249b6ff165b4298fd1fb5d98",
+      "program": "calls",
+      "facts_from": "program-acquisitions/d04d63cd9321ff6a413415ae54bae202aeda75baa6ef190ddc756794a4d09ac2",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/topology.bzl",
+      "source_sha256": "621829bde90a78ab2b064cb590c78033899b489b2935bfa9fe7751a57d83722d",
+      "program": "defines",
+      "facts_from": "program-acquisitions/e007a3150bc552c174fab04fac567c2c39fbcfc57387f71adcdfbe447a979acd",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/topology.bzl",
+      "source_sha256": "621829bde90a78ab2b064cb590c78033899b489b2935bfa9fe7751a57d83722d",
+      "program": "imports",
+      "facts_from": "program-acquisitions/ca0282664bd5f049f62c7a44445bcae36c058ac956731a6c863fa7d41ee114c1",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/topology.bzl",
+      "source_sha256": "621829bde90a78ab2b064cb590c78033899b489b2935bfa9fe7751a57d83722d",
+      "program": "calls",
+      "facts_from": "program-acquisitions/60ac002e2d5fae2dd76e17eb148f3f378f42b387d8f359c4531c9aadf441c679",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/work_topology.bzl",
+      "source_sha256": "7cdb45843b27c532272ddae6b4857287a8a0931c0ceb660d20ce984e3baf466a",
+      "program": "defines",
+      "facts_from": "program-acquisitions/e167ab2e7d51f86c52807f2b1d8ba68522b4c41c4f97fb09d2d88c0e128d6ce8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/work_topology.bzl",
+      "source_sha256": "7cdb45843b27c532272ddae6b4857287a8a0931c0ceb660d20ce984e3baf466a",
+      "program": "imports",
+      "facts_from": "program-acquisitions/7bf4c75c9c1f1fa5783242cf782a6c6014bad1aa890ad47aac5cd288f83a6e2c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/atlas-work-topology/work_topology.bzl",
+      "source_sha256": "7cdb45843b27c532272ddae6b4857287a8a0931c0ceb660d20ce984e3baf466a",
+      "program": "calls",
+      "facts_from": "program-acquisitions/f52b4e9e853d2437762b15175d486699793e39a39eebaf1f713b46bebb77cad8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+      "source_sha256": "ea93dca627447413600bc299f7e07fe004dbb8158dd1b9e9ec0983d72a2f3b06",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+      "source_sha256": "ea93dca627447413600bc299f7e07fe004dbb8158dd1b9e9ec0983d72a2f3b06",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "experiments/swe-explore-js-ts-scale/BUILD.bazel",
+      "source_sha256": "ea93dca627447413600bc299f7e07fe004dbb8158dd1b9e9ec0983d72a2f3b06",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas.flix",
+      "source_sha256": "44ab7421a7e2c25238c9894c1f14cc900f5bd61defba1c7a7c44374a7c1853cf",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas.flix",
+      "source_sha256": "44ab7421a7e2c25238c9894c1f14cc900f5bd61defba1c7a7c44374a7c1853cf",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas.flix",
+      "source_sha256": "44ab7421a7e2c25238c9894c1f14cc900f5bd61defba1c7a7c44374a7c1853cf",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature.flix",
+      "source_sha256": "ac50c0e9cbcfb5ea94cc913ed6a36c78aba565b34eab4b2156d07ff17efbea34",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature.flix",
+      "source_sha256": "ac50c0e9cbcfb5ea94cc913ed6a36c78aba565b34eab4b2156d07ff17efbea34",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature.flix",
+      "source_sha256": "ac50c0e9cbcfb5ea94cc913ed6a36c78aba565b34eab4b2156d07ff17efbea34",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Summary.flix",
+      "source_sha256": "b5b202fac6253e2d2c4efd957e8c2b6a2ead2b92bf1ed876808584751d6997ac",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Summary.flix",
+      "source_sha256": "b5b202fac6253e2d2c4efd957e8c2b6a2ead2b92bf1ed876808584751d6997ac",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Summary.flix",
+      "source_sha256": "b5b202fac6253e2d2c4efd957e8c2b6a2ead2b92bf1ed876808584751d6997ac",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Table.flix",
+      "source_sha256": "8bb6890424c2721cbf1adbfeb44c60185e387cd7e8cbcfb4c2e0d68bc58d2b81",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Table.flix",
+      "source_sha256": "8bb6890424c2721cbf1adbfeb44c60185e387cd7e8cbcfb4c2e0d68bc58d2b81",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Atlas/Signature/Table.flix",
+      "source_sha256": "8bb6890424c2721cbf1adbfeb44c60185e387cd7e8cbcfb4c2e0d68bc58d2b81",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/BUILD.bazel",
+      "source_sha256": "25cee999406f2c199593c3de48cd37b10944abfe2b79dacc684645f97ea0e5be",
+      "program": "defines",
+      "facts_from": "program-acquisitions/ab3e19ba9f8ed9fa45457dbd42509706981c3b35d9aecfa9f9cfb65567733fc1",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "src/BUILD.bazel",
+      "source_sha256": "25cee999406f2c199593c3de48cd37b10944abfe2b79dacc684645f97ea0e5be",
+      "program": "imports",
+      "facts_from": "program-acquisitions/19314d81525876e31639b29dd327577f3ea37981f7ac7ea1a7c375d5a904b853",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "src/BUILD.bazel",
+      "source_sha256": "25cee999406f2c199593c3de48cd37b10944abfe2b79dacc684645f97ea0e5be",
+      "program": "calls",
+      "facts_from": "program-acquisitions/0a9f1e59549ff931a6c0a549cd7915097053e35937f22cfebfa9d93083c9e475",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "src/Experiment.flix",
+      "source_sha256": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Experiment.flix",
+      "source_sha256": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Experiment.flix",
+      "source_sha256": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization.flix",
+      "source_sha256": "cb9130d8e8c48219fb4f430cf6c0c1767d610b0565d0de110b02220876c3c573",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization.flix",
+      "source_sha256": "cb9130d8e8c48219fb4f430cf6c0c1767d610b0565d0de110b02220876c3c573",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization.flix",
+      "source_sha256": "cb9130d8e8c48219fb4f430cf6c0c1767d610b0565d0de110b02220876c3c573",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/IssueTable.flix",
+      "source_sha256": "fee92092ebfc204fe488feb52789cfb1927e38bf79e23c101014eac4ea67ff4c",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/IssueTable.flix",
+      "source_sha256": "fee92092ebfc204fe488feb52789cfb1927e38bf79e23c101014eac4ea67ff4c",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/IssueTable.flix",
+      "source_sha256": "fee92092ebfc204fe488feb52789cfb1927e38bf79e23c101014eac4ea67ff4c",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PredictionTable.flix",
+      "source_sha256": "1b682a8c852db1af8ac6e0b051e41eb8528e561d2a6836b2bb7f43bd9c124a48",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PredictionTable.flix",
+      "source_sha256": "1b682a8c852db1af8ac6e0b051e41eb8528e561d2a6836b2bb7f43bd9c124a48",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PredictionTable.flix",
+      "source_sha256": "1b682a8c852db1af8ac6e0b051e41eb8528e561d2a6836b2bb7f43bd9c124a48",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PriorTable.flix",
+      "source_sha256": "eb99e5a72e43e960ef39231ca44ea8501a55caf7b0669a2a25639244c7ec1bfb",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PriorTable.flix",
+      "source_sha256": "eb99e5a72e43e960ef39231ca44ea8501a55caf7b0669a2a25639244c7ec1bfb",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/PriorTable.flix",
+      "source_sha256": "eb99e5a72e43e960ef39231ca44ea8501a55caf7b0669a2a25639244c7ec1bfb",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/Sandwich.flix",
+      "source_sha256": "161f2a40dd548ca6463109d756224d3ab800af85f88dc3214ced5c78490322ec",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/Sandwich.flix",
+      "source_sha256": "161f2a40dd548ca6463109d756224d3ab800af85f88dc3214ced5c78490322ec",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Localization/Sandwich.flix",
+      "source_sha256": "161f2a40dd548ca6463109d756224d3ab800af85f88dc3214ced5c78490322ec",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population.flix",
+      "source_sha256": "97c187aa23a3b64d76739cfbc6c824056663ddf20f120b0ba53e34bc425e6e8e",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population.flix",
+      "source_sha256": "97c187aa23a3b64d76739cfbc6c824056663ddf20f120b0ba53e34bc425e6e8e",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population.flix",
+      "source_sha256": "97c187aa23a3b64d76739cfbc6c824056663ddf20f120b0ba53e34bc425e6e8e",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population/Table.flix",
+      "source_sha256": "02910d9a3011614ec7f25652b02556343deb5cf0df2d8237f4c1688c373d3fb4",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population/Table.flix",
+      "source_sha256": "02910d9a3011614ec7f25652b02556343deb5cf0df2d8237f4c1688c373d3fb4",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Population/Table.flix",
+      "source_sha256": "02910d9a3011614ec7f25652b02556343deb5cf0df2d8237f4c1688c373d3fb4",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii.flix",
+      "source_sha256": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii.flix",
+      "source_sha256": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii.flix",
+      "source_sha256": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Evaluate.flix",
+      "source_sha256": "a6d791620ea19dd2e1abf6a8e122022c95b2935bc0f248304cd9838e833bf76e",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Evaluate.flix",
+      "source_sha256": "a6d791620ea19dd2e1abf6a8e122022c95b2935bc0f248304cd9838e833bf76e",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Evaluate.flix",
+      "source_sha256": "a6d791620ea19dd2e1abf6a8e122022c95b2935bc0f248304cd9838e833bf76e",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Synthesize.flix",
+      "source_sha256": "7991cee7113c9cf2f6e75c3445b485b6277d2a2e10b9831074a5886198914b2c",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Synthesize.flix",
+      "source_sha256": "7991cee7113c9cf2f6e75c3445b485b6277d2a2e10b9831074a5886198914b2c",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Radii/Synthesize.flix",
+      "source_sha256": "7991cee7113c9cf2f6e75c3445b485b6277d2a2e10b9831074a5886198914b2c",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository.flix",
+      "source_sha256": "5ac2cb97d2e9ab1525f1e873ec8caeed31066ec38e01e8d7b92144a7f499dea3",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository.flix",
+      "source_sha256": "5ac2cb97d2e9ab1525f1e873ec8caeed31066ec38e01e8d7b92144a7f499dea3",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository.flix",
+      "source_sha256": "5ac2cb97d2e9ab1525f1e873ec8caeed31066ec38e01e8d7b92144a7f499dea3",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Acquire.flix",
+      "source_sha256": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Acquire.flix",
+      "source_sha256": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Acquire.flix",
+      "source_sha256": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Grit.flix",
+      "source_sha256": "0ea3521a6b871e5fa81d8daa80b8bf64e69e26bc617515dbcf2aa493f5e21185",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Grit.flix",
+      "source_sha256": "0ea3521a6b871e5fa81d8daa80b8bf64e69e26bc617515dbcf2aa493f5e21185",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Grit.flix",
+      "source_sha256": "0ea3521a6b871e5fa81d8daa80b8bf64e69e26bc617515dbcf2aa493f5e21185",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Physical.flix",
+      "source_sha256": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Physical.flix",
+      "source_sha256": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Physical.flix",
+      "source_sha256": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Reference.flix",
+      "source_sha256": "1313988046d760af621068c03b44ea3e75ca7249134347a783d421cf66f5329c",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Reference.flix",
+      "source_sha256": "1313988046d760af621068c03b44ea3e75ca7249134347a783d421cf66f5329c",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Reference.flix",
+      "source_sha256": "1313988046d760af621068c03b44ea3e75ca7249134347a783d421cf66f5329c",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Structure.flix",
+      "source_sha256": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Structure.flix",
+      "source_sha256": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Structure.flix",
+      "source_sha256": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Table.flix",
+      "source_sha256": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Table.flix",
+      "source_sha256": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/Repository/Table.flix",
+      "source_sha256": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificIdentity.flix",
+      "source_sha256": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificIdentity.flix",
+      "source_sha256": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificIdentity.flix",
+      "source_sha256": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable.flix",
+      "source_sha256": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable.flix",
+      "source_sha256": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable.flix",
+      "source_sha256": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable/Columns.flix",
+      "source_sha256": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable/Columns.flix",
+      "source_sha256": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/ScientificTable/Columns.flix",
+      "source_sha256": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/grit/BUILD.bazel",
+      "source_sha256": "84168c5d3a597f147f97d0c24ebcf4bf7b44accc1aa965677774fdb6853b135e",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/grit/BUILD.bazel",
+      "source_sha256": "84168c5d3a597f147f97d0c24ebcf4bf7b44accc1aa965677774fdb6853b135e",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/grit/BUILD.bazel",
+      "source_sha256": "84168c5d3a597f147f97d0c24ebcf4bf7b44accc1aa965677774fdb6853b135e",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGrit.java",
+      "source_sha256": "ae579a676d2e41a003217d2fc71515408ad44600e885201f196f24efd139ef8f",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGrit.java",
+      "source_sha256": "ae579a676d2e41a003217d2fc71515408ad44600e885201f196f24efd139ef8f",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGrit.java",
+      "source_sha256": "ae579a676d2e41a003217d2fc71515408ad44600e885201f196f24efd139ef8f",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritNative.java",
+      "source_sha256": "6167bb138fdf375bbfdb1fad6e37a60574ed272e0f035c54d9f88651a3d8d977",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritNative.java",
+      "source_sha256": "6167bb138fdf375bbfdb1fad6e37a60574ed272e0f035c54d9f88651a3d8d977",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritNative.java",
+      "source_sha256": "6167bb138fdf375bbfdb1fad6e37a60574ed272e0f035c54d9f88651a3d8d977",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritTest.java",
+      "source_sha256": "ea909673089df8828d3ce139eb2ad4a4c29ccf548b5d68a15d233809e189887d",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritTest.java",
+      "source_sha256": "ea909673089df8828d3ce139eb2ad4a4c29ccf548b5d68a15d233809e189887d",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/AttuneGritTest.java",
+      "source_sha256": "ea909673089df8828d3ce139eb2ad4a4c29ccf548b5d68a15d233809e189887d",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/BUILD.bazel",
+      "source_sha256": "6e8ca38ef71a41f0afdc5aa9cf53d23330638bc833c7c8f5616da03c05c71b93",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/BUILD.bazel",
+      "source_sha256": "6e8ca38ef71a41f0afdc5aa9cf53d23330638bc833c7c8f5616da03c05c71b93",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/grit/BUILD.bazel",
+      "source_sha256": "6e8ca38ef71a41f0afdc5aa9cf53d23330638bc833c7c8f5616da03c05c71b93",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentity.java",
+      "source_sha256": "5b6aed8f4be36c970819f9b26160b089e0f6859321a49c02849e39b19cc74c77",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentity.java",
+      "source_sha256": "5b6aed8f4be36c970819f9b26160b089e0f6859321a49c02849e39b19cc74c77",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentity.java",
+      "source_sha256": "5b6aed8f4be36c970819f9b26160b089e0f6859321a49c02849e39b19cc74c77",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentityTest.java",
+      "source_sha256": "abd2b94930fd61d766f8d3a415f7666d526e2b0dd77b8d46206a20614b9ef1eb",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentityTest.java",
+      "source_sha256": "abd2b94930fd61d766f8d3a415f7666d526e2b0dd77b8d46206a20614b9ef1eb",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/AttuneIdentityTest.java",
+      "source_sha256": "abd2b94930fd61d766f8d3a415f7666d526e2b0dd77b8d46206a20614b9ef1eb",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/BUILD.bazel",
+      "source_sha256": "cca6a3763740d25f06217488f8cc9e1adefc15b3bd8e6d8307a69c22b9ec8aad",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/BUILD.bazel",
+      "source_sha256": "cca6a3763740d25f06217488f8cc9e1adefc15b3bd8e6d8307a69c22b9ec8aad",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/identity/BUILD.bazel",
+      "source_sha256": "cca6a3763740d25f06217488f8cc9e1adefc15b3bd8e6d8307a69c22b9ec8aad",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneDecision.java",
+      "source_sha256": "5471672cfb5abfb99ad6568cc6035243cd7cd2cd9198cb474ee054600f93ce9e",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneDecision.java",
+      "source_sha256": "5471672cfb5abfb99ad6568cc6035243cd7cd2cd9198cb474ee054600f93ce9e",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneDecision.java",
+      "source_sha256": "5471672cfb5abfb99ad6568cc6035243cd7cd2cd9198cb474ee054600f93ce9e",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneEmbed.java",
+      "source_sha256": "020d062ee3c39461f5ac72fced4e7f50cc1aab9313f3e83985f6d2bffc7ec269",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneEmbed.java",
+      "source_sha256": "020d062ee3c39461f5ac72fced4e7f50cc1aab9313f3e83985f6d2bffc7ec269",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneEmbed.java",
+      "source_sha256": "020d062ee3c39461f5ac72fced4e7f50cc1aab9313f3e83985f6d2bffc7ec269",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneInferenceTest.java",
+      "source_sha256": "473be4d2d010d4a310b0025efa54fc67ed3711aaa09f61bdcc2b51f747afe510",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneInferenceTest.java",
+      "source_sha256": "473be4d2d010d4a310b0025efa54fc67ed3711aaa09f61bdcc2b51f747afe510",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/AttuneInferenceTest.java",
+      "source_sha256": "473be4d2d010d4a310b0025efa54fc67ed3711aaa09f61bdcc2b51f747afe510",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/BUILD.bazel",
+      "source_sha256": "716ef8efa6cf88101ec8a979c5879626a9d4846ff534ba43df830daf72a30537",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/BUILD.bazel",
+      "source_sha256": "716ef8efa6cf88101ec8a979c5879626a9d4846ff534ba43df830daf72a30537",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/BUILD.bazel",
+      "source_sha256": "716ef8efa6cf88101ec8a979c5879626a9d4846ff534ba43df830daf72a30537",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/OpenRouter.java",
+      "source_sha256": "e9c1a89c90ec0361ea7f2fa33af733224c8458970ffec744127c7019860ec22d",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/OpenRouter.java",
+      "source_sha256": "e9c1a89c90ec0361ea7f2fa33af733224c8458970ffec744127c7019860ec22d",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/inference/OpenRouter.java",
+      "source_sha256": "e9c1a89c90ec0361ea7f2fa33af733224c8458970ffec744127c7019860ec22d",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquet.java",
+      "source_sha256": "924b41b6a17a414bbeef87440e3924764a8a0e6b47c4667b8a1b4cf91d811e76",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquet.java",
+      "source_sha256": "924b41b6a17a414bbeef87440e3924764a8a0e6b47c4667b8a1b4cf91d811e76",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquet.java",
+      "source_sha256": "924b41b6a17a414bbeef87440e3924764a8a0e6b47c4667b8a1b4cf91d811e76",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquetTest.java",
+      "source_sha256": "20e3f149fd97974370bd3046c49fe7fb84e6fea419b5e6357a9bc81f41b0ea2a",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquetTest.java",
+      "source_sha256": "20e3f149fd97974370bd3046c49fe7fb84e6fea419b5e6357a9bc81f41b0ea2a",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/AttuneParquetTest.java",
+      "source_sha256": "20e3f149fd97974370bd3046c49fe7fb84e6fea419b5e6357a9bc81f41b0ea2a",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/BUILD.bazel",
+      "source_sha256": "7a4f51192c6e73677883897bf077f70585539bd58b3c8a9437528ed940bd0195",
+      "program": "defines",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/BUILD.bazel",
+      "source_sha256": "7a4f51192c6e73677883897bf077f70585539bd58b3c8a9437528ed940bd0195",
+      "program": "imports",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "src/native/parquet/BUILD.bazel",
+      "source_sha256": "7a4f51192c6e73677883897bf077f70585539bd58b3c8a9437528ed940bd0195",
+      "program": "calls",
+      "facts_from": "retained:control",
+      "acquisition_identity": "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
+    },
+    {
+      "path": "test/Applications/BUILD.bazel",
+      "source_sha256": "6e72e76a442846a402376d016704de664ac7270a9af07a0a65d56c7135152d30",
+      "program": "defines",
+      "facts_from": "program-acquisitions/3e8f312dd8dfab904cb651d21d2f23f049a33212f2a00a0b74aceae8df9fe244",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/BUILD.bazel",
+      "source_sha256": "6e72e76a442846a402376d016704de664ac7270a9af07a0a65d56c7135152d30",
+      "program": "imports",
+      "facts_from": "program-acquisitions/e2916b47ea3ed58c7f2c9328b7ab49cedf939a4310563f68cb680aa3fb7ef6db",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/BUILD.bazel",
+      "source_sha256": "6e72e76a442846a402376d016704de664ac7270a9af07a0a65d56c7135152d30",
+      "program": "calls",
+      "facts_from": "program-acquisitions/56eb738dd54cc4ed8d7a16519aae2028dc6452b08eec12a869ea5c8517b7b1f0",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/InferenceBoundaryTest.flix",
+      "source_sha256": "c66ddd2607749ccf54581c549339a376d197a40d476ad4d1684d594d1d6c2781",
+      "program": "defines",
+      "facts_from": "program-acquisitions/f31912dc8a651380cd29f936bb9f3eaae7fef4afe8741a7b6b14ff31a88842c7",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/InferenceBoundaryTest.flix",
+      "source_sha256": "c66ddd2607749ccf54581c549339a376d197a40d476ad4d1684d594d1d6c2781",
+      "program": "imports",
+      "facts_from": "program-acquisitions/bffddfb0c6a344b1bda57440826495ca66ba6620faed2c7c08b908ee6056c25c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/InferenceBoundaryTest.flix",
+      "source_sha256": "c66ddd2607749ccf54581c549339a376d197a40d476ad4d1684d594d1d6c2781",
+      "program": "calls",
+      "facts_from": "program-acquisitions/c49a655f3ba329cac76270e7322ad57c8c6d221ee93eda0e3789975aed7414af",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/LocalizationTest.flix",
+      "source_sha256": "90c0e173df877848acda4956f5b3b019013560a947e808381cccfb55df9a6259",
+      "program": "defines",
+      "facts_from": "program-acquisitions/5e87abfeeb7b9d00a902feac8a71e0ed94924146aac0f9385067c6e88ea0a3eb",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/LocalizationTest.flix",
+      "source_sha256": "90c0e173df877848acda4956f5b3b019013560a947e808381cccfb55df9a6259",
+      "program": "imports",
+      "facts_from": "program-acquisitions/460ef98e9afb6537fb6b31b0cfd640efcf022fdfb654b40c75ac298b1d68d2f6",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/LocalizationTest.flix",
+      "source_sha256": "90c0e173df877848acda4956f5b3b019013560a947e808381cccfb55df9a6259",
+      "program": "calls",
+      "facts_from": "program-acquisitions/a508100eb970dc67a9b00f4ef4169b370c74c2910cd64d08c95d3dd2adb28495",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/PopulationTableTest.flix",
+      "source_sha256": "f61bbcb9f3ae55a51d604526bb8a78f2f43ba024e8adb3255aad09014d19c340",
+      "program": "defines",
+      "facts_from": "program-acquisitions/ca6a61cfa6eeeed539e8c3527fbe7a8ac98da51743a3aedaf6e5679aa8ce29b3",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/PopulationTableTest.flix",
+      "source_sha256": "f61bbcb9f3ae55a51d604526bb8a78f2f43ba024e8adb3255aad09014d19c340",
+      "program": "imports",
+      "facts_from": "program-acquisitions/92f77336ca45c0f689e2d85e35af6bd440165435e72425f96b8e64dbe557126a",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Applications/PopulationTableTest.flix",
+      "source_sha256": "f61bbcb9f3ae55a51d604526bb8a78f2f43ba024e8adb3255aad09014d19c340",
+      "program": "calls",
+      "facts_from": "program-acquisitions/293827b45227b1f344f7110caa1496105627e8abfb7ede683d1aa53a05f9a6f4",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/BUILD.bazel",
+      "source_sha256": "738fec7288ad83686592d87a0611b22d60f99d5f069fa60fd1ab1b10f7c227ee",
+      "program": "defines",
+      "facts_from": "program-acquisitions/1a0d19b430a2c54bb42c5ea9cfe0170f7dfbbeb4471602c7cff748b63d81b5a3",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/BUILD.bazel",
+      "source_sha256": "738fec7288ad83686592d87a0611b22d60f99d5f069fa60fd1ab1b10f7c227ee",
+      "program": "imports",
+      "facts_from": "program-acquisitions/0c8860afcc8020fb3b6b9e262d3fd8e76ed88a4a43dd76b540de2685fca816b8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/BUILD.bazel",
+      "source_sha256": "738fec7288ad83686592d87a0611b22d60f99d5f069fa60fd1ab1b10f7c227ee",
+      "program": "calls",
+      "facts_from": "program-acquisitions/1aa90cf5c1d5a9caec0cf5912700cf0cbd6263fca0f77eccef43dd6936cc5134",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasSignatureTableTest.flix",
+      "source_sha256": "bc1695941cbea9e911b89e975cf5ed177e01f4dea30ff6d6289806362e78c772",
+      "program": "defines",
+      "facts_from": "program-acquisitions/20d66162628282172906290e258fdc1257024be7ea736bcf46c2987ad57ca35b",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasSignatureTableTest.flix",
+      "source_sha256": "bc1695941cbea9e911b89e975cf5ed177e01f4dea30ff6d6289806362e78c772",
+      "program": "imports",
+      "facts_from": "program-acquisitions/09c6d9460ecba4e0ef11497ac902a804e4b9e1723c901b422d52a9c88091de63",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasSignatureTableTest.flix",
+      "source_sha256": "bc1695941cbea9e911b89e975cf5ed177e01f4dea30ff6d6289806362e78c772",
+      "program": "calls",
+      "facts_from": "program-acquisitions/96f8b3cc8d50029d38cd92b6917c41f1529e7ecca201a2f4a70b94a4e8319668",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasTest.flix",
+      "source_sha256": "8df51e3e11ec666fd655dfe159d65f1bfbd28ecf30313eac67c7e230c524d3e0",
+      "program": "defines",
+      "facts_from": "program-acquisitions/961c674b3b022c2d1cdf0d3e2f06635c52e46af4b1b4fbae8fa176001c06efb0",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasTest.flix",
+      "source_sha256": "8df51e3e11ec666fd655dfe159d65f1bfbd28ecf30313eac67c7e230c524d3e0",
+      "program": "imports",
+      "facts_from": "program-acquisitions/4a776bf0d3f9f38f99c8d6c2df5fe7d9000da2f1e0381df44b4c1a805883e941",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/AtlasTest.flix",
+      "source_sha256": "8df51e3e11ec666fd655dfe159d65f1bfbd28ecf30313eac67c7e230c524d3e0",
+      "program": "calls",
+      "facts_from": "program-acquisitions/49fe730320587ecb7e82fea945f38513a2d4984e4a33c6455366060c1f731ff9",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/BUILD.bazel",
+      "source_sha256": "8a4b08fe7c3424d3b77fd97458b39c083ae2ac3828d3357cc37bc6fcbe5d6848",
+      "program": "defines",
+      "facts_from": "program-acquisitions/efb6b4e5fed3799a29b915d5987dab4f8b9609916bfea1ab467b73298770767d",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/BUILD.bazel",
+      "source_sha256": "8a4b08fe7c3424d3b77fd97458b39c083ae2ac3828d3357cc37bc6fcbe5d6848",
+      "program": "imports",
+      "facts_from": "program-acquisitions/c084b26ee5a8fa3ba2e286d86b1f1017129c52c60e7298ee92e53c7488f194f8",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/BUILD.bazel",
+      "source_sha256": "8a4b08fe7c3424d3b77fd97458b39c083ae2ac3828d3357cc37bc6fcbe5d6848",
+      "program": "calls",
+      "facts_from": "program-acquisitions/d9de15b4aab780154622407dcd7ece4997ab27ec04bbc3e60ce00ad7226347a6",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/ParityTest.flix",
+      "source_sha256": "24e7efce3f1368e9952a2fdfda9adea78b6b11ecfcab6a3fb45e49fbea250923",
+      "program": "defines",
+      "facts_from": "program-acquisitions/fbf6d66211f53eef4854eb92c10fc5bc6dc47002800430744b2b6dc944d590d3",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/ParityTest.flix",
+      "source_sha256": "24e7efce3f1368e9952a2fdfda9adea78b6b11ecfcab6a3fb45e49fbea250923",
+      "program": "imports",
+      "facts_from": "program-acquisitions/2ad8f25cb7691f9da04843ea5d6906dec7a9c9060e88a8cbed2b08ad0fce2a6c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Engine/ParityTest.flix",
+      "source_sha256": "24e7efce3f1368e9952a2fdfda9adea78b6b11ecfcab6a3fb45e49fbea250923",
+      "program": "calls",
+      "facts_from": "program-acquisitions/6cd9f47c887dc9a88622eb54bbe6d17c8d33ad49e6ccfa3e7552c9e6e0a393e6",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/BUILD.bazel",
+      "source_sha256": "0e3f2d11760d53848212ca6835becb1a5d26cae0fccf2384f48edda350b1e809",
+      "program": "defines",
+      "facts_from": "program-acquisitions/bb5dd046305f9a15f4fabfcada28a04f5154c4035244a52cc40758c780270548",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/BUILD.bazel",
+      "source_sha256": "0e3f2d11760d53848212ca6835becb1a5d26cae0fccf2384f48edda350b1e809",
+      "program": "imports",
+      "facts_from": "program-acquisitions/1e4d4f30748cfc65905accf812c2a3346885d3c41aafa279006332a20d239090",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/BUILD.bazel",
+      "source_sha256": "0e3f2d11760d53848212ca6835becb1a5d26cae0fccf2384f48edda350b1e809",
+      "program": "calls",
+      "facts_from": "program-acquisitions/f6c66a833b9ac785c585d93b7421baf16ff717dfa4dbfe2c9840c7c52c790c87",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/IdentityTest.flix",
+      "source_sha256": "1c297a829f4257960f3c29f9002e48399e101e3d2318d9f282648ca4c06a565e",
+      "program": "defines",
+      "facts_from": "program-acquisitions/00b458fdbfc558f9ec5d84b2cad4b2698a71e1ad882fac7dfb5d045ead3296cd",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/IdentityTest.flix",
+      "source_sha256": "1c297a829f4257960f3c29f9002e48399e101e3d2318d9f282648ca4c06a565e",
+      "program": "imports",
+      "facts_from": "program-acquisitions/ac61033ae355c8fae6e24aa5b14fef653b84a6f43a1ab16093a867c84a455a0b",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/IdentityTest.flix",
+      "source_sha256": "1c297a829f4257960f3c29f9002e48399e101e3d2318d9f282648ca4c06a565e",
+      "program": "calls",
+      "facts_from": "program-acquisitions/5cb9ad3cc8a5e32902d618ddc332bc6fe952593a76327c21da88ac8c000d5b4f",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/ScientificTableTest.flix",
+      "source_sha256": "fc8e8a37ea727913d3bd1d8c9a82cd350d13a5d741bffbc5b503643f7558de82",
+      "program": "defines",
+      "facts_from": "program-acquisitions/15c85cd81e9fc583f433fd0752476ff815a8aac6a96567a678e07b431995c087",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/ScientificTableTest.flix",
+      "source_sha256": "fc8e8a37ea727913d3bd1d8c9a82cd350d13a5d741bffbc5b503643f7558de82",
+      "program": "imports",
+      "facts_from": "program-acquisitions/1d47007c57babd60561c0751fe06331ec9648043fa875d27662d854b7eab5355",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Kernel/ScientificTableTest.flix",
+      "source_sha256": "fc8e8a37ea727913d3bd1d8c9a82cd350d13a5d741bffbc5b503643f7558de82",
+      "program": "calls",
+      "facts_from": "program-acquisitions/90f66d2c4224fe77d5dded986b1e10fc95b79ff5a9ce41161b0d12bca31ee1bb",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Repository.flix",
+      "source_sha256": "2eebfeaa923e3e798a305e28a78d8d2fa5532ad8db4f2de2645b52323d75b708",
+      "program": "defines",
+      "facts_from": "program-acquisitions/094eff1420b8e36744c91d7ea6f46849f643ccc000094a743a6a0a06ca0c8569",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Repository.flix",
+      "source_sha256": "2eebfeaa923e3e798a305e28a78d8d2fa5532ad8db4f2de2645b52323d75b708",
+      "program": "imports",
+      "facts_from": "program-acquisitions/80eb78855caeb07f99eeb285d09a384ff765c8528c30af7db8d828ae6b26c09c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/Repository.flix",
+      "source_sha256": "2eebfeaa923e3e798a305e28a78d8d2fa5532ad8db4f2de2645b52323d75b708",
+      "program": "calls",
+      "facts_from": "program-acquisitions/12e6174efb0ff923f498ed60d54f5bc14efb34bfb31751b475fdecaa59cc4a82",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/TestWorlds.flix",
+      "source_sha256": "56c7163a7155e77d735bb8763f281b26daa865d7cf00e514cd346047353fff07",
+      "program": "defines",
+      "facts_from": "program-acquisitions/29a668557acf7abfab0941f4b7a3b4a60ae2235614d0c174830d53001176dfd0",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/TestWorlds.flix",
+      "source_sha256": "56c7163a7155e77d735bb8763f281b26daa865d7cf00e514cd346047353fff07",
+      "program": "imports",
+      "facts_from": "program-acquisitions/dd29d69a164df447f9f94894c51b93cd67c5c4935acef838364effe9abd40ac4",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/TestWorlds.flix",
+      "source_sha256": "56c7163a7155e77d735bb8763f281b26daa865d7cf00e514cd346047353fff07",
+      "program": "calls",
+      "facts_from": "program-acquisitions/7eaee9872f4d2fc5fc9201251dfd1320fd6a603f4bb29e698ab78f5c40947424",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/BUILD.bazel",
+      "source_sha256": "252cc25946ef74ad5a37b88d977275543f87295e196b170af10d462e266e4161",
+      "program": "defines",
+      "facts_from": "program-acquisitions/8fcfaa9419b361a060665afe91dc1aedd46e0c7686206f59ac9fa4620b5e507e",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/BUILD.bazel",
+      "source_sha256": "252cc25946ef74ad5a37b88d977275543f87295e196b170af10d462e266e4161",
+      "program": "imports",
+      "facts_from": "program-acquisitions/cb8782082c2c1a0e5cb6891040c7df72eaa31f7bc3ad82d8c9e267fe0a1c9fdb",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/BUILD.bazel",
+      "source_sha256": "252cc25946ef74ad5a37b88d977275543f87295e196b170af10d462e266e4161",
+      "program": "calls",
+      "facts_from": "program-acquisitions/5722a7fffc519370e50ca8e7252ffdb6988145f69463f9caf26f8edc36075829",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/GritAcquisitionTest.flix",
+      "source_sha256": "751bec2f0f9e5582c4adae70337d3e7c790f29d713e60e0fab5d16d1070532b7",
+      "program": "defines",
+      "facts_from": "program-acquisitions/34a7ac3a251f37328a56ebc1cb0ef11f39361cce8741bea8aa82f701bc64ab9c",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/GritAcquisitionTest.flix",
+      "source_sha256": "751bec2f0f9e5582c4adae70337d3e7c790f29d713e60e0fab5d16d1070532b7",
+      "program": "imports",
+      "facts_from": "program-acquisitions/a07d923b6052df92863d1dbc5807e5e573dbb75c9347a7d51ac857744b002a6a",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/GritAcquisitionTest.flix",
+      "source_sha256": "751bec2f0f9e5582c4adae70337d3e7c790f29d713e60e0fab5d16d1070532b7",
+      "program": "calls",
+      "facts_from": "program-acquisitions/7a151f43f0e6ef4356f55a1a5a1b9154c36549ef37070a11db3b70ec984431dd",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryAdmissionTest.flix",
+      "source_sha256": "e28816d7a2de24dc5e4aeb28aaf082ddb811834f24639bd1d06b4d4bbd4be30c",
+      "program": "defines",
+      "facts_from": "program-acquisitions/18cd0cab34cda8398a823cb82a93ee2dc6f3e61af90737737ce724b2b6a7eca3",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryAdmissionTest.flix",
+      "source_sha256": "e28816d7a2de24dc5e4aeb28aaf082ddb811834f24639bd1d06b4d4bbd4be30c",
+      "program": "imports",
+      "facts_from": "program-acquisitions/ee7c0f1d172d11442b26c01a02226254da1c15fd1c2bc46a92e52af59971facc",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryAdmissionTest.flix",
+      "source_sha256": "e28816d7a2de24dc5e4aeb28aaf082ddb811834f24639bd1d06b4d4bbd4be30c",
+      "program": "calls",
+      "facts_from": "program-acquisitions/85f256d79dd58c4617f9477d642a092a0ecf798879f5c7649ec192fc2c1f7730",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryTableTest.flix",
+      "source_sha256": "170ace1ceac50a3ff6921a7ea85b253755e87f635dd27092eedc9564e06c73b8",
+      "program": "defines",
+      "facts_from": "program-acquisitions/06ebfc199601edf933e3f1144318034afb7ef2398a15abd3affa8f047f6dd116",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryTableTest.flix",
+      "source_sha256": "170ace1ceac50a3ff6921a7ea85b253755e87f635dd27092eedc9564e06c73b8",
+      "program": "imports",
+      "facts_from": "program-acquisitions/675d7a770b351ccc157f5fb19ad04d9b44824da74d726546b276cd2f04cd91d0",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    },
+    {
+      "path": "test/World/RepositoryTableTest.flix",
+      "source_sha256": "170ace1ceac50a3ff6921a7ea85b253755e87f635dd27092eedc9564e06c73b8",
+      "program": "calls",
+      "facts_from": "program-acquisitions/ff12c1ebc98d6b401daa5321e2820e600c741f05b457ac098b00731bc3aa96d1",
+      "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 1736,
+    "language": "flix",
+    "path": "src/Repository/Location/Table.flix",
+    "physical_lines": 44,
+    "repository_path": "src/Repository/Location/Table.flix",
+    "sha256": "625122523ffa1a8d9548380c919fe10ca7026af76deb85a7f2a41f30f01d39ca"
+  },
+  "program": "defines",
+  "root_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

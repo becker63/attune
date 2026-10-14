@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 17999,
+    "language": "flix",
+    "path": "experiments/atlas-families/AcquisitionTest.flix",
+    "physical_lines": 299,
+    "repository_path": "experiments/atlas-families/AcquisitionTest.flix",
+    "sha256": "10945e76d589ae869978c0125282623f204800b96ba6f35f411dd8d13bad3e37"
+  },
+  "program": "imports",
+  "root_revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

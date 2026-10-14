@@ -1,0 +1,96 @@
+[
+  {
+    "after": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "before": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "delta": {
+      "file": {
+        "extinction": -0.006442512961268743,
+        "reach_p90": 0.025555555555555554,
+        "recurrence_pooled": -0.6198297646683226
+      },
+      "symbol": {
+        "extinction": 0.02859103385178413,
+        "reach_p90": 0.05611111111111111,
+        "recurrence_pooled": 0.21772950722404794
+      }
+    },
+    "evidence_class": "exact facts",
+    "title": "consolidation with denser retained relations"
+  },
+  {
+    "after": "eca979f524661cbe400d22b90c7e3c305b32052e",
+    "before": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "delta": {
+      "file": {
+        "extinction": -0.000991155840195157,
+        "reach_p90": 0.020740740740740726,
+        "recurrence_pooled": -0.34239206939281175
+      },
+      "symbol": {
+        "extinction": 0.05344617261360163,
+        "reach_p90": -0.0650980392156863,
+        "recurrence_pooled": 1.7069189384500962
+      }
+    },
+    "evidence_class": "exact facts",
+    "title": "Symbol panel turnover"
+  },
+  {
+    "after": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+    "before": "eca979f524661cbe400d22b90c7e3c305b32052e",
+    "d50_after": 4,
+    "d50_before": 3,
+    "depth7_delta": -0.010802469135802517,
+    "evidence_class": "controlled remapping",
+    "title": "Build and law admission remapping"
+  },
+  {
+    "after": "c236a3aabfa13e5f36162e895d1ca4742f9730c0",
+    "before": "73b870983147a3cff26052097adea5e979b84271",
+    "curves_equal": true,
+    "evidence_class": "controlled remapping negative case",
+    "title": "Declared cacheable stages with unchanged cumulative response"
+  },
+  {
+    "after": "d901935b03f15e70d5870f6bed33b0f01a089d0f",
+    "before": "7a32afb53a37318399d5325c9f6449dfeec945aa",
+    "candidate_files": [
+      86,
+      85
+    ],
+    "evidence_class": "source diff only; semantic signature unavailable",
+    "production_files": [
+      16,
+      18
+    ],
+    "title": "Typed core and Study consolidation"
+  },
+  {
+    "after": "eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a",
+    "before": "b28fc778dc095b633c3667211b6c32843970413a",
+    "candidate_files": [
+      85,
+      85
+    ],
+    "evidence_class": "source diff only; semantic signature unavailable",
+    "production_files": [
+      18,
+      15
+    ],
+    "title": "Repository owns Grit and native mechanics move"
+  },
+  {
+    "after": "66e98a16b741c2a318f2c7601f84e48293afd58f",
+    "before": "438d73d0a344c12e97d9db3036d57ce1be89d30f",
+    "candidate_files": [
+      108,
+      108
+    ],
+    "evidence_class": "source diff only; semantic signature unavailable",
+    "production_files": [
+      13,
+      13
+    ],
+    "title": "Study and Theory own reusable stage semantics"
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "incoming_imports": 46,
+    "outgoing_imports": 0,
+    "path": "src/ScientificTable.flix"
+  },
+  {
+    "incoming_imports": 34,
+    "outgoing_imports": 4,
+    "path": "web/atlas-live/projection/src/graph.ts"
+  },
+  {
+    "incoming_imports": 31,
+    "outgoing_imports": 0,
+    "path": "src/Repository/Structure.flix"
+  },
+  {
+    "incoming_imports": 28,
+    "outgoing_imports": 1,
+    "path": "src/ScientificTable/Columns.flix"
+  },
+  {
+    "incoming_imports": 26,
+    "outgoing_imports": 1,
+    "path": "web/atlas-live/projection/src/relation.ts"
+  },
+  {
+    "incoming_imports": 20,
+    "outgoing_imports": 0,
+    "path": "src/Repository/Grit.flix"
+  },
+  {
+    "incoming_imports": 20,
+    "outgoing_imports": 1,
+    "path": "web/atlas-live/projection/src/tables.ts"
+  },
+  {
+    "incoming_imports": 19,
+    "outgoing_imports": 3,
+    "path": "src/Repository/Table.flix"
+  },
+  {
+    "incoming_imports": 16,
+    "outgoing_imports": 2,
+    "path": "src/Atlas.flix"
+  },
+  {
+    "incoming_imports": 14,
+    "outgoing_imports": 2,
+    "path": "web/atlas-live/app/src/vocabulary.ts"
+  },
+  {
+    "incoming_imports": 14,
+    "outgoing_imports": 4,
+    "path": "web/atlas-live/projection/src/families.ts"
+  },
+  {
+    "incoming_imports": 13,
+    "outgoing_imports": 0,
+    "path": "src/Radii.flix"
+  },
+  {
+    "incoming_imports": 13,
+    "outgoing_imports": 0,
+    "path": "test/build/flix.bzl"
+  },
+  {
+    "incoming_imports": 12,
+    "outgoing_imports": 1,
+    "path": "src/Repository/Location.flix"
+  },
+  {
+    "incoming_imports": 12,
+    "outgoing_imports": 2,
+    "path": "src/Atlas/Signature.flix"
+  },
+  {
+    "incoming_imports": 12,
+    "outgoing_imports": 3,
+    "path": "src/Atlas/Signature/Table.flix"
+  },
+  {
+    "incoming_imports": 11,
+    "outgoing_imports": 2,
+    "path": "src/Repository.flix"
+  },
+  {
+    "incoming_imports": 11,
+    "outgoing_imports": 1,
+    "path": "src/Repository/Physical.flix"
+  },
+  {
+    "incoming_imports": 11,
+    "outgoing_imports": 0,
+    "path": "src/ScientificIdentity.flix"
+  },
+  {
+    "incoming_imports": 11,
+    "outgoing_imports": 7,
+    "path": "web/atlas-live/app/src/atoms.ts"
+  }
+]

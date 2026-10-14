@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "worlds": [
+    {
+      "assets": {
+        "anchors": {
+          "masses": "inputs/published/anchors.parquet",
+          "scenarios": "inputs/published/scenarios.parquet"
+        },
+        "entities": "inputs/published/entities.parquet",
+        "locations": "inputs/published/locations.parquet",
+        "metadata": "inputs/published/metadata.parquet",
+        "physical": "inputs/published/physical-all-seeds.parquet",
+        "relations": "inputs/published/relations.parquet"
+      },
+      "baseRevision": "88f97599901df1be52ce8cb06f2a701c464cbbbe",
+      "counts": {
+        "calls": 2967,
+        "defines": 2344,
+        "directories": 57,
+        "files": 272,
+        "imports": 693,
+        "links": 6332,
+        "parent": 328,
+        "points": 2673,
+        "symbols": 2344
+      },
+      "factIdentity": "repository-facts-v2:51fd0342852e771b588edcd4ef89b105b57e8ec400741aa562c7fbabfb6c95a5",
+      "physicalSummary": {
+        "evaluations": 2085708,
+        "medianSeedFraction": 0.9642656162070906,
+        "requests": 55783584,
+        "reuseFraction": 0.962610720745372,
+        "reuses": 53697876,
+        "seeds": 2616
+      },
+      "repository": "attuneflix",
+      "sha256": {
+        "anchors": {
+          "masses": "bb13294a2f749b897366a91cde517a65dcbe20ec62d96e7b756f7ab1a1c537e7",
+          "scenarios": "8ce52b26026f2bebcc364c3f524a0817e66bd98159b822ed60fbfad2f62cbfab"
+        },
+        "entities": "6e81c086928f1217752cca17df52cd70dba5cb7466bb671e4a9d4b038d760586",
+        "locations": "66bf0514374a03d7cff94c037fdea523474a51c63cc3ea217545d7ffc758c705",
+        "metadata": "cf33c4071f16a4a1f63d5bced37364c07230cffbadb5b9c1264885894c0f4f83",
+        "physical": "c687e03e499421c091af597f13666323daa70b53055a7eaa1dace838e36ef054",
+        "relations": "b2c0aef9252049b5a4e7f86f031fa8465da581b6559f0b11da4d62bd60c18d7f"
+      },
+      "signatureSummary": {
+        "fileExtinction": 0.49919945105215,
+        "fileReachP90": 0.19117647058823528,
+        "fileRecurrence": 4.601298017891598,
+        "files": 272,
+        "physicalCompression": 5.058904773954116,
+        "protocol": "atlas-signature-swe-explore-v1",
+        "reuseFraction": 0.9622432470455824,
+        "snapshots": 1,
+        "symbolExtinction": 0.6583562061604148,
+        "symbolReachP90": 0.125,
+        "symbolRecurrence": 6.076441973592773,
+        "symbols": 2344
+      },
+      "snapshotDigest": "6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a",
+      "snapshotId": "repository-snapshot-v1:6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a",
+      "sourceTreeIdentity": "attuneflix-source-tree-v2:88f97599901df1be52ce8cb06f2a701c464cbbbe",
+      "synthetic": false
+    }
+  ],
+  "synthetic": null
+}

@@ -1,0 +1,8 @@
+platform/build/study.bzl
+src/Attune.flix
+src/Attune/Study.flix
+src/Attune/Theory.flix
+test/study/BUILD.bazel
+test/study/BoundsLaw.flix
+test/study/ManifestLaw.flix
+test/study/Stages.flix

@@ -632,3 +632,15 @@ for every sample, source and executable identities, preview URL, exact limits,
 verification and code accounting. The BuildBuddy build passes with local fallback
 disabled. The library still has 20 passing targets and the preserved 4,004-file
 `workspace_audit_test` failure. Production and frozen research are unchanged.
+
+## Repository-specialization experiment (2026-10-13)
+
+The new `experiments/native_patterns/specialization/` package owns concrete signed
+response, selection, replay application and canonical evaluation functions. It does
+not add a descriptor interpreter, scheduler, inference provider or browser evaluator.
+Authored experiment Flix, Python assembly/reference/reductions/report logic, native
+laws and generated BUILD bytes are all counted separately in
+`~/experiments/attune-repository-specialization-20261013/tables/source-accounting.json`.
+The existing stretch budgets remain exceeded by total research/build code; experiment
+placement does not remove authored logic from the count. Frozen prior code and
+unrelated `notes/repository-through-time/` are preserved. Deployment remains unchanged.

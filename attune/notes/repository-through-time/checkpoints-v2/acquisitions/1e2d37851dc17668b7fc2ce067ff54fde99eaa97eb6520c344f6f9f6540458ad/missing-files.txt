@@ -1,0 +1,1 @@
+test/localization_qwen/localization_qwen.bzl

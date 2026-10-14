@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 19966,
+    "language": "flix",
+    "path": "test/localization_embedding/EmbeddingRankAudit.flix",
+    "physical_lines": 347,
+    "repository_path": "attune/test/localization_embedding/EmbeddingRankAudit.flix",
+    "sha256": "50f72906ed8365d22263c83f045f5de6f6046f8553a138d1ab38e1367685b2d1"
+  },
+  "program": "defines",
+  "root_revision": "3d1ad9014f175f03e3b13fbe70872962779b7065",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

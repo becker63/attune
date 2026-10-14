@@ -36,13 +36,13 @@ def outcome(
 
 /// One summary's exact mean as `numerator/denominator`, or `undefined`.
 def pair(summary: Metrics.MetricSummary): String = match summary#value {
-    case Some(value) => Int32.toString(value#numerator) + "/" + Int32.toString(value#denominator)
+    case Some(value) => ToString.toString(value#numerator) + "/" + ToString.toString(value#denominator)
     case None        => "undefined"
 }
 
 /// One optional exact ratio as `numerator/denominator`, or `undefined`.
 def ratioText(value: Option[Metrics.Ratio]): String = match value {
-    case Some(ratio) => Int32.toString(ratio#numerator) + "/" + Int32.toString(ratio#denominator)
+    case Some(ratio) => ToString.toString(ratio#numerator) + "/" + ToString.toString(ratio#denominator)
     case None        => "undefined"
 }
 

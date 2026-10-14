@@ -1,0 +1,23 @@
+Found 'flix.toml'. Checking dependencies...
+Resolving Flix dependencies...
+Downloading Flix dependencies...
+Resolving Maven dependencies...
+  Running Maven dependency resolver.
+Downloading external jar dependencies...
+  Cached `0.jar` from `file:lib/external/0.jar`.
+  Cached `1.jar` from `file:lib/external/1.jar`.
+  Cached `2.jar` from `file:lib/external/2.jar`.
+  Cached `3.jar` from `file:lib/external/3.jar`.
+  Cached `4.jar` from `file:lib/external/4.jar`.
+  Cached `5.jar` from `file:lib/external/5.jar`.
+  Cached `6.jar` from `file:lib/external/6.jar`.
+  Cached `7.jar` from `file:lib/external/7.jar`.
+  Cached `8.jar` from `file:lib/external/8.jar`.
+  Cached `9.jar` from `file:lib/external/9.jar`.
+  Cached `10.jar` from `file:lib/external/10.jar`.
+  Cached `11.jar` from `file:lib/external/11.jar`.
+  Cached `12.jar` from `file:lib/external/12.jar`.
+  Cached `13.jar` from `file:lib/external/13.jar`.
+  Cached `14.jar` from `file:lib/external/14.jar`.
+  Cached `15.jar` from `file:lib/external/15.jar`.
+Dependency resolution completed.

@@ -1,0 +1,578 @@
+[
+  {
+    "assets": {
+      "identity_map": {
+        "bytes": 28121,
+        "path": "measurements/round1/identity_map.json",
+        "sha256": "1850021e6e16ca7c3585ccb4bf1fcaa976ed6a83835a076b724b277e29623316"
+      },
+      "oracle": {
+        "bytes": 4949,
+        "path": "measurements/round1/oracle.json",
+        "sha256": "d5d770055de59b9bb20606c3dabb96db3cfc2c6e6645617b053f7e8417e1297c"
+      },
+      "topology": {
+        "bytes": 11530,
+        "path": "measurements/round1/topology.json",
+        "sha256": "1fdc4ac743f6def7565bf20017b658c6c1e8e0efe4f7467a1fdb2bf83db8f6fd"
+      }
+    },
+    "basis_edge_drift": {
+      "gained_edges": [
+        [
+          "experiments/atlas-parallelism/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "experiments/atlas-swe-explore/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "src/Repository.flix"
+        ]
+      ],
+      "lost_edges": [
+        [
+          "test/BUILD.bazel",
+          "test/Applications/InferenceBoundaryTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/LocalizationTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/PopulationTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasSignatureTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/IdentityTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/ScientificTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/GritAcquisitionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryAdmissionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/TestWorlds.flix"
+        ]
+      ],
+      "translated_control_edges": 137
+    },
+    "candidate_source_files": 102,
+    "cross_region_edge_ratio": 0.7956204379562044,
+    "cumulative_file_reach": [
+      0.07561728395061729,
+      0.2685185185185185,
+      0.4722222222222222,
+      0.5910493827160495,
+      0.6327160493827162,
+      0.6512345679012346,
+      0.6635802469135802
+    ],
+    "date": "2026-09-26T08:07:32+00:00",
+    "graph_counts": {
+      "candidate_calls": 893,
+      "candidate_defines": 816,
+      "candidate_files": 81,
+      "candidate_symbols": 816,
+      "candidate_unresolved_imports": 506,
+      "candidate_use_edges": 128,
+      "control_calls": 893,
+      "control_defines": 816,
+      "control_files": 81,
+      "control_symbols": 816,
+      "control_unresolved_imports": 507,
+      "control_use_edges": 137
+    },
+    "id": "round1",
+    "landmarks": {
+      "D50": 4,
+      "D80": 8,
+      "D90": 8,
+      "D95": 8,
+      "depth7_reach": 0.6635802469135802,
+      "mean_coverage": [
+        0.07561728395061729,
+        0.2685185185185185,
+        0.4722222222222222,
+        0.5910493827160495,
+        0.6327160493827162,
+        0.6512345679012346,
+        0.6635802469135802
+      ]
+    },
+    "max_region_blast": 139.5,
+    "ownership_cut": {
+      "considered_edges": 65,
+      "excluded_kernel_edges": 34,
+      "excluded_law_edges": 43,
+      "excluded_other_edges": 0,
+      "fraction": 0.5538461538461539,
+      "shared_edges": 36
+    },
+    "repository": "attuneflix",
+    "revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+    "series": "atlas-signature-work-topology-v1/remapped-control",
+    "shared_hotspots": 16,
+    "source_files_in_fixed_basis": 81,
+    "status": "controlled_path_remapping_of_frozen_facts"
+  },
+  {
+    "assets": {
+      "identity_map": {
+        "bytes": 28523,
+        "path": "measurements/round2/identity_map.json",
+        "sha256": "f9bad978712d38e369fc08209b91307abb78664213c1a958a7923fe53751f427"
+      },
+      "oracle": {
+        "bytes": 4956,
+        "path": "measurements/round2/oracle.json",
+        "sha256": "4db78cf2bd68be41376bd212071e5d2d7d22f1db7f8fb5c196381ebc9f9f036d"
+      },
+      "topology": {
+        "bytes": 11530,
+        "path": "measurements/round2/topology.json",
+        "sha256": "f4e764c5585b4de3d076db80290f59969c32795167318dd53f8ede28a979a690"
+      }
+    },
+    "basis_edge_drift": {
+      "gained_edges": [
+        [
+          "experiments/atlas-parallelism/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "experiments/atlas-swe-explore/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "src/Repository.flix"
+        ]
+      ],
+      "lost_edges": [
+        [
+          "test/BUILD.bazel",
+          "test/Applications/InferenceBoundaryTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/LocalizationTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/PopulationTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasSignatureTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/IdentityTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/ScientificTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/TestWorlds.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/GritAcquisitionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryAdmissionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryTableTest.flix"
+        ]
+      ],
+      "translated_control_edges": 137
+    },
+    "candidate_source_files": 110,
+    "cross_region_edge_ratio": 0.7956204379562044,
+    "cumulative_file_reach": [
+      0.07561728395061729,
+      0.2685185185185185,
+      0.4722222222222222,
+      0.5910493827160495,
+      0.6327160493827162,
+      0.6512345679012346,
+      0.6635802469135802
+    ],
+    "date": "2026-09-26T09:37:23+00:00",
+    "graph_counts": {
+      "candidate_calls": 893,
+      "candidate_defines": 816,
+      "candidate_files": 81,
+      "candidate_symbols": 816,
+      "candidate_unresolved_imports": 506,
+      "candidate_use_edges": 128,
+      "control_calls": 893,
+      "control_defines": 816,
+      "control_files": 81,
+      "control_symbols": 816,
+      "control_unresolved_imports": 507,
+      "control_use_edges": 137
+    },
+    "id": "round2",
+    "landmarks": {
+      "D50": 4,
+      "D80": 8,
+      "D90": 8,
+      "D95": 8,
+      "depth7_reach": 0.6635802469135802,
+      "mean_coverage": [
+        0.07561728395061729,
+        0.2685185185185185,
+        0.4722222222222222,
+        0.5910493827160495,
+        0.6327160493827162,
+        0.6512345679012346,
+        0.6635802469135802
+      ]
+    },
+    "max_region_blast": 139.5,
+    "ownership_cut": {
+      "considered_edges": 65,
+      "excluded_kernel_edges": 34,
+      "excluded_law_edges": 43,
+      "excluded_other_edges": 0,
+      "fraction": 0.5538461538461539,
+      "shared_edges": 36
+    },
+    "repository": "attuneflix",
+    "revision": "10f3a212d0c4d10a6c06a8f1570b0e2dd284c920",
+    "series": "atlas-signature-work-topology-v1/remapped-control",
+    "shared_hotspots": 16,
+    "source_files_in_fixed_basis": 81,
+    "status": "controlled_path_remapping_of_frozen_facts"
+  },
+  {
+    "assets": {
+      "identity_map": {
+        "bytes": 28552,
+        "path": "measurements/round3/identity_map.json",
+        "sha256": "5cf494fa1c7eda731f929c0b9a53d6e85106db1c448e777ffd0caba2e68420ae"
+      },
+      "oracle": {
+        "bytes": 4981,
+        "path": "measurements/round3/oracle.json",
+        "sha256": "939d4f07e9d67d7a511563769f8f0c63223c212ffc96484c59a827a561dc3854"
+      },
+      "topology": {
+        "bytes": 11470,
+        "path": "measurements/round3/topology.json",
+        "sha256": "6f70459248e5af48be22724a88791467f6edb182044896c84694a7bec15d4067"
+      }
+    },
+    "basis_edge_drift": {
+      "gained_edges": [
+        [
+          "experiments/atlas-parallelism/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "experiments/atlas-swe-explore/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "src/Repository.flix"
+        ]
+      ],
+      "lost_edges": [
+        [
+          "test/BUILD.bazel",
+          "test/Applications/InferenceBoundaryTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/LocalizationTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/PopulationTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasSignatureTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/IdentityTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/ScientificTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/TestWorlds.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/GritAcquisitionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryAdmissionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryTableTest.flix"
+        ]
+      ],
+      "translated_control_edges": 137
+    },
+    "candidate_source_files": 111,
+    "cross_region_edge_ratio": 0.7883211678832117,
+    "cumulative_file_reach": [
+      0.07561728395061729,
+      0.2685185185185185,
+      0.4722222222222222,
+      0.5910493827160495,
+      0.6327160493827162,
+      0.6512345679012346,
+      0.6635802469135802
+    ],
+    "date": "2026-09-26T09:55:50+00:00",
+    "graph_counts": {
+      "candidate_calls": 893,
+      "candidate_defines": 816,
+      "candidate_files": 81,
+      "candidate_symbols": 816,
+      "candidate_unresolved_imports": 506,
+      "candidate_use_edges": 128,
+      "control_calls": 893,
+      "control_defines": 816,
+      "control_files": 81,
+      "control_symbols": 816,
+      "control_unresolved_imports": 507,
+      "control_use_edges": 137
+    },
+    "id": "round3",
+    "landmarks": {
+      "D50": 4,
+      "D80": 8,
+      "D90": 8,
+      "D95": 8,
+      "depth7_reach": 0.6635802469135802,
+      "mean_coverage": [
+        0.07561728395061729,
+        0.2685185185185185,
+        0.4722222222222222,
+        0.5910493827160495,
+        0.6327160493827162,
+        0.6512345679012346,
+        0.6635802469135802
+      ]
+    },
+    "max_region_blast": 139.5,
+    "ownership_cut": {
+      "considered_edges": 65,
+      "excluded_kernel_edges": 34,
+      "excluded_law_edges": 43,
+      "excluded_other_edges": 0,
+      "fraction": 0.5538461538461539,
+      "shared_edges": 36
+    },
+    "repository": "attuneflix",
+    "revision": "73b870983147a3cff26052097adea5e979b84271",
+    "series": "atlas-signature-work-topology-v1/remapped-control",
+    "shared_hotspots": 15,
+    "source_files_in_fixed_basis": 81,
+    "status": "controlled_path_remapping_of_frozen_facts"
+  },
+  {
+    "assets": {
+      "identity_map": {
+        "bytes": 28600,
+        "path": "measurements/round4/identity_map.json",
+        "sha256": "4d660ce77ae187e41dc538fd00c9ac47f6d2d4d036c8e8467c70bf66aff3bcfc"
+      },
+      "oracle": {
+        "bytes": 4981,
+        "path": "measurements/round4/oracle.json",
+        "sha256": "6f94779ee7d00153934399c068c9d7afd2f937ecb2293a5fd7a4b2202716a160"
+      },
+      "topology": {
+        "bytes": 11470,
+        "path": "measurements/round4/topology.json",
+        "sha256": "a058f4b3cf9cc0ce803777aa74e8bdf1f1cec14cda42743ba071ac57438cbd06"
+      }
+    },
+    "basis_edge_drift": {
+      "gained_edges": [
+        [
+          "experiments/atlas-parallelism/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "experiments/atlas-swe-explore/BUILD.bazel",
+          "src/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "src/Repository.flix"
+        ]
+      ],
+      "lost_edges": [
+        [
+          "test/BUILD.bazel",
+          "test/Applications/InferenceBoundaryTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/LocalizationTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Applications/PopulationTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasSignatureTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Engine/AtlasTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/IdentityTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Kernel/ScientificTableTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/Repository.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/TestWorlds.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/GritAcquisitionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryAdmissionTest.flix"
+        ],
+        [
+          "test/BUILD.bazel",
+          "test/World/RepositoryTableTest.flix"
+        ]
+      ],
+      "translated_control_edges": 137
+    },
+    "candidate_source_files": 112,
+    "cross_region_edge_ratio": 0.7883211678832117,
+    "cumulative_file_reach": [
+      0.07561728395061729,
+      0.2685185185185185,
+      0.4722222222222222,
+      0.5910493827160495,
+      0.6327160493827162,
+      0.6512345679012346,
+      0.6635802469135802
+    ],
+    "date": "2026-09-26T11:08:24+00:00",
+    "graph_counts": {
+      "candidate_calls": 893,
+      "candidate_defines": 816,
+      "candidate_files": 81,
+      "candidate_symbols": 816,
+      "candidate_unresolved_imports": 506,
+      "candidate_use_edges": 128,
+      "control_calls": 893,
+      "control_defines": 816,
+      "control_files": 81,
+      "control_symbols": 816,
+      "control_unresolved_imports": 507,
+      "control_use_edges": 137
+    },
+    "id": "round4",
+    "landmarks": {
+      "D50": 4,
+      "D80": 8,
+      "D90": 8,
+      "D95": 8,
+      "depth7_reach": 0.6635802469135802,
+      "mean_coverage": [
+        0.07561728395061729,
+        0.2685185185185185,
+        0.4722222222222222,
+        0.5910493827160495,
+        0.6327160493827162,
+        0.6512345679012346,
+        0.6635802469135802
+      ]
+    },
+    "max_region_blast": 139.5,
+    "ownership_cut": {
+      "considered_edges": 65,
+      "excluded_kernel_edges": 34,
+      "excluded_law_edges": 43,
+      "excluded_other_edges": 0,
+      "fraction": 0.5538461538461539,
+      "shared_edges": 36
+    },
+    "repository": "attuneflix",
+    "revision": "c236a3aabfa13e5f36162e895d1ca4742f9730c0",
+    "series": "atlas-signature-work-topology-v1/remapped-control",
+    "shared_hotspots": 15,
+    "source_files_in_fixed_basis": 81,
+    "status": "controlled_path_remapping_of_frozen_facts"
+  }
+]

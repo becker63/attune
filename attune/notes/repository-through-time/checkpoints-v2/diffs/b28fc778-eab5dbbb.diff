@@ -1,0 +1,517 @@
+diff --git a/attune/src/native/grit/AttuneGrit.java b/attune/platform/tools/grit/AttuneGrit.java
+rename from attune/src/native/grit/AttuneGrit.java
+rename to attune/platform/tools/grit/AttuneGrit.java
+diff --git a/attune/src/native/grit/AttuneGritNative.java b/attune/platform/tools/grit/AttuneGritNative.java
+rename from attune/src/native/grit/AttuneGritNative.java
+rename to attune/platform/tools/grit/AttuneGritNative.java
+diff --git a/attune/src/native/grit/BUILD.bazel b/attune/platform/tools/grit/BUILD.bazel
+rename from attune/src/native/grit/BUILD.bazel
+rename to attune/platform/tools/grit/BUILD.bazel
+index 2f32c1c4f4..0d2de57beb 100644
+--- a/attune/src/native/grit/BUILD.bazel
++++ b/attune/platform/tools/grit/BUILD.bazel
+@@ -8,11 +8,12 @@
+     srcs = glob(["**"]),
+ )
+ 
+-# The narrow JVM facade over the pinned native Grit ABI. It performs only
+-# mechanical interop: it loads the prepared shared library, marshals UTF-8 byte
+-# slices, and projects the versioned native envelope into a canonical record
+-# stream. Flix owns every language, relation, identity, admission and verdict
+-# decision; this library decides none of them.
++# The narrow mechanical native adapter over the pinned Grit ABI, grouped with
++# the other mechanical Java under `platform/tools/`. It performs only interop:
++# it loads the prepared shared library, marshals UTF-8 byte slices, and projects
++# the versioned native envelope into a canonical record stream. Flix owns every
++# language, relation, identity, admission and verdict decision; this library
++# decides none of them. The maintained `.grit` frontends stay under `//src/grit`.
+ java_library(
+     name = "attune_grit",
+     srcs = [
+diff --git a/attune/src/Attune/Grit.flix b/attune/src/Attune/Repository/Grit.flix
+rename from attune/src/Attune/Grit.flix
+rename to attune/src/Attune/Repository/Grit.flix
+index 36c691c1eb..4b92812e26 100644
+--- a/attune/src/Attune/Grit.flix
++++ b/attune/src/Attune/Repository/Grit.flix
+@@ -1,17 +1,18 @@
+-/// The canonical typed envelope over the pinned native Grit boundary.
++/// The canonical typed envelope over the pinned native Grit boundary: the wire
++/// projection of the Repository owner.
+ ///
+ /// Flix owns the meaning here: the admitted language vocabulary, deterministic
+ /// language detection, the one canonical fact shape, and the projection from
+-/// the native envelope into facts. The narrow JVM facade only copies the
+-/// versioned JSON the pinned engine returns into a canonical record stream; it
+-/// classifies nothing.
++/// the native envelope into facts. The narrow JVM facade in
++/// `//platform/tools/grit` only copies the versioned JSON the pinned engine
++/// returns into a canonical record stream; it classifies nothing.
+ ///
+ /// The fact shape is one shape for every language: a syntactic kind, a path, the
+ /// byte range of the match, the byte range of the logged value, and that value.
+ /// There are no per-language fact types. Identity assignment, conservative
+-/// resolution, admission and inverse derivation live in `Attune.Repository`,
+-/// one layer above this module.
+-pub mod Attune.Grit {
++/// resolution, admission and inverse derivation live in the parent
++/// `Attune.Repository` module, one step above this projection.
++pub mod Attune.Repository.Grit {
+ 
+     /// The admitted source languages: the seven retained surfaces plus the
+     /// approved bounded Ruby arm. Order is stable.
+@@ -177,7 +178,10 @@
+             case _ => Err(Error.Wire("native envelope does not begin with a version record"))
+         }
+ 
+-    /// One canonical record line.
++    /// One canonical record line. `RMalformed` is a non-blank line the canonical
++    /// grammar does not recognise: it is a classified failure, not a line to
++    /// skip silently, so a truncated or corrupted envelope can never collapse
++    /// into a complete empty evaluation.
+     enum Record {
+         case RVersion(Int32)
+         case RError(String, String)
+@@ -185,31 +189,33 @@
+         case RSpan(Span)
+         case RLog(Log)
+         case RDiagnostic(String)
++        case RMalformed
+     }
+ 
+-    /// Parse one record line, or report it as unparseable.
++    /// Parse one record line. A blank line is dropped; a non-blank line that is
++    /// not a canonical record is preserved as `RMalformed`.
+     def parseRecord(line: String): Option[Record] =
+         if (String.isEmpty(String.trim(line))) None
+         else match String.split(regex = "\t", line) {
+             case "version" :: version :: Nil =>
+                 match Int32.fromString(version) {
+                     case Some(value) => Some(Record.RVersion(value))
+-                    case None        => None
++                    case None        => Some(Record.RMalformed)
+                 }
+             case "error" :: kind :: message :: Nil => Some(Record.RError(unescape(kind), unescape(message)))
+             case "matched" :: value :: Nil         => Some(Record.RMatched(value == "true"))
+             case "match" :: path :: start :: end :: Nil =>
+                 match (Int32.fromString(start), Int32.fromString(end)) {
+                     case (Some(s), Some(e)) => Some(Record.RSpan({ path = unescape(path), startByte = s, endByte = e }))
+-                    case _                  => None
++                    case _                  => Some(Record.RMalformed)
+                 }
+             case "log" :: message :: start :: end :: Nil =>
+                 match (Int32.fromString(start), Int32.fromString(end)) {
+                     case (Some(s), Some(e)) => Some(Record.RLog({ message = unescape(message), startByte = s, endByte = e }))
+-                    case _                  => None
++                    case _                  => Some(Record.RMalformed)
+                 }
+             case "diagnostic" :: message :: Nil => Some(Record.RDiagnostic(unescape(message)))
+-            case _                              => None
++            case _                              => Some(Record.RMalformed)
+         }
+ 
+     /// Fold the record stream into one evaluation, preserving order.
+@@ -234,6 +240,7 @@
+             case Record.RLog(log)             => assemble(rest, matched, spans, log :: logs, diagnostics)
+             case Record.RDiagnostic(message)  => assemble(rest, matched, spans, logs, message :: diagnostics)
+             case Record.RVersion(_)           => Err(Error.Wire("duplicate version record"))
++            case Record.RMalformed            => Err(Error.Wire("native envelope carries an unparseable record"))
+         }
+     }
+ 
+@@ -253,12 +260,17 @@
+ 
+     // ---------------------------------------------------------------- facts
+ 
+-    /// The exact source text of one byte range.
+-    pub def substring(source: String, start: Int32, end: Int32): String =
+-        if (start < 0 or end < start or end > String.length(source))
++    /// The exact source text of one byte range. The native envelope reports byte
++    /// offsets, so the range is sliced from the source's UTF-8 bytes rather than
++    /// from its character sequence: a source that carries a multi-byte character
++    /// before the range must still yield exactly the text those bytes hold.
++    pub def substring(source: String, start: Int32, end: Int32): String = {
++        let bytes = String.toBytes(source);
++        if (start < 0 or end < start or end > Vector.length(bytes))
+             ""
+         else
+-            String.take(end - start, String.drop(start, source))
++            String.fromBytes(Vector.slice(start = start, end = end, bytes))
++    }
+ 
+     /// Project the native envelope into canonical facts for one source file.
+     /// Every logged range is bound to its smallest enclosing syntax match, so
+diff --git a/attune/src/Attune/Repository.flix b/attune/src/Attune/Repository.flix
+index 5fd2711f79..0a5688f588 100644
+--- a/attune/src/Attune/Repository.flix
++++ b/attune/src/Attune/Repository.flix
+@@ -43,7 +43,7 @@
+ 
+     import attune.grit.AttuneGrit
+ 
+-    use Attune.Grit
++    use Attune.Repository.Grit
+ 
+     // ---------------------------------------------------------------- refusals
+ 
+@@ -165,17 +165,10 @@
+     }
+ 
+     /// Sort and deduplicate a relation, so one admitted edge is recorded once.
++    /// The ordered pair key is unique per edge, so the standard distinct after
++    /// the sort is exactly the adjacent dedup, without a second hand-rolled walk.
+     def dedupSorted(edges: List[(String, String)]): List[(String, String)] =
+-        dedupAdjacent(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges), Nil)
+-
+-    def dedupAdjacent(sorted: List[(String, String)], acc: List[(String, String)]): List[(String, String)] =
+-        match sorted {
+-            case Nil => List.reverse(acc)
+-            case edge :: rest => match acc {
+-                case head :: _ if head == edge => dedupAdjacent(rest, acc)
+-                case _                         => dedupAdjacent(rest, edge :: acc)
+-            }
+-        }
++        List.distinct(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges))
+ 
+     /// The inverse of a relation is derived from that relation, once.
+     def invert(edges: List[(String, String)]): List[(String, String)] =
+@@ -194,8 +187,10 @@
+ 
+     // ------------------------------------------------------------ the frontend
+ 
+-    /// Run one admitted relation program over one source file.
+-    def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
++    /// Run one admitted relation program over one source file. This is the one
++    /// native route: `fileFacts` and every fixture that needs a single relation
++    /// go through it, rather than re-implementing the packaged program lookup.
++    pub def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
+         let languageName = Grit.name(language);
+         let programText = AttuneGrit.program(languageName, Grit.programName(program));
+         Grit.facts(id, source, AttuneGrit.evaluate(languageName, programText, id, source))
+@@ -360,12 +355,8 @@
+             if (countOfSymbol(declarations, d#symbol) > 1) Some(d#symbol) else None,
+             declarations))
+ 
+-    def dedupStrings(values: List[String]): List[String] = distinctSorted(List.sortBy(value -> value, values))
+-
+-    def distinctSorted(sorted: List[String]): List[String] = match sorted {
+-        case Nil => Nil
+-        case value :: rest => value :: distinctSorted(List.filter(other -> other != value, rest))
+-    }
++    def dedupStrings(values: List[String]): List[String] =
++        List.distinct(List.sortBy(value -> value, values))
+ 
+     // ------------------------------------------------------- Ruby import branch
+ 
+diff --git a/attune/src/BUILD.bazel b/attune/src/BUILD.bazel
+index a02b2ec231..3b4277cd1e 100644
+--- a/attune/src/BUILD.bazel
++++ b/attune/src/BUILD.bazel
+@@ -36,24 +36,6 @@
+     ],
+ )
+ 
+-# The canonical typed envelope over the pinned native Grit boundary: the admitted
+-# language vocabulary, the canonical fact shape and the projection from the
+-# native record stream into facts.
+-filegroup(
+-    name = "grit",
+-    srcs = [
+-        "Attune.flix",
+-        "Attune/Grit.flix",
+-    ],
+-)
+-
+-# Conservative repository admission over the canonical facts: identity,
+-# resolution, the admitted edges, the derived inverses and the named refusals.
+-filegroup(
+-    name = "repository",
+-    srcs = [
+-        "Attune.flix",
+-        "Attune/Grit.flix",
+-        "Attune/Repository.flix",
+-    ],
+-)
++# The Repository owner: the native Grit wire projection under
++# `Attune.Repository.Grit`, and the conservative identity, resolution,
++# admission, derived inverses and named refusals under `Attune.Repository`.
+diff --git a/attune/src/grit/README.md b/attune/src/grit/README.md
+index 997fb03254..bbaa9ee51f 100644
+--- a/attune/src/grit/README.md
++++ b/attune/src/grit/README.md
+@@ -6,11 +6,12 @@
+ `imported_by`, and `callers` by inversion; there are no independent inverse
+ extractors.
+ 
+-Every language emits the same `Attune.Grit.Fact` shape and flows through
+-ordinary `Attune.Repository` admission. There are no per-language fact types, and
+-the native host never normalizes syntax differently for Atlas: language-specific
+-syntax is parsed by Grit (inside the frozen closure), and `Attune.Grit` turns the
+-one wire envelope into one canonical typed fact stream.
++Every language emits the same `Attune.Repository.Grit.Fact` shape and flows
++through ordinary `Attune.Repository` admission. There are no per-language fact
++types, and the native host never normalizes syntax differently for Atlas:
++language-specific syntax is parsed by Grit (inside the frozen closure), and the
++`Attune.Repository.Grit` projection turns the one wire envelope into one
++canonical typed fact stream.
+ 
+ File routing is explicit:
+ 
+@@ -26,7 +27,7 @@
+ | `BUILD`, `BUILD.bazel`, `WORKSPACE`, `WORKSPACE.bazel` | `starlark.grit` | `language starlark` |
+ | `.rb` | `ruby.grit` | `language ruby` |
+ 
+-`Attune.Grit.language(path)` is the one detection table; unknown extensions are
++`Attune.Repository.Grit.language(path)` is the one detection table; unknown extensions are
+ rejected by name before Grit runs. Every entry point documents positive examples,
+ exclusions, normalization, parser selection, returned values, and the later
+ resolver/admission responsibilities.
+diff --git a/attune/test/docs/BUILD.bazel b/attune/test/docs/BUILD.bazel
+index db021dac7b..b5fab87e1a 100644
+--- a/attune/test/docs/BUILD.bazel
++++ b/attune/test/docs/BUILD.bazel
+@@ -50,8 +50,8 @@
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Docs.flix",
+         "//src:Attune/Envelope.flix",
+-        "//src:Attune/Grit.flix",
+         "//src:Attune/Repository.flix",
++        "//src:Attune/Repository/Grit.flix",
+         "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+@@ -62,7 +62,7 @@
+     declared_files = [":documents"],
+     java_deps = [
+         "//test/grit:grit_fixtures",
+-        "//src/native/grit:attune_grit",
++        "//platform/tools/grit:attune_grit",
+     ],
+     native_libs = ["//platform/support/grit:attune_grit_abi"],
+     tags = [
+diff --git a/attune/test/grit/BUILD.bazel b/attune/test/grit/BUILD.bazel
+index 994b570fbb..036ce07e4c 100644
+--- a/attune/test/grit/BUILD.bazel
++++ b/attune/test/grit/BUILD.bazel
+@@ -61,8 +61,10 @@
+     srcs = [
+         "GritSeamTest.flix",
+         "//src:Attune.flix",
+-        "//src:Attune/Grit.flix",
++        "//src:Attune/Envelope.flix",
+         "//src:Attune/Repository.flix",
++        "//src:Attune/Repository/Grit.flix",
++        "//src:Attune/Study.flix",
+     ],
+     declared_files = [
+         ":fixtures",
+@@ -70,7 +72,7 @@
+     ],
+     java_deps = [
+         ":grit_fixtures",
+-        "//src/native/grit:attune_grit",
++        "//platform/tools/grit:attune_grit",
+     ],
+     native_libs = ["//platform/support/grit:attune_grit_abi"],
+ )
+diff --git a/attune/test/grit/GritSeamTest.flix b/attune/test/grit/GritSeamTest.flix
+index d64c0c515f..55abfa1d70 100644
+--- a/attune/test/grit/GritSeamTest.flix
++++ b/attune/test/grit/GritSeamTest.flix
+@@ -1,8 +1,9 @@
+-import attune.grit.AttuneGrit
+ import attune.grit.fixtures.GritFixtures
+ 
+-use Attune.Grit
++use Attune.Envelope
+ use Attune.Repository
++use Attune.Repository.Grit
++use Attune.Study
+ 
+ /// Native `@Test` laws for the retained native Grit frontends and the approved
+ /// bounded Ruby arm.
+@@ -88,12 +89,11 @@
+ 
+ def reversed(edges: List[(String, String)]): List[String] = List.map(edgeText, edges)
+ 
+-/// One relation program of one language over one source, through the ABI.
+-def relationFacts(language: Grit.Language, file: String, source: String, program: Grit.Program): List[Grit.Fact] \ IO = {
+-    let languageName = Grit.name(language);
+-    let text = AttuneGrit.program(languageName, Grit.programName(program));
+-    Result.getWithDefault(Nil, Grit.facts(file, source, AttuneGrit.evaluate(languageName, text, file, source)))
+-}
++/// One relation program of one language over one source, through the one native
++/// route the Repository owner uses, so the fixture never re-implements the
++/// packaged program lookup or the wire projection.
++def relationFacts(language: Grit.Language, file: String, source: String, program: Grit.Program): List[Grit.Fact] \ IO =
++    Result.getWithDefault(Nil, Repository.factsOf(file, source, language, program))
+ 
+ /// A fact as kind, the exact source text before its logged value, that value and
+ /// both byte ranges: the construct, the syntax the value does not carry, the
+@@ -107,6 +107,10 @@
+     List.map(fact -> factLine(source, fact), relationFacts(language, path(file), source, program))
+ }
+ 
++/// The fact lines of one relation program over one inline source.
++def factLinesOf(language: Grit.Language, file: String, source: String, program: Grit.Program): List[String] \ IO =
++    List.map(fact -> factLine(source, fact), relationFacts(language, file, source, program))
++
+ def surface(language: Grit.Language, file: String, source: String, callee: String): Unit \ {Assert, IO} =
+     Assert.assertEq(
+         expected = callee :: Nil,
+@@ -459,3 +463,143 @@
+             case Err(Grit.Error.UnsupportedFile(file)) => "unsupported-file " + file
+             case Err(other) => "other ${other}"
+         })
++
++/// The JavaScript and TypeScript frontends report exact facts through the real
++/// engine on sources whose whole spans are stated independently: the matched
++/// construct, the syntax before the logged name, that name and both byte ranges.
++@Test
++def javascriptAndTypescriptFrontendsReportExactFactRanges(): Unit \ {Assert, IO} = {
++    Assert.assertEq(expected = "call helper [0,9] [0,6]" :: Nil,
++        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "helper(1)", Grit.Program.Calls));
++    Assert.assertEq(expected = "definition function helper [0,31] [9,15]" :: Nil,
++        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "function helper() { return 1; }", Grit.Program.Defines));
++    Assert.assertEq(expected = "call helper [0,9] [0,6]" :: Nil,
++        factLinesOf(Grit.Language.TypeScript, "src/helper.ts", "helper(1)", Grit.Program.Calls));
++    Assert.assertEq(expected = "definition function helper [0,31] [9,15]" :: Nil,
++        factLinesOf(Grit.Language.TypeScript, "src/helper.ts", "function helper() { return 1; }", Grit.Program.Defines));
++    Assert.assertEq(expected = "import require(\"./util\" [0,17] [8,16]" :: Nil,
++        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "require(\"./util\");\n", Grit.Program.Imports))
++}
++
++/// A source that carries a multi-byte character before a construct still reports
++/// exact byte ranges: the range accessor agrees with the logged value, the
++/// declaration keyword is read from the right bytes, and admission is not
++/// refused merely because the bytes are not ASCII.
++@Test
++def nonAsciiSourceKeepsExactByteRanges(): Unit \ {Assert, IO} = {
++    let source = "module Boutique\n  # café ☕\n  def self.total\n    1\n  end\nend\n";
++    let facts = relationFacts(Grit.Language.Ruby, "src/boutique.rb", source, Grit.Program.Defines);
++    Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total", facts));
++    Assert.assertEq(
++        expected = Nil,
++        List.filterMap(fact ->
++            if (Grit.substring(source, fact#valueStart, fact#valueEnd) == fact#value) None
++            else Some(fact#value), facts));
++    let repository = admittedWorld(("src/boutique.rb", source) :: Nil);
++    Assert.assertEq(
++        expected = true,
++        List.exists(line -> String.contains(substr = " singleton 32-", line), Repository.declarationTexts(repository)))
++}
++
++def decodeName(wire: String): String = match Grit.decode(wire) {
++    case Ok(_)  => "ok"
++    case Err(e) => errorName(e)
++}
++
++def factsName(path: String, source: String, wire: String): String = match Grit.facts(path, source, wire) {
++    case Ok(_)  => "ok"
++    case Err(e) => errorName(e)
++}
++
++def errorName(error: Grit.Error): String = match error {
++    case Grit.Error.Wire(_)                     => "wire"
++    case Grit.Error.Native(kind, _)             => "native " + kind
++    case Grit.Error.UnsupportedVersion(version) => "unsupported-version ${version}"
++    case Grit.Error.UnexpectedPath(_, actual)   => "unexpected-path " + actual
++    case Grit.Error.InvalidRange(start, end)    => "invalid-range ${start} ${end}"
++    case Grit.Error.LogOutsideMatch(start, end) => "log-outside-match ${start} ${end}"
++    case Grit.Error.UnsupportedFile(file)       => "unsupported-file " + file
++}
++
++/// A malformed, mis-ranged or foreign native envelope is a classified failure,
++/// never an admitted empty evaluation.
++@Test
++def malformedNativeRecordsAreClassified(): Unit \ Assert = {
++    Assert.assertEq(expected = "wire", decodeName("matched\ttrue\n"));
++    Assert.assertEq(expected = "wire", decodeName("version\t1\nmatched\ttrue\nmatch\tf.rb\tnope\t2\n"));
++    Assert.assertEq(expected = "unsupported-version 2", decodeName("version\t2\n"));
++    Assert.assertEq(expected = "native host", decodeName("version\t1\nerror\thost\tboom\n"));
++    Assert.assertEq(expected = "invalid-range 5 2", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t5\t2\n"));
++    Assert.assertEq(expected = "unexpected-path other.rb", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tother.rb\t0\t2\n"));
++    Assert.assertEq(expected = "log-outside-match 5 7",
++        factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t0\t2\nlog\tx\t5\t7\n"))
++}
++
++/// The three forward relations are the only extraction; each inverse is exactly
++/// the reversal of its forward set, including the empty and multiple-edge cases.
++@Test
++def everyInverseIsTheExactReversalOfItsForwardRelation(): Unit \ {Assert, IO} = {
++    let repository = admittedWorld(List#{
++        ("src/a.js", "import { b } from \"./b\";\nimport { c } from \"./c\";\nfunction run() { b(1); }\n"),
++        ("src/b.js", "function b(value) { return value; }\n"),
++        ("src/c.js", "function c(value) { return value; }\n")
++    });
++    Assert.assertEq(expected = sorted(reversed(repository#imports)),
++        sorted(Repository.edgeTexts(repository#importedBy)));
++    Assert.assertEq(expected = sorted(reversed(repository#definedIn)),
++        sorted(Repository.edgeTexts(repository#defines)));
++    Assert.assertEq(expected = sorted(reversed(repository#calls)),
++        sorted(Repository.edgeTexts(repository#callers)));
++    let empty = admittedWorld(("src/only.ts", "function solo(): number { return 1; }\n") :: Nil);
++    Assert.assertEq(expected = Nil, empty#imports);
++    Assert.assertEq(expected = Nil, empty#importedBy);
++    Assert.assertEq(expected = Nil, empty#calls);
++    Assert.assertEq(expected = Nil, empty#callers)
++}
++
++/// The declared coverage claim of this fixture: the acquisition is the authored
++/// Ruby shop, the extractor is the pinned Ruby `calls` frontend, the relation is
++/// `calls`, the scope is one world named for that acquisition, and the bound is
++/// the three authored shop files.
++def acquisition(): String = "authored-ruby-shop"
++
++def extractor(): Grit.Program = Grit.Program.Calls
++
++def scopeBound(): Int32 = 3
++
++def shopWorldName(): Envelope.World = Envelope.World.World(acquisition())
++
++def callFacts(repository: Repository.Repository, scope: Envelope.World): List[Envelope.Fact] =
++    List.map(pair -> match pair {
++        case (caller, target) => { world = scope, source = caller, atom = Envelope.Atom.Calls, target = target }
++    }, repository#calls)
++
++def supportOf(facts: List[Envelope.Fact], status: Study.Status): List[Study.Support] =
++    List.map(fact -> { fact = fact, status = status }, facts)
++
++/// Earned scoped coverage over the real extraction. A positive witness survives
++/// partial coverage, missing or failed evidence cannot become a complete
++/// no-match, a same-named entity in another scope cannot donate a witness, and
++/// support counts distinct entities rather than duplicated proof paths.
++@Test
++def earnedCoverageResistsForeignAndProposedDonation(): Unit \ {Assert, IO} = {
++    Assert.assertEq(expected = scopeBound(), List.length(shopFiles()));
++    let receipt = relationFacts(Grit.Language.Ruby, path("shop/receipt.rb"), fixture("shop/receipt.rb"), extractor());
++    Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total_cents", receipt));
++    let repository = admitted(shopFiles());
++    let facts = callFacts(repository, shopWorldName());
++    let ask: Study.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
++    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(ask, Study.Coverage.Partial, facts));
++    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(ask, Study.Coverage.Missing, Nil));
++    Assert.assertEq(expected = Study.Outcome.Failed,
++        Study.observe(ask, Study.Coverage.Failure("acquisition-error"), Nil));
++    let foreign: Study.Query =
++        { scope = Envelope.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
++    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
++    let support = supportOf(facts, Study.Status.Observed);
++    Assert.assertEq(expected = 2, List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
++    Assert.assertEq(expected = 2,
++        List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
++    Assert.assertEq(expected = false,
++        Study.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Study.Status.Proposed)))
++}
+diff --git a/attune/test/view/AsciiTreeLaw.flix b/attune/test/view/AsciiTreeLaw.flix
+index c6951f7b7d..f5607e9ae0 100644
+--- a/attune/test/view/AsciiTreeLaw.flix
++++ b/attune/test/view/AsciiTreeLaw.flix
+@@ -76,6 +76,7 @@
+     Assert.assertEq(expected = Ok("b/pricing.rb"), AsciiTree.label(limits(), "b/pricing.rb"));
+     Assert.assertTrue(AsciiTree.label(limits(), "a/pricing.rb") != AsciiTree.label(limits(), "b/pricing.rb"));
+     Assert.assertErr(AsciiTree.label(limits(), "a\tb"));
++    Assert.assertErr(AsciiTree.label(limits(), "café"));
+     Assert.assertErr(AsciiTree.label(limits(), "a -> b"));
+     Assert.assertErr(AsciiTree.label(limits(), "[OK]"));
+     Assert.assertErr(AsciiTree.label(limits(), String.repeat(65, "x")))

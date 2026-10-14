@@ -1,0 +1,669 @@
+diff --git a/attune/src/Attune/Policy.flix b/attune/src/Attune/Policy.flix
+index f97e63c860..152dc42a20 100644
+--- a/attune/src/Attune/Policy.flix
++++ b/attune/src/Attune/Policy.flix
+@@ -130,27 +130,9 @@
+     def hasSuffix(suffix: String, s: String): Bool = String.endsWith(suffix = suffix, s)
+     def hasInfix(needle: String, s: String): Bool = String.contains(substr = needle, s)
+ 
+-    /// One single-character piece of horizontal whitespace. Inside a
+-    /// triple-quoted literal a whitespace-only line stays blank; a line that
+-    /// carries any other content is code, so the content of a generated string
+-    /// is counted rather than disappearing into an apparent blank.
+-    def isSpaceText(text: String): Bool =
+-        text == " " or text == "\t" or text == "\r"
+-
+     /// The last `/`-separated segment of a path.
+     pub def basename(path: String): String =
+-        match String.split(regex = "/", path) {
+-            case Nil => path
+-            case first :: Nil => first
+-            case _ :: rest => basenameOf(rest)
+-        }
+-
+-    def basenameOf(parts: List[String]): String =
+-        match parts {
+-            case last :: Nil => last
+-            case _ :: rest => basenameOf(rest)
+-            case Nil => ""
+-        }
++        List.foldLeft((_acc, segment) -> segment, "", String.split(regex = "/", path))
+ 
+     // ------------------------------------------------------------ admission
+ 
+@@ -258,57 +240,30 @@
+ 
+     /// First-party executable languages whose code must not embed a shell.
+     pub def isFirstPartyExecution(lang: Language): Bool =
+-        match lang {
+-            case Language.Flix => true
+-            case Language.Java => true
+-            case Language.Starlark => true
+-            case _ => false
+-        }
++        lang == Language.Flix or lang == Language.Java or lang == Language.Starlark
+ 
+     // -------------------------------------------------------- lexical count
+ 
+     def supportsSlashComments(lang: Language): Bool =
+-        match lang {
+-            case Language.Flix => true
+-            case Language.Java => true
+-            case Language.Grit => true
+-            case Language.Ruby => true
+-            case _ => false
+-        }
++        lang == Language.Flix or lang == Language.Java or lang == Language.Grit or lang == Language.Ruby
+ 
+-    def supportsBlockComments(lang: Language): Bool =
+-        match lang {
+-            case Language.Flix => true
+-            case Language.Java => true
+-            case _ => false
+-        }
++    def supportsBlockComments(lang: Language): Bool = lang == Language.Flix or lang == Language.Java
+ 
+     def supportsHashComments(lang: Language): Bool =
+-        match lang {
+-            case Language.Starlark => true
+-            case Language.Ruby => true
+-            case Language.Nix => true
+-            case Language.Other => true
+-            case _ => false
+-        }
++        lang == Language.Starlark or lang == Language.Ruby or lang == Language.Nix or lang == Language.Other
+ 
+     /// True only where a quote really opens a string literal. In prose and
+     /// unstructured metadata an apostrophe is just a character; treating it as a
+     /// string start would swallow the rest of the file, which is exactly the
+     /// kind of silently dishonest count this policy exists to prevent.
+-    def tracksStrings(lang: Language): Bool =
+-        match lang {
+-            case Language.Markdown => false
+-            case Language.Other => false
+-            case _ => true
+-        }
++    def tracksStrings(lang: Language): Bool = lang != Language.Markdown and lang != Language.Other
+ 
+     /// A markdown file is documentation; its non-blank lines are documentation
+     /// lines rather than code lines.
+-    def isProseDoc(lang: Language): Bool = match lang { case Language.Markdown => true case _ => false }
++    def isProseDoc(lang: Language): Bool = lang == Language.Markdown
+ 
+-    def isStarlark(lang: Language): Bool = match lang { case Language.Starlark => true case _ => false }
+-    def isJava(lang: Language): Bool = match lang { case Language.Java => true case _ => false }
++    def isStarlark(lang: Language): Bool = lang == Language.Starlark
++    def isJava(lang: Language): Bool = lang == Language.Java
+ 
+     def step(kind: LineKind): Counts =
+         match kind {
+@@ -322,28 +277,26 @@
+     /// non-empty counts as code, so comments never inflate the code count while
+     /// trailing comments and comment-like strings inside code still count.
+     pub def countLines(lang: Language, text: String): Counts =
+-        countFrom(lang, Lex.Normal, true, String.lines(text), zeroCounts())
+-
+-    def countFrom(lang: Language, st: Lex, pending: Bool, lines: List[String], acc: Counts): Counts =
+-        match lines {
+-            case Nil => acc
+-            case line :: rest =>
+-                let (kind, st2, pending2, _) = scanLine(lang, st, pending, line);
+-                countFrom(lang, st2, pending2, rest, addCounts(acc, step(kind)))
+-        }
++        match countAndCode(lang, text) { case (counts, _) => counts }
+ 
+     /// The code-only text of a file: every comment and recognised Starlark
+     /// docstring is removed, so a documented mention of a forbidden token is not
+     /// treated as an embedded script.
+     pub def codeText(lang: Language, text: String): String =
+-        List.join("", codeSegments(lang, Lex.Normal, true, String.lines(text), Nil))
+-
+-    def codeSegments(lang: Language, st: Lex, pending: Bool, lines: List[String], acc: List[String]): List[String] =
++        match countAndCode(lang, text) { case (_, code) => code }
++
++    /// One lexical pass yields both the honest line counts and the
++    /// comment-stripped code text, so a caller that needs both (the report's
++    /// totals and the forbidden-token scan) never walks a file twice.
++    def countAndCode(lang: Language, text: String): (Counts, String) =
++        countFrom(lang, Lex.Normal, true, String.lines(text), zeroCounts(), Nil)
++
++    def countFrom(lang: Language, st: Lex, pending: Bool, lines: List[String], acc: Counts, kept: List[String]): (Counts, String) =
+         match lines {
+-            case Nil => List.reverse(acc)
++            case Nil => (acc, List.join("", List.reverse(kept)))
+             case line :: rest =>
+-                let (_, st2, pending2, kept) = scanLine(lang, st, pending, line);
+-                codeSegments(lang, st2, pending2, rest, kept :: acc)
++                let (kind, st2, pending2, seg) = scanLine(lang, st, pending, line);
++                countFrom(lang, st2, pending2, rest, addCounts(acc, step(kind)), seg :: kept)
+         }
+ 
+     /// Classify one line and return its comment-stripped code text.
+@@ -353,41 +306,25 @@
+             case Lex.TripleDoc(q) =>
+                 if (hasInfix(q, trimmed)) (LineKind.Doc, Lex.Normal, false, "")
+                 else (LineKind.Doc, Lex.TripleDoc(q), false, "")
+-            case Lex.Normal =>
+-                if (isStarlark(lang) and pending and (hasPrefix("\"\"\"", trimmed) or hasPrefix("'''", trimmed))) {
+-                    let q = String.take(3, trimmed);
+-                    let rest = String.drop(3, trimmed);
+-                    if (hasInfix(q, rest)) (LineKind.Doc, Lex.Normal, false, "")
+-                    else (LineKind.Doc, Lex.TripleDoc(q), false, "")
+-                } else {
+-                    let (code, comment, doc, end, kept) = lexFrom(lang, st, line, 0, false, false, false, Nil);
+-                    let kind =
+-                        if (code) LineKind.Code
+-                        else if (doc) LineKind.Doc
+-                        else if (comment) LineKind.Comment
+-                        else LineKind.Blank;
+-                    let honest = if (isProseDoc(lang) and kind == LineKind.Code) LineKind.Doc else kind;
+-                    let text = List.join("", List.reverse(kept));
+-                    (honest, end, nextPending(honest, trimmed), text)
+-                }
++            case _ if isStarlark(lang) and st == Lex.Normal and pending and (hasPrefix("\"\"\"", trimmed) or hasPrefix("'''", trimmed)) =>
++                let q = String.take(3, trimmed);
++                let rest = String.drop(3, trimmed);
++                if (hasInfix(q, rest)) (LineKind.Doc, Lex.Normal, false, "")
++                else (LineKind.Doc, Lex.TripleDoc(q), false, "")
+             case _ =>
+                 let (code, comment, doc, end, kept) = lexFrom(lang, st, line, 0, false, false, false, Nil);
+-                let kind = if (code) LineKind.Code
+-                           else if (doc) LineKind.Doc
+-                           else if (comment) LineKind.Comment
+-                           else LineKind.Blank;
+-                let text = List.join("", List.reverse(kept));
+-                (kind, end, nextPending(kind, trimmed), text)
++                let raw = if (code) LineKind.Code
++                          else if (doc) LineKind.Doc
++                          else if (comment) LineKind.Comment
++                          else LineKind.Blank;
++                let kind = if (isProseDoc(lang) and raw == LineKind.Code) LineKind.Doc else raw;
++                (kind, end, nextPending(kind, trimmed), List.join("", List.reverse(kept)))
+         }
+ 
+     /// A recognised Starlark docstring is the first statement of a module or the
+     /// first statement of a `def` body.
+     def nextPending(kind: LineKind, trimmed: String): Bool =
+-        match kind {
+-            case LineKind.Code =>
+-                if (hasPrefix("def ", trimmed) and hasSuffix(":", trimmed)) true else false
+-            case _ => false
+-        }
++        kind == LineKind.Code and hasPrefix("def ", trimmed) and hasSuffix(":", trimmed)
+ 
+     def lexFrom(lang: Language, st: Lex, s: String, i: Int32, code: Bool, comment: Bool, doc: Bool, kept: List[String]): (Bool, Bool, Bool, Lex, List[String]) =
+         if (i >= String.length(s)) (code, comment, doc, st, kept)
+@@ -403,7 +340,7 @@
+                     else lexFrom(lang, Lex.DocBlock, s, i + 1, code, true, true, kept)
+                 case Lex.Triple(q) =>
+                     if (hasPrefix(q, r)) lexFrom(lang, Lex.Normal, s, i + String.length(q), true, comment, doc, kept)
+-                    else if (isSpaceText(one)) lexFrom(lang, Lex.Triple(q), s, i + 1, code, comment, doc, one :: kept)
++                    else if (one == " " or one == "\t" or one == "\r") lexFrom(lang, Lex.Triple(q), s, i + 1, code, comment, doc, one :: kept)
+                     else lexFrom(lang, Lex.Triple(q), s, i + 1, true, comment, doc, one :: kept)
+                 case Lex.Str(q) =>
+                     // A backslash escapes exactly one following character: the
+@@ -440,8 +377,6 @@
+         }
+ 
+     /// Every quoted literal in a document, used only for BUILD reference checks.
+-    pub def quotedLiterals(s: String): List[String] = quoteFrom(s, 0, false, "", Nil)
+-
+     def quoteFrom(s: String, i: Int32, inQ: Bool, cur: String, acc: List[String]): List[String] =
+         if (i >= String.length(s)) List.reverse(acc)
+         else {
+@@ -502,9 +437,6 @@
+             case Nil => Nil
+         }
+ 
+-    def measuredOf(kind: String, target: String): Measured =
+-        if (kind == "symlink") Measured.Link(target) else Measured.Regular
+-
+     /// Interpret one size field honestly and fail closed: a malformed,
+     /// negative or out-of-Int32-range value becomes `Unusable` and is never
+     /// treated as zero or readable. Only a genuine non-negative size becomes
+@@ -519,7 +451,7 @@
+         match String.split(regex = "\t", line) {
+             case rel :: abs :: kind :: size :: rest =>
+                 if (rel == "root") None
+-                else Some(Entry.Entry(rel, abs, measuredOf(kind, targetOf(rest)), parseSize(size)))
++                else Some(Entry.Entry(rel, abs, if (kind == "symlink") Measured.Link(targetOf(rest)) else Measured.Regular, parseSize(size)))
+             case _ => None
+         }
+ 
+@@ -542,12 +474,9 @@
+     /// read as a whole file.
+     pub def readable(e: Entry): Bool =
+         let path = entryPath(e);
+-        match entryMeasured(e) {
+-            case Measured.Link(_) => false
+-            case Measured.Regular =>
+-                not (isSecretPath(path) or isExcludedPath(path) or isReferencePath(path))
+-                    and sizeAtMost(entrySize(e), maxTextBytes())
+-        }
++        entryMeasured(e) == Measured.Regular
++            and not (isSecretPath(path) or isExcludedPath(path) or isReferencePath(path))
++            and sizeAtMost(entrySize(e), maxTextBytes())
+ 
+     def readEntry(e: Entry): String \ FileRead =
+         if (readable(e)) Result.getWithDefault("", FileRead.read(entryAbs(e))) else ""
+@@ -570,6 +499,27 @@
+     def pairEntry(p: (Entry, String)): Entry = match p { case (e, _) => e }
+     def pairText(p: (Entry, String)): String = match p { case (_, t) => t }
+ 
++    // ------------------------------------------------------- classification
++
++    /// One loaded file, classified once: its measured entry, accounting role,
++    /// language, honest line counts and comment-stripped code text, and whether
++    /// its content was readable. The counts and code text come from one lexical
++    /// pass, and every per-file decision (findings, totals, audit) consumes this
++    /// record, so a readable file is never read or counted twice.
++    pub type alias Classified = (Entry, Role, Language, Counts, String, Bool)
++
++    pub def classified(loaded: List[(Entry, String)]): List[Classified] =
++        List.map(classify, loaded)
++
++    def classify(p: (Entry, String)): Classified =
++        let e = pairEntry(p);
++        let path = entryPath(e);
++        let lang = languageOf(path);
++        if (readable(e)) {
++            let (counts, code) = countAndCode(lang, pairText(p));
++            (e, roleOf(path), lang, counts, code, true)
++        } else (e, roleOf(path), lang, zeroCounts(), "", false)
++
+     // ------------------------------------------------------------- findings
+ 
+     /// The reviewed shared-code target. The user explicitly approved 4,300
+@@ -604,24 +554,15 @@
+         else Nil
+ 
+     def contentFindings(path: String, lang: Language, code: String): List[Finding] =
+-        let embedded =
+-            if (isFirstPartyExecution(lang) and containsAny(shellTokens(), code))
+-                Finding.Finding("embedded-script", path, "executable code embeds a shell script or shell action") :: Nil
+-            else Nil;
+-        let http =
+-            if (hasPrefix("src/", path) and containsAny(httpTokens(), code))
+-                Finding.Finding("raw-http", path, "production source substitutes a raw HTTP client for the approved SDK") :: Nil
+-            else Nil;
+-        let proposal =
+-            if (hasPrefix("src/", path) and containsAny(proposalTokens(), code))
+-                Finding.Finding("proposal-dependency", path, "production source depends on a test-only proposal module") :: Nil
+-            else Nil;
+-        embedded ::: http ::: proposal
++        (if (isFirstPartyExecution(lang) and containsAny(shellTokens(), code))
++            Finding.Finding("embedded-script", path, "executable code embeds a shell script or shell action") :: Nil else Nil)
++            ::: (if (hasPrefix("src/", path) and containsAny(httpTokens(), code))
++                Finding.Finding("raw-http", path, "production source substitutes a raw HTTP client for the approved SDK") :: Nil else Nil)
++            ::: (if (hasPrefix("src/", path) and containsAny(proposalTokens(), code))
++                Finding.Finding("proposal-dependency", path, "production source depends on a test-only proposal module") :: Nil else Nil)
+ 
+     def rootFindings(path: String): List[Finding] =
+-        if (isRootMetadata(path) or isExcludedPath(path)) Nil
+-        else if (isApprovedRoot(path)) Nil
+-        else if (isAdmittedForeign(path)) Nil
++        if (isRootMetadata(path) or isExcludedPath(path) or isApprovedRoot(path) or isAdmittedForeign(path)) Nil
+         else Finding.Finding("unapproved-root", path, "authored source outside the approved source roots") :: Nil
+ 
+     /// A regular entry whose size metadata could not be interpreted honestly is
+@@ -629,89 +570,75 @@
+     /// a defect, not a zero-size file. The `readable` predicate already refuses
+     /// to open it, so no oversized whole-file read can occur.
+     def sizeFindings(e: Entry): List[Finding] =
+-        let path = entryPath(e);
+         match entrySize(e) {
+             case Size.Bytes(_) => Nil
+             case Size.Unusable(_) =>
+-                Finding.Finding("unusable-size", path, "size metadata is malformed, negative or out of range, so the content is never read") :: Nil
++                Finding.Finding("unusable-size", entryPath(e), "size metadata is malformed, negative or out of range, so the content is never read") :: Nil
+         }
+ 
+-    def fileFindings(e: Entry, text: String): List[Finding] =
++    /// Every finding for one classified file: secrecy, the reference checkout
++    /// and the excluded boundaries first, then ownership, suffix, embedded
++    /// script and size checks over the entry and its recovered code text.
++    def fileFindings(c: Classified): List[Finding] =
++        let (e, _, lang, _, code, readable) = c;
+         let path = entryPath(e);
+         if (isSecretPath(path))
+-            if (String.isEmpty(text))
+-                Nil
+-            else
+-                Finding.Finding("secret-content", path, "a secret path must stay metadata only") :: Nil
+-        else if (isReferencePath(path))
+-            Finding.Finding("reference-source", path, "the read-only reference checkout is never parent source") :: Nil
++            if (readable) Finding.Finding("secret-content", path, "a secret path must stay metadata only") :: Nil else Nil
++        else if (isReferencePath(path)) Finding.Finding("reference-source", path, "the read-only reference checkout is never parent source") :: Nil
+         else if (isExcludedPath(path)) Nil
+-        else {
+-            let lang = languageOf(path);
+-            let code = codeText(lang, text);
+-            rootFindings(path) ::: suffixFindings(path) ::: contentFindings(path, lang, code) ::: sizeFindings(e)
+-        }
++        else rootFindings(path) ::: suffixFindings(path) ::: contentFindings(path, lang, code) ::: sizeFindings(e)
+ 
+     def buildTexts(loaded: List[(Entry, String)]): List[String] =
+         List.filterMap(p -> if (isBuildFile(entryPath(pairEntry(p)))) Some(pairText(p)) else None, loaded)
+ 
++    def nestedBuildFindings(loaded: List[(Entry, String)]): List[Finding] =
++        List.filterMap(p -> nestedOne(pairEntry(p), pairText(p)), loaded)
++
++    def nestedOne(e: Entry, text: String): Option[Finding] =
++        let path = entryPath(e);
++        if (isBuildFile(path) and List.exists(l -> hasInfix("..", l), quoteFrom(text, 0, false, "", Nil)))
++            Some(Finding.Finding("nested-build-escape", path, "a BUILD source entry escapes its own package directory"))
++        else None
++
+     def isOrphanCandidate(path: String): Bool =
+         not isExcludedPath(path) and not isReferencePath(path) and not isBuildFile(path)
+             and (hasSuffix(".flix", path) or hasSuffix(".java", path) or hasSuffix(".bzl", path)
+                  or hasSuffix(".grit", path) or hasSuffix(".rb", path))
+ 
+-    def orphanFindings(loaded: List[(Entry, String)]): List[Finding] =
+-        let blob = List.join("\n", buildTexts(loaded));
+-        List.filterMap(p -> orphanOne(blob, p), loaded)
+-
+-    def orphanOne(blob: String, p: (Entry, String)): Option[Finding] =
+-        let path = entryPath(pairEntry(p));
+-        if (isOrphanCandidate(path) and not hasInfix(basename(path), blob))
+-            Some(Finding.Finding("orphaned-source", path, "no BUILD file in this workspace admits this source"))
+-        else None
+-
+-    def nestedBuildFindings(loaded: List[(Entry, String)]): List[Finding] =
+-        List.filterMap(p -> nestedOne(pairEntry(p), pairText(p)), loaded)
+-
+-    def nestedOne(e: Entry, text: String): Option[Finding] =
++    /// The live-tree audit over the classified entries, in one pass: a source no
++    /// BUILD admits, a forbidden file no BUILD admits and a link that leaves the
++    /// root. One BUILD-text blob and the one classification serve every check.
++    def auditFindings(root: String, blob: String, cs: List[Classified]): List[Finding] =
++        List.flatMap(c -> ownershipFindings(blob, c) ::: symlinkFindings(root, c), cs)
++
++    def ownershipFindings(blob: String, c: Classified): List[Finding] =
++        let (e, _, _, _, code, _) = c;
+         let path = entryPath(e);
+-        if (isBuildFile(path) and List.exists(l -> hasInfix("..", l), quotedLiterals(text)))
+-            Some(Finding.Finding("nested-build-escape", path, "a BUILD source entry escapes its own package directory"))
+-        else None
++        let orphan = if (isOrphanCandidate(path) and not hasInfix(basename(path), blob))
++            Finding.Finding("orphaned-source", path, "no BUILD file in this workspace admits this source") :: Nil else Nil;
++        let forbidden = isForbiddenSuffix(path) or containsAny(shellTokens() ::: httpTokens(), code);
++        let ignored = if (forbidden and not isAdmittedForeign(path) and not isExcludedPath(path)
++                           and not isReferencePath(path) and not hasInfix(basename(path), blob))
++            Finding.Finding("ignored-forbidden", path, "a forbidden file is present in the live workspace but no build admits it") :: Nil else Nil;
++        orphan ::: ignored
+ 
+     /// A symbolic link whose resolved target leaves the audited root escapes it.
+-    def symlinkFindings(root: String, loaded: List[(Entry, String)]): List[Finding] =
+-        List.filterMap(p -> symlinkOne(root, pairEntry(p)), loaded)
+-
+-    def symlinkOne(root: String, e: Entry): Option[Finding] =
++    def symlinkFindings(root: String, c: Classified): List[Finding] =
++        let (e, _, _, _, _, _) = c;
+         let path = entryPath(e);
+-        if (isExcludedPath(path) or isReferencePath(path)) None
++        if (isExcludedPath(path) or isReferencePath(path)) Nil
+         else match entryMeasured(e) {
+             case Measured.Link(target) =>
+                 let outside = String.isEmpty(target) or not (target == root or hasPrefix(root + "/", target));
+-                if (outside) Some(Finding.Finding("symlink-escape", path, "a symbolic link resolves outside the audited workspace"))
+-                else None
+-            case Measured.Regular => None
++                if (outside) Finding.Finding("symlink-escape", path, "a symbolic link resolves outside the audited workspace") :: Nil
++                else Nil
++            case Measured.Regular => Nil
+         }
+ 
+-    def ignoredFindings(loaded: List[(Entry, String)]): List[Finding] =
+-        let blob = List.join("\n", buildTexts(loaded));
+-        List.filterMap(p -> ignoredOne(blob, p), loaded)
+-
+-    def ignoredOne(blob: String, p: (Entry, String)): Option[Finding] =
+-        let e = pairEntry(p);
+-        let path = entryPath(e);
+-        let code = codeText(languageOf(path), pairText(p));
+-        let forbidden = isForbiddenSuffix(path) or containsAny(shellTokens() ::: httpTokens(), code);
+-        if (forbidden and not isAdmittedForeign(path) and not isExcludedPath(path)
+-               and not isReferencePath(path) and not hasInfix(basename(path), blob))
+-            Some(Finding.Finding("ignored-forbidden", path, "a forbidden file is present in the live workspace but no build admits it"))
+-        else None
+-
+     def docFindings(loaded: List[(Entry, String)]): List[Finding] =
+         let present = List.map(p -> entryPath(pairEntry(p)), loaded);
+         let missing = List.filterMap(d -> if (List.memberOf(d, present)) None else Some(Finding.Finding("required-doc", d, "required core documentation is missing")), requiredDocs());
+-        missing ::: List.flatMap(p -> commentFindings(p), loaded)
++        missing ::: List.flatMap(commentFindings, loaded)
+ 
+     def commentFindings(p: (Entry, String)): List[Finding] =
+         let path = entryPath(pairEntry(p));
+@@ -719,93 +646,61 @@
+             checkPubMods(path, Nil, String.lines(pairText(p)), Nil)
+         else Nil
+ 
++    /// Every `pub mod` in an authored Flix source needs a `///` comment within
++    /// the three lines above it.
+     def checkPubMods(path: String, prev: List[String], lines: List[String], acc: List[Finding]): List[Finding] =
+         match lines {
+             case Nil => acc
+             case line :: rest =>
+-                let acc2 =
+-                    if (hasPrefix("pub mod ", String.trim(line)) and not anyDoc(prev))
+-                        Finding.Finding("required-comment", path, "a public module has no `///` documentation comment") :: acc
+-                    else acc;
++                let acc2 = if (hasPrefix("pub mod ", String.trim(line)) and not List.exists(isDoc, prev))
++                    Finding.Finding("required-comment", path, "a public module has no `///` documentation comment") :: acc else acc;
+                 checkPubMods(path, keepThree(line :: prev), rest, acc2)
+         }
+ 
++    def isDoc(line: String): Bool = hasPrefix("///", String.trim(line))
++
+     def keepThree(l: List[String]): List[String] =
+-        match l {
+-            case a :: b :: c :: _ => a :: b :: c :: Nil
+-            case _ => l
+-        }
+-
+-    def anyDoc(l: List[String]): Bool =
+-        match l {
+-            case Nil => false
+-            case x :: xs => if (hasPrefix("///", String.trim(x))) true else anyDoc(xs)
+-        }
++        match l { case a :: b :: c :: _ => a :: b :: c :: Nil case _ => l }
+ 
+     // --------------------------------------------------------------- totals
+ 
+-    def roles(): List[Role] =
+-        Role.Shared :: Role.Declarative :: Role.Fixture :: Role.Support :: Role.Metadata :: Nil
+-
+-    def languages(): List[Language] =
+-        Language.Flix :: Language.Java :: Language.Starlark :: Language.Grit :: Language.Ruby
+-            :: Language.Nix :: Language.Markdown :: Language.Other :: Nil
+-
+-    pub def rowOf(loaded: List[(Entry, String)], role: Role, lang: Language): (Int32, Counts) =
+-        List.foldLeft((acc, p) -> addToRow(acc, p, role, lang), (0, zeroCounts()), loaded)
+-
+-    def addToRow(acc: (Int32, Counts), p: (Entry, String), role: Role, lang: Language): (Int32, Counts) =
+-        let e = pairEntry(p);
+-        if (not readable(e))
+-            acc
+-        else if (roleOf(entryPath(e)) == role and languageOf(entryPath(e)) == lang)
+-            (rowFiles(acc) + 1, addCounts(rowCounts(acc), countLines(lang, pairText(p))))
+-        else acc
+-
+-    def rowFiles(p: (Int32, Counts)): Int32 = match p { case (n, _) => n }
+-    def rowCounts(p: (Int32, Counts)): Counts = match p { case (_, c) => c }
+-
+-    pub def rows(loaded: List[(Entry, String)]): List[(Role, Language, Int32, Counts)] =
+-        List.flatMap(role -> List.map(lang -> (role, lang, rowFiles(rowOf(loaded, role, lang)), rowCounts(rowOf(loaded, role, lang))), languages()), roles())
+-
+-    pub def roleCode(loaded: List[(Entry, String)], role: Role): Int32 =
+-        List.foldLeft((acc, row) -> acc + rowCodeFor(row, role), 0, rows(loaded))
+-
+-    def rowCodeFor(row: (Role, Language, Int32, Counts), role: Role): Int32 =
+-        match row {
+-            case (r, _, _, c) => if (r == role) codeOf(c) else 0
++    /// Raw totals over the readable population: file count and the summed
++    /// code/comment/doc/blank lines, plus the shared, proposal and test code
++    /// subtotals the budgets compare. The per-file role/language/counts record
++    /// stays reproducible through `classified`; this is only the summary.
++    pub type alias Totals = (Int32, Counts, Int32, Int32, Int32)
++
++    pub def totalsOf(cs: List[Classified]): Totals =
++        List.foldLeft(addTotal, (0, zeroCounts(), 0, 0, 0), cs)
++
++    def addTotal(t: Totals, c: Classified): Totals =
++        let (files, all, shared, proposal, test) = t;
++        let (e, role, _, counts, _, readable) = c;
++        if (not readable) t
++        else {
++            let code = codeOf(counts);
++            (files + 1, addCounts(all, counts),
++                if (role == Role.Shared) shared + code else shared,
++                if (hasPrefix("test/proposals/", entryPath(e))) proposal + code else proposal,
++                if (role == Role.Fixture) test + code else test)
+         }
+ 
+-    /// Test-only proposal source is reported separately from ordinary tests, so
+-    /// the two budgets are never silently merged.
+-    pub def proposalCode(loaded: List[(Entry, String)]): Int32 =
+-        List.foldLeft((acc, p) -> {
+-            let path = entryPath(pairEntry(p));
+-            if (hasPrefix("test/proposals/", path) and readable(pairEntry(p)))
+-                acc + codeOf(countLines(languageOf(path), pairText(p)))
+-            else acc
+-        }, 0, loaded)
+-
+-    def budgetFindings(loaded: List[(Entry, String)]): List[Finding] =
+-        let shared = roleCode(loaded, Role.Shared);
+-        let test = roleCode(loaded, Role.Fixture);
+-        let overShared =
+-            if (shared > sharedTarget())
+-                Finding.Finding("budget-exceeded", "shared", "shared implementation code exceeds the declared target without a reviewed gate change") :: Nil
+-            else Nil;
+-        let overTest =
+-            if (test > testTarget())
+-                Finding.Finding("budget-exceeded", "test", "test-review code exceeds the declared target without a reviewed gate change") :: Nil
+-            else Nil;
++    def budgetFindings(t: Totals): List[Finding] =
++        let (_, _, shared, _, test) = t;
++        let overShared = if (shared > sharedTarget())
++            Finding.Finding("budget-exceeded", "shared", "shared implementation code exceeds the declared target without a reviewed gate change") :: Nil else Nil;
++        let overTest = if (test > testTarget())
++            Finding.Finding("budget-exceeded", "test", "test-review code exceeds the declared target without a reviewed gate change") :: Nil else Nil;
+         overShared ::: overTest
+ 
+-    pub def evaluate(mode: String, root: String, loaded: List[(Entry, String)]): (List[Finding], List[(Role, Language, Int32, Counts)]) =
+-        let perFile = List.flatMap(p -> fileFindings(pairEntry(p), pairText(p)), loaded);
+-        let docs = docFindings(loaded);
+-        let audit = if (mode == "audit") ignoredFindings(loaded) ::: orphanFindings(loaded) ::: nestedBuildFindings(loaded) ::: symlinkFindings(root, loaded) else Nil;
+-        let findings = perFile ::: docs ::: audit;
+-        let complete = findings ::: budgetFindings(loaded);
+-        (complete, rows(loaded))
++    /// The one evaluation: classify every loaded file once, then derive the
++    /// per-file findings, the required-document check, the live audit (in audit
++    /// mode) and the budget verdict from those records.
++    pub def evaluate(mode: String, root: String, loaded: List[(Entry, String)]): (List[Finding], List[Classified]) =
++        let cs = classified(loaded);
++        let blob = List.join("\n", buildTexts(loaded));
++        let audit = if (mode == "audit") nestedBuildFindings(loaded) ::: auditFindings(root, blob, cs) else Nil;
++        (List.flatMap(fileFindings, cs) ::: docFindings(loaded) ::: audit ::: budgetFindings(totalsOf(cs)), cs)
+ 
+     /// The single verdict string the report prints and the tests assert.
+     pub def verdictName(findings: List[Finding]): String =
+@@ -816,50 +711,21 @@
+     def findingLine(f: Finding): String =
+         "attune-policy-finding rule=" + ruleOf(f) + " path=" + pathOf(f) + " message=" + messageOf(f)
+ 
+-    def rowLine(row: (Role, Language, Int32, Counts)): Option[String] =
+-        match row {
+-            case (role, lang, files, c) =>
+-                if (files > 0)
+-                    Some("attune-policy-count role=" + roleName(role) + " language=" + langName(lang)
+-                        + " files=" + "${files}" + " code=" + "${codeOf(c)}" + " comment=" + "${commentOf(c)}"
+-                        + " doc=" + "${docOf(c)}" + " blank=" + "${blankOf(c)}")
+-                else None
+-        }
+-
+-    pub def roleName(role: Role): String =
+-        match role {
+-            case Role.Shared => "shared"
+-            case Role.Declarative => "declarative"
+-            case Role.Fixture => "fixture"
+-            case Role.Support => "support"
+-            case Role.Metadata => "metadata"
+-            case Role.Excluded => "excluded"
+-        }
+-
+-    pub def langName(lang: Language): String =
+-        match lang {
+-            case Language.Flix => "flix"
+-            case Language.Java => "java"
+-            case Language.Starlark => "starlark"
+-            case Language.Grit => "grit"
+-            case Language.Ruby => "ruby"
+-            case Language.Nix => "nix"
+-            case Language.Markdown => "markdown"
+-            case Language.Other => "other"
+-        }
+-
+-    def budgetLine(loaded: List[(Entry, String)]): String =
+-        "attune-policy-budget shared_code=" + "${roleCode(loaded, Role.Shared)}"
+-            + " shared_target=" + "${sharedTarget()}"
+-            + " proposal_code=" + "${proposalCode(loaded)}"
+-            + " proposal_line_target=" + "${proposalTarget()}"
+-            + " test_code=" + "${roleCode(loaded, Role.Fixture)}"
+-            + " test_target=" + "${testTarget()}"
+-
+-    /// The whole report as text: findings, the count table, the budgets and the
++    def totalsLine(t: Totals): String =
++        let (files, c, _, _, _) = t;
++        "attune-policy-total files=" + "${files}" + " code=" + "${codeOf(c)}" + " comment=" + "${commentOf(c)}"
++            + " doc=" + "${docOf(c)}" + " blank=" + "${blankOf(c)}"
++
++    def budgetLine(t: Totals): String =
++        let (_, _, shared, proposal, test) = t;
++        "attune-policy-budget shared_code=" + "${shared}" + " shared_target=" + "${sharedTarget()}"
++            + " proposal_code=" + "${proposal}" + " proposal_line_target=" + "${proposalTarget()}"
++            + " test_code=" + "${test}" + " test_target=" + "${testTarget()}"
++
++    /// The whole report as text: findings, the raw totals, the budgets and the
+     /// verdict. Formatting lives here; the mechanical test only prints it.
+-    pub def renderReport(findings: List[Finding], counts: List[(Role, Language, Int32, Counts)], loaded: List[(Entry, String)]): String =
+-        let rows = List.filterMap(rowLine, counts);
+-        let tail = budgetLine(loaded) :: ("attune-policy-verdict: " + verdictName(findings)) :: Nil;
+-        List.join("\n", List.map(findingLine, findings) ::: rows ::: tail)
++    pub def renderReport(findings: List[Finding], cs: List[Classified]): String =
++        let t = totalsOf(cs);
++        List.join("\n", List.map(findingLine, findings)
++            ::: (totalsLine(t) :: budgetLine(t) :: ("attune-policy-verdict: " + verdictName(findings)) :: Nil))
+ }
+diff --git a/attune/test/policy/AuditLaw.flix b/attune/test/policy/AuditLaw.flix
+index de6018a5fb..40e0193499 100644
+--- a/attune/test/policy/AuditLaw.flix
++++ b/attune/test/policy/AuditLaw.flix
+@@ -11,8 +11,8 @@
+ @Test
+ def liveWorkspaceIsAccepted(): Unit \ { Assert, IO } = {
+     let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+-    let (findings, counts) = Attune.Policy.evaluate("audit", root, loaded);
+-    println(Attune.Policy.renderReport(findings, counts, loaded));
++    let (findings, classified) = Attune.Policy.evaluate("audit", root, loaded);
++    println(Attune.Policy.renderReport(findings, classified));
+     Assert.assertEq(expected = "accept", verdictName(findings))
+ }
+ 
+diff --git a/attune/test/policy/DeclaredPolicyLaw.flix b/attune/test/policy/DeclaredPolicyLaw.flix
+index c0c2d7f906..9a983d32a3 100644
+--- a/attune/test/policy/DeclaredPolicyLaw.flix
++++ b/attune/test/policy/DeclaredPolicyLaw.flix
+@@ -10,8 +10,8 @@
+ @Test
+ def declaredSourcePopulationIsAccepted(): Unit \ { Assert, IO } = {
+     let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+-    let (findings, counts) = Attune.Policy.evaluate("declared", root, loaded);
+-    println(Attune.Policy.renderReport(findings, counts, loaded));
++    let (findings, classified) = Attune.Policy.evaluate("declared", root, loaded);
++    println(Attune.Policy.renderReport(findings, classified));
+     Assert.assertEq(expected = "accept", verdictName(findings))
+ }
+ 

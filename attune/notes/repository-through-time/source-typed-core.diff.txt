@@ -1,0 +1,311 @@
+diff --git a/attune/src/Attune/Apply.flix b/attune/src/Attune/Apply.flix
+new file mode 100644
+index 0000000000..4c450fa203
+--- /dev/null
++++ b/attune/src/Attune/Apply.flix
+@@ -0,0 +1,111 @@
++/// The one exact relation application and its genuinely instrumented local memo.
++///
++/// `Attune.Envelope` fixes identity; this module is the single evaluator that
++/// applies one directed atom to one exact frontier against one world's facts,
++/// and the one small memo that records where a repeated exact lookup really
++/// reused an earlier producer. It decides no coverage, evidence or verdict: it
++/// produces an exact typed frontier or a classified rejection, never an empty
++/// success for an illegal route.
++pub mod Attune.Apply {
++
++    use Attune.Envelope
++    use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
++
++    /// The exact identity of one memo entry: the world/semantic namespace, the
++    /// exact typed input frontier and the next atom. The ordinal and the work tag
++    /// are absent by design, so two transitions may share a key while recording
++    /// different ordinals.
++    pub type alias TransitionKey = (World, String, Frontier, Atom)
++
++    /// The frontier of `world` in `domain` over exactly `texts`.
++    pub def frontierOf(world: World, domain: Domain, texts: List[String]): Frontier =
++        match domain {
++            case Domain.Files =>
++                Frontier.Files(world, List.toSet(List.map(FileId.FileId, texts)))
++            case Domain.Symbols =>
++                Frontier.Symbols(world, List.toSet(List.map(SymbolId.SymbolId, texts)))
++        }
++
++    /// Whether `text` names a member of `frontier`, compared by nominal identity.
++    pub def holds(frontier: Frontier, text: String): Bool = match frontier {
++        case Frontier.Files(_, ids) =>
++            List.exists(id -> match id { case FileId.FileId(name) => name == text }, Set.toList(ids))
++        case Frontier.Symbols(_, ids) =>
++            List.exists(id -> match id { case SymbolId.SymbolId(name) => name == text }, Set.toList(ids))
++    }
++
++    /// Apply exactly one atom to one frontier against one world's facts.
++    ///
++    /// The atom's declared source domain must equal the frontier's domain and
++    /// every fact must belong to the frontier's world; otherwise the route is a
++    /// classified rejection, never an empty success. A legal application with no
++    /// matching fact is `Ok` of the empty frontier in the atom's target domain,
++    /// so emptiness stays a property of the answer and keeps its world.
++    pub def apply(facts: List[Fact], input: Frontier, atom: Atom): Result[String, Frontier] = {
++        let world = Envelope.worldOf(input);
++        let domain = Envelope.domainOf(input);
++        if (domain != Envelope.atomSource(atom))
++            Err(Envelope.atomName(atom) + " needs " + Envelope.domainName(Envelope.atomSource(atom))
++                + " but the current domain is " + Envelope.domainName(domain) + ".")
++        else match List.find(fact -> fact#world != world, facts) {
++            case Some(_) => Err("a fact from another world cannot apply here.")
++            case None =>
++                let targets = List.filterMap(fact ->
++                    if (fact#atom == atom and holds(input, fact#source)) Some(fact#target) else None,
++                    facts);
++                Ok(frontierOf(world, Envelope.atomTarget(atom), targets))
++        }
++    }
++
++    /// One instrumented lookup event: a cold miss that produced the answer at
++    /// `ordinal`, or a hit that reused the producer recorded at `ordinal`.
++    pub enum Lookup with Eq, ToString {
++        case Miss(Int32)
++        case Hit(Int32)
++    }
++
++    /// The exact memo: transition key, producing ordinal and exact typed output.
++    pub type alias Memo = List[(TransitionKey, Int32, Frontier)]
++
++    /// Look one exact transition up in the memo, computing it through the one
++    /// evaluator only when it is absent. The returned events are the real
++    /// lookups, in order, and the threaded ordinal is the real computation order,
++    /// so a producer reference is never fabricated.
++    pub def lookup(
++        memo: Memo,
++        next: Int32,
++        namespace: String,
++        input: Frontier,
++        atom: Atom,
++        facts: List[Fact]
++    ): (Result[String, Frontier], Memo, List[Lookup], Int32) = {
++        let key = (Envelope.worldOf(input), namespace, input, atom);
++        match List.find(entry -> match entry { case (k, _, _) => k == key }, memo) {
++            case Some(entry) => match entry {
++                case (_, ordinal, output) => (Ok(output), memo, Lookup.Hit(ordinal) :: Nil, next)
++            }
++            case None => match apply(facts, input, atom) {
++                case Ok(output) =>
++                    (Ok(output), (key, next, output) :: memo, Lookup.Miss(next) :: Nil, next + 1)
++                case Err(error) =>
++                    (Err(error), memo, Lookup.Miss(next) :: Nil, next + 1)
++            }
++        }
++    }
++
++    /// The number of cold lookups in a recorded event sequence.
++    pub def misses(events: List[Lookup]): Int32 = List.length(List.filter(isMiss, events))
++
++    /// The number of real reuse hits in a recorded event sequence.
++    pub def hits(events: List[Lookup]): Int32 = List.length(List.filter(isHit, events))
++
++    def isMiss(event: Lookup): Bool = match event {
++        case Lookup.Miss(_) => true
++        case Lookup.Hit(_)  => false
++    }
++
++    def isHit(event: Lookup): Bool = match event {
++        case Lookup.Hit(_)  => true
++        case Lookup.Miss(_) => false
++    }
++}
+diff --git a/attune/src/Attune/Envelope.flix b/attune/src/Attune/Envelope.flix
+index 47a9ec8239..a34a2696b8 100644
+--- a/attune/src/Attune/Envelope.flix
++++ b/attune/src/Attune/Envelope.flix
+@@ -16,6 +16,17 @@
+         case World(String)
+     }
+ 
++    /// A structured world identity: the canonical repository origin, the exact
++    /// content/source epoch and the frontend/resolver/admission semantics. All
++    /// three are part of identity, so a display name, a member count or an
++    /// unchecked commit alone can never establish it.
++    pub type alias WorldId = { origin = String, content = String, semantics = String }
++
++    /// The world named by one structured identity. Changing any component yields
++    /// a different world, so dirty content cannot reuse a clean world's identity.
++    pub def worldId(id: WorldId): World =
++        World.World(id#origin + "@" + id#content + "#" + id#semantics)
++
+     /// A file entity identity, valid only in the Files domain.
+     pub enum FileId with Eq, Order, ToString, Hash {
+         case FileId(String)
+@@ -43,6 +54,11 @@
+         case Callers
+     }
+ 
++    /// One directed relation fact in exactly one world. The world is part of the
++    /// fact's identity, so a same-named edge in another world is a different
++    /// fact and can never donate an edge.
++    pub type alias Fact = { world = World, source = String, atom = Atom, target = String }
++
+     /// A complete finite frontier: one world, one nominal domain and the exact
+     /// finite set of entities in that domain. The constructor fixes the domain,
+     /// so a frontier cannot pair a domain with members from another one.
+diff --git a/attune/src/Attune/Study.flix b/attune/src/Attune/Study.flix
+new file mode 100644
+index 0000000000..01f19c3348
+--- /dev/null
++++ b/attune/src/Attune/Study.flix
+@@ -0,0 +1,154 @@
++/// Study's small typed evidence and artifact values.
++///
++/// Source facts, scoped observations, separately versioned static witnesses,
++/// task declarations, predictions and execution observations are different typed
++/// owners. A witness, a complete no-match, unknown and failure stay distinct; an
++/// observation is `ObservedTrue`, `ObservedFalse` or `Unmeasured`, with a
++/// classified error kept separate; and an artifact is identified by its declared
++/// schema, producer and exact input rather than by its bytes. Nothing here reads
++/// a document, contacts a provider or decides a corpus verdict.
++pub mod Attune.Study {
++
++    use Attune.Envelope.{Atom, Fact, World}
++
++    /// One logical outcome, distinct from an answer's emptiness.
++    pub enum Outcome with Eq, ToString {
++        case Witness
++        case NoMatch
++        case Unknown
++        case Failed
++    }
++
++    /// The stable outcome name.
++    pub def outcomeName(outcome: Outcome): String = match outcome {
++        case Outcome.Witness => "WITNESS"
++        case Outcome.NoMatch => "NO-MATCH"
++        case Outcome.Unknown => "UNKNOWN"
++        case Outcome.Failed  => "FAILED"
++    }
++
++    /// How much of one scope's observation window was actually seen. `Complete`
++    /// is an honest claim that nothing else was observed; the others can never
++    /// support a complete no-match.
++    pub enum Coverage with Eq {
++        case Complete
++        case Partial
++        case Missing
++        case Failure(String)
++    }
++
++    /// One scoped question: name an entity inside exactly one scope and ask one
++    /// directed atom about it.
++    pub type alias Query = { scope = World, subject = String, atom = Atom }
++
++    /// Resolve a scoped question against a coverage claim and the observed facts.
++    /// The scope is part of the match, so a fact from another scope is never
++    /// donated.
++    pub def observe(ask: Query, coverage: Coverage, facts: List[Fact]): Outcome = match coverage {
++        case Coverage.Failure(_) => Outcome.Failed
++        case Coverage.Complete  => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.NoMatch
++        case Coverage.Partial   => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.Unknown
++        case Coverage.Missing   => Outcome.Unknown
++    }
++
++    /// A witness is a fact of exactly this scope, subject and atom. The target is
++    /// the answer, not part of the question.
++    def hasWitness(ask: Query, facts: List[Fact]): Bool =
++        List.exists(fact ->
++            fact#world == ask#scope and fact#source == ask#subject and fact#atom == ask#atom, facts)
++
++    /// How one supporting entity was obtained. Observed evidence was measured;
++    /// Proposed evidence is a hypothesis, and only Observed evidence can meet an
++    /// observed guard.
++    pub enum Status with Eq {
++        case Observed
++        case Proposed
++    }
++
++    /// One piece of evidence: a shared scoped fact plus how it was obtained. The
++    /// supporting entity is the fact's own source and the fact's scope is part of
++    /// that identity, so a same-named entity in another scope is a different one.
++    pub type alias Support = { fact = Fact, status = Status }
++
++    /// The distinct observed entities that support `branch` in exactly `scope`.
++    /// The result dedupes by entity identity, so two derivations naming one
++    /// entity are one supporter and never two.
++    pub def witnesses(scope: World, branch: String, items: List[Support]): List[String] =
++        List.distinct(List.filterMap(item ->
++            if (item#fact#world == scope and item#fact#target == branch and item#status == Status.Observed)
++                Some(item#fact#source)
++            else None, items))
++
++    /// An explicit threshold over one sealed scope: it counts only observed
++    /// entities of exactly this scope and branch.
++    pub def meets(threshold: Int32, scope: World, branch: String, items: List[Support]): Bool =
++        List.length(witnesses(scope, branch, items)) >= threshold
++
++    /// The tri-state observation component, separate from any classified error.
++    /// A missing or failed observation is `Unmeasured`, never `ObservedFalse`.
++    pub enum Observation with Eq, ToString {
++        case ObservedTrue
++        case ObservedFalse
++        case Unmeasured
++    }
++
++    /// The stable observation name.
++    pub def observationName(observation: Observation): String = match observation {
++        case Observation.ObservedTrue  => "true"
++        case Observation.ObservedFalse => "false"
++        case Observation.Unmeasured    => "unmeasured"
++    }
++
++    /// The declared schema of one produced artifact. Closed: an evaluator's gold
++    /// and a prediction input are different schemas, not interchangeable labels.
++    pub enum Schema with Eq, ToString {
++        case Embedding
++        case Prediction
++        case Gold
++    }
++
++    /// One produced artifact: declared schema, producer identity, exact input
++    /// identity and the producer's recorded payload bytes. The first three are
++    /// the artifact's identity; the payload is evidence, not the artifact's name.
++    pub type alias Artifact = { schema = Schema, producer = String, input = String, payload = String }
++
++    /// The exact identity of one artifact.
++    pub def artifactIdentity(artifact: Artifact): (Schema, String, String) =
++        (artifact#schema, artifact#producer, artifact#input)
++
++    /// A prediction input is a distinct nominal type. Only an `Embedding`
++    /// artifact yields one, and no constructor accepts a gold label.
++    pub enum PredictionInput with Eq, ToString {
++        case PredictionInput(String)
++    }
++
++    /// An evaluator gold label is its own type, sealed off from prediction.
++    pub enum GoldLabel with Eq {
++        case GoldLabel(String)
++    }
++
++    /// The single typed prediction entry point; it consumes only a prediction input.
++    pub def predict(input: PredictionInput): String = match input {
++        case PredictionInput.PredictionInput(payload) => "prediction:" + payload
++    }
++
++    /// Admit a prediction input from an artifact. Only the embedding schema yields
++    /// one; a gold- or prediction-schema artifact has no path here.
++    pub def predictInput(artifact: Artifact): Option[PredictionInput] =
++        if (artifact#schema == Schema.Embedding) Some(PredictionInput.PredictionInput(artifact#payload))
++        else None
++
++    /// The replay boundary: a re-read artifact is admitted only when its exact
++    /// identity equals the stored one, so a wrong schema or a different input
++    /// rejects instead of masquerading as the stored artifact.
++    pub def accept(stored: Artifact, candidate: Artifact): Result[String, Artifact] =
++        if (artifactIdentity(stored) != artifactIdentity(candidate)) Err("artifact identity mismatch")
++        else Ok(stored)
++
++    /// The only route by which a gold label becomes an artifact: a gold-schema
++    /// artifact, which `predictInput` refuses.
++    pub def goldArtifact(label: GoldLabel, task: String): Artifact = match label {
++        case GoldLabel.GoldLabel(text) =>
++            { schema = Schema.Gold, producer = "evaluator", input = task, payload = text }
++    }
++}

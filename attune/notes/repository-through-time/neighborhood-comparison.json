@@ -1,0 +1,70 @@
+{
+  "after": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "before": "eca979f524661cbe400d22b90c7e3c305b32052e",
+  "gained_edges": [
+    [
+      "experiments/atlas-parallelism/BUILD.bazel",
+      "src/Repository.flix"
+    ],
+    [
+      "experiments/atlas-swe-explore/BUILD.bazel",
+      "src/Repository.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "src/Repository.flix"
+    ]
+  ],
+  "lost_edges": [
+    [
+      "test/BUILD.bazel",
+      "test/Applications/InferenceBoundaryTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Applications/LocalizationTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Applications/PopulationTableTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Engine/AtlasSignatureTableTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Engine/AtlasTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Kernel/IdentityTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/Kernel/ScientificTableTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/World/GritAcquisitionTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/World/Repository.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/World/RepositoryAdmissionTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/World/RepositoryTableTest.flix"
+    ],
+    [
+      "test/BUILD.bazel",
+      "test/World/TestWorlds.flix"
+    ]
+  ],
+  "relation": "imports",
+  "status": "partial exact edge-difference witnesses from canonical remapping oracle"
+}

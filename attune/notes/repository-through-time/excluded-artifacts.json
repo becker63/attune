@@ -1,0 +1,2181 @@
+[
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/68007ef3b4b0afab17e16aa25e7419f9a66dfcfdc34745f33a4e5ded11eee2b0/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "9457b221fdacd1052ffdb385918e1bab4b10e833",
+    "sha256": "e95834a0c52ece6264d5a67cce48fa16ca844645231d3d8f1d7dbc13ac6fb796",
+    "source_identity": "source-tree-js-ts-v1:9be1b6edbde8dc0328a33bce43dede2c9bbad56ea6f02553624c34b3d37031ef",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/d72c0a5bb9de4b03af189def5922c95936c31e9a5ba4670f1214704201f4aff2/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "b17a932342bfdeeaf1dc0fbe4f436c83e258d6c8",
+    "sha256": "bc807090b6ae6ad0dfadd9c3d3c824f2a46fdbbbf9928546529571d59f6a38fa",
+    "source_identity": "source-tree-js-ts-v1:104333035766582db8710cf1c0182b0d099d7c2f4357a7437601aaf513ca186c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/08f7b2e66236ac0cd947e41a09aff9fd0a2e46468e0264b025449deff79c7f8a/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "66cb6a78776b263a2fe4d1283426e699961095d2",
+    "sha256": "e3f12a11d1cbd44a73926ad9fa2d843527fbc70a1ffd537401a40d0e7f2376ce",
+    "source_identity": "source-tree-js-ts-v1:b57143f5d007ef8e20ef97fb744d16206d7542a17781b664879560b1a9c82cc8",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/c3a5e2c93836b804fdc83372bb8762c819be9c0e0d85271119651b65edaaca8c/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "a9f7e676dc03b5008b8483e0937fc27c1af8287f",
+    "sha256": "dc518d911286b1a76162e08e41c871aaca5ea6eb7d456e8942a7aedb9d1bc3ae",
+    "source_identity": "source-tree-js-ts-v1:4e49733652ebb24d69ba51d2c0eda3ca8cb6d5e62b7e2b1a3adae142e2e61082",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/9baabc868071c0b8223fc4177c59048a03c18e14438b1b0b70ee39124a0a2b59/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "0b9a9275b47e446106e6e97c78011896f7db2a61",
+    "sha256": "df0fd91994f82d91e1d9fca7d807f1414db39af827cb2590696e5eff569f8373",
+    "source_identity": "source-tree-js-ts-v1:88ef9289239d100ab71a5e325f2b25e5fa0b76151be8bc7a2f262c9f4b4c1a2d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/740528d09425a7d614f804a48d6064e63fb2d2c083c5e300a3610448d863095e/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "db0f4f2e7a2338ea40050f623f05505a798fc1a4",
+    "sha256": "fd3ef3ab801a969a4b7d42fbf18858fd69cabf688e0987c520ac19b3a3c6cf19",
+    "source_identity": "source-tree-js-ts-v1:253d9e166904ec8ec0da58b7b39651adb66f1f5f74bbc6c6b72bfe1cdeb4a1ca",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/e92d4ebb0bdba9e510bd88eadc5a3d15879a33c5cfab3bdc274ff6238c67b22e/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "00c8d1ff1498084c15408cf0014d4c7facdb5dd7",
+    "sha256": "b7c83b4c847f8fa06e19aba6438cc295c7c770b2e51d9e9e1d2467560fb35117",
+    "source_identity": "source-tree-js-ts-v1:081960e355b8bdbc08d78ead3574fb4d35bc45c64544e9e45ab96a9fdd8e1735",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/928e5391022d6f815bf3ee80a171c73dd8855d5856c8a643c35353eedd26bf21/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "2cafedee2ddf7c73795e887ef1970df4be2bca90",
+    "sha256": "4f2cdbf18d802b8f9f24daf2c3de383ea1a68086184c331bf7d9da6b4e289920",
+    "source_identity": "source-tree-js-ts-v1:2f296d8308f2f3dcfc89e679eb5d48418277b1f4df77a2af2942ca1c22dc6c54",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/a95d2e8bccc80b6252e619899a69ca335b8c8615a846e910b96868823d5e13ee/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "c12331064f4ea967641cd5e419204422af050fbb",
+    "sha256": "f5502e46779cb9e4ada0f9b3f848dbfaff1986c8ceabcf94cba81d6615496d3d",
+    "source_identity": "source-tree-js-ts-v1:7f16ef9ccf4c526b5ae0a7e44a9a7de02a257a0ee4d07953659c42bfd26f39d2",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/4a8402c0dc2aa086687453636de9cc934c805fa68fb93dc8e2016aa3b4002c80/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "9c5a82efcc3dcbd0035c694817a3022d81264687",
+    "sha256": "7d3596e8a8f5811bb71b42f99d086aa825a3e3eb1a35f652e861d36db94abcdd",
+    "source_identity": "source-tree-js-ts-v1:11d91b862ccaaee90ffd58fbaf2fdc83541daa957797f30b8c70bca9a2182840",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/6d8a8802325288502e5890f3cdf8e2240914717d661b4809e299a1ff29d97b6c/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "e968a5a4000dfa9bec7e8d7b26543b23def6d29d",
+    "sha256": "5f07a2fb2077acfc8104b6953ddc87cf26f37765d972fac5574d3094780cd5e8",
+    "source_identity": "source-tree-js-ts-v1:73a0bf335d2cb77d9df6402b49bfe1ee4ada85dbf253d6eed43cbb8970dd8d8a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/000365e13105629d144db298591cebfc4c6cd58e546ab24d4f3bf6e836a14efe/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "9c5a82efcc3dcbd0035c694817a3022d81264687",
+    "sha256": "7d3596e8a8f5811bb71b42f99d086aa825a3e3eb1a35f652e861d36db94abcdd",
+    "source_identity": "source-tree-js-ts-v1:11d91b862ccaaee90ffd58fbaf2fdc83541daa957797f30b8c70bca9a2182840",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/7dcd08c6dcd8558e051002333932a19ab74ee48fe7d3e288acda54dad1129b89/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "a9f7e676dc03b5008b8483e0937fc27c1af8287f",
+    "sha256": "dc518d911286b1a76162e08e41c871aaca5ea6eb7d456e8942a7aedb9d1bc3ae",
+    "source_identity": "source-tree-js-ts-v1:4e49733652ebb24d69ba51d2c0eda3ca8cb6d5e62b7e2b1a3adae142e2e61082",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/4fdaac70f41803332ccc735c2a6991132882f2bdb909d1450b287b9f38b9a24d/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "00c8d1ff1498084c15408cf0014d4c7facdb5dd7",
+    "sha256": "b7c83b4c847f8fa06e19aba6438cc295c7c770b2e51d9e9e1d2467560fb35117",
+    "source_identity": "source-tree-js-ts-v1:081960e355b8bdbc08d78ead3574fb4d35bc45c64544e9e45ab96a9fdd8e1735",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/c1e88c310b4d2d00ca66f8b05c98726c0a3ccbc6285496f796377029d53b75ac/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "66cb6a78776b263a2fe4d1283426e699961095d2",
+    "sha256": "e3f12a11d1cbd44a73926ad9fa2d843527fbc70a1ffd537401a40d0e7f2376ce",
+    "source_identity": "source-tree-js-ts-v1:b57143f5d007ef8e20ef97fb744d16206d7542a17781b664879560b1a9c82cc8",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/80b1792c54806b7f668cfe99126d221f59f280188794510cb57425a54dc9bf26/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "c12331064f4ea967641cd5e419204422af050fbb",
+    "sha256": "f5502e46779cb9e4ada0f9b3f848dbfaff1986c8ceabcf94cba81d6615496d3d",
+    "source_identity": "source-tree-js-ts-v1:7f16ef9ccf4c526b5ae0a7e44a9a7de02a257a0ee4d07953659c42bfd26f39d2",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/1044506ddb4491ea06a20209ab5bce6b7a278ee23a14e5db259d9a33d6241dcf/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "0b9a9275b47e446106e6e97c78011896f7db2a61",
+    "sha256": "df0fd91994f82d91e1d9fca7d807f1414db39af827cb2590696e5eff569f8373",
+    "source_identity": "source-tree-js-ts-v1:88ef9289239d100ab71a5e325f2b25e5fa0b76151be8bc7a2f262c9f4b4c1a2d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/6e2bef41bf19f638be084df8cb82127e4832d4abbafa8ca20ebd5db9be3ac8a9/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "b17a932342bfdeeaf1dc0fbe4f436c83e258d6c8",
+    "sha256": "bc807090b6ae6ad0dfadd9c3d3c824f2a46fdbbbf9928546529571d59f6a38fa",
+    "source_identity": "source-tree-js-ts-v1:104333035766582db8710cf1c0182b0d099d7c2f4357a7437601aaf513ca186c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/8708b4d618d69f1f77980c37d9d04e2c0f4f346fd094745a72cf97861d10762a/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "e968a5a4000dfa9bec7e8d7b26543b23def6d29d",
+    "sha256": "5f07a2fb2077acfc8104b6953ddc87cf26f37765d972fac5574d3094780cd5e8",
+    "source_identity": "source-tree-js-ts-v1:73a0bf335d2cb77d9df6402b49bfe1ee4ada85dbf253d6eed43cbb8970dd8d8a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/69e49acea3491b2e42ca15990b137fed59d69f5d9fcb8022a5d91b33722e49f9/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "2cafedee2ddf7c73795e887ef1970df4be2bca90",
+    "sha256": "4f2cdbf18d802b8f9f24daf2c3de383ea1a68086184c331bf7d9da6b4e289920",
+    "source_identity": "source-tree-js-ts-v1:2f296d8308f2f3dcfc89e679eb5d48418277b1f4df77a2af2942ca1c22dc6c54",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/197d5a4deb6c1c7827e89304714830aa9be2c3f01b252d834427cb9a96ac402b/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "9457b221fdacd1052ffdb385918e1bab4b10e833",
+    "sha256": "e95834a0c52ece6264d5a67cce48fa16ca844645231d3d8f1d7dbc13ac6fb796",
+    "source_identity": "source-tree-js-ts-v1:9be1b6edbde8dc0328a33bce43dede2c9bbad56ea6f02553624c34b3d37031ef",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/409e2753ea0dddfc0db2fd2c60a4cd260302ac9e8ef1ef8a5603151a030d23df/metadata.parquet",
+    "repository": "preactjs/preact",
+    "revision": "db0f4f2e7a2338ea40050f623f05505a798fc1a4",
+    "sha256": "fd3ef3ab801a969a4b7d42fbf18858fd69cabf688e0987c520ac19b3a3c6cf19",
+    "source_identity": "source-tree-js-ts-v1:253d9e166904ec8ec0da58b7b39651adb66f1f5f74bbc6c6b72bfe1cdeb4a1ca",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/4943bd0ae6244eb047c2002220b613754986a861a52fb1c0e6e95dff4cc7f791/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "212233cb0b9127c95966492175a730d5b954690f",
+    "sha256": "249740fb1090205849581e9b82cb717ad14fc3243a24a8cf71c198ed5825ed3e",
+    "source_identity": "source-tree-js-ts-v1:185d514ca227a647cdc5d8addce94942ecd573608fa9482d1dc88ceccdfebd44",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/77818acd57c97a838fa338d8adf3f6d1b4cd22384ea2feb89498c2519f48725c/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "97f6431d60ff5e3f9168948a306036402c316fa1",
+    "sha256": "8729cba5edda999a730a6ecfc5f013c9a59a740330ef07c24cff1f9c5812cfb3",
+    "source_identity": "source-tree-js-ts-v1:ee5815bff59fa4b5d165682f224b5d5014540d92a46280ad7b444fd08b11faee",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/6deb6027a67597c39f6cea7228ac69ac4364a9e9f502600b938ac9a3535db1b7/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "8c13a0f8d48441eccdd69e41e76251478bdeab8c",
+    "sha256": "ab9a0f4396a3ec3c71ff8dc0bf69e14e8f07ca1f1ea9555464dcf98b05c99b21",
+    "source_identity": "source-tree-js-ts-v1:38f22e60597d5a0acac8e2c33b8bc0087513282db98889b517c576d8376ca08d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/db534d379c55f4475910977250f3617198f2af1a70422ab7a36956da712437d0/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "8ebdcab7d92f90422776c4390363338dcfd98ba5",
+    "sha256": "9c48132e5f9b1f59f8f54869473f4812b24e9f408a381e00d94890f591d7f865",
+    "source_identity": "source-tree-js-ts-v1:26b4e3c3503acd2182f96bdcdc14117112d126ed68746c56eeb4936912980046",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/f75b3a655da34b54ff794afe06e8b0b0ca026425689838e450bb1436bcee6ec8/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "e6fe7b7ea8aad2672854b96b5eb7fb863e19cf92",
+    "sha256": "77797164d8490873b58ffd00190e34e4a804b759597f98fb710a3afeed4e3aec",
+    "source_identity": "source-tree-js-ts-v1:372ba6afda002b599a8f67428de5fcd3a92de3cc70581780a3d3ea8b8c6372a1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/8fff13294035f5efc77be28a3a156c66391ec3a059764b3538d7eb64099e2ff2/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "53415bfdfeb9f25e6755dde2bc41e9dbca4fa791",
+    "sha256": "a7b5d2cde0b91749b92fda8d0b4135b0c4a26d7179450ff5216cf8617f79ea7b",
+    "source_identity": "source-tree-js-ts-v1:19b05277ee67106145fca043bdbd43d8beabcaeec367de888ffa7e0dc943c557",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/520350f207d718a5de4db027648c423fe699bb52b487e0b56e8cf08333feb552/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "c2ae6c279b8c80ea5bd58f3354e5949a9fa5ee41",
+    "sha256": "124b55cfcf29dce7b353f02e3fa04b3d78caf88c6d9e59ec0acb0218622db157",
+    "source_identity": "source-tree-js-ts-v1:784384ef00499e70514becff9eb133ed4f709eafcc4df1ec762b6a49f73cc02e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/96ec68d67f8a94f613b085e30ff0cca94c7e2fa3e16183c0fb4b5c1543b8dff5/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "83612dd4adeb2a4dad77655ec8969fcb1c555e6f",
+    "sha256": "2173829e1f5da27cf926d493306789f49967f75294777edf066730d035e3c44f",
+    "source_identity": "source-tree-js-ts-v1:a72d2b1dd21c1a546fda00fee864e3d517c517054ef3a255cf6849d2d73c24e4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/57a932c0fe562fc7f0ea7d90f3ea28531d9deff899376d195e82a8fdacde8a04/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "372720ec8bab38e33fa0c375ce231c67792f43a4",
+    "sha256": "40a3792585771549917c67651130ef0235a48c79f51f5748d48309a23f639ae5",
+    "source_identity": "source-tree-js-ts-v1:fde423c9c8f7811d01a3db32b01dbbddf90ef7321c1f5d9bdd54d23ddcd39ad4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/450357d824848737c27ad4b64189169d05f019ed83cfc0c4ae5d0c203f96b920/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "28f7aac9a5970d27ff3757875b464a5a58a1eb1a",
+    "sha256": "bce9db99d5ddfddaf9386c60892a1447a1207604b7d91fceab954a0bb8129ec3",
+    "source_identity": "source-tree-js-ts-v1:4c67337a0ad21d32c30b853c772cd639811491586c8393c5401906675de50e38",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/7a9114c9efea458a903c64b5c40eb48609dd56d105a3683b75f648a409f1a1c5/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "16e92a4d8cb66c10c46eb9d94d9e2b82d612108a",
+    "sha256": "faf4a8424b4d5aeb94aa8609326d2e9f4e7135ef07d4164fd4b5cec625112a4f",
+    "source_identity": "source-tree-js-ts-v1:025fc277cbf728d381d218865d514f3929d105b5ae60c1a2ad737a655c576541",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/f3f457af2343b4745354301c643cb213c92bfbd0eaf011c9280aa44a407db593/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "19b81d257f7b8b134bf5d7e555c9d5fca3570f69",
+    "sha256": "2fc6bf36e310486be461d43bc421703438f36d93736941e664d9f1764bbe6b3d",
+    "source_identity": "source-tree-js-ts-v1:dcce945b70cb0747125adddb28d65f37f82cf1b335ccb3ba06bbb0c63c5a6b01",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/8c478416d0cc6588a78c78756fd0579c1c84043c8113b9a67734eb2964f912e4/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "28f7aac9a5970d27ff3757875b464a5a58a1eb1a",
+    "sha256": "bce9db99d5ddfddaf9386c60892a1447a1207604b7d91fceab954a0bb8129ec3",
+    "source_identity": "source-tree-js-ts-v1:4c67337a0ad21d32c30b853c772cd639811491586c8393c5401906675de50e38",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/2ad7fd77595ba90034705832a91f64bf65800349797341182501c44b6d5c2075/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "83612dd4adeb2a4dad77655ec8969fcb1c555e6f",
+    "sha256": "2173829e1f5da27cf926d493306789f49967f75294777edf066730d035e3c44f",
+    "source_identity": "source-tree-js-ts-v1:a72d2b1dd21c1a546fda00fee864e3d517c517054ef3a255cf6849d2d73c24e4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/1f1fb6e8cbfb38f8d2f6f641fba3fbce89a1adfde8e9fd6b73cefd08611df23e/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "212233cb0b9127c95966492175a730d5b954690f",
+    "sha256": "249740fb1090205849581e9b82cb717ad14fc3243a24a8cf71c198ed5825ed3e",
+    "source_identity": "source-tree-js-ts-v1:185d514ca227a647cdc5d8addce94942ecd573608fa9482d1dc88ceccdfebd44",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/25054646c3f316d59634b7ef351e4cceae0e15c1ed4ad6e7b6a9e6ea07f4629f/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "372720ec8bab38e33fa0c375ce231c67792f43a4",
+    "sha256": "40a3792585771549917c67651130ef0235a48c79f51f5748d48309a23f639ae5",
+    "source_identity": "source-tree-js-ts-v1:fde423c9c8f7811d01a3db32b01dbbddf90ef7321c1f5d9bdd54d23ddcd39ad4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/be4b21ddb7b9f5c36b7d8004dee3a4592466219b32245d5d58b7e012b2a6bc8d/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "19b81d257f7b8b134bf5d7e555c9d5fca3570f69",
+    "sha256": "2fc6bf36e310486be461d43bc421703438f36d93736941e664d9f1764bbe6b3d",
+    "source_identity": "source-tree-js-ts-v1:dcce945b70cb0747125adddb28d65f37f82cf1b335ccb3ba06bbb0c63c5a6b01",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/e5bfbed1587a474108acc0a043858b1b6c6f118463bcafd6344a0d6e47e4af70/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "8c13a0f8d48441eccdd69e41e76251478bdeab8c",
+    "sha256": "ab9a0f4396a3ec3c71ff8dc0bf69e14e8f07ca1f1ea9555464dcf98b05c99b21",
+    "source_identity": "source-tree-js-ts-v1:38f22e60597d5a0acac8e2c33b8bc0087513282db98889b517c576d8376ca08d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/a2fdbccfb962d71870ef586d45621dd5428a00118b09379d96cde4d4e33ef505/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "16e92a4d8cb66c10c46eb9d94d9e2b82d612108a",
+    "sha256": "faf4a8424b4d5aeb94aa8609326d2e9f4e7135ef07d4164fd4b5cec625112a4f",
+    "source_identity": "source-tree-js-ts-v1:025fc277cbf728d381d218865d514f3929d105b5ae60c1a2ad737a655c576541",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/ff2df8a191125982b3f81183d8edba47888468c0feff1dfd555217faa858a779/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "8ebdcab7d92f90422776c4390363338dcfd98ba5",
+    "sha256": "9c48132e5f9b1f59f8f54869473f4812b24e9f408a381e00d94890f591d7f865",
+    "source_identity": "source-tree-js-ts-v1:26b4e3c3503acd2182f96bdcdc14117112d126ed68746c56eeb4936912980046",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/ea7c1240175d2dd358d6d532075055d20eeb1d10169b4fd814a0f41dd009cb1e/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "c2ae6c279b8c80ea5bd58f3354e5949a9fa5ee41",
+    "sha256": "124b55cfcf29dce7b353f02e3fa04b3d78caf88c6d9e59ec0acb0218622db157",
+    "source_identity": "source-tree-js-ts-v1:784384ef00499e70514becff9eb133ed4f709eafcc4df1ec762b6a49f73cc02e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/18c7f4c0686bfee7d0ffe6a5a8a503e14957c7896396801aa9bccfee501cdb94/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "e6fe7b7ea8aad2672854b96b5eb7fb863e19cf92",
+    "sha256": "77797164d8490873b58ffd00190e34e4a804b759597f98fb710a3afeed4e3aec",
+    "source_identity": "source-tree-js-ts-v1:372ba6afda002b599a8f67428de5fcd3a92de3cc70581780a3d3ea8b8c6372a1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/5d4287f3c0aaa688c773bd0f4684e2da11fac9a699e511a5c0a49e36e68937a0/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "97f6431d60ff5e3f9168948a306036402c316fa1",
+    "sha256": "8729cba5edda999a730a6ecfc5f013c9a59a740330ef07c24cff1f9c5812cfb3",
+    "source_identity": "source-tree-js-ts-v1:ee5815bff59fa4b5d165682f224b5d5014540d92a46280ad7b444fd08b11faee",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/482aa007034c4569f2c8f66ea1b732faa197ceab18938fa4fbdd2cd559701987/metadata.parquet",
+    "repository": "element-hq/element-web",
+    "revision": "53415bfdfeb9f25e6755dde2bc41e9dbca4fa791",
+    "sha256": "a7b5d2cde0b91749b92fda8d0b4135b0c4a26d7179450ff5216cf8617f79ea7b",
+    "source_identity": "source-tree-js-ts-v1:19b05277ee67106145fca043bdbd43d8beabcaeec367de888ffa7e0dc943c557",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/fe15e87b57595ded4604fe96ddbada298bd2618f741aa095a932c9a6db7eb63c/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "bbaf26cedc3462ef928906dc90db5cb98a3ec22e",
+    "sha256": "710322c0b83bcd475db095e0eb6fe0a8751f0bca4ce1e2613674ae2d8d3cc7b8",
+    "source_identity": "source-tree-js-ts-v1:8da4b74b7a385a0f35fac7160a36427cff4b57d7ad75c21d04a4652d3872e6e7",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/57634d3c170e70ff0836f9107fa1c2d6a867e9c11ef0502d1dcd6a9b9afbb8c9/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "f8cfe64c7e5243ac394695293d7517b0b509a4b3",
+    "sha256": "e62ff68faf1c8efddc224c8d37112889b627c49fd410b1aa94c2271c064245a6",
+    "source_identity": "source-tree-js-ts-v1:2e13d38fe79647dd3a2561a210784e788931a5c7326b7baeeac5dc6e70d74a2a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/607784ef978dcabf1b52c1d7cace1e31ed1436b6b7a220d332eb485fe2631714/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "50e1a1a7ca1d95cbf82187ff685bea8cf3966cd0",
+    "sha256": "a4b25d6fe00eb28f192328d78170ff6197c96d03706073969b3ee306f04ef8ba",
+    "source_identity": "source-tree-js-ts-v1:7706a115fa7dd276895d26613958f5a94c97c061c9df522d12b359bab2d9a9c1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/405541d510999d97261c740d5a00102a0eea845f1f77b7ca80d5354fd24cda5d/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "03a98f4de484f16d038892a0a9d2317a45e79df1",
+    "sha256": "50503e1e29aac07323abcebddf61c54718fd7c4f1dfa2ac414bcc225a31fddd6",
+    "source_identity": "source-tree-js-ts-v1:2b3adcb04b56bbad79f57adec5b2b0ab33cbb8974e458b0f5c70b0fffad8b453",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/5a3a96376dd5440779d96b76769a7c259085c50c6927de54a1c85a2f77974210/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "6ecc791db9bfbb2a22e113e4630071da87ce3c1e",
+    "sha256": "9704a1bff0f70839bab5515a17fa4ca843f8a28ce7ce8fb1f2586022aa8abbd7",
+    "source_identity": "source-tree-js-ts-v1:82d24e51d60ae5675d665cd2c5187b641f6fe9310cc188b83d31b13f2cc0a5b2",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/e7e27bd1bc1eb465d65e524b502d2da872c6b3a6923ed9d8f34c0714a27450f8/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "88aee439477603da95beb8a1cc23d43b9d6d482c",
+    "sha256": "eafa93437a445da343f14c601256ab701a452554697363433002afa51d4bb8ae",
+    "source_identity": "source-tree-js-ts-v1:b9fd7c1dcb235354d41240cbc234441b9ed98b5cbe87181094a3c0875ecbc295",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/c1aa8cfe597013523fed510bd5c0b822b8902b6bbb9a68190d8aac7a2e238c42/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "3ecbb624d892b9fce078304cf89c0fe94f8ab3be",
+    "sha256": "0a2c5110eb8add9690624d8286e160cc532b53595429d22aa5546f458e0e7b15",
+    "source_identity": "source-tree-js-ts-v1:d86ab15cb09905c1246374db40f4a5c77b9364f90066b096af3bde281bd53cc4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/3231f2526d53ac254f44acc67eba5f729bd6076a1e28320d9c649018a6d0bd81/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "d9e2190a6b4b6bef2d8d2558524dd124be33760f",
+    "sha256": "0c899300a4447c1cc62d599738293d0d7b492f0a94a0752e83f05ff68eebaaee",
+    "source_identity": "source-tree-js-ts-v1:5a08e5305b01f33b0a17960630aff340fa424bcc85b32d3af3d70785c863b046",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/0b893d525a10d5073e28d235486c2eaf28c7d47b73fb9f931e0c7caa11efdf07/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "84dfda59e6a0e8a77240f939a7cb8757e6eaf945",
+    "sha256": "a91bdca3a3bb4d43cc0211bb0663e19171c6b1a1d23c1d2212254fc43c455d05",
+    "source_identity": "source-tree-js-ts-v1:05ca7879547d885bf0d4635cf953d3c0dc2ae5f2b5c18394dbcf04de4d2e2565",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/cb613bd02e884c093781a1ae7df3da3f98f0f743db05d0463c6425e5434cba43/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "d9c42c000cd6c624794722fd55a741aff9d18823",
+    "sha256": "2b3f1b6f76e608068680645881fd5afc80fed50c1df0fbf36b6af65960e3e99c",
+    "source_identity": "source-tree-js-ts-v1:902426a299608cdf831ad1bd7d8b4a6160ba49080edb0807c2070adf5ab1276b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/9bf3596667b3040e9e6d34eccfd24aa2e361162d47c2e1bf67ecba22e4226e7a/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "779c73eadea5d4246a60ab60486d5e49164884db",
+    "sha256": "963469aa9e4dc15a896a68a6dbe296f1a560b2e176393f4b81b6310b21a2bfd6",
+    "source_identity": "source-tree-js-ts-v1:2a049c902c1ca51a401c6677af9be14c247486d3910cebffe04de1d607ca3461",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/6651385c47af1140fc2398b3c85d484cb79c534c03f2a8b0a39a239649bcfd98/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "e0149462b3f4e7c843d89701ad9edd2e744d7593",
+    "sha256": "03c86dc470b6b38f4c266afbf8f2f05937cf57e51f4e87b58104425df92174e1",
+    "source_identity": "source-tree-js-ts-v1:d5f6a31d2f245fbe233b69c1fdf3efb1a2064078e291d03496ee13dd15be5c9e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/ec20e1beaa5ce32aca55aa0e5965296f0357fdb0adc632eac8bffecb7161569b/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "163c977d2f4891fa7c4372b9f6a686b1fa34350f",
+    "sha256": "8707d6adc0dc733155624c10feb63bd5f9271aed7ec54e70c74ef99f03828010",
+    "source_identity": "source-tree-js-ts-v1:dab433d08b3f7b57ba41e854c4d0705118de859b83402bcce49dd1d5d9fb5962",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/7a71526ba6954d4ee32c8dfe2bd20f0f5627919d9d5ca171b372714d46cfa7e2/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "7f48edc02aa68c547d96ad7d6432ff8c1e359742",
+    "sha256": "562c3efa2843f1032a18307b153af249b6161a89df8ca708e7aa714fb9f2cd7f",
+    "source_identity": "source-tree-js-ts-v1:7e4d98c200a424c0271a6c94c1f18e3a3f3758005ef2c9221a94eab68662ece1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/f9c00f6291b565307811c55ede25cc6d5cb660a223770d3b0fe52a7ab8407ef9/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "6bbe3d1c4cefe56f81629dfa3343fd0a875d9cf1",
+    "sha256": "4ce93bf8dec075dedde817bdcc30c589f3d46eb90d30baedfe7d729efa342a00",
+    "source_identity": "source-tree-js-ts-v1:5e1c0e29b7f32820f227af871449d735ddee1fc41bd71243ee283f21c7e6db98",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/0363c732cbde95352e155f0743a72ee44bcb509b5d5737f4fd3ae78b4f472c2f/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "a2ebf53b6098635c3abcab3fd9144c766e32b350",
+    "sha256": "69e41b94d50dd894fa43cc46160bb5f599f7489294cc60ac67d9394260958479",
+    "source_identity": "source-tree-js-ts-v1:bd15564b5364d263c676e620437ffc94d46a26addd3aa78d92f6064a3bb53150",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/303d5097c295925a2966646ae987c323a58c2a1e2b9c0419d48f106d6f6d5ed5/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "a3e1a666b876e0b3ccbb5284dd826c8c90c113b4",
+    "sha256": "1d9b6ff9711d8b56996ebd5f682437a685321412cda132c5cba6724ecc415a80",
+    "source_identity": "source-tree-js-ts-v1:e6cd9fd45eae2090016168d2c7e9b64bec45bc52fd1eb001f24975bc3d6e6ba5",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/14ad51b429555a165d61598806a7bdf67c11c5b33f7ab9ef13c1abe1c30aa7de/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "c5ae8a70e1b0305af324ad7b1b0911d4023f1338",
+    "sha256": "7a9f5d7e10ed922ff392caaf992e104ca4b402ca1a3d4fd6a61ca8808704db70",
+    "source_identity": "source-tree-js-ts-v1:153d2e096a79845e60747c9f2ec728f09b52a7667e198f18d3a82c4f15672f5b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/99e434d5f6237fabb8568bf62c040a4b4615806b3c519a00239d1923decc8ef0/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "da2441b9bd293d7188ee645be3322a7305a43a19",
+    "sha256": "c22f6277249fa15063d425a7f0d29046968998acbc1a7108eab91589726c4ac3",
+    "source_identity": "source-tree-js-ts-v1:12bec1e3e5b251227101237d0ad32f02ae6775808ffaef6c7ff5f86950fb94b3",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/2648fda02e899c70520b2700a370265ac5d4af40b8b6dfa6d3fbf158038fa32d/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "ab5e2a416324ec56cea44b79067ba798f8394de1",
+    "sha256": "77a3908ca7bf531caaef884c0ad796d47e611c59294015f3736ab33b28d4c5f6",
+    "source_identity": "source-tree-js-ts-v1:757b33f8b94d434f5231ca82b29c29f2c7b428bee552004933eb510eb7aae11a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/ba740e85916a045e1f1a3cef90c0e70602ac7ec2089af77dc7d0e505262cd925/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "be86d8efc7fb019e707754b8b64dd6cf3517e8c7",
+    "sha256": "3427e037a3b7bf877e6917e4da2f6925288ec7579483c7302a96e2168416a340",
+    "source_identity": "source-tree-js-ts-v1:349d18bf15781c510162cc95ed7052e944319bd5d4b6a9f4e63025c7d4dc114c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/9e1cfdd2b88f943c7e0a5249208040a648a98cc0f24c6719b4c84af38a101e27/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "754965b572f33bfd864e98e4805e1182c1960080",
+    "sha256": "0883db066b41f7c69f93c9845eb8e95ec6e9064ac652967e3c32d56c1ae695b8",
+    "source_identity": "source-tree-js-ts-v1:2cca84b6f810d34983c87f5c4b0b5f95efcba0395e8c85c8134fb16d7f8e342e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/d60aff465833ebc595c2c3681e87a2a8fd3b352c0d45499f29deeec2a410e609/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "bbaf26cedc3462ef928906dc90db5cb98a3ec22e",
+    "sha256": "710322c0b83bcd475db095e0eb6fe0a8751f0bca4ce1e2613674ae2d8d3cc7b8",
+    "source_identity": "source-tree-js-ts-v1:8da4b74b7a385a0f35fac7160a36427cff4b57d7ad75c21d04a4652d3872e6e7",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/945252fe6e867e4d406e48af8ec2d7e9b025c4b63a1f878af2a976945021a29b/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "6bbe3d1c4cefe56f81629dfa3343fd0a875d9cf1",
+    "sha256": "4ce93bf8dec075dedde817bdcc30c589f3d46eb90d30baedfe7d729efa342a00",
+    "source_identity": "source-tree-js-ts-v1:5e1c0e29b7f32820f227af871449d735ddee1fc41bd71243ee283f21c7e6db98",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/b01273c831ecb224f2c459aedf2020d5487d20ec961426026d93b25e015c4186/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "88aee439477603da95beb8a1cc23d43b9d6d482c",
+    "sha256": "eafa93437a445da343f14c601256ab701a452554697363433002afa51d4bb8ae",
+    "source_identity": "source-tree-js-ts-v1:b9fd7c1dcb235354d41240cbc234441b9ed98b5cbe87181094a3c0875ecbc295",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/0a4d2c8aacbbd3762bd6976bcf91866f819881ab0aad5580d9fadfdc6bbbd973/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "da2441b9bd293d7188ee645be3322a7305a43a19",
+    "sha256": "c22f6277249fa15063d425a7f0d29046968998acbc1a7108eab91589726c4ac3",
+    "source_identity": "source-tree-js-ts-v1:12bec1e3e5b251227101237d0ad32f02ae6775808ffaef6c7ff5f86950fb94b3",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/8d83c99061722a8356c0ffdcb23976f0af9c6dc2d77131116cf5bff1dc031c0c/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "7f48edc02aa68c547d96ad7d6432ff8c1e359742",
+    "sha256": "562c3efa2843f1032a18307b153af249b6161a89df8ca708e7aa714fb9f2cd7f",
+    "source_identity": "source-tree-js-ts-v1:7e4d98c200a424c0271a6c94c1f18e3a3f3758005ef2c9221a94eab68662ece1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/72a6fb2a39b820e1d21bb2059d937358647faf44982002ab988da1df6e04b459/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "779c73eadea5d4246a60ab60486d5e49164884db",
+    "sha256": "963469aa9e4dc15a896a68a6dbe296f1a560b2e176393f4b81b6310b21a2bfd6",
+    "source_identity": "source-tree-js-ts-v1:2a049c902c1ca51a401c6677af9be14c247486d3910cebffe04de1d607ca3461",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/bb174a00f1122b9df7e4ebb958bbcad8e5bd9c1842bb8da9add37a00f034747d/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "ab5e2a416324ec56cea44b79067ba798f8394de1",
+    "sha256": "77a3908ca7bf531caaef884c0ad796d47e611c59294015f3736ab33b28d4c5f6",
+    "source_identity": "source-tree-js-ts-v1:757b33f8b94d434f5231ca82b29c29f2c7b428bee552004933eb510eb7aae11a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/f73daccf345e592d08fdcb534b830943dbe1a30c60b1b9cefbd1cbfa6d97ed33/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "d9e2190a6b4b6bef2d8d2558524dd124be33760f",
+    "sha256": "0c899300a4447c1cc62d599738293d0d7b492f0a94a0752e83f05ff68eebaaee",
+    "source_identity": "source-tree-js-ts-v1:5a08e5305b01f33b0a17960630aff340fa424bcc85b32d3af3d70785c863b046",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/55d7a8cefbffbce2fd6aed9ed500e8473d5dc49b8f9308f1eede358dd1593911/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "3ecbb624d892b9fce078304cf89c0fe94f8ab3be",
+    "sha256": "0a2c5110eb8add9690624d8286e160cc532b53595429d22aa5546f458e0e7b15",
+    "source_identity": "source-tree-js-ts-v1:d86ab15cb09905c1246374db40f4a5c77b9364f90066b096af3bde281bd53cc4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/43d1969f5d5b33ddcee39867475aaf1fdde2042171e2425b339e9b2fbffb8e5a/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "03a98f4de484f16d038892a0a9d2317a45e79df1",
+    "sha256": "50503e1e29aac07323abcebddf61c54718fd7c4f1dfa2ac414bcc225a31fddd6",
+    "source_identity": "source-tree-js-ts-v1:2b3adcb04b56bbad79f57adec5b2b0ab33cbb8974e458b0f5c70b0fffad8b453",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/d81af495867cd7415488f697c081ce31ea2241c54bced4a8b496d67a894d2178/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "a2ebf53b6098635c3abcab3fd9144c766e32b350",
+    "sha256": "69e41b94d50dd894fa43cc46160bb5f599f7489294cc60ac67d9394260958479",
+    "source_identity": "source-tree-js-ts-v1:bd15564b5364d263c676e620437ffc94d46a26addd3aa78d92f6064a3bb53150",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/f4f3fb7417a2711fb1cf379687841dab491f79755758f47824920cb11ea7b0ed/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "6ecc791db9bfbb2a22e113e4630071da87ce3c1e",
+    "sha256": "9704a1bff0f70839bab5515a17fa4ca843f8a28ce7ce8fb1f2586022aa8abbd7",
+    "source_identity": "source-tree-js-ts-v1:82d24e51d60ae5675d665cd2c5187b641f6fe9310cc188b83d31b13f2cc0a5b2",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/4b14c05228d2c59e68c2aaa978fb7d655aed032a75804f35ac94389520607084/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "c5ae8a70e1b0305af324ad7b1b0911d4023f1338",
+    "sha256": "7a9f5d7e10ed922ff392caaf992e104ca4b402ca1a3d4fd6a61ca8808704db70",
+    "source_identity": "source-tree-js-ts-v1:153d2e096a79845e60747c9f2ec728f09b52a7667e198f18d3a82c4f15672f5b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/cb161a51dc34e3348154b57d2c4e6882552e5d5e5c9253dfd0e867c6aea5251b/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "e0149462b3f4e7c843d89701ad9edd2e744d7593",
+    "sha256": "03c86dc470b6b38f4c266afbf8f2f05937cf57e51f4e87b58104425df92174e1",
+    "source_identity": "source-tree-js-ts-v1:d5f6a31d2f245fbe233b69c1fdf3efb1a2064078e291d03496ee13dd15be5c9e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/47676c68fbccfe9e87212f9d2225a33ccc4d975a182f5c7d99742069c6bb02e0/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "d9c42c000cd6c624794722fd55a741aff9d18823",
+    "sha256": "2b3f1b6f76e608068680645881fd5afc80fed50c1df0fbf36b6af65960e3e99c",
+    "source_identity": "source-tree-js-ts-v1:902426a299608cdf831ad1bd7d8b4a6160ba49080edb0807c2070adf5ab1276b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/2d10a775f9683c1ae129907d2ed2345469363a0553b9cee91c210413aacf6c8e/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "be86d8efc7fb019e707754b8b64dd6cf3517e8c7",
+    "sha256": "3427e037a3b7bf877e6917e4da2f6925288ec7579483c7302a96e2168416a340",
+    "source_identity": "source-tree-js-ts-v1:349d18bf15781c510162cc95ed7052e944319bd5d4b6a9f4e63025c7d4dc114c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/c39f4787c4aad99b5033c759a3a9acb952f98d199b06d58ffdb231f058760d4e/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "163c977d2f4891fa7c4372b9f6a686b1fa34350f",
+    "sha256": "8707d6adc0dc733155624c10feb63bd5f9271aed7ec54e70c74ef99f03828010",
+    "source_identity": "source-tree-js-ts-v1:dab433d08b3f7b57ba41e854c4d0705118de859b83402bcce49dd1d5d9fb5962",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/29e9da075af8f7bed29e7fdc29b7239fc39b633ef37658be4dd3200802df24f7/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "84dfda59e6a0e8a77240f939a7cb8757e6eaf945",
+    "sha256": "a91bdca3a3bb4d43cc0211bb0663e19171c6b1a1d23c1d2212254fc43c455d05",
+    "source_identity": "source-tree-js-ts-v1:05ca7879547d885bf0d4635cf953d3c0dc2ae5f2b5c18394dbcf04de4d2e2565",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/8037ac6f92441b6ba2c9c85ca3cdd7f469430c8c1337a783b44985f6b180829e/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "a3e1a666b876e0b3ccbb5284dd826c8c90c113b4",
+    "sha256": "1d9b6ff9711d8b56996ebd5f682437a685321412cda132c5cba6724ecc415a80",
+    "source_identity": "source-tree-js-ts-v1:e6cd9fd45eae2090016168d2c7e9b64bec45bc52fd1eb001f24975bc3d6e6ba5",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/962ea6c586b06ccf757b5a22fc7d8eb6a6d69f549949ecd15bfe7b58d5279621/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "50e1a1a7ca1d95cbf82187ff685bea8cf3966cd0",
+    "sha256": "a4b25d6fe00eb28f192328d78170ff6197c96d03706073969b3ee306f04ef8ba",
+    "source_identity": "source-tree-js-ts-v1:7706a115fa7dd276895d26613958f5a94c97c061c9df522d12b359bab2d9a9c1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/ee4256c77f74bb7406db66a8f952d5caad16e8616072c92c82384dfe873797f7/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "f8cfe64c7e5243ac394695293d7517b0b509a4b3",
+    "sha256": "e62ff68faf1c8efddc224c8d37112889b627c49fd410b1aa94c2271c064245a6",
+    "source_identity": "source-tree-js-ts-v1:2e13d38fe79647dd3a2561a210784e788931a5c7326b7baeeac5dc6e70d74a2a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/d13b9c7923b4753ff87cabfe722a0c6b928a50ed9dffebbda85ccb8d3641d9ed/metadata.parquet",
+    "repository": "NodeBB/NodeBB",
+    "revision": "754965b572f33bfd864e98e4805e1182c1960080",
+    "sha256": "0883db066b41f7c69f93c9845eb8e95ec6e9064ac652967e3c32d56c1ae695b8",
+    "source_identity": "source-tree-js-ts-v1:2cca84b6f810d34983c87f5c4b0b5f95efcba0395e8c85c8134fb16d7f8e342e",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/6b02c81f6cfbeafe5b0364cc476ff265e8424191de9eb2cc1376501ab9ce9722/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "02e38d8ccf7811af27a9c15ddbadf4d26cfc0eab",
+    "sha256": "8bace01b201d145cb906162fba36e7a49ff04b95d688b5065bf71ca9b9ab4aa1",
+    "source_identity": "source-tree-js-ts-v1:c8ec36ab257711451b63d0de433638a248d76c7bc8d850e82d90d7bd50fff1fd",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/dbbe9b53cc6f6442e20c4bbfbf2fe050802a86afc7e2da3d521b544e0a683b78/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "0589b1475d56b0b541348aa56f201ec7c56c56d5",
+    "sha256": "3cd7ddef60c13c6662977e1d805d5ee478256e5de89fba74658a0e31cda122b5",
+    "source_identity": "source-tree-js-ts-v1:7b33f83fc5f9eaed8b21e468ff8eecbb57f491400231492d03ec0a00225ee63b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/527115c931f274a4324a0e00e2230b94526837a6a40ce66a1a99d54382d948ef/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "5e9e1d051b2217b95498ecbc10f7e33f64e7a4d3",
+    "sha256": "61c698bf4d111605e522a58e488e06b21f60e9ad2fc8708d992b346b72e2b2c8",
+    "source_identity": "source-tree-js-ts-v1:4986fc15aab953453236f3366943bc3ba83b72ae42a2a9ba20703a5b2cf13f1f",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/b9dd309ede3789e905993b104f3d9ff206a8810300c413fc3d467bbb1c2a1780/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "5e9e1d051b2217b95498ecbc10f7e33f64e7a4d3",
+    "sha256": "61c698bf4d111605e522a58e488e06b21f60e9ad2fc8708d992b346b72e2b2c8",
+    "source_identity": "source-tree-js-ts-v1:4986fc15aab953453236f3366943bc3ba83b72ae42a2a9ba20703a5b2cf13f1f",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/bc01d02e8d9bea47c2f2f8628d391c32e7b56a072143f6cdc24f027c51384113/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "0589b1475d56b0b541348aa56f201ec7c56c56d5",
+    "sha256": "3cd7ddef60c13c6662977e1d805d5ee478256e5de89fba74658a0e31cda122b5",
+    "source_identity": "source-tree-js-ts-v1:7b33f83fc5f9eaed8b21e468ff8eecbb57f491400231492d03ec0a00225ee63b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/19fa623c87d7c746cf5b4af08f5b92c9fede4cd02f2e0772da95d223c1b52313/metadata.parquet",
+    "repository": "facebook/docusaurus",
+    "revision": "02e38d8ccf7811af27a9c15ddbadf4d26cfc0eab",
+    "sha256": "8bace01b201d145cb906162fba36e7a49ff04b95d688b5065bf71ca9b9ab4aa1",
+    "source_identity": "source-tree-js-ts-v1:c8ec36ab257711451b63d0de433638a248d76c7bc8d850e82d90d7bd50fff1fd",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/c5ae94f4f943f8a31d16c625be5c4a4f892860827bc7244afde9626f6896c60a/metadata.parquet",
+    "repository": "immutable-js/immutable-js",
+    "revision": "493afba6ec17d9c999dc5a15ac80c71c6bdba1c3",
+    "sha256": "d9ccaa6298d01d4ae4f19a6f40b7909d62f9ce302caf2b44f889b148331e1ed0",
+    "source_identity": "source-tree-js-ts-v1:3ce873400be177179bbf1799720ef206de9c22280ba0cf9bf74e6df05715bc9f",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/5beac9676cbe021f8e4671b40ecbba0e59e04502639ae67433b859b619d1cab6/metadata.parquet",
+    "repository": "immutable-js/immutable-js",
+    "revision": "77434b3cbbc8ee21206f4cc6965e1c9b09cc92b6",
+    "sha256": "1bde007c71d375bf8d91ef954b289a5d8632f1cc618bfb901bf731adaed2de28",
+    "source_identity": "source-tree-js-ts-v1:1e9b61a2423da98af5ccc3dc0fb0a93720473f2380e8c810ac1e9489e3b6571b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/975db8fff535fc05f8590cff0927c3023de27ade911bc314ae3f9a1bbc39fffe/metadata.parquet",
+    "repository": "immutable-js/immutable-js",
+    "revision": "493afba6ec17d9c999dc5a15ac80c71c6bdba1c3",
+    "sha256": "d9ccaa6298d01d4ae4f19a6f40b7909d62f9ce302caf2b44f889b148331e1ed0",
+    "source_identity": "source-tree-js-ts-v1:3ce873400be177179bbf1799720ef206de9c22280ba0cf9bf74e6df05715bc9f",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/f0d3c13774ad53f40a97c6e74c61e2705718cdd2b215560b9ede898df79c22da/metadata.parquet",
+    "repository": "immutable-js/immutable-js",
+    "revision": "77434b3cbbc8ee21206f4cc6965e1c9b09cc92b6",
+    "sha256": "1bde007c71d375bf8d91ef954b289a5d8632f1cc618bfb901bf731adaed2de28",
+    "source_identity": "source-tree-js-ts-v1:1e9b61a2423da98af5ccc3dc0fb0a93720473f2380e8c810ac1e9489e3b6571b",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/5b6561eee762745bd307fbca80750cc3bc3ae9f300ef16f18d0d5bdf209b5ce4/metadata.parquet",
+    "repository": "axios/axios",
+    "revision": "85740c3e7a1fa48346dfcbd4497f463ccb1c1b05",
+    "sha256": "97e3a4ff4e06d0689fe1372c279b9f7f9852a2c9384968ea64e9e572d5c07969",
+    "source_identity": "source-tree-js-ts-v1:c137dc7fe64304f3055e6f2bb259125b483915f4620633a94eda5a8b6fa264cd",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/af48d16e4cbc1a32faafb5f2c84b31982b6ca485d0bf2b91d7452d6818c63f14/metadata.parquet",
+    "repository": "axios/axios",
+    "revision": "c30252f685e8f4326722de84923fcbc8cf557f06",
+    "sha256": "69af97112453b505e535c8ca07295e9bb9619b62e031591acd8fe60bb7c0ba25",
+    "source_identity": "source-tree-js-ts-v1:6263b0ef1ef967b350b9674f45766b073c7945e7f80863236cad126445341e8c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/af4495290bbce5f65c9fd59841254c0fb0460bda2f72ba2cb42658416c3520a6/metadata.parquet",
+    "repository": "axios/axios",
+    "revision": "85740c3e7a1fa48346dfcbd4497f463ccb1c1b05",
+    "sha256": "97e3a4ff4e06d0689fe1372c279b9f7f9852a2c9384968ea64e9e572d5c07969",
+    "source_identity": "source-tree-js-ts-v1:c137dc7fe64304f3055e6f2bb259125b483915f4620633a94eda5a8b6fa264cd",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/1e44a1c45ec4a91bb7774dc6d37a2846a5f56262b6fa7ae5722bcbcc15ba10c7/metadata.parquet",
+    "repository": "axios/axios",
+    "revision": "c30252f685e8f4326722de84923fcbc8cf557f06",
+    "sha256": "69af97112453b505e535c8ca07295e9bb9619b62e031591acd8fe60bb7c0ba25",
+    "source_identity": "source-tree-js-ts-v1:6263b0ef1ef967b350b9674f45766b073c7945e7f80863236cad126445341e8c",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/175db21d2cd5b358e17cecc4c86dea948d4a430256b15ebae031cd9ae8a4aecd/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "782d01551257eb0a373db3b2d5c39612b87fa7e9",
+    "sha256": "15d65fb254a68068972a9e82f106a89d217bd16c6ffe129c80a4679e40c4c218",
+    "source_identity": "source-tree-js-ts-v1:fab7fc9a01e9c44161fa90727f93e01461d4f292c1230fe5c47c0e358da9370d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/2a6a91f37334c7370bc54fa4c26370f1a4890ed3b93ce48ddcaaaf4a7d0a79ea/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "a118161e912592cc084945157b713050ca7ea4ba",
+    "sha256": "ccfe72c809a358f5d2614fcde2dbf1d51b242a64cceb0c222cee8d28c335b1c5",
+    "source_identity": "source-tree-js-ts-v1:75d58dd62ea26a74949a4f42bb92019e50840fffb2946c6f73a981ac306d2d1d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/cc58720ea92864bd85f9ac608e389a889e7a2a3d4e9fe71ab56ba9638b5b89db/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "41f29d1c8dad68d693d2e3e10e5c65b6fb780142",
+    "sha256": "f11f65c4c97e96ec9a0ea3712d3f9b5b80f074ed5b1560291b90391455698406",
+    "source_identity": "source-tree-js-ts-v1:423e4ebf55036804062a7547ca6fd806e64f0ff547c459c01021ad77bb540f36",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/e340eb56a90c936d4a5879ec37f471260b07abeb021a11a29e2f3db0d1e35520/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "ebed8ea9f69216d3ce996dd88457046c0a033caf",
+    "sha256": "ff0ed51e66f32c2070d9bb5648f386370e7fa5fe074c360fa661658ce408c2ef",
+    "source_identity": "source-tree-js-ts-v1:05fa6c316e581b5ca9f32ee3598aa17678df733eec331231c1d0f4851ee5ec63",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/262ffb4d4159c53a19b0a2d0e17ba255ad915e6c6c658c91b680e42aa3f6d5d1/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "a5e37d3fe77abd2279bea864bf57f8d641e1777b",
+    "sha256": "f114a260db62ffe808189cdaadec9490977e9fc8a8f27683503ce8fafad3c022",
+    "source_identity": "source-tree-js-ts-v1:c3183ba4282d3e830bc85c3afa3dd82a272b86ced49de6685e36776e415fadfa",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/0cc7b7c20b18e7bd7980c4510936b82c6d2a42556bbf86bacb56c23cfd87e6f1/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "21b45bd4378834403ad9e69dc91605c21f43438b",
+    "sha256": "aa3723e8ca2a630601a2ce5bb2d98225cc98e69ad14fd968a50bd38d9e27875b",
+    "source_identity": "source-tree-js-ts-v1:34f99c2cfc2cfa0de9fa9f3d95fa53f1aafa7371f1601bee4a42f42c085de755",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/accf5131f33552a6d04eff95d31291c1a10f47a2ac05b625004fd7e50da33881/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "078178de4df1ffb606f1fc5a46bebe6c31d06b4a",
+    "sha256": "8a96734d0dbae7bde75b57c615b54e7a17e67b9b8dcfe840a23d56ef095e7f56",
+    "source_identity": "source-tree-js-ts-v1:e8be839e14f9e5edfd0e21a726552d37b489cb2d7bf75accf3b311dec25c10f8",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/54bbe0595be03ec61e2571706708686925ddbc600bbb001d6d60942dc6e71ede/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "a118161e912592cc084945157b713050ca7ea4ba",
+    "sha256": "ccfe72c809a358f5d2614fcde2dbf1d51b242a64cceb0c222cee8d28c335b1c5",
+    "source_identity": "source-tree-js-ts-v1:75d58dd62ea26a74949a4f42bb92019e50840fffb2946c6f73a981ac306d2d1d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/5186c9010641e075f7ffc0d7b0f0752b8260f64862e3e5e9f1ec6b592313844f/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "7ff95b70115415f47b89c81a40e90b60bcf3dbd8",
+    "sha256": "75e51c0b70029880194856ae87f046a8081a23cdff14ca97cb02814ad9c233ea",
+    "source_identity": "source-tree-js-ts-v1:fe46578e5c9456a578ac1611939e28eb15f7fda37b04cb3cfca0e4c0ceedb834",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/bde468c0e909ebddbe2138914e2caa0619df93dbeac23ba765a4c701c6554e80/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "c35133622a7950d2aa96d1db03ad8b96ccd65df9",
+    "sha256": "724149223ae13efd2c169abaaff0813f09072a4b7dfd2892bcae2bd7e42d15a1",
+    "source_identity": "source-tree-js-ts-v1:31fecb057165d0a55c7042242e07921afce0e229f3e61e6dc436cbce9609ea86",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/50b27b40a91c9d9267da9d5b2620101e4798ef8f819c6e549f32b5f0da02d0ca/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "52ada0340f0ae0869ef1e3b92e1cc4c799b637cf",
+    "sha256": "5b4e20a0cfab7f74df5dd5fd1b6f01e42748e55f14b39dffa7e626588ef90f02",
+    "source_identity": "source-tree-js-ts-v1:e2c1ae40a31c5e7c6182c8359aa192960d0604cec95a9217f282a26596814ee1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/2d1fa59b3248944c7ea360bc178a689cddf1fe733db9d3dca1e34529c1939157/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "c40dccc34870418e29f51861a38647bc1cbdf0a8",
+    "sha256": "cdaf15454b7ab8c8d0d52996586dc2e46ce3b41b4550ed0f361f5290c31e8d5d",
+    "source_identity": "source-tree-js-ts-v1:c83ba18665a8b4087a30b85c348d5c67575ef726de871a6d5cdbf5d331c75bd1",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/e87245df2ce6b98863e6644cf146b0cc6992c7a5fdce6a067b997b3e75004230/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "3f9771dd682247118e66e9e27bc6ef677ef5214d",
+    "sha256": "93e4c21782d4594d0237b536334892481abe80bc5e88f9f3649fa734c5aa9535",
+    "source_identity": "source-tree-js-ts-v1:36f3bf73fb86d65a733f2f86d1ff24ea24140bbd1baa305a5d029f4bbeef177d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/d88ee1076ffd84be98861f5002bbc14c55d667dd31ac773911c490f8cd33d41d/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "7264c6bd7f515ae4609be9a5f0c3032ae6fe486a",
+    "sha256": "11c7ce2221e1c67a4d0c4fc8e2bdb0d122cdf651e2527db9dc95bae4ebd05503",
+    "source_identity": "source-tree-js-ts-v1:9face03896516dc70bf6e2ff858edeb82dfb36ff04a152dde459238d6e52cf25",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/e37e024c1844c2b2f4e4221ead91b3aa396db23e7a4fa1b6e9bbe12238bfa1dc/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "e131cde781c398b38f649501cae5f03cf77e75bd",
+    "sha256": "851ed152a283b47b8d159038f7da7d2322f455798aaf0503ce9c46930dffa784",
+    "source_identity": "source-tree-js-ts-v1:960b61282e6e828ab2897b62189cc59749a53186ae64e38d30bb37c12584f917",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/a57d483946f45be372495cb0243cf4b5903726bdfea1909b01ff6a161864659a/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "782d01551257eb0a373db3b2d5c39612b87fa7e9",
+    "sha256": "15d65fb254a68068972a9e82f106a89d217bd16c6ffe129c80a4679e40c4c218",
+    "source_identity": "source-tree-js-ts-v1:fab7fc9a01e9c44161fa90727f93e01461d4f292c1230fe5c47c0e358da9370d",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/e798747366601b55aa909a8724b64a2949accb6421a45f773251055d1e0313fa/metadata.parquet",
+    "repository": "protonmail/webclients",
+    "revision": "41f29d1c8dad68d693d2e3e10e5c65b6fb780142",
+    "sha256": "f11f65c4c97e96ec9a0ea3712d3f9b5b80f074ed5b1560291b90391455698406",
+    "source_identity": "source-tree-js-ts-v1:423e4ebf55036804062a7547ca6fd806e64f0ff547c459c01021ad77bb540f36",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/921edc365f757f70f8748a996c392e93c4f334d4345d00eb54fdec7f0447fc0c/metadata.parquet",
+    "repository": "mrdoob/three.js",
+    "revision": "8d9f8d50b923d5f8a673590ae138bc5d86a3a256",
+    "sha256": "522a3d5c0ba1bb35dbfb71c8eb82ceff1385db2f5db17d3b5b2d513a070fd55b",
+    "source_identity": "source-tree-js-ts-v1:0d06fca1a4487ae818f03ce26709b278af285911ca90aa7d55d747cb623fdf71",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/2bb09ed8046555f07959d0e9a60838e4ac2fbf9005d0ba8a34f5b830885932f9/metadata.parquet",
+    "repository": "mrdoob/three.js",
+    "revision": "b99b3fd955864f534b1e2649518112f7e50fef21",
+    "sha256": "55478ee85776e7bab47615a29fa2e3b34261ee3b7c407351ffbe91a449f01ace",
+    "source_identity": "source-tree-js-ts-v1:7ca2d93376273b2410dc909ed92e0e025ce1bd47adb0cc5d1abc82fd2bf1ab08",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/0ba18a217eefcafd6ba5afe527e293f53643e7b6d5d6e3ae48cf9ad2e5e3171a/metadata.parquet",
+    "repository": "mrdoob/three.js",
+    "revision": "b99b3fd955864f534b1e2649518112f7e50fef21",
+    "sha256": "55478ee85776e7bab47615a29fa2e3b34261ee3b7c407351ffbe91a449f01ace",
+    "source_identity": "source-tree-js-ts-v1:7ca2d93376273b2410dc909ed92e0e025ce1bd47adb0cc5d1abc82fd2bf1ab08",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/c09c5aceb7270db20383531fa1c5f16b9e592b3592cabb62da376e8a9a41a872/metadata.parquet",
+    "repository": "mrdoob/three.js",
+    "revision": "8d9f8d50b923d5f8a673590ae138bc5d86a3a256",
+    "sha256": "522a3d5c0ba1bb35dbfb71c8eb82ceff1385db2f5db17d3b5b2d513a070fd55b",
+    "source_identity": "source-tree-js-ts-v1:0d06fca1a4487ae818f03ce26709b278af285911ca90aa7d55d747cb623fdf71",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v0-path-keyed/3a5f9170165da6f9b6010b524faab407b6bc0d251568dca95eb2a7051d2290cd/metadata.parquet",
+    "repository": "babel/babel",
+    "revision": "5134505bf93013c5fa7df66704df8d04becb7f7d",
+    "sha256": "a0702535ed8629f5705deae554de16f4f8dd533e509a876639d937307de42018",
+    "source_identity": "source-tree-js-ts-v1:dfea6a8a1538c7240f8dad90b7d5765560915d07c5e381ea93002f60c00c52df",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/002a462e6f58440bbf60071f1e945b38bb304fe46a38ca6fdfd578248693cf01/metadata.parquet",
+    "repository": "babel/babel",
+    "revision": "5134505bf93013c5fa7df66704df8d04becb7f7d",
+    "sha256": "a0702535ed8629f5705deae554de16f4f8dd533e509a876639d937307de42018",
+    "source_identity": "source-tree-js-ts-v1:dfea6a8a1538c7240f8dad90b7d5765560915d07c5e381ea93002f60c00c52df",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/38cc6652f9833888aecbff584b825a5baadde579abb249860e0a6157d7221839/metadata.parquet",
+    "repository": "tutao/tutanota",
+    "revision": "7ebf14a3432c8f0d8b31d48968a08d055bec2002",
+    "sha256": "4336069a12f6c218b2176a53d362bd6261e2597025e2fdb09f6f618546df39ce",
+    "source_identity": "source-tree-js-ts-v1:e122ef3c2ec0560ddcc54488b834691587a19ed76fad57049a5caca987718fd4",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/1b1bc8349e395c8776a0ad6200d81355c753e089ef067543ebf37cbba0949171/metadata.parquet",
+    "repository": "tutao/tutanota",
+    "revision": "376d4f298af944bda3e3207ab03de0fcbfc13b2f",
+    "sha256": "f482e4a16f6644c03f30e4d4e75c0b61e0fef4f090b1c5244853ff5f935ac3d5",
+    "source_identity": "source-tree-js-ts-v1:3400a8948fd1c0f631d109b3799ce1b8044dce41ddf038a76531a118f0ee2222",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/45b8021a93812ab4080edeb1f8ebfcb1acad5ffe4d6d7122a30179a7e409c578/metadata.parquet",
+    "repository": "tutao/tutanota",
+    "revision": "26c98dd37701c1c657edec33465d52e43e4a05cb",
+    "sha256": "d5e0972642665245a68d296a995f6e23f91181c4abd0fd09917ebf02d72e07d5",
+    "source_identity": "source-tree-js-ts-v1:071705d26d45ce3a08691f7dc4f9a3b4755ea97562cf4b704ab31fc0b1404110",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/1dd4f1023c7ec84511b472dc4d888f653fcba7c3cfa07bed8fd24b19f3b5c166/metadata.parquet",
+    "repository": "tutao/tutanota",
+    "revision": "9dfb7c231f98a2d3bf48a99577d8a55cfdb2480b",
+    "sha256": "d4adfe43b7b30de170579c9f522e31f9d0cd358e75f8cd2ae127ee32e9a4a6a9",
+    "source_identity": "source-tree-js-ts-v1:dca10056964a01afaf45468bef15fd2a2bfcca9a02ef8e59b31339dda20d32e5",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/6fa65b34fcfd9e959d1cbf442c513bc2648cae8fe87ddd0c4a1217206d65ad17/metadata.parquet",
+    "repository": "tutao/tutanota",
+    "revision": "5f77040986114d0ed019e58cab6ddf5152e55dbb",
+    "sha256": "76fc49c1542faa0e5d102c318e96c53d7a5221ae24c858e5c7bf624251b5176b",
+    "source_identity": "source-tree-js-ts-v1:34c6b0cc22903b20c0d4f5f5547287deddc80aae4338ff54829d5a460a44d5e5",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/678f8ed4bfb9dda19f2f538fe1248da1ae809a11675498575a989b3b3744a9f3/metadata.parquet",
+    "repository": "vuejs/core",
+    "revision": "d0b513eb463f580e29378e43d112ff6859aa366e",
+    "sha256": "335a9d7d5ab61b6482ca1c9fd232f8afbaa6b0f2d2cee14de208a4cc415412b4",
+    "source_identity": "source-tree-js-ts-v1:6fdb56d12203835e9ebd06a21a1f7ef01498ca9c15b0378e86a06c7a1db2aa4a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/9335add06b4ab87b65c8dbffb8aae507f77073e0b89eab4dcd8e1842782e8232/metadata.parquet",
+    "repository": "vuejs/core",
+    "revision": "cb843e0be31f9e563ccfc30eca0c06f2a224b505",
+    "sha256": "c00c1404339ed6faacd52d62b11b8973f0c01d22cd31edf6ab90988cb5e6cc18",
+    "source_identity": "source-tree-js-ts-v1:0b44611f9d0a6bdb3c0d100fbde6a8f3946bc56ba11207f4c4e5f5f5ae47ef9f",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/3b5f437f41ce2dfe1328116a893b4cada05008f1210045630bef2ed1546038d3/metadata.parquet",
+    "repository": "vuejs/core",
+    "revision": "67d6596d40b1807b9cd8eb0d9282932ea77be3c0",
+    "sha256": "a3d2802fe70389bbcee9d2be65698942bc6f6b4c95e178108ebc98f1a094da55",
+    "source_identity": "source-tree-js-ts-v1:c5681c6eeb4b34b1fba4085666bfddd431af60662eb27329dcf6826a00c22de6",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/.attune/repository-world-v1/96c87d8880052c38779278f3f6da6b143c57f5f8fc252f529321c73fdfb32510/metadata.parquet",
+    "repository": "vuejs/core",
+    "revision": "3653bc0f45d6fedf84e29b64ca52584359c383c0",
+    "sha256": "3c9ecdafcc5a8eee48d945dd315db88ab10dc04cdddd8ff73d3eb8777b04e50a",
+    "source_identity": "source-tree-js-ts-v1:00417218678682b50e8ae6a5a31f98cb904284705c6cb8c1682b3c1cc37d5d8a",
+    "status": "external_repository_not_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/6e24b69312138456e50de12776f6a0c1e74933514e01d9612c20e138c39a406e/snapshots.parquet",
+    "repository": "attune-final-topology/A",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "83e1a83b9e7de2c52cb3c140f3cf2154d7a4224885c955ac1ed3263af1eb1d93",
+    "source_identity": "final-topology-sources-v1:55db7549ed4d87d4c6ce60ddbce56840681e2dca458ea01e6d23c96be17de716",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/abfe5701c4dacc7659c2e93aa59b635e8e0d33bf671c35b5ed063c6712666f32/snapshots.parquet",
+    "repository": "attune-final-topology/A",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "bd4019a0f67c223a95bdc7a2caff0a87351653857d6e8ec0e2a4fb002dd1dedd",
+    "source_identity": "final-topology-sources-v1:90d6c0e74d8e3cfbadac7e0384b8bd5c10bbb66e4aea56a79e00370d15845087",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/c75930d9d8ce860ee2528e6a098f6cfc3283c3286832c5cd2b5004fe4e119af7/snapshots.parquet",
+    "repository": "attune-final-topology/B",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "45d23d143df877706a5787810f459e5811cd263e0ef84d4f09d71e2ae053b29b",
+    "source_identity": "final-topology-sources-v1:b4bccc6a4329ef13ed6c9b6a04b9f7af5686b9a3edd01ef0f0813ef47b36be26",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/db181956d422f283b2e37d068c6f9f2dcfaf1ee3a2b9507c5f7c70d77b72ddf7/snapshots.parquet",
+    "repository": "attune-final-topology/B",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "94d36fb9b560df6d01723e18f674fbc920dc5936ce5d689646a3119a57861337",
+    "source_identity": "final-topology-sources-v1:8310a94fb1d0527b6fa8dda664c82c0ba1cb6773b4e98f8dd45a641f96bc5c90",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/2b62fcf59f0775eafc2f0354d5e8576f68ec82ad2fb5b932e3e8246dd953f829/snapshots.parquet",
+    "repository": "attune-final-topology/C",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "6ef0c4f2ec4c03b11e2e56d7120e25298968134027ead99b3a29df1f57af96d3",
+    "source_identity": "final-topology-sources-v1:f4c9b66fd98ca6e26bfc2adfcf8e35c3f67c3e2fb482a8b532a37be142fa4a82",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/projects/attuneflix/experiments/attune-final-topology/evidence/36c37c88732df660fc0b631f840c648387a01bd76ce544686a04d436a9ebe188/snapshots.parquet",
+    "repository": "attune-final-topology/C",
+    "revision": "b633bcbf1fa7393d2360890e40bc81bbb6f8fbd6",
+    "sha256": "6b4636b9a13ea8787774bcda3441fffe02dca53d7e57da38c25f9fb0045ff22b",
+    "source_identity": "final-topology-sources-v1:73abda2dd5d3332211423810845c80fa3a30bc78c22d388b95c59f695b33130c",
+    "status": "controlled_final_topology_specimen_not_whole_self"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w51/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw51\tdeclared\t817\tsources\t577\tnon_ascii\t0\tfacts\t8668\tdeclarations\t956\tcandidates\t72\trefusals\t16817\tcoverage\tPartial",
+    "repository": "solid/community-server",
+    "revision": "e604c0c2e427f7cf426cda6e3a52c2d72b997057",
+    "sha256": "974c1e4c2700ffb04b08950d9b33c4e4a52b475fe7cf51b030b3a0154d9335b0",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w51"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w13/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw13\tdeclared\t265\tsources\t197\tnon_ascii\t0\tfacts\t3126\tdeclarations\t597\tcandidates\t72\trefusals\t3280\tcoverage\tPartial",
+    "repository": "platers/obsidian-linter",
+    "revision": "5ed573398e717b06f2afa65818224cf0abc1ab2a",
+    "sha256": "cfcbf15011390107bd3edf0549e47f7eea0cd296df6a5995d89955cb45c98f38",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w13"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w47/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw47\tdeclared\t794\tsources\t362\tnon_ascii\t0\tfacts\t1626\tdeclarations\t408\tcandidates\t72\trefusals\t10198\tcoverage\tPartial",
+    "repository": "ProjectEvergreen/greenwood",
+    "revision": "e7a08b6fcf7aa60f69491ec6aff591823991b7f6",
+    "sha256": "96ff051bd58ef1796facd1c8c1bd9c718dfc0180873dec49a6c0c635560255c7",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w47"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w12/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw12\tdeclared\t265\tsources\t197\tnon_ascii\t0\tfacts\t3122\tdeclarations\t596\tcandidates\t72\trefusals\t3279\tcoverage\tPartial",
+    "repository": "platers/obsidian-linter",
+    "revision": "d3515fe32804f4ec495d993f10eabbf4b9fa6161",
+    "sha256": "32e82258756cd82c732d7e7c740f663421f3526a5291189ac7cc902cf653c183",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w12"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w46/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw46\tdeclared\t792\tsources\t360\tnon_ascii\t0\tfacts\t1620\tdeclarations\t407\tcandidates\t72\trefusals\t10143\tcoverage\tPartial",
+    "repository": "ProjectEvergreen/greenwood",
+    "revision": "76f943ef09dedce2c3ee9deecb562c298d00f271",
+    "sha256": "bfa8c32b2447b07b0fcb6241f65624d7ed14ee95ffa80c42a0c11bedba8cac6f",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w46"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w57/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw57\tdeclared\t682\tsources\t323\tnon_ascii\t0\tfacts\t2846\tdeclarations\t658\tcandidates\t72\trefusals\t8345\tcoverage\tPartial",
+    "repository": "FormidableLabs/urql",
+    "revision": "da5a2eba69afdc5c176066c1ea1e2311d4c1435d",
+    "sha256": "9af2554f6ae4bb487031827a06c7bc9cee7e183b297f68a2e54b80e5d5ecfb45",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w57"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w62/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw62\tdeclared\t304\tsources\t206\tnon_ascii\t0\tfacts\t3024\tdeclarations\t651\tcandidates\t72\trefusals\t3541\tcoverage\tPartial",
+    "repository": "ember-cli/eslint-plugin-ember",
+    "revision": "88c231a3cb54248ed0f60f05b9733834bc75e83e",
+    "sha256": "06de18d0e41f11da0bd9ff002c832f7eba8168a7c377752fbea2458ff2770705",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w62"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w44/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw44\tdeclared\t371\tsources\t245\tnon_ascii\t0\tfacts\t5474\tdeclarations\t1054\tcandidates\t72\trefusals\t3025\tcoverage\tPartial",
+    "repository": "jsx-eslint/eslint-plugin-react",
+    "revision": "aac7fb9bc48427539839280ea522ccbe50458ac1",
+    "sha256": "604f34343ddff6479a2ad91ff022195996e7e4469a28a7b4b0689db35c65b8b0",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w44"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w67/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw67\tdeclared\t188\tsources\t109\tnon_ascii\t0\tfacts\t1244\tdeclarations\t224\tcandidates\t72\trefusals\t5939\tcoverage\tPartial",
+    "repository": "singapore/renovate",
+    "revision": "50295417d4ff68571bd90e9e75cdd1daf5a08ed2",
+    "sha256": "6dc857d4de8d7f51c4942d770e6c0ebde1b6ad4ba4fd4e1d9089dfe747fd552f",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w67"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w4/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw4\tdeclared\t1450\tsources\t755\tnon_ascii\t0\tfacts\t7982\tdeclarations\t1659\tcandidates\t72\trefusals\t31051\tcoverage\tPartial",
+    "repository": "serverless/serverless",
+    "revision": "17d64e6c94b88a5daf36f28a4fa192c231052cfb",
+    "sha256": "926488dec15646c70159a0500118dd7f3cd205affabae099e5953a9d73e4fc98",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w4"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w88/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw88\tdeclared\t115\tsources\t60\tnon_ascii\t0\tfacts\t1840\tdeclarations\t422\tcandidates\t72\trefusals\t2753\tcoverage\tPartial",
+    "repository": "elastic/synthetics",
+    "revision": "7384dc9588c3773f4f639387047faf3393e621f0",
+    "sha256": "6306509735929ae03068298eeb3e7dbbb1bb6275afa39f84916f5ef2b068d17b",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w88"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w83/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw83\tdeclared\t1051\tsources\t729\tnon_ascii\t0\tfacts\t10836\tdeclarations\t2382\tcandidates\t72\trefusals\t21198\tcoverage\tPartial",
+    "repository": "GoogleChrome/lighthouse",
+    "revision": "7ffb922b1911e6db114f21d92f37a63f835ba3b7",
+    "sha256": "8d98c98ef60f3492d6a179e804903b9556d39f6b8c9a3970c950a903ff7a4bc7",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w83"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w36/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw36\tdeclared\t222\tsources\t102\tnon_ascii\t0\tfacts\t1668\tdeclarations\t332\tcandidates\t72\trefusals\t2649\tcoverage\tPartial",
+    "repository": "obsidian-tasks-group/obsidian-tasks",
+    "revision": "7716c2894fd721e6de5691066647822b3c7a1bad",
+    "sha256": "3911fabe679c3987576295365c257a739e739102b6212b7b720dcd336a591530",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w36"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w5/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw5\tdeclared\t1550\tsources\t1007\tnon_ascii\t0\tfacts\t11722\tdeclarations\t3277\tcandidates\t72\trefusals\t25325\tcoverage\tPartial",
+    "repository": "eslint/eslint",
+    "revision": "22ff6f3ab122f61c10fa51f9b1082f2e6f302938",
+    "sha256": "d2282b4761238a28426977a25936b740a03b3c732baa9c5159de9d02963ea55a",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w5"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w23/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw23\tdeclared\t309\tsources\t281\tnon_ascii\t0\tfacts\t1386\tdeclarations\t199\tcandidates\t72\trefusals\t1571\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+    "revision": "0c95c3f83e9ab70e77d552210f94928fce6808b3",
+    "sha256": "f3f91b03842a7993caef30f4509372a41091ec580e1cc67f08d5c46702820803",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w23"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w33/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw33\tdeclared\t624\tsources\t235\tnon_ascii\t0\tfacts\t2004\tdeclarations\t570\tcandidates\t72\trefusals\t2598\tcoverage\tPartial",
+    "repository": "vuejs/eslint-plugin-vue",
+    "revision": "ee4143b08d57a279dc17fb5ebccd212dfc122d86",
+    "sha256": "65bf2376a77f1a04c648211964ac5ffaea9c0145b097682bad01b6b6545484dd",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w33"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w38/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw38\tdeclared\t1803\tsources\t1431\tnon_ascii\t0\tfacts\t3856\tdeclarations\t1611\tcandidates\t72\trefusals\t2877\tcoverage\tPartial",
+    "repository": "jlongster/prettier",
+    "revision": "b37e8c4b361acbe08e716f0aa71f29b4b55fcb5b",
+    "sha256": "afc5dfe13c258ec06fb651ce117e846dda57b0d24142990a79ef0af82694ae9f",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w38"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w71/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw71\tdeclared\t25\tsources\t15\tnon_ascii\t0\tfacts\t58\tdeclarations\t12\tcandidates\t72\trefusals\t623\tcoverage\tPartial",
+    "repository": "sindresorhus/got",
+    "revision": "cecea2d1081c2dc255995229cbcf4eff92a7efb1",
+    "sha256": "821a98a2d2e67f66b879be826345e7e91a4eeb8608d8da26afa437c5ff956544",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w71"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w58/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw58\tdeclared\t321\tsources\t263\tnon_ascii\t0\tfacts\t2262\tdeclarations\t269\tcandidates\t72\trefusals\t5297\tcoverage\tPartial",
+    "repository": "marpple/FxTS",
+    "revision": "54cf5d26171a9c7632d459c97b5c2853b4190ac9",
+    "sha256": "2d804fcd8410b7d39f9101cca584992b5f511b39fd1cd766e6302b9a7102f7ab",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w58"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w45/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw45\tdeclared\t371\tsources\t245\tnon_ascii\t0\tfacts\t5490\tdeclarations\t1055\tcandidates\t72\trefusals\t3030\tcoverage\tPartial",
+    "repository": "jsx-eslint/eslint-plugin-react",
+    "revision": "87fb344c9509f8c31e9bd4a49d31576397a89ebc",
+    "sha256": "0576a1c36176b58cfcac7fdd75adc52f56b0adfacd7edb7e2a1f02bbe39e4539",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w45"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w79/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw79\tdeclared\t483\tsources\t359\tnon_ascii\t0\tfacts\t6890\tdeclarations\t932\tcandidates\t72\trefusals\t12406\tcoverage\tPartial",
+    "repository": "firebase/firebase-tools",
+    "revision": "63ed7b1d005c9d65956910fa8d523571da271bc1",
+    "sha256": "efbf52a234514615e62cdaab1a8e8827e6803b86e0071cd9e04644e4a9f4fe7d",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w79"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w11/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw11\tdeclared\t609\tsources\t276\tnon_ascii\t0\tfacts\t4698\tdeclarations\t684\tcandidates\t72\trefusals\t34881\tcoverage\tPartial",
+    "repository": "FHIR/sushi",
+    "revision": "d8f56185677f9748d7a759c624bdf3d2192dd3c9",
+    "sha256": "4432d9df1dc11e00098d5319bf78197d6805e9bec090d1f1250d533f177d5a2e",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w11"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w89/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw89\tdeclared\t147\tsources\t110\tnon_ascii\t0\tfacts\t694\tdeclarations\t291\tcandidates\t72\trefusals\t5193\tcoverage\tPartial",
+    "repository": "pinojs/pino",
+    "revision": "c57c25855d89a2c481914672bbdeebe7ec3087c7",
+    "sha256": "12d0754365fb2f65fb41fb569f1f0ba97336b43cf7b4962f2e595ec630afaf6c",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w89"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w80/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw80\tdeclared\t486\tsources\t361\tnon_ascii\t0\tfacts\t6946\tdeclarations\t940\tcandidates\t72\trefusals\t12440\tcoverage\tPartial",
+    "repository": "firebase/firebase-tools",
+    "revision": "c8de003b82acd00dc244a30c6b5c21c615c57b09",
+    "sha256": "5a4d1535f6cdd3472202d9f3e07736d5a286fa4d2a7a6c5b801b628c82c2fbd6",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w80"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w86/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw86\tdeclared\t115\tsources\t60\tnon_ascii\t0\tfacts\t1820\tdeclarations\t416\tcandidates\t72\trefusals\t2684\tcoverage\tPartial",
+    "repository": "elastic/synthetics",
+    "revision": "769e2e8b36229b1f48be3349d5c1f679ed210ffe",
+    "sha256": "5bfb464db0a6226c9b5f43bbb2a59be6064d3549e1160bc1c7902497907d4e57",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w86"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w50/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw50\tdeclared\t717\tsources\t496\tnon_ascii\t0\tfacts\t7566\tdeclarations\t843\tcandidates\t72\trefusals\t15014\tcoverage\tPartial",
+    "repository": "solid/community-server",
+    "revision": "b0208bf4699ce96c4e30ab6603089c1d8b5f2aef",
+    "sha256": "a02b814d3a369f171ec8fb387d55b15fb47991cbefa991e53c35aa59de499890",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w50"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w65/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw65\tdeclared\t188\tsources\t109\tnon_ascii\t0\tfacts\t1244\tdeclarations\t224\tcandidates\t72\trefusals\t5916\tcoverage\tPartial",
+    "repository": "singapore/renovate",
+    "revision": "8d91a85fb72490c996fd953925a9e3a856c35b5f",
+    "sha256": "31af642d3b78fe0b80977867e78df3fb5d061b9ec82fbf623de69c8050f28e26",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w65"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w18/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw18\tdeclared\t239\tsources\t176\tnon_ascii\t0\tfacts\t764\tdeclarations\t246\tcandidates\t72\trefusals\t3172\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/create-typescript-app",
+    "revision": "834a44de5b4a7f3e4be4925a68911e192cbba2de",
+    "sha256": "a649b699dd2ca9e05b6044935df2e2fef0a26b33dd41ba24fb5c6ff791e97f50",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w18"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w40/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw40\tdeclared\t1804\tsources\t1432\tnon_ascii\t0\tfacts\t3858\tdeclarations\t1612\tcandidates\t72\trefusals\t2882\tcoverage\tPartial",
+    "repository": "jlongster/prettier",
+    "revision": "6557bc76b39d668254ee1847de3691044c71adc8",
+    "sha256": "0c24dc6446c6d23c48de0184f8e9b2f64e3a52cece6abfb62efd98ec52c3fb0e",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w40"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w43/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw43\tdeclared\t372\tsources\t245\tnon_ascii\t0\tfacts\t5454\tdeclarations\t1047\tcandidates\t72\trefusals\t2986\tcoverage\tPartial",
+    "repository": "jsx-eslint/eslint-plugin-react",
+    "revision": "ef733fd420c821f7159b28f4a36ce5e09375f9b8",
+    "sha256": "4d55758a475523d7c7569a3e482fc363f3c430a48e72f9f8eb11e4bb92889fb6",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w43"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w90/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw90\tdeclared\t147\tsources\t110\tnon_ascii\t0\tfacts\t694\tdeclarations\t291\tcandidates\t72\trefusals\t5214\tcoverage\tPartial",
+    "repository": "pinojs/pino",
+    "revision": "21ee5e2a03835dca7652f7b66905ae436c92e7d1",
+    "sha256": "43c1c8cc228b11a52b7a19b6936f62756b51b5f438005e804f25c30c3a5e40fb",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w90"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w91/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw91\tdeclared\t159\tsources\t122\tnon_ascii\t0\tfacts\t722\tdeclarations\t299\tcandidates\t72\trefusals\t5477\tcoverage\tPartial",
+    "repository": "pinojs/pino",
+    "revision": "1726618447f01ed90276d92d2ae196c252770e01",
+    "sha256": "a9ae6ae5a3b6edccbd1ddf36dd8bde0a45441727524e4e7df36b3e189e5f570b",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w91"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w54/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw54\tdeclared\t677\tsources\t320\tnon_ascii\t0\tfacts\t2768\tdeclarations\t650\tcandidates\t72\trefusals\t8202\tcoverage\tPartial",
+    "repository": "FormidableLabs/urql",
+    "revision": "8e7fc5ce1451b24f569343011da717362c1ba3f0",
+    "sha256": "1411cf9bf8c17332a482a1a0f2a6f8bc4218de97f62a9b661887955e9a1f9552",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w54"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w66/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw66\tdeclared\t198\tsources\t113\tnon_ascii\t0\tfacts\t1248\tdeclarations\t224\tcandidates\t72\trefusals\t5823\tcoverage\tPartial",
+    "repository": "singapore/renovate",
+    "revision": "af8f11dbbfb03982ead3cb627a2a2b49eaa1abd1",
+    "sha256": "aaa185417fdd638dec26be5c6c634df9e1897280a707bbc0b160ce93efcd024f",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w66"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w77/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw77\tdeclared\t489\tsources\t363\tnon_ascii\t0\tfacts\t7022\tdeclarations\t950\tcandidates\t72\trefusals\t12570\tcoverage\tPartial",
+    "repository": "firebase/firebase-tools",
+    "revision": "ba06f6dc34e64ef53a9cf002bacd6cdd0675749f",
+    "sha256": "21948a5c947c01d21800f67141594c1de55c8ea7bbf9585653ce4f56ca323bc1",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w77"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w22/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw22\tdeclared\t1753\tsources\t384\tnon_ascii\t2\tfacts\t2318\tdeclarations\t566\tcandidates\t72\trefusals\t5473\tcoverage\tPartial",
+    "repository": "sveltejs/kit",
+    "revision": "b7ebff7ecdac6b7e6901553ada453743b18d78e4",
+    "sha256": "dc278292c435cf98d12c9131fd5e541983bd9003f5615df2dea63774a9c95fe1",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w22"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w6/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw6\tdeclared\t1550\tsources\t1007\tnon_ascii\t0\tfacts\t11742\tdeclarations\t3285\tcandidates\t72\trefusals\t25349\tcoverage\tPartial",
+    "repository": "eslint/eslint",
+    "revision": "4f595e8a7cc1fefae866d2cf0e758515d6098e3c",
+    "sha256": "2b3cdec48b79fc8609470be74367617e71922e428c1dfec380a8f7caa687ab19",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w6"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w59/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw59\tdeclared\t355\tsources\t297\tnon_ascii\t0\tfacts\t2560\tdeclarations\t301\tcandidates\t72\trefusals\t5840\tcoverage\tPartial",
+    "repository": "marpple/FxTS",
+    "revision": "7b099745fd3038f9155d74b8b76c3a7561073a9e",
+    "sha256": "dac82cf3c7da6398ead71080b12a268c0404ca431ea1a8ae1a089aa979c19448",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w59"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w61/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw61\tdeclared\t305\tsources\t208\tnon_ascii\t0\tfacts\t3044\tdeclarations\t656\tcandidates\t72\trefusals\t3537\tcoverage\tPartial",
+    "repository": "ember-cli/eslint-plugin-ember",
+    "revision": "fcdb389919d704177bdf78bbf6ca2f21b30e516b",
+    "sha256": "eee85f2922e73629bd489be126b4c6f212a7c500352dca493d4a7c5cf94e5858",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w61"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w30/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw30\tdeclared\t1684\tsources\t1340\tnon_ascii\t0\tfacts\t11886\tdeclarations\t2106\tcandidates\t72\trefusals\t46076\tcoverage\tPartial",
+    "repository": "Sage/carbon",
+    "revision": "18bca960fd0fbd8893c18415eb9a79eed23fdc0a",
+    "sha256": "22305459a85e9cb3525d37cffdb85d8052e6ffd5fbef3b9c6a1220d025bb28fc",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w30"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w82/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw82\tdeclared\t1008\tsources\t714\tnon_ascii\t0\tfacts\t9882\tdeclarations\t2033\tcandidates\t72\trefusals\t19146\tcoverage\tPartial",
+    "repository": "GoogleChrome/lighthouse",
+    "revision": "17ac7e23bd70f1b98ddc79f9221ef2831e393119",
+    "sha256": "124a9878bc0e04021148532ac2ce85097b34e6ce89bcdc9bce0cfa612bb9bbe0",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w82"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w21/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw21\tdeclared\t1555\tsources\t343\tnon_ascii\t2\tfacts\t1972\tdeclarations\t451\tcandidates\t72\trefusals\t4858\tcoverage\tPartial",
+    "repository": "sveltejs/kit",
+    "revision": "80233c279f94e6aa86888b24147d46141c3ea688",
+    "sha256": "0ae7763495801fea96a33da216a26d66a8718970677383374db1f264d7bc21c9",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w21"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w85/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw85\tdeclared\t112\tsources\t58\tnon_ascii\t0\tfacts\t1784\tdeclarations\t413\tcandidates\t72\trefusals\t2613\tcoverage\tPartial",
+    "repository": "elastic/synthetics",
+    "revision": "01c81e9607da4c0f57f83c775f810bc22861c5db",
+    "sha256": "5672ec8f5e1cde5338edbb5cb206c70cd7ce31ecab7112b9ab43b4beb4b9780f",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w85"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w68/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw68\tdeclared\t201\tsources\t115\tnon_ascii\t0\tfacts\t1292\tdeclarations\t233\tcandidates\t72\trefusals\t6058\tcoverage\tPartial",
+    "repository": "singapore/renovate",
+    "revision": "0427604de61a6a1783f208d9858320c29950b794",
+    "sha256": "4e1d06237b712306facef81c2653fd83b4099c5b442929837dcf622996907bec",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w68"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w7/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw7\tdeclared\t1550\tsources\t1007\tnon_ascii\t0\tfacts\t11742\tdeclarations\t3285\tcandidates\t72\trefusals\t25355\tcoverage\tPartial",
+    "repository": "eslint/eslint",
+    "revision": "abc765c1bc6b546db82cb5cd038b66a3aa68b315",
+    "sha256": "e217d4c7eaf60b98265b5c1c88b52868dffae55ce19774a128bce31b4f6ec0c9",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w7"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w56/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw56\tdeclared\t677\tsources\t320\tnon_ascii\t0\tfacts\t2776\tdeclarations\t651\tcandidates\t72\trefusals\t8267\tcoverage\tPartial",
+    "repository": "FormidableLabs/urql",
+    "revision": "935db592cf3365e29d351d654d6bdd7d3bc1e9d1",
+    "sha256": "3fada866607bc33121a967e308020c0d5089fd02b9ba94a74d5ca15b80650dd9",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w56"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w16/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw16\tdeclared\t240\tsources\t185\tnon_ascii\t0\tfacts\t788\tdeclarations\t271\tcandidates\t72\trefusals\t3435\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/create-typescript-app",
+    "revision": "6f260c8df819bd796252ae3797809bf40d915520",
+    "sha256": "cc03360c8a9379a2b99b8fdccc34b73d870d6d0a0afa414ac209a0483c30c2ac",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w16"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w2/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw2\tdeclared\t1449\tsources\t754\tnon_ascii\t0\tfacts\t7980\tdeclarations\t1659\tcandidates\t72\trefusals\t30976\tcoverage\tPartial",
+    "repository": "serverless/serverless",
+    "revision": "4d64730130c44cdfbb872f8a16111df409135dc8",
+    "sha256": "0d7516b5fc946d32419720521790e7b6b08d0106d598e287e84b00bb738120b6",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w2"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w42/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw42\tdeclared\t373\tsources\t245\tnon_ascii\t0\tfacts\t5580\tdeclarations\t1070\tcandidates\t72\trefusals\t3119\tcoverage\tPartial",
+    "repository": "jsx-eslint/eslint-plugin-react",
+    "revision": "2575bba0ae30b1b0b4013539be3b0dc4eb8114eb",
+    "sha256": "5e412ff64a1bca1d2cd31477ec527b073c0c2ca2b3b9d3905ae259c15c8c87f5",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w42"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w24/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw24\tdeclared\t245\tsources\t232\tnon_ascii\t0\tfacts\t1092\tdeclarations\t146\tcandidates\t72\trefusals\t1010\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+    "revision": "df0faf840109374be3f74778e4302820de5df497",
+    "sha256": "671db83ab70c5c43ff98db6f3910388a64cddd13ec9bc21127071cbcb5165790",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w24"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w53/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw53\tdeclared\t201\tsources\t170\tnon_ascii\t0\tfacts\t2062\tdeclarations\t255\tcandidates\t72\trefusals\t3829\tcoverage\tPartial",
+    "repository": "solid/community-server",
+    "revision": "f6f45c0ece35ed72c14224925e4711ae4d756520",
+    "sha256": "86e83b2a16f23d03fbf8bc123771cff953412459c52e2646f7adfb720d96cb59",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w53"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w26/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw26\tdeclared\t246\tsources\t233\tnon_ascii\t0\tfacts\t1100\tdeclarations\t147\tcandidates\t72\trefusals\t1011\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+    "revision": "54590cf89a1d6dcac5352a908ee16f75adb087fd",
+    "sha256": "e9816d84a6d699afaf8ee651729e09e806dd5f2d13d3a6c6b80aba9b1e360157",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w26"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w28/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw28\tdeclared\t1698\tsources\t1335\tnon_ascii\t0\tfacts\t11596\tdeclarations\t2047\tcandidates\t72\trefusals\t44283\tcoverage\tPartial",
+    "repository": "Sage/carbon",
+    "revision": "5be5f330c7dc88fc30f5362c7d4f9c9d0ada74bf",
+    "sha256": "bbabd1435b2e168390023bc3d29241528a3ca374b5930aed38a4f0bdc53cb1b2",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w28"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w69/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw69\tdeclared\t24\tsources\t14\tnon_ascii\t0\tfacts\t66\tdeclarations\t12\tcandidates\t72\trefusals\t633\tcoverage\tPartial",
+    "repository": "sindresorhus/got",
+    "revision": "f9f2807e63635432ab175824859caa70e3c583aa",
+    "sha256": "a9fbd861df680f2515f83e92484258964f8aeed893978283f59512bbaba28ecb",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w69"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w76/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw76\tdeclared\t503\tsources\t296\tnon_ascii\t0\tfacts\t2166\tdeclarations\t291\tcandidates\t72\trefusals\t7199\tcoverage\tPartial",
+    "repository": "stoplightio/spectral",
+    "revision": "40a39628cd2cb9e907d5e052d9d186838c70659e",
+    "sha256": "4edfda00ec272706c7a069991ad94686b2da350ee8a2dcd35118975e33050289",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w76"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w60/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw60\tdeclared\t330\tsources\t272\tnon_ascii\t0\tfacts\t2348\tdeclarations\t279\tcandidates\t72\trefusals\t5419\tcoverage\tPartial",
+    "repository": "marpple/FxTS",
+    "revision": "2738b9ae070b173d0bd78036168f09426581401c",
+    "sha256": "56e0be899de89c1217ed5aeee2c6e6c7a5d409237a1b7a5624f23f0e39cec115",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w60"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w81/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw81\tdeclared\t1006\tsources\t712\tnon_ascii\t0\tfacts\t9878\tdeclarations\t2034\tcandidates\t72\trefusals\t19159\tcoverage\tPartial",
+    "repository": "GoogleChrome/lighthouse",
+    "revision": "590bda3a771bae2f2dea4a7a903ecf96a34fdcd9",
+    "sha256": "3e7029eabd75a995a5fd55200b30b4e2d8e941730e0fd3da0bd85482b609c7da",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w81"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w70/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw70\tdeclared\t25\tsources\t15\tnon_ascii\t0\tfacts\t58\tdeclarations\t12\tcandidates\t72\trefusals\t623\tcoverage\tPartial",
+    "repository": "sindresorhus/got",
+    "revision": "f9078b6440eefd3a8ebf15ff07b61d2bc1b27b8b",
+    "sha256": "bbac5c9391c3e35df14b3024c75d1bf7f2ba802eceae7d7a353c0a825ba319f6",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w70"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w73/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw73\tdeclared\t432\tsources\t247\tnon_ascii\t0\tfacts\t1754\tdeclarations\t251\tcandidates\t72\trefusals\t5895\tcoverage\tPartial",
+    "repository": "stoplightio/spectral",
+    "revision": "20774dca6b244aa11dfea9ee76de2a76c5f9d98a",
+    "sha256": "3f66c2b3ff365cd4725c6b3701e665f7c4d92dfd2b2f94e5f8f6b71620579143",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w73"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w32/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw32\tdeclared\t619\tsources\t235\tnon_ascii\t0\tfacts\t2000\tdeclarations\t570\tcandidates\t72\trefusals\t2593\tcoverage\tPartial",
+    "repository": "vuejs/eslint-plugin-vue",
+    "revision": "99fe70dd45097ed4a7c8bdc60cf98e30ee57afac",
+    "sha256": "cdc8227cc5a4c9099f3dd5369eaa3bb56ffdd99e3cedfe5c1d132df2713bfa03",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w32"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w52/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw52\tdeclared\t181\tsources\t153\tnon_ascii\t0\tfacts\t1744\tdeclarations\t219\tcandidates\t72\trefusals\t3107\tcoverage\tPartial",
+    "repository": "solid/community-server",
+    "revision": "b1991cb08ae722aae497104067a7a455456952c7",
+    "sha256": "fb8ba3dae5b1dc62777d7d7d0ee4c7a6e6d0cba18f69dc57a1fa231dab9a46e5",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w52"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w48/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw48\tdeclared\t822\tsources\t379\tnon_ascii\t0\tfacts\t1796\tdeclarations\t432\tcandidates\t72\trefusals\t10479\tcoverage\tPartial",
+    "repository": "ProjectEvergreen/greenwood",
+    "revision": "7ff06de494ddebd1e97e6ba65401d5c931b0eaf6",
+    "sha256": "b62dd0a892ba0a631695807b3e434292b915d05b70bf3d9d5b53e3b72ae2714d",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w48"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w10/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw10\tdeclared\t606\tsources\t276\tnon_ascii\t0\tfacts\t4690\tdeclarations\t683\tcandidates\t72\trefusals\t34853\tcoverage\tPartial",
+    "repository": "FHIR/sushi",
+    "revision": "663286ef961c7546f71ba9e86e1e6862e4ff7046",
+    "sha256": "7fe92579a418f05ed8ab9cd535da023cb6dca304619411708f6388d6961356e1",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w10"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w19/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw19\tdeclared\t239\tsources\t176\tnon_ascii\t0\tfacts\t766\tdeclarations\t246\tcandidates\t72\trefusals\t3168\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/create-typescript-app",
+    "revision": "be806ca42a57a0e97108d3a736288d225967616a",
+    "sha256": "05cb89224ad83c0e4b445ab2f0b08df75e1979744827a8ba59811d47695bfa44",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w19"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w3/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw3\tdeclared\t1450\tsources\t755\tnon_ascii\t0\tfacts\t7980\tdeclarations\t1659\tcandidates\t72\trefusals\t31032\tcoverage\tPartial",
+    "repository": "serverless/serverless",
+    "revision": "83e194cb17b5b932bcc866f2543351b64fde329a",
+    "sha256": "070a98e9c44a2457f16514831f012e9d0de01bf1bab87792bb716dba03702da3",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w3"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w1/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw1\tdeclared\t1451\tsources\t750\tnon_ascii\t0\tfacts\t7614\tdeclarations\t1570\tcandidates\t72\trefusals\t30868\tcoverage\tPartial",
+    "repository": "serverless/serverless",
+    "revision": "2ac55b01bee405c5ca719f4b52166399b9d6f48a",
+    "sha256": "1ac3715dce5269c97dd0fc31d53416a2415859202989b51aef72c0c9dfad1eed",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w1"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w25/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw25\tdeclared\t246\tsources\t233\tnon_ascii\t0\tfacts\t1100\tdeclarations\t147\tcandidates\t72\trefusals\t1011\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+    "revision": "1f8f414a487a0f8d67c37b7de13fda7848f5ac67",
+    "sha256": "ee3ab474bc4c0826f185b619d16daa6d8840c00a01f3b512a76b9129ce6cad41",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w25"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w87/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw87\tdeclared\t115\tsources\t60\tnon_ascii\t0\tfacts\t1836\tdeclarations\t420\tcandidates\t72\trefusals\t2705\tcoverage\tPartial",
+    "repository": "elastic/synthetics",
+    "revision": "7c3bd6475040967ffae003e0509df502ced35f64",
+    "sha256": "3a75214c62bf3969e5b5db8622dcb8fbe64e7ce8c7ec10856d0a6b3e3c767ad5",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w87"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w17/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw17\tdeclared\t239\tsources\t176\tnon_ascii\t0\tfacts\t764\tdeclarations\t246\tcandidates\t72\trefusals\t3172\tcoverage\tPartial",
+    "repository": "JoshuaKGoldberg/create-typescript-app",
+    "revision": "a64a9c7f55de23c8f80633dd0e6d4353fcd1f220",
+    "sha256": "ad06fc247e106cfe2fc636a3d0c2743ad91f02da784ac69b9f84823acf2460c9",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w17"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w9/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw9\tdeclared\t606\tsources\t276\tnon_ascii\t0\tfacts\t4690\tdeclarations\t683\tcandidates\t72\trefusals\t34854\tcoverage\tPartial",
+    "repository": "FHIR/sushi",
+    "revision": "301e66940a2265a467debff69c5c3bfaeb06931a",
+    "sha256": "1537cbf7be001aa6183b3767d47bb179ae4108078917ee40639a1bb8d1f03f21",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w9"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w63/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw63\tdeclared\t93\tsources\t60\tnon_ascii\t0\tfacts\t684\tdeclarations\t148\tcandidates\t72\trefusals\t774\tcoverage\tPartial",
+    "repository": "ember-cli/eslint-plugin-ember",
+    "revision": "9cde36a38d1e57cd64812a7a44ac0f42df16905c",
+    "sha256": "6b2f41aa43f1f420fa6c70237f175a38bddf25f3d775194c3538818ff4843e26",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w63"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w31/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw31\tdeclared\t967\tsources\t428\tnon_ascii\t0\tfacts\t3962\tdeclarations\t1086\tcandidates\t72\trefusals\t4353\tcoverage\tPartial",
+    "repository": "vuejs/eslint-plugin-vue",
+    "revision": "47e3f89a554ada9f32acd48088abbb7d40d51b5e",
+    "sha256": "16e43f67f78212f80418257904f5f6377d2f215b2fc17d8100d7ccf8bcb61f94",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w31"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w92/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw92\tdeclared\t34\tsources\t24\tnon_ascii\t0\tfacts\t174\tdeclarations\t54\tcandidates\t72\trefusals\t1262\tcoverage\tPartial",
+    "repository": "pinojs/pino",
+    "revision": "5e5e543033f5a0596142e0c8af6693a393c28013",
+    "sha256": "2f620c0b94e882dfe68d24076d507331c35ba791cbbd13f1639bbfe03beec9c7",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w92"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w20/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw20\tdeclared\t1549\tsources\t341\tnon_ascii\t2\tfacts\t1966\tdeclarations\t450\tcandidates\t72\trefusals\t4847\tcoverage\tPartial",
+    "repository": "sveltejs/kit",
+    "revision": "842337b35a7c5fb49917c409e773ac5d9c61049d",
+    "sha256": "38c08001f6f0ff610b983dabb44169df4c25eb44526dd1bf8597396ffdcd9a9d",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w20"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w78/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw78\tdeclared\t483\tsources\t359\tnon_ascii\t0\tfacts\t6878\tdeclarations\t932\tcandidates\t72\trefusals\t12385\tcoverage\tPartial",
+    "repository": "firebase/firebase-tools",
+    "revision": "e04591d4965746af1b7e36873265dcf4cbd5cb6c",
+    "sha256": "83ac75b586f3164c15886da6195d5a98043eea5a4716431495e49c2e4a55ef3e",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w78"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w55/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw55\tdeclared\t677\tsources\t320\tnon_ascii\t0\tfacts\t2772\tdeclarations\t651\tcandidates\t72\trefusals\t8232\tcoverage\tPartial",
+    "repository": "FormidableLabs/urql",
+    "revision": "2527996491103e5ce17328071e67583f5b498c70",
+    "sha256": "a19fd154a362a58d68796c155cad1110974e2b71536f59f35670173c68fe08b5",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w55"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w74/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw74\tdeclared\t438\tsources\t248\tnon_ascii\t0\tfacts\t1768\tdeclarations\t254\tcandidates\t72\trefusals\t5998\tcoverage\tPartial",
+    "repository": "stoplightio/spectral",
+    "revision": "d2803e9f9a7c6e185cb7ecc6f492cc81f312889f",
+    "sha256": "37636339297def7d0c6b923e65a4eed3b1ae2d51e4eb0f6c0d1b118c09c4df00",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w74"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w34/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw34\tdeclared\t191\tsources\t87\tnon_ascii\t0\tfacts\t3034\tdeclarations\t1049\tcandidates\t72\trefusals\t6578\tcoverage\tPartial",
+    "repository": "obsidian-tasks-group/obsidian-tasks",
+    "revision": "d48284e82386548e13c1471fc9dc1771d3d736be",
+    "sha256": "42f426cc16b7d01fa56bba9605cb7eeea39fba83edf636bb2bf04cc767e404ac",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w34"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w29/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw29\tdeclared\t1668\tsources\t1335\tnon_ascii\t0\tfacts\t12208\tdeclarations\t2192\tcandidates\t72\trefusals\t46558\tcoverage\tPartial",
+    "repository": "Sage/carbon",
+    "revision": "bde9df23ae9b494ebb6a63dc20355337cda5e062",
+    "sha256": "affa4922ef8f04efdef6834d16a9623d0a8e82c285d2e6ad6b449b9dd4dcfa23",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w29"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w64/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw64\tdeclared\t313\tsources\t213\tnon_ascii\t0\tfacts\t3020\tdeclarations\t648\tcandidates\t72\trefusals\t3562\tcoverage\tPartial",
+    "repository": "ember-cli/eslint-plugin-ember",
+    "revision": "c879157460fad4353f826c924f2e41761427337e",
+    "sha256": "5e582c39f15f6263be5c21f2996bb7c43c0b007132d64d0a1f3239a7ef91fb52",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w64"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w39/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw39\tdeclared\t1804\tsources\t1432\tnon_ascii\t0\tfacts\t3858\tdeclarations\t1612\tcandidates\t72\trefusals\t2880\tcoverage\tPartial",
+    "repository": "jlongster/prettier",
+    "revision": "7a84cdbc3430441c992912c15509cfb788925084",
+    "sha256": "e2c7f975c6d6beee7a0a19ecfaaad33c5051ee8e826c0dafd12038f2bdf0e1d7",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w39"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w37/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw37\tdeclared\t239\tsources\t106\tnon_ascii\t0\tfacts\t1754\tdeclarations\t347\tcandidates\t72\trefusals\t2864\tcoverage\tPartial",
+    "repository": "obsidian-tasks-group/obsidian-tasks",
+    "revision": "04c621db3117b8ccaaa57c10ea212c682e27e716",
+    "sha256": "6e278c79a9ca531350166fc9b347f76846b4dd4a4efe67cb30a7e16a92558793",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w37"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w49/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw49\tdeclared\t847\tsources\t393\tnon_ascii\t0\tfacts\t1888\tdeclarations\t451\tcandidates\t72\trefusals\t10795\tcoverage\tPartial",
+    "repository": "ProjectEvergreen/greenwood",
+    "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+    "sha256": "127e453455afa6a80d3730f9ba13e2ad8b0f3a469617a3470942fa4b1ecc6070",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w49"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w72/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw72\tdeclared\t105\tsources\t66\tnon_ascii\t0\tfacts\t790\tdeclarations\t372\tcandidates\t72\trefusals\t5015\tcoverage\tPartial",
+    "repository": "sindresorhus/got",
+    "revision": "c25af092bf792c2c7e29db848a569f2eb3e527f8",
+    "sha256": "e8eb4230a34dc35d5ae65283090da5064cfee33c01f451f17fafdf2e6ac14a7e",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w72"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w27/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw27\tdeclared\t1654\tsources\t1347\tnon_ascii\t0\tfacts\t12986\tdeclarations\t2353\tcandidates\t72\trefusals\t49065\tcoverage\tPartial",
+    "repository": "Sage/carbon",
+    "revision": "f303f8d3d3204b1c947ae749bd6f1bf96233b888",
+    "sha256": "324af400a7785c606c1f8cc33f40863edff1643c8c3506cfe30925a1fa4902bc",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w27"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w75/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw75\tdeclared\t438\tsources\t248\tnon_ascii\t0\tfacts\t1768\tdeclarations\t254\tcandidates\t72\trefusals\t6002\tcoverage\tPartial",
+    "repository": "stoplightio/spectral",
+    "revision": "ec6b829a8bfa047882b9939738c6f95eb180c5aa",
+    "sha256": "ee9f9ab714c86344a2c7fe48e5aaa07491f44595905fbde984ccc6b6159bb086",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w75"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w35/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw35\tdeclared\t205\tsources\t95\tnon_ascii\t0\tfacts\t3136\tdeclarations\t1068\tcandidates\t72\trefusals\t6873\tcoverage\tPartial",
+    "repository": "obsidian-tasks-group/obsidian-tasks",
+    "revision": "1164899d6b4b251db81dff1edcc836d4192d833a",
+    "sha256": "1caad38c92aabbf59e601f675c426b65ce07a51c4bfa99bd335c4d6cfb7d9868",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w35"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w14/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw14\tdeclared\t265\tsources\t197\tnon_ascii\t0\tfacts\t3128\tdeclarations\t597\tcandidates\t72\trefusals\t3290\tcoverage\tPartial",
+    "repository": "platers/obsidian-linter",
+    "revision": "4cd434c20a3e1384911680c7eaf1414a59ee0205",
+    "sha256": "630a4e4974127b748b2f8fddb4903f0401a1daaa0b0ed11dd06eb85b1864d1ed",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w14"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w8/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw8\tdeclared\t606\tsources\t276\tnon_ascii\t0\tfacts\t4690\tdeclarations\t683\tcandidates\t72\trefusals\t34841\tcoverage\tPartial",
+    "repository": "FHIR/sushi",
+    "revision": "2f6adfd82de60ef6d810a3345dc953c7387da732",
+    "sha256": "887a20bc438df9c4586993250c6c38c5105ee1010c458070e389b64148387e48",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w8"
+  },
+  {
+    "artifact": "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w15/extract.tsv",
+    "identity_binding": "current declared world row; cached output receipt itself omits source content hash, so not exact historical provenance",
+    "receipt": "extract\tw15\tdeclared\t265\tsources\t197\tnon_ascii\t0\tfacts\t3128\tdeclarations\t597\tcandidates\t72\trefusals\t3294\tcoverage\tPartial",
+    "repository": "platers/obsidian-linter",
+    "revision": "4a0724ab6a3f8340ea3a48f491f6f08bdaa86e57",
+    "sha256": "9a4eb222b892b8d72be58b6f8a5fabcc264f6b67d5885bc4f8eb39d3f85f0699",
+    "source_identity": "public-archive-at-pinned-revision",
+    "status": "external_repository_not_self; JS/TS selection",
+    "world_id": "w15"
+  },
+  {
+    "artifact": "/tmp/attuneflix-codex-topology-m2NRiF/current.sources.parquet",
+    "files": 213,
+    "repository": "unknown attuneflix working snapshot",
+    "sha256": "946f2e51913a2e7d7d98ef2bc78b61b7b7b013e1f7cf877eece170de13e7389d",
+    "status": "unavailable_source_identity: no retained revision receipt"
+  },
+  {
+    "cas_blob": "83e1a83b9e7de2c52cb3c140f3cf2154d7a4224885c955ac1ed3263af1eb1d93/4866",
+    "invocation": "c6513144-0d03-400d-97ae-cde433c05d29",
+    "repository": "attune-final-topology/A",
+    "status": "CAS unavailable: Exhausted all peers; local specimen evidence retained"
+  },
+  {
+    "artifacts": [
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/baseline/files.txt",
+        "sha256": "aae7943db10254089381e572247d8d2bc7ea6c3a6fb29c20146c676b9899342d"
+      },
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/baseline/modules.txt",
+        "sha256": "9c16d814fe3f3e554d4f1e386a28405b38450f0bef5c206fea65dfcb3e1a3fbb"
+      },
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/baseline/uses.txt",
+        "sha256": "658bb2f24fa509d3ab38397db57575ffb0a7486edccc377ba71583857023ab11"
+      }
+    ],
+    "protocol": "attuneflix-self-admission-v1",
+    "repository": "attuneflix",
+    "revision": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "status": "incompatible_protocol: lexical module/dotted-token proxy; no real symbol-call acquisition"
+  },
+  {
+    "artifacts": [
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/after/files.txt",
+        "sha256": "a0116188a52bd1b182c90f067bf8eb20ddcb3e55c9dbca6cd7fff89c876b8a86"
+      },
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/after/modules.txt",
+        "sha256": "f67c49d3dc3ee289dffadb63aa263e341b199a2749b166f1bfd9d6f94a732120"
+      },
+      {
+        "path": "/home/becker/projects/attuneflix/experiments/atlas-parallelism/extracted/after/uses.txt",
+        "sha256": "ebf5d26c057a88a60bb2207529ac54e9b805b5a210918fb8513884bc80b60169"
+      }
+    ],
+    "protocol": "attuneflix-self-admission-v1",
+    "repository": "attuneflix",
+    "revision": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "status": "incompatible_protocol: lexical module/dotted-token proxy; no real symbol-call acquisition"
+  }
+]

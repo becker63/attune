@@ -1,0 +1,29 @@
+{
+  "checkpoint": "140d1b2d1805a1b55c22c7c1953aa36eb866be98",
+  "output_directory": "/tmp/attune-checkpoint-replay-h05lgfuu",
+  "checks": {
+    "observations.parquet": true,
+    "summaries.parquet": true,
+    "identity-map.json": true
+  },
+  "args": [
+    "/tmp/attuneflix-oracle-fab7e731/external/rules_java++toolchains+remotejdk25_linux_aarch64/bin/java",
+    "-Xmx1536m",
+    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+    "--enable-native-access=ALL-UNNAMED",
+    "-Dattune.stage=signature",
+    "-Dattune.command=compute",
+    "-Dattune.repository=attune",
+    "-Dattune.source_tree_identity=attune-checkpoint-common-source-v1:140d1b2d1805a1b55c22c7c1953aa36eb866be98:8126248cc54a8894cf37f8d2a768ce3a45d7819fc419eff92e80a4e86abcf15c",
+    "-Dattune.acquisition_identity=grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+    "-Dattune.sources=/home/becker/projects/attune/attune/notes/repository-through-time/checkpoints-v2/checkpoints/attune-140d1b2d1805/sources.parquet",
+    "-Dattune.facts=/home/becker/projects/attune/attune/notes/repository-through-time/checkpoints-v2/checkpoints/attune-140d1b2d1805/facts.parquet",
+    "-Dattune.revision=/home/becker/projects/attune/attune/notes/repository-through-time/checkpoints-v2/checkpoints/attune-140d1b2d1805/revision.txt",
+    "-Dattune.output_signatures=/tmp/attune-checkpoint-replay-h05lgfuu/observations.parquet",
+    "-Dattune.output_summaries=/tmp/attune-checkpoint-replay-h05lgfuu/summaries.parquet",
+    "-Dattune.output_identity=/tmp/attune-checkpoint-replay-h05lgfuu/identity-map.json",
+    "-jar",
+    "/tmp/attune-checkpoints-v2/instrument/artifact/instrument.jar"
+  ],
+  "status": "passed"
+}

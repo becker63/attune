@@ -1,0 +1,12 @@
+src/Attune/Study.flix
+test/catalog/BUILD.bazel
+test/catalog/PanelArtifactLaw.flix
+test/catalog/PanelLaw.flix
+test/catalog/PanelSelect.flix
+test/study/BUILD.bazel
+test/study/LocalizationAdmissionLaw.flix
+test/study/LocalizationArtifactLaw.flix
+test/study/LocalizationLabels.flix
+test/study/LocalizationLaw.flix
+test/study/manifest/catalog/manifest.bzl
+test/study/manifest/localization/mapped.bzl

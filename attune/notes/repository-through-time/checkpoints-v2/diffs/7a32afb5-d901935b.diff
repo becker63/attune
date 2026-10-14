@@ -1,0 +1,1971 @@
+diff --git a/attune/src/Attune/Apply.flix b/attune/src/Attune/Apply.flix
+new file mode 100644
+index 0000000000..4c450fa203
+--- /dev/null
++++ b/attune/src/Attune/Apply.flix
+@@ -0,0 +1,111 @@
++/// The one exact relation application and its genuinely instrumented local memo.
++///
++/// `Attune.Envelope` fixes identity; this module is the single evaluator that
++/// applies one directed atom to one exact frontier against one world's facts,
++/// and the one small memo that records where a repeated exact lookup really
++/// reused an earlier producer. It decides no coverage, evidence or verdict: it
++/// produces an exact typed frontier or a classified rejection, never an empty
++/// success for an illegal route.
++pub mod Attune.Apply {
++
++    use Attune.Envelope
++    use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
++
++    /// The exact identity of one memo entry: the world/semantic namespace, the
++    /// exact typed input frontier and the next atom. The ordinal and the work tag
++    /// are absent by design, so two transitions may share a key while recording
++    /// different ordinals.
++    pub type alias TransitionKey = (World, String, Frontier, Atom)
++
++    /// The frontier of `world` in `domain` over exactly `texts`.
++    pub def frontierOf(world: World, domain: Domain, texts: List[String]): Frontier =
++        match domain {
++            case Domain.Files =>
++                Frontier.Files(world, List.toSet(List.map(FileId.FileId, texts)))
++            case Domain.Symbols =>
++                Frontier.Symbols(world, List.toSet(List.map(SymbolId.SymbolId, texts)))
++        }
++
++    /// Whether `text` names a member of `frontier`, compared by nominal identity.
++    pub def holds(frontier: Frontier, text: String): Bool = match frontier {
++        case Frontier.Files(_, ids) =>
++            List.exists(id -> match id { case FileId.FileId(name) => name == text }, Set.toList(ids))
++        case Frontier.Symbols(_, ids) =>
++            List.exists(id -> match id { case SymbolId.SymbolId(name) => name == text }, Set.toList(ids))
++    }
++
++    /// Apply exactly one atom to one frontier against one world's facts.
++    ///
++    /// The atom's declared source domain must equal the frontier's domain and
++    /// every fact must belong to the frontier's world; otherwise the route is a
++    /// classified rejection, never an empty success. A legal application with no
++    /// matching fact is `Ok` of the empty frontier in the atom's target domain,
++    /// so emptiness stays a property of the answer and keeps its world.
++    pub def apply(facts: List[Fact], input: Frontier, atom: Atom): Result[String, Frontier] = {
++        let world = Envelope.worldOf(input);
++        let domain = Envelope.domainOf(input);
++        if (domain != Envelope.atomSource(atom))
++            Err(Envelope.atomName(atom) + " needs " + Envelope.domainName(Envelope.atomSource(atom))
++                + " but the current domain is " + Envelope.domainName(domain) + ".")
++        else match List.find(fact -> fact#world != world, facts) {
++            case Some(_) => Err("a fact from another world cannot apply here.")
++            case None =>
++                let targets = List.filterMap(fact ->
++                    if (fact#atom == atom and holds(input, fact#source)) Some(fact#target) else None,
++                    facts);
++                Ok(frontierOf(world, Envelope.atomTarget(atom), targets))
++        }
++    }
++
++    /// One instrumented lookup event: a cold miss that produced the answer at
++    /// `ordinal`, or a hit that reused the producer recorded at `ordinal`.
++    pub enum Lookup with Eq, ToString {
++        case Miss(Int32)
++        case Hit(Int32)
++    }
++
++    /// The exact memo: transition key, producing ordinal and exact typed output.
++    pub type alias Memo = List[(TransitionKey, Int32, Frontier)]
++
++    /// Look one exact transition up in the memo, computing it through the one
++    /// evaluator only when it is absent. The returned events are the real
++    /// lookups, in order, and the threaded ordinal is the real computation order,
++    /// so a producer reference is never fabricated.
++    pub def lookup(
++        memo: Memo,
++        next: Int32,
++        namespace: String,
++        input: Frontier,
++        atom: Atom,
++        facts: List[Fact]
++    ): (Result[String, Frontier], Memo, List[Lookup], Int32) = {
++        let key = (Envelope.worldOf(input), namespace, input, atom);
++        match List.find(entry -> match entry { case (k, _, _) => k == key }, memo) {
++            case Some(entry) => match entry {
++                case (_, ordinal, output) => (Ok(output), memo, Lookup.Hit(ordinal) :: Nil, next)
++            }
++            case None => match apply(facts, input, atom) {
++                case Ok(output) =>
++                    (Ok(output), (key, next, output) :: memo, Lookup.Miss(next) :: Nil, next + 1)
++                case Err(error) =>
++                    (Err(error), memo, Lookup.Miss(next) :: Nil, next + 1)
++            }
++        }
++    }
++
++    /// The number of cold lookups in a recorded event sequence.
++    pub def misses(events: List[Lookup]): Int32 = List.length(List.filter(isMiss, events))
++
++    /// The number of real reuse hits in a recorded event sequence.
++    pub def hits(events: List[Lookup]): Int32 = List.length(List.filter(isHit, events))
++
++    def isMiss(event: Lookup): Bool = match event {
++        case Lookup.Miss(_) => true
++        case Lookup.Hit(_)  => false
++    }
++
++    def isHit(event: Lookup): Bool = match event {
++        case Lookup.Hit(_)  => true
++        case Lookup.Miss(_) => false
++    }
++}
+diff --git a/attune/src/Attune/Envelope.flix b/attune/src/Attune/Envelope.flix
+index 47a9ec8239..a34a2696b8 100644
+--- a/attune/src/Attune/Envelope.flix
++++ b/attune/src/Attune/Envelope.flix
+@@ -16,6 +16,17 @@
+         case World(String)
+     }
+ 
++    /// A structured world identity: the canonical repository origin, the exact
++    /// content/source epoch and the frontend/resolver/admission semantics. All
++    /// three are part of identity, so a display name, a member count or an
++    /// unchecked commit alone can never establish it.
++    pub type alias WorldId = { origin = String, content = String, semantics = String }
++
++    /// The world named by one structured identity. Changing any component yields
++    /// a different world, so dirty content cannot reuse a clean world's identity.
++    pub def worldId(id: WorldId): World =
++        World.World(id#origin + "@" + id#content + "#" + id#semantics)
++
+     /// A file entity identity, valid only in the Files domain.
+     pub enum FileId with Eq, Order, ToString, Hash {
+         case FileId(String)
+@@ -43,6 +54,11 @@
+         case Callers
+     }
+ 
++    /// One directed relation fact in exactly one world. The world is part of the
++    /// fact's identity, so a same-named edge in another world is a different
++    /// fact and can never donate an edge.
++    pub type alias Fact = { world = World, source = String, atom = Atom, target = String }
++
+     /// A complete finite frontier: one world, one nominal domain and the exact
+     /// finite set of entities in that domain. The constructor fixes the domain,
+     /// so a frontier cannot pair a domain with members from another one.
+diff --git a/attune/src/Attune/Study.flix b/attune/src/Attune/Study.flix
+new file mode 100644
+index 0000000000..01f19c3348
+--- /dev/null
++++ b/attune/src/Attune/Study.flix
+@@ -0,0 +1,154 @@
++/// Study's small typed evidence and artifact values.
++///
++/// Source facts, scoped observations, separately versioned static witnesses,
++/// task declarations, predictions and execution observations are different typed
++/// owners. A witness, a complete no-match, unknown and failure stay distinct; an
++/// observation is `ObservedTrue`, `ObservedFalse` or `Unmeasured`, with a
++/// classified error kept separate; and an artifact is identified by its declared
++/// schema, producer and exact input rather than by its bytes. Nothing here reads
++/// a document, contacts a provider or decides a corpus verdict.
++pub mod Attune.Study {
++
++    use Attune.Envelope.{Atom, Fact, World}
++
++    /// One logical outcome, distinct from an answer's emptiness.
++    pub enum Outcome with Eq, ToString {
++        case Witness
++        case NoMatch
++        case Unknown
++        case Failed
++    }
++
++    /// The stable outcome name.
++    pub def outcomeName(outcome: Outcome): String = match outcome {
++        case Outcome.Witness => "WITNESS"
++        case Outcome.NoMatch => "NO-MATCH"
++        case Outcome.Unknown => "UNKNOWN"
++        case Outcome.Failed  => "FAILED"
++    }
++
++    /// How much of one scope's observation window was actually seen. `Complete`
++    /// is an honest claim that nothing else was observed; the others can never
++    /// support a complete no-match.
++    pub enum Coverage with Eq {
++        case Complete
++        case Partial
++        case Missing
++        case Failure(String)
++    }
++
++    /// One scoped question: name an entity inside exactly one scope and ask one
++    /// directed atom about it.
++    pub type alias Query = { scope = World, subject = String, atom = Atom }
++
++    /// Resolve a scoped question against a coverage claim and the observed facts.
++    /// The scope is part of the match, so a fact from another scope is never
++    /// donated.
++    pub def observe(ask: Query, coverage: Coverage, facts: List[Fact]): Outcome = match coverage {
++        case Coverage.Failure(_) => Outcome.Failed
++        case Coverage.Complete  => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.NoMatch
++        case Coverage.Partial   => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.Unknown
++        case Coverage.Missing   => Outcome.Unknown
++    }
++
++    /// A witness is a fact of exactly this scope, subject and atom. The target is
++    /// the answer, not part of the question.
++    def hasWitness(ask: Query, facts: List[Fact]): Bool =
++        List.exists(fact ->
++            fact#world == ask#scope and fact#source == ask#subject and fact#atom == ask#atom, facts)
++
++    /// How one supporting entity was obtained. Observed evidence was measured;
++    /// Proposed evidence is a hypothesis, and only Observed evidence can meet an
++    /// observed guard.
++    pub enum Status with Eq {
++        case Observed
++        case Proposed
++    }
++
++    /// One piece of evidence: a shared scoped fact plus how it was obtained. The
++    /// supporting entity is the fact's own source and the fact's scope is part of
++    /// that identity, so a same-named entity in another scope is a different one.
++    pub type alias Support = { fact = Fact, status = Status }
++
++    /// The distinct observed entities that support `branch` in exactly `scope`.
++    /// The result dedupes by entity identity, so two derivations naming one
++    /// entity are one supporter and never two.
++    pub def witnesses(scope: World, branch: String, items: List[Support]): List[String] =
++        List.distinct(List.filterMap(item ->
++            if (item#fact#world == scope and item#fact#target == branch and item#status == Status.Observed)
++                Some(item#fact#source)
++            else None, items))
++
++    /// An explicit threshold over one sealed scope: it counts only observed
++    /// entities of exactly this scope and branch.
++    pub def meets(threshold: Int32, scope: World, branch: String, items: List[Support]): Bool =
++        List.length(witnesses(scope, branch, items)) >= threshold
++
++    /// The tri-state observation component, separate from any classified error.
++    /// A missing or failed observation is `Unmeasured`, never `ObservedFalse`.
++    pub enum Observation with Eq, ToString {
++        case ObservedTrue
++        case ObservedFalse
++        case Unmeasured
++    }
++
++    /// The stable observation name.
++    pub def observationName(observation: Observation): String = match observation {
++        case Observation.ObservedTrue  => "true"
++        case Observation.ObservedFalse => "false"
++        case Observation.Unmeasured    => "unmeasured"
++    }
++
++    /// The declared schema of one produced artifact. Closed: an evaluator's gold
++    /// and a prediction input are different schemas, not interchangeable labels.
++    pub enum Schema with Eq, ToString {
++        case Embedding
++        case Prediction
++        case Gold
++    }
++
++    /// One produced artifact: declared schema, producer identity, exact input
++    /// identity and the producer's recorded payload bytes. The first three are
++    /// the artifact's identity; the payload is evidence, not the artifact's name.
++    pub type alias Artifact = { schema = Schema, producer = String, input = String, payload = String }
++
++    /// The exact identity of one artifact.
++    pub def artifactIdentity(artifact: Artifact): (Schema, String, String) =
++        (artifact#schema, artifact#producer, artifact#input)
++
++    /// A prediction input is a distinct nominal type. Only an `Embedding`
++    /// artifact yields one, and no constructor accepts a gold label.
++    pub enum PredictionInput with Eq, ToString {
++        case PredictionInput(String)
++    }
++
++    /// An evaluator gold label is its own type, sealed off from prediction.
++    pub enum GoldLabel with Eq {
++        case GoldLabel(String)
++    }
++
++    /// The single typed prediction entry point; it consumes only a prediction input.
++    pub def predict(input: PredictionInput): String = match input {
++        case PredictionInput.PredictionInput(payload) => "prediction:" + payload
++    }
++
++    /// Admit a prediction input from an artifact. Only the embedding schema yields
++    /// one; a gold- or prediction-schema artifact has no path here.
++    pub def predictInput(artifact: Artifact): Option[PredictionInput] =
++        if (artifact#schema == Schema.Embedding) Some(PredictionInput.PredictionInput(artifact#payload))
++        else None
++
++    /// The replay boundary: a re-read artifact is admitted only when its exact
++    /// identity equals the stored one, so a wrong schema or a different input
++    /// rejects instead of masquerading as the stored artifact.
++    pub def accept(stored: Artifact, candidate: Artifact): Result[String, Artifact] =
++        if (artifactIdentity(stored) != artifactIdentity(candidate)) Err("artifact identity mismatch")
++        else Ok(stored)
++
++    /// The only route by which a gold label becomes an artifact: a gold-schema
++    /// artifact, which `predictInput` refuses.
++    pub def goldArtifact(label: GoldLabel, task: String): Artifact = match label {
++        case GoldLabel.GoldLabel(text) =>
++            { schema = Schema.Gold, producer = "evaluator", input = task, payload = text }
++    }
++}
+diff --git a/attune/src/Attune/View.flix b/attune/src/Attune/View.flix
+index 66e3beffed..5b4d744353 100644
+--- a/attune/src/Attune/View.flix
++++ b/attune/src/Attune/View.flix
+@@ -19,7 +19,8 @@
+ pub mod Attune.View {
+ 
+     use Attune.Envelope
+-    use Attune.Envelope.{Atom, Domain, FileId, Frontier, SymbolId, World}
++    use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
++    use Attune.Study.{Outcome, outcomeName}
+     use Attune.AsciiTree
+ 
+     // ------------------------------------------------------------ projections
+@@ -309,22 +310,6 @@
+ 
+     // ------------------------------------------------------------------ proof
+ 
+-    /// A logical outcome, distinct from an answer's emptiness.
+-    pub enum Outcome with Eq, ToString {
+-        case Witness
+-        case NoMatch
+-        case Unknown
+-        case Failed
+-    }
+-
+-    /// The stable outcome name.
+-    pub def outcomeName(outcome: Outcome): String = match outcome {
+-        case Outcome.Witness => "WITNESS"
+-        case Outcome.NoMatch => "NO-MATCH"
+-        case Outcome.Unknown => "UNKNOWN"
+-        case Outcome.Failed  => "FAILED"
+-    }
+-
+     /// One premise of one rule application: the named role it fills, the literal
+     /// premise, whether it holds for this binding, and the exact bindings. A
+     /// premise that does not hold is shown as false rather than dropped.
+@@ -402,9 +387,6 @@
+ 
+     // ------------------------------------------------------------ semantic view
+ 
+-    /// One authored relation fact in one scope.
+-    pub type alias ViewFact = { scope = String, source = String, atom = Atom, target = String }
+-
+     /// A seed node with its nominal domain.
+     pub type alias ViewSeed = { id = String, domain = Domain }
+ 
+@@ -423,13 +405,14 @@
+     /// two selected nodes is an edge. An induced lateral edge between two seeds
+     /// therefore survives even though no traversal tree would draw it.
+     pub def induced(
+-        facts: List[ViewFact],
++        facts: List[Fact],
+         name: String,
+         scope: String,
+         seeds: List[ViewSeed],
+         relations: List[Atom]
+     ): View = {
+-        let selected = List.filter(fact -> fact#scope == scope and memberOf(fact#atom, relations), facts);
++        let selected = List.filter(fact ->
++            fact#world == World.World(scope) and memberOf(fact#atom, relations), facts);
+         let seedIds = List.map(seed -> seed#id, seeds);
+         let children = List.filterMap(fact ->
+             if (List.exists(id -> id == fact#source, seedIds))
+diff --git a/attune/test/docs/BUILD.bazel b/attune/test/docs/BUILD.bazel
+index 0918c72fc5..db021dac7b 100644
+--- a/attune/test/docs/BUILD.bazel
++++ b/attune/test/docs/BUILD.bazel
+@@ -52,6 +52,7 @@
+         "//src:Attune/Envelope.flix",
+         "//src:Attune/Grit.flix",
+         "//src:Attune/Repository.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+     checkout_files = [
+diff --git a/attune/test/docs/ReadmeCorrespondence.flix b/attune/test/docs/ReadmeCorrespondence.flix
+index 72da5b6db1..2deb302e86 100644
+--- a/attune/test/docs/ReadmeCorrespondence.flix
++++ b/attune/test/docs/ReadmeCorrespondence.flix
+@@ -3,8 +3,9 @@
+ use Attune.AsciiTree
+ use Attune.Docs
+ use Attune.Envelope
+-use Attune.Envelope.{Atom, Domain, Frontier, World}
++use Attune.Envelope.{Atom, Domain, Fact, Frontier, World}
+ use Attune.Repository
++use Attune.Study.{Outcome}
+ use Attune.View
+ 
+ /// The documentation correspondence fixture.
+@@ -96,8 +97,8 @@
+     View.renderRoutes(limits(), snapshot(), "demo", r :: e :: a :: b :: Nil)
+ }
+ 
+-def viewFact(source: String, target: String): View.ViewFact =
+-    { scope = "shop-v1", source = source, atom = Atom.Imports, target = target }
++def viewFact(source: String, target: String): Fact =
++    { world = World.World("shop-v1"), source = source, atom = Atom.Imports, target = target }
+ 
+ def fileSeed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
+ 
+@@ -159,7 +160,7 @@
+             match pairs {
+                 case Nil => Err("the shop join produced no witness")
+                 case (a, b) :: _ => View.renderProof(limits(), {
+-                    goal = "Pair", scope = "shop-v1", outcome = View.Outcome.Witness, detail = "",
++                    goal = "Pair", scope = "shop-v1", outcome = Outcome.Witness, detail = "",
+                     application = application("shop-v1", a, b, center, true), alternatives = Nil })
+             }
+         }
+@@ -172,7 +173,7 @@
+     let rows = query facts, pairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
+     if (not Vector.isEmpty(rows)) Err("the one-importer counterexample should have no row")
+     else View.renderProof(limits(), {
+-        goal = "Pair", scope = "one", outcome = View.Outcome.NoMatch, detail = "",
++        goal = "Pair", scope = "one", outcome = Outcome.NoMatch, detail = "",
+         application = application("one", "receipt.rb", "receipt.rb", "pricing.rb", false), alternatives = Nil })
+ }
+ 
+diff --git a/attune/test/proposals/BUILD.bazel b/attune/test/proposals/BUILD.bazel
+index 4250c4f54d..394348468e 100644
+--- a/attune/test/proposals/BUILD.bazel
++++ b/attune/test/proposals/BUILD.bazel
+@@ -1,4 +1,4 @@
+-load("//platform/build:native.bzl", "native_flix_java_test", "native_flix_reject_test", "native_flix_test")
++load("//platform/build:native.bzl", "native_flix_java_test", "native_flix_test")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -8,67 +8,12 @@
+     srcs = glob(["**"]),
+ )
+ 
+-# The test-only proposal namespace. P01-P10 live here, one small typed contract
+-# per file: a question and ASCII explanation, the smallest relevant signature,
+-# a visible positive fixture, a counterexample and the enforcement note. The
+-# approved policy admits and counts this exact prefix (`test/proposals/`), so
+-# proposal source is reported separately from ordinary test code.
+-
+-# P01: exact world/domain/frontier identity. Reordering one set preserves
+-# identity; equal-sized unequal sets, equal basenames, another world and another
+-# domain stay distinct. Executed fixture.
+-native_flix_test(
+-    name = "p01_identity_test",
+-    srcs = [
+-        "P01Identity.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/AsciiTree.flix",
+-        "//src:Attune/Envelope.flix",
+-        "//src:Attune/View.flix",
+-    ],
+-)
+-
+-# P02: typed composition. A legal Files -> defines -> Symbols -> defined_in ->
+-# Files walk succeeds, a typed empty continuation keeps its domain, and
+-# Symbols -> imports rejects at runtime. Executed fixture.
+-native_flix_test(
+-    name = "p02_composition_test",
+-    srcs = [
+-        "P02Composition.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/AsciiTree.flix",
+-        "//src:Attune/Envelope.flix",
+-        "//src:Attune/View.flix",
+-    ],
+-)
+-
+-# P03: transition identity and execution evidence. Two authored routes share an
+-# exact final key, EMPTY+REUSE is representable, and equal-output/unequal-input,
+-# missing-producer and cross-world reuse all reject at runtime. Executed fixture.
+-native_flix_test(
+-    name = "p03_evidence_test",
+-    srcs = [
+-        "P03Evidence.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/AsciiTree.flix",
+-        "//src:Attune/Envelope.flix",
+-        "//src:Attune/View.flix",
+-    ],
+-)
+-
+-# P04: scoped observations and completeness. Match, complete no-match, unknown
+-# and failure stay four distinct outcomes; a foreign similarly named file cannot
+-# donate a witness and missing evidence stays unknown. Executed fixture.
+-native_flix_test(
+-    name = "p04_completeness_test",
+-    srcs = [
+-        "P04Completeness.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/AsciiTree.flix",
+-        "//src:Attune/Envelope.flix",
+-        "//src:Attune/View.flix",
+-    ],
+-)
++# The remaining test-only proposal namespace. P05, P06, P08 and P09 stay here
++# until their own compact features migrate them; P01-P04, P07 and P10 were
++# consolidated into the compact core (`//test/spine:core_*_test`) and the real
++# Parquet seam (`//test/seam:parquet_seam_test`), and their duplicate proposal
++# implementations were removed rather than left beside the compact owners. The
++# approved policy admits and counts this exact prefix (`test/proposals/`).
+ 
+ # P05: native first-class Datalog composition. A parameterized fragment joins a
+ # second fragment on a shared scope/center role, rule-set union is not
+@@ -94,21 +39,6 @@
+     ],
+ )
+ 
+-# P07: evidence guards, support and witnesses. Two distinct observed entities
+-# support two branches, two proof paths to one entity are one supporter, a
+-# foreign scope cannot meet a sealed threshold, and proposed evidence stays
+-# distinct from observed. Executed fixture.
+-native_flix_test(
+-    name = "p07_guards_test",
+-    srcs = [
+-        "P07Guards.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/AsciiTree.flix",
+-        "//src:Attune/Envelope.flix",
+-        "//src:Attune/View.flix",
+-    ],
+-)
+-
+ # P08: prior and decision contracts. The approved LangChain4j seam is driven by
+ # a recorded fake transport; a decoded in-budget decision is chosen, a classified
+ # failure stays a failure, and over-budget/unknown requests take the declared
+@@ -134,34 +64,7 @@
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+-
+-# P10: typed artifacts and effect/handler seams. The approved LangChain4j
+-# embedding seam runs a recorded fake exchange with no provider IO; an authored
+-# artifact round-trips by exact schema/producer/input identity, a wrong schema or
+-# changed identity rejects, and a gold-shaped input has no path into prediction.
+-# Executed fixture.
+-native_flix_java_test(
+-    name = "p10_artifacts_test",
+-    srcs = [
+-        "P10Artifacts.flix",
+-        "//test/seam:Seam.flix",
+-    ],
+-    java_deps = ["//test/seam:attune_inference"],
+-)
+-
+-# The one static domain witness P02 cites: a `Frontier` constructor fixes its
+-# member domain, so a `SymbolId` cannot inhabit `Frontier.Files`. The pinned
+-# compiler rejects it during `check` with no `main` required. Sibling to the
+-# spine's File/Symbol negative, kept isolated so the normal suite stays green.
+-native_flix_reject_test(
+-    name = "p02_domain_witness_negative_test",
+-    srcs = [
+-        "P02DomainWitnessNegative.flix",
+-        "//src:Attune.flix",
+-        "//src:Attune/Envelope.flix",
+-    ],
+-    expected = "Unable to unify the types",
+-)
+diff --git a/attune/test/proposals/P01Identity.flix b/attune/test/proposals/P01Identity.flix
+deleted file mode 100644
+index f0191033ef..0000000000
+--- a/attune/test/proposals/P01Identity.flix
++++ /dev/null
+@@ -1,97 +0,0 @@
+-use Attune.Envelope
+-use Attune.Envelope.{Domain, Frontier, World}
+-use Attune.View
+-
+-/// P01 - world, entity and frontier identity.
+-///
+-/// Question. When do two frontiers name the same observation?
+-///
+-///   one observation = (world, domain, complete finite member set)
+-///
+-///   Files{w1,{a/pricing.rb,b/pricing.rb}}  == reordered set       same value
+-///   Files{w1,{a/pricing.rb,b/pricing.rb}}  != Files{w1,{a/pricing.rb}}  size alone
+-///   Files{w1,{a/pricing.rb}}               != Files{w1,{b/pricing.rb}}  same basename
+-///   Files{w1,{a.flix}}                     != Files{w2,{a.flix}}        other world
+-///   Files{w1,{a.flix}}                     != Symbols{w1,{a}}           other domain
+-///
+-/// Proposition. Identity is that exact triple. A member count, an insertion
+-/// order and a printed basename are presentation and never merge two distinct
+-/// observations.
+-///
+-/// Reused envelope. `Attune.Envelope` already defines `World`, `FileId`,
+-/// `SymbolId` and the domain-tagged `Frontier`, and the shared projection
+-/// `Attune.View.members` already reads a frontier without comparing two
+-/// domains. This proposal adds only the exact identity key and its laws, so
+-/// there is no second Atom/State schema and no new store.
+-///
+-/// Enforcement. Executed: every assertion below runs under the pinned native
+-/// test engine. The nominal separation (a `FileId` cannot enter the Symbols
+-/// constructor) is a compiler guarantee already demonstrated by
+-/// `//test/spine:nominal_negative_test`; nothing here is claimed static.
+-///
+-/// Open. Durable encoding, and whether extra identity witnesses earn their
+-/// complexity, stay undecided. `identityKey` is a canonical in-memory key, not
+-/// a storage format.
+-
+-/// The exact identity key: world, domain and the complete member set in one
+-/// canonical order. Two frontiers share a key exactly when they are equal, so
+-/// the key introduces no identity of its own.
+-pub enum IdentityKey with Eq, ToString {
+-    case IdentityKey(World, Domain, List[String])
+-}
+-
+-/// The identity key of one frontier, built from the shared projections only.
+-pub def identityKey(frontier: Frontier): IdentityKey =
+-    IdentityKey.IdentityKey(Envelope.worldOf(frontier), Envelope.domainOf(frontier),
+-        List.sort(View.members(frontier)))
+-
+-/// A Files frontier of one world over exactly these paths.
+-def files(world: World, paths: List[String]): Frontier = Envelope.files(world, paths)
+-
+-/// A Symbols frontier of one world over exactly these names.
+-def symbols(world: World, names: List[String]): Frontier = Envelope.symbols(world, names)
+-
+-/// Reordering one exact set is the same observation.
+-@Test
+-def reorderingOneExactSetPreservesIdentity(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let left = files(world, List#{"a/pricing.rb", "b/pricing.rb"});
+-    let right = files(world, List#{"b/pricing.rb", "a/pricing.rb"});
+-    Assert.assertEq(expected = left, right);
+-    Assert.assertEq(expected = identityKey(left), identityKey(right))
+-}
+-
+-/// Equal size is not identity: two sets with the same cardinality stay distinct.
+-@Test
+-def equalSizedUnequalSetsDoNotMerge(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let left = files(world, List#{"a.flix", "b.flix"});
+-    let right = files(world, List#{"a.flix", "c.flix"});
+-    Assert.assertEq(expected = 2, List.length(View.members(left)));
+-    Assert.assertEq(expected = 2, List.length(View.members(right)));
+-    Assert.assertEq(expected = false, left == right);
+-    Assert.assertEq(expected = false, identityKey(left) == identityKey(right))
+-}
+-
+-/// A shared display basename does not merge two entities.
+-@Test
+-def equalBasenamesKeepDistinctIdentities(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let left = files(world, List#{"a/pricing.rb"});
+-    let right = files(world, List#{"b/pricing.rb"});
+-    Assert.assertEq(expected = "Files{a/pricing.rb}", View.frontierLabel(left));
+-    Assert.assertEq(expected = "Files{b/pricing.rb}", View.frontierLabel(right));
+-    Assert.assertEq(expected = false, left == right)
+-}
+-
+-/// Another world or another domain never merges with this one.
+-@Test
+-def anotherWorldOrDomainDoesNotMerge(): Unit \ Assert = {
+-    let w1 = World.World("shop-v1");
+-    let w2 = World.World("shop-v2");
+-    let here = files(w1, List#{"a.flix"});
+-    Assert.assertEq(expected = false, here == files(w2, List#{"a.flix"}));
+-    Assert.assertEq(expected = false, here == symbols(w1, List#{"a.flix"}));
+-    Assert.assertEq(expected = "files", Envelope.domainName(Envelope.domainOf(here)));
+-    Assert.assertEq(expected = "symbols", Envelope.domainName(Envelope.domainOf(symbols(w1, List#{"a.flix"}))))
+-}
+diff --git a/attune/test/proposals/P02Composition.flix b/attune/test/proposals/P02Composition.flix
+deleted file mode 100644
+index 7d663d5984..0000000000
+--- a/attune/test/proposals/P02Composition.flix
++++ /dev/null
+@@ -1,87 +0,0 @@
+-use Attune.Envelope
+-use Attune.Envelope.{Atom, Domain, Frontier, World}
+-use Attune.View
+-
+-/// P02 - typed composition.
+-///
+-/// Question. Can one typed walk compose the six directed atoms, and what does a
+-/// legal empty answer keep?
+-///
+-///   Files -> defines -> Symbols -> defined_in -> Files        Ok(Files)
+-///   Symbols -> imports                                        Err(needs files)
+-///   Files{} -> defines -> Symbols{} -> defined_in -> Files{}  Ok(Files)
+-///
+-/// Proposition. A composition is a domain walk over the one signature table:
+-/// each atom's declared source must equal the current domain and yields its
+-/// declared target. A rejected sequence is a typed error, never an empty
+-/// success, and emptiness stays a property of an answer rather than a route.
+-///
+-/// Reused envelope. `Attune.Envelope.atoms/atomSource/atomTarget` is the single
+-/// atom vocabulary and `Attune.View.empty/frontierLabel` presents an answer.
+-/// This proposal adds only the walk and its refusal text.
+-///
+-/// Enforcement. Honest split. The sequence check is RUNTIME: `Symbols` and
+-/// `imports` are ordinary values of the shared types, so the compiler accepts
+-/// the call and the walk rejects it. The one STATIC witness is narrower, that a
+-/// `Frontier` constructor fixes its member domain; the isolated compiler
+-/// negative `P02DomainWitnessNegative.flix` demonstrates it. No extra
+-/// compile-time domain witnesses are added, so no static sequencing claim is
+-/// made.
+-///
+-/// Open. Whether those extra witnesses are worth their complexity stays
+-/// undecided.
+-
+-/// One step of a domain walk: the atom's declared source must equal the current
+-/// domain and the result is the atom's declared target.
+-pub def step(domain: Domain, atom: Atom): Result[String, Domain] =
+-    if (Envelope.atomSource(atom) != domain)
+-        Err(Envelope.atomName(atom) + " needs " + Envelope.domainName(Envelope.atomSource(atom))
+-            + " but the current domain is " + Envelope.domainName(domain) + ".")
+-    else Ok(Envelope.atomTarget(atom))
+-
+-/// Walk a whole atom sequence from one starting domain.
+-pub def compose(domain: Domain, atoms: List[Atom]): Result[String, Domain] = match atoms {
+-    case Nil => Ok(domain)
+-    case atom :: rest => match step(domain, atom) {
+-        case Err(error) => Err(error)
+-        case Ok(next)   => compose(next, rest)
+-    }
+-}
+-
+-/// The legal route closes back onto Files by the declared domains.
+-@Test
+-def filesDefinesSymbolsDefinedInFilesComposes(): Unit \ Assert = {
+-    Assert.assertEq(expected = Ok(Domain.Symbols), compose(Domain.Files, Atom.Defines :: Nil));
+-    Assert.assertEq(expected = Ok(Domain.Files), compose(Domain.Files, Atom.Defines :: Atom.DefinedIn :: Nil))
+-}
+-
+-/// A Symbols frontier does not accept `imports`; the walk says so at runtime.
+-@Test
+-def symbolsThenImportsRejectsAtRuntime(): Unit \ Assert = {
+-    Assert.assertErr(compose(Domain.Symbols, Atom.Imports :: Nil));
+-    Assert.assertEq(expected = true, String.contains(substr = "needs files",
+-        match compose(Domain.Symbols, Atom.Imports :: Nil) {
+-            case Err(error) => error
+-            case Ok(_)      => ""
+-        }))
+-}
+-
+-/// The same law from the other side: `defined_in` needs Symbols, not Files.
+-@Test
+-def filesThenDefinedInAlsoRejectsAtRuntime(): Unit \ Assert =
+-    Assert.assertErr(compose(Domain.Files, Atom.DefinedIn :: Nil))
+-
+-/// A legal empty continuation keeps its world and domain and stays distinct
+-/// from the other empty domain's answer.
+-@Test
+-def legalEmptinessKeepsItsDomain(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let seed = Envelope.files(world, Nil);
+-    Assert.assertEq(expected = Ok(Domain.Files),
+-        compose(Envelope.domainOf(seed), Atom.Defines :: Atom.DefinedIn :: Nil));
+-    let afterDefines = Envelope.symbols(world, Nil);
+-    Assert.assertEq(expected = true, View.empty(seed) and View.empty(afterDefines));
+-    Assert.assertEq(expected = "Files{}", View.frontierLabel(seed));
+-    Assert.assertEq(expected = "Symbols{}", View.frontierLabel(afterDefines));
+-    Assert.assertEq(expected = false, seed == afterDefines)
+-}
+diff --git a/attune/test/proposals/P02DomainWitnessNegative.flix b/attune/test/proposals/P02DomainWitnessNegative.flix
+deleted file mode 100644
+index 9fd59823bc..0000000000
+--- a/attune/test/proposals/P02DomainWitnessNegative.flix
++++ /dev/null
+@@ -1,15 +0,0 @@
+-use Attune.Envelope.{Frontier, SymbolId, World}
+-
+-/// Isolated compiler negative cited by P02.
+-///
+-/// A frontier constructor fixes its member domain: `Frontier.Files` carries a
+-/// `Set[FileId]`, so a `SymbolId` cannot inhabit it. The pinned compiler must
+-/// reject this program during `check`, which is the one static domain witness
+-/// P02 relies on. The sequencing check in `P02Composition.flix` is runtime and
+-/// is labeled as such; this file exists only to be rejected.
+-@Test
+-def domainWitnessNegative(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let invalid = Frontier.Files(world, Set#{SymbolId.SymbolId("Receipt.render")});
+-    Assert.assertEq(expected = invalid, invalid)
+-}
+diff --git a/attune/test/proposals/P03Evidence.flix b/attune/test/proposals/P03Evidence.flix
+deleted file mode 100644
+index f1e618c180..0000000000
+--- a/attune/test/proposals/P03Evidence.flix
++++ /dev/null
+@@ -1,140 +0,0 @@
+-use Attune.Envelope
+-use Attune.Envelope.{Atom, Frontier, World}
+-use Attune.View
+-use Attune.View.{Step, Work}
+-
+-/// P03 - transition identity and execution evidence.
+-///
+-/// Question. When are two recorded transitions the same transition, and when is
+-/// one the reuse of an earlier one?
+-///
+-///   exact transition key = (snapshot world, memo scope, exact input, atom, exact output)
+-///
+-///   A: Symbols{Receipt.render} --defined_in--> Files{pricing.rb}
+-///                              --imported_by--> Files{checkout.rb, receipt.rb}  [OK; COMPUTED t2]
+-///   B: Symbols{Pricing.total_cents} --defined_in--> Files{pricing.rb}
+-///                              --imported_by--> Files{checkout.rb, receipt.rb}  [OK; REUSE t2]
+-///
+-///   A and B have different seeds and different first steps, but their final
+-///   steps carry the same exact key. Reuse names that key, not an equal output.
+-///
+-///   Files{pricing.rb} --imports--> Files{}   [EMPTY; REUSE t1]
+-///   An empty answer is still a transition, so answer status and work evidence
+-///   are two independent axes.
+-///
+-/// Proposition. The key is exactly that five-tuple. It excludes the event
+-/// ordinal and the work tag: the ordinal says *when* a step ran and the work tag
+-/// says *how*, but neither changes *which* transition it is. `OK`/`EMPTY`
+-/// describes the answer and `Unrecorded`/`COMPUTED`/`REUSE` describes recorded
+-/// work, so `EMPTY` plus `REUSE` is a representable, meaningful pair.
+-///
+-/// Reused envelope. `Attune.View.Step`, `Work`, `validateStep`, `validateRoutes`
+-/// and `annotation` already model the two axes and the exact-producer rule. This
+-/// proposal adds only the key as a first-class value and the laws that read it;
+-/// no second store, scheduler or cache protocol is introduced.
+-///
+-/// Enforcement. RUNTIME. `Work.Reused` is an ordinary well-typed constructor, so
+-/// the pinned compiler accepts a lying reuse claim; the shared validators
+-/// `Attune.View.validateStep`/`validateRoutes` are what reject it. No new static
+-/// witness is claimed here, and no dummy production body is added.
+-///
+-/// Open. Runtime memo ownership and partitioning, and any distributed reuse
+-/// protocol, stay undecided. These ordinals are local to one recorded serial run,
+-/// not a global cache identity.
+-
+-/// The exact identity of one recorded transition: the snapshot (world), the memo
+-/// scope, the exact input frontier, the atom and the exact output frontier. The
+-/// event ordinal and the work tag are absent by design, so two routes may share a
+-/// key while recording different ordinals and different work.
+-pub def transitionKey(step: Step): (World, String, Frontier, Atom, Frontier) =
+-    (step#snapshot, step#memo, step#input, step#atom, step#output)
+-
+-/// One recorded transition value of the shared shape.
+-def step(
+-    id: Int32,
+-    snapshot: World,
+-    memo: String,
+-    input: Frontier,
+-    atom: Atom,
+-    output: Frontier,
+-    work: Work
+-): Step = { id = id, snapshot = snapshot, memo = memo, input = input, atom = atom, output = output, work = work }
+-
+-def files(world: World, paths: List[String]): Frontier = Envelope.files(world, paths)
+-
+-def symbols(world: World, names: List[String]): Frontier = Envelope.symbols(world, names)
+-
+-/// Two authored routes converge on one exact final key; the later route's final
+-/// step is the only one that records reuse, and it names the earlier producer.
+-@Test
+-def twoRoutesShareAnExactFinalKey(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let memo = "demo";
+-    let receipt = symbols(world, List#{"Receipt.render"});
+-    let total = symbols(world, List#{"Pricing.total_cents"});
+-    let pricing = files(world, List#{"pricing.rb"});
+-    let importers = files(world, List#{"checkout.rb", "receipt.rb"});
+-    let a1 = step(1, world, memo, receipt, Atom.DefinedIn, pricing, Work.Computed);
+-    let a2 = step(2, world, memo, pricing, Atom.ImportedBy, importers, Work.Computed);
+-    let b1 = step(3, world, memo, total, Atom.DefinedIn, pricing, Work.Computed);
+-    let b2 = step(4, world, memo, pricing, Atom.ImportedBy, importers, Work.Reused(2));
+-    let routeA = { name = "A", seed = receipt, steps = a1 :: a2 :: Nil };
+-    let routeB = { name = "B", seed = total, steps = b1 :: b2 :: Nil };
+-    Assert.assertEq(expected = true, Result.isOk(View.validateRoutes(world, memo, routeA :: routeB :: Nil, Nil)));
+-    Assert.assertEq(expected = true, transitionKey(a2) == transitionKey(b2));
+-    Assert.assertEq(expected = false, a2#id == b2#id);
+-    Assert.assertEq(expected = false, routeA#seed == routeB#seed);
+-    Assert.assertEq(expected = "[OK; COMPUTED t2]", View.annotation(a2));
+-    Assert.assertEq(expected = "[OK; REUSE t2]", View.annotation(b2));
+-    Assert.assertEq(expected = "OK", View.routeStatus(routeB))
+-}
+-
+-/// `EMPTY` and `REUSE` are independent axes, so an empty answer can still carry
+-/// exact earlier-producer evidence.
+-@Test
+-def emptyAnswerWithReuseEvidenceIsRepresentable(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let pricing = files(world, List#{"pricing.rb"});
+-    let none = files(world, Nil);
+-    let producer = step(1, world, "demo", pricing, Atom.Imports, none, Work.Computed);
+-    let hit = step(2, world, "demo", pricing, Atom.Imports, none, Work.Reused(1));
+-    Assert.assertEq(expected = true, Result.isOk(View.validateStep(pricing, hit, producer :: Nil)));
+-    Assert.assertEq(expected = "EMPTY", View.outcome(hit#output));
+-    Assert.assertEq(expected = "[EMPTY; REUSE t1]", View.annotation(hit))
+-}
+-
+-/// Equal outputs from unequal inputs do not share a key, so they cannot be reuse.
+-@Test
+-def equalOutputWithUnequalInputIsNotReuse(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let here = files(world, List#{"pricing.rb"});
+-    let elsewhere = files(world, List#{"checkout.rb"});
+-    let answer = files(world, List#{"receipt.rb"});
+-    let producer = step(1, world, "demo", here, Atom.Imports, answer, Work.Computed);
+-    let candidate = step(2, world, "demo", elsewhere, Atom.Imports, answer, Work.Reused(1));
+-    Assert.assertEq(expected = true, producer#output == candidate#output);
+-    Assert.assertEq(expected = false, transitionKey(producer) == transitionKey(candidate));
+-    Assert.assertErr(View.validateStep(elsewhere, candidate, producer :: Nil))
+-}
+-
+-/// A producer that is not present and earlier cannot be reused.
+-@Test
+-def aMissingProducerIsNotReuse(): Unit \ Assert = {
+-    let world = World.World("shop-v1");
+-    let pricing = files(world, List#{"pricing.rb"});
+-    let hit = step(1, world, "demo", pricing, Atom.Imports, files(world, Nil), Work.Reused(7));
+-    Assert.assertErr(View.validateStep(pricing, hit, Nil))
+-}
+-
+-/// A key includes the snapshot, so a reuse cannot cross worlds.
+-@Test
+-def crossWorldReuseIsNotReuse(): Unit \ Assert = {
+-    let shop1 = World.World("shop-v1");
+-    let shop2 = World.World("shop-v2");
+-    let here = files(shop1, List#{"pricing.rb"});
+-    let there = files(shop2, List#{"pricing.rb"});
+-    let producer = step(1, shop1, "demo", here, Atom.Imports, files(shop1, List#{"receipt.rb"}), Work.Computed);
+-    let candidate = step(2, shop2, "demo", there, Atom.Imports, files(shop2, List#{"receipt.rb"}), Work.Reused(1));
+-    Assert.assertEq(expected = false, producer#snapshot == candidate#snapshot);
+-    Assert.assertErr(View.validateStep(there, candidate, producer :: Nil))
+-}
+diff --git a/attune/test/proposals/P04Completeness.flix b/attune/test/proposals/P04Completeness.flix
+deleted file mode 100644
+index ef27ef0fa2..0000000000
+--- a/attune/test/proposals/P04Completeness.flix
++++ /dev/null
+@@ -1,123 +0,0 @@
+-use Attune.Envelope.{Atom}
+-use Attune.View
+-use Attune.View.{Outcome, ViewFact}
+-
+-/// P04 - scoped observations and completeness.
+-///
+-/// Question. When is "no such fact" a complete answer, and when is it only the
+-/// absence of evidence?
+-///
+-///   facts(shop-v1) = { shop-v1: pricing.rb --defines--> Pricing }
+-///
+-///   observe(shop-v1, pricing.rb, defines) with Complete evidence  -> WITNESS
+-///   observe(shop-v1, receipt.rb, defines) with Complete evidence  -> NO-MATCH
+-///   observe(shop-v2, pricing.rb, defines) with Complete evidence  -> NO-MATCH
+-///   observe(shop-v1, pricing.rb, defines) with Missing evidence   -> UNKNOWN
+-///   observe(shop-v1, pricing.rb, defines) after a failed read      -> FAILED
+-///
+-///   The shop-v1 `pricing.rb` fact is a witness in shop-v1 only. A same-named
+-///   file in shop-v2 is a different entity, so shop-v1 cannot donate a witness
+-///   to shop-v2, and an absent scope is never reported as a complete no-match.
+-///
+-/// Proposition. A positive match, a complete no-match, unknown and failure are
+-/// four distinct outcomes. `NO-MATCH` is only honest when the observation for
+-/// that exact scope is declared complete; partial or missing evidence stays
+-/// `UNKNOWN`, and a failed read is `FAILED`, never emptiness.
+-///
+-/// Reused envelope. The witness is the shared `Attune.View.ViewFact`, whose
+-/// `scope` is part of its identity, and the outcome vocabulary is the shared
+-/// closed `Attune.View.Outcome` that the proof adapter already uses. This
+-/// proposal adds only the coverage distinction and the scope-respecting lookup;
+-/// no second evidence store, census or threshold is introduced.
+-///
+-/// Enforcement. RUNTIME. `Coverage`, `Query` and `observe` are ordinary typed
+-/// values: the compiler cannot see that a `Complete` claim is honest, so the
+-/// scope check and the completeness ladder are runtime laws, exercised by the
+-/// native fixtures below. No dummy production body is added.
+-///
+-/// Open. Production scope recipes, census populations and empirical thresholds
+-/// stay undecided. `Complete` is a claim the caller must earn; this proposal does
+-/// not try to compute it.
+-
+-/// How much of one scope's observation window was actually seen. `Complete` is
+-/// an honest claim that nothing else was observed; the others can never support
+-/// a complete no-match.
+-pub enum Coverage with Eq {
+-    case Complete
+-    case Partial
+-    case Missing
+-    case Failure(String)
+-}
+-
+-/// One scoped question: name an entity inside exactly one scope and ask one
+-/// directed atom about it.
+-pub type alias Query = { scope = String, subject = String, atom = Atom }
+-
+-/// Resolve a scoped question against a coverage claim and the observed facts.
+-/// The scope is part of the match, so a fact from another scope is never donated.
+-pub def observe(ask: Query, coverage: Coverage, facts: List[ViewFact]): Outcome = match coverage {
+-    case Coverage.Failure(_) => Outcome.Failed
+-    case Coverage.Complete  => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.NoMatch
+-    case Coverage.Partial   => if (hasWitness(ask, facts)) Outcome.Witness else Outcome.Unknown
+-    case Coverage.Missing   => Outcome.Unknown
+-}
+-
+-/// A witness is a fact of exactly this scope, subject and atom. The target is
+-/// the answer, not part of the question.
+-def hasWitness(ask: Query, facts: List[ViewFact]): Bool =
+-    List.exists(fact ->
+-        fact#scope == ask#scope and fact#source == ask#subject and fact#atom == ask#atom,
+-        facts)
+-
+-/// One authored scoped fact.
+-def fact(scope: String, source: String, atom: Atom, target: String): ViewFact =
+-    { scope = scope, source = source, atom = atom, target = target }
+-
+-/// A present fact answers its own scoped question.
+-@Test
+-def aPositiveMatchIsAWitness(): Unit \ Assert = {
+-    let facts = List#{fact("shop-v1", "pricing.rb", Atom.Defines, "Pricing")};
+-    let ask = { scope = "shop-v1", subject = "pricing.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Outcome.Witness, observe(ask, Coverage.Complete, facts));
+-    Assert.assertEq(expected = "WITNESS", View.outcomeName(observe(ask, Coverage.Complete, facts)))
+-}
+-
+-/// A complete observation with no matching fact is a no-match, not unknown.
+-@Test
+-def aCompleteNoMatchIsNotUnknown(): Unit \ Assert = {
+-    let facts = List#{fact("shop-v1", "pricing.rb", Atom.Defines, "Pricing")};
+-    let ask = { scope = "shop-v1", subject = "receipt.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Outcome.NoMatch, observe(ask, Coverage.Complete, facts));
+-    Assert.assertEq(expected = "NO-MATCH", View.outcomeName(observe(ask, Coverage.Complete, facts)));
+-    Assert.assertEq(expected = false, observe(ask, Coverage.Complete, facts) == Outcome.Unknown)
+-}
+-
+-/// No evidence is unknown; it is never a complete no-match.
+-@Test
+-def missingEvidenceStaysUnknown(): Unit \ Assert = {
+-    let ask = { scope = "shop-v1", subject = "pricing.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Outcome.Unknown, observe(ask, Coverage.Missing, Nil));
+-    Assert.assertEq(expected = false, observe(ask, Coverage.Missing, Nil) == Outcome.NoMatch);
+-    Assert.assertEq(expected = false, observe(ask, Coverage.Missing, Nil) == Outcome.Failed)
+-}
+-
+-/// A failed read is its own outcome, distinct from unknown and emptiness.
+-@Test
+-def failureIsNotEmptiness(): Unit \ Assert = {
+-    let ask = { scope = "shop-v1", subject = "pricing.rb", atom = Atom.Defines };
+-    let failed = observe(ask, Coverage.Failure("acquisition-error"), Nil);
+-    Assert.assertEq(expected = Outcome.Failed, failed);
+-    Assert.assertEq(expected = "FAILED", View.outcomeName(failed));
+-    Assert.assertEq(expected = false, failed == Outcome.Unknown)
+-}
+-
+-/// A similarly named file in another scope cannot donate a witness.
+-@Test
+-def aForeignSimilarlyNamedFileCannotDonateAWitness(): Unit \ Assert = {
+-    let facts = List#{fact("shop-v1", "pricing.rb", Atom.Defines, "Pricing")};
+-    let own = { scope = "shop-v1", subject = "pricing.rb", atom = Atom.Defines };
+-    let foreign = { scope = "shop-v2", subject = "pricing.rb", atom = Atom.Defines };
+-    Assert.assertEq(expected = Outcome.Witness, observe(own, Coverage.Complete, facts));
+-    Assert.assertEq(expected = Outcome.NoMatch, observe(foreign, Coverage.Complete, facts));
+-    Assert.assertEq(expected = Outcome.Unknown, observe(foreign, Coverage.Partial, facts))
+-}
+diff --git a/attune/test/proposals/P07Guards.flix b/attune/test/proposals/P07Guards.flix
+deleted file mode 100644
+index 39127c8d77..0000000000
+--- a/attune/test/proposals/P07Guards.flix
++++ /dev/null
+@@ -1,126 +0,0 @@
+-use Attune.Envelope.{Atom}
+-use Attune.View.{ViewFact}
+-
+-/// P07 - evidence guards, support and witnesses.
+-///
+-/// Question. When do two pieces of evidence really support a branch, and when
+-/// is "two proofs" only one entity counted twice?
+-///
+-///   sealed scope shop-v1
+-///     branch calls-pricing
+-///       entity Pricing.total   Observed
+-///       entity Pricing.rate    Observed
+-///     branch imports-pricing
+-///       entity pricing.rb      Observed
+-///
+-///   witnesses(shop-v1, calls-pricing) = {Pricing.total, Pricing.rate}   2
+-///   two paths that both name Pricing.total are ONE supporter, not two
+-///   a shop-v2 entity cannot pay for shop-v1's own threshold
+-///   a Proposed entity is not Observed, so it cannot pay either
+-///
+-/// Proposition. Support is the number of distinct observed entities inside one
+-/// sealed scope, not the number of derivation paths. A threshold is an explicit
+-/// parameter that counts only entities of the asked status in the asked scope,
+-/// so a foreign scope or a proposed hypothesis can never meet it.
+-///
+-/// Reused envelope. An observation is the shared `Attune.View.ViewFact`, whose
+-/// scope is part of its identity, and the relation is a shared
+-/// `Attune.Envelope.Atom`. This proposal adds only the observed/proposed status
+-/// and the scope-respecting support count; it introduces no second evidence
+-/// store, census or scoring engine.
+-///
+-/// Enforcement. RUNTIME. `witnesses` and `meets` are ordinary typed functions.
+-/// The pinned compiler checks their shapes but cannot see that a threshold is
+-/// honest, so every law below is an executed native fixture. No dummy production
+-/// body is added and no separate compiler-negative fixture is claimed.
+-///
+-/// Open. Which calibrated values deserve retention, and which architectural
+-/// names are worth keeping, stay undecided. `meets` is a guard, not a scoring
+-/// model, and this proposal computes no support weight beyond a distinct count.
+-
+-/// How one supporting entity was obtained. Observed evidence was measured;
+-/// Proposed evidence is a hypothesis. The two never merge, and only Observed
+-/// evidence can meet an observed guard.
+-pub enum Status with Eq {
+-    case Observed
+-    case Proposed
+-}
+-
+-/// One piece of evidence: a shared scoped observation plus how it was obtained.
+-/// The supporting entity is the fact's own subject, and the fact's scope is part
+-/// of that identity, so a same-named entity in another scope is a different one.
+-pub type alias Support = { fact = ViewFact, status = Status }
+-
+-/// The distinct observed entities that support `branch` in exactly `scope`. The
+-/// result dedupes by entity identity, so two derivations naming one entity are
+-/// one supporter and never two.
+-pub def witnesses(scope: String, branch: String, items: List[Support]): List[String] =
+-    List.distinct(List.filterMap(item ->
+-        if (item#fact#scope == scope and item#fact#target == branch and item#status == Status.Observed)
+-            Some(item#fact#source)
+-        else None, items))
+-
+-/// An explicit threshold over one sealed scope: it counts only observed entities
+-/// of exactly this scope and branch. Another scope and a proposed hypothesis can
+-/// never pay for it.
+-pub def meets(threshold: Int32, scope: String, branch: String, items: List[Support]): Bool =
+-    List.length(witnesses(scope, branch, items)) >= threshold
+-
+-/// One authored observation of one entity supporting one branch.
+-def support(scope: String, entity: String, branch: String, status: Status): Support =
+-    { fact = { scope = scope, source = entity, atom = Atom.Calls, target = branch },
+-      status = status }
+-
+-/// Two distinct entities support two branches: the count follows the entities,
+-/// not a display name, so each branch sees exactly its own supporters.
+-@Test
+-def twoDistinctEntitiesSupportTwoBranches(): Unit \ Assert = {
+-    let items = List#{
+-        support("shop-v1", "Pricing.total", "calls-pricing", Status.Observed),
+-        support("shop-v1", "Pricing.rate", "calls-pricing", Status.Observed),
+-        support("shop-v1", "pricing.rb", "imports-pricing", Status.Observed)
+-    };
+-    Assert.assertEq(expected = List#{"Pricing.rate", "Pricing.total"},
+-        List.sort(witnesses("shop-v1", "calls-pricing", items)));
+-    Assert.assertEq(expected = List#{"pricing.rb"}, witnesses("shop-v1", "imports-pricing", items))
+-}
+-
+-/// Two proof paths to one entity are one supporter: counting the paths would
+-/// report three, but the distinct-entity guard stays below the paths.
+-@Test
+-def twoProofPathsToOneEntityAreOneSupporter(): Unit \ Assert = {
+-    let items = List#{
+-        support("shop-v1", "Pricing.total", "calls-pricing", Status.Observed),
+-        support("shop-v1", "Pricing.total", "calls-pricing", Status.Observed),
+-        support("shop-v1", "Pricing.rate", "calls-pricing", Status.Observed)
+-    };
+-    let paths = List.length(List.filter(item -> item#fact#target == "calls-pricing", items));
+-    Assert.assertEq(expected = 3, paths);
+-    Assert.assertEq(expected = 2, List.length(witnesses("shop-v1", "calls-pricing", items)));
+-    Assert.assertEq(expected = false, meets(3, "shop-v1", "calls-pricing", items))
+-}
+-
+-/// A similarly named entity in another scope cannot meet this scope's guard: the
+-/// cross-scope count is two, but the sealed-scope count is one.
+-@Test
+-def anotherScopesEntityCannotMeetTheGuard(): Unit \ Assert = {
+-    let items = List#{
+-        support("shop-v1", "Pricing.total", "calls-pricing", Status.Observed),
+-        support("shop-v2", "Pricing.total", "calls-pricing", Status.Observed)
+-    };
+-    let acrossScopes = List.length(List.filter(item -> item#fact#target == "calls-pricing", items));
+-    Assert.assertEq(expected = 2, acrossScopes);
+-    Assert.assertEq(expected = true, meets(1, "shop-v1", "calls-pricing", items));
+-    Assert.assertEq(expected = false, meets(2, "shop-v1", "calls-pricing", items))
+-}
+-
+-/// Observed and proposed evidence stay distinct: a proposed entity is invisible
+-/// to the observed guard even though it names the same entity.
+-@Test
+-def proposedEvidenceIsNotObserved(): Unit \ Assert = {
+-    let proposed = List#{ support("shop-v1", "Pricing.total", "calls-pricing", Status.Proposed) };
+-    Assert.assertTrue(List.isEmpty(witnesses("shop-v1", "calls-pricing", proposed)));
+-    Assert.assertEq(expected = false, meets(1, "shop-v1", "calls-pricing", proposed));
+-    Assert.assertEq(expected = true, meets(1, "shop-v1", "calls-pricing",
+-        List#{ support("shop-v1", "Pricing.total", "calls-pricing", Status.Observed) }))
+-}
+diff --git a/attune/test/proposals/P09Views.flix b/attune/test/proposals/P09Views.flix
+index 18876c60ec..bd1ed79f96 100644
+--- a/attune/test/proposals/P09Views.flix
++++ b/attune/test/proposals/P09Views.flix
+@@ -1,6 +1,7 @@
+ use Attune.Envelope
+-use Attune.Envelope.{Atom, Domain, World}
++use Attune.Envelope.{Atom, Domain, Fact, World}
+ use Attune.AsciiTree
++use Attune.Study.{Outcome}
+ use Attune.View
+ 
+ /// P09 - semantic views and diagram projection.
+@@ -52,14 +53,14 @@
+ 
+ def limits(): AsciiTree.Limits = AsciiTree.limits(16, 64, 100, 64, 4096)
+ 
+-def fact(scope: String, source: String, atom: Atom, target: String): View.ViewFact =
+-    { scope = scope, source = source, atom = atom, target = target }
++def fact(scope: String, source: String, atom: Atom, target: String): Fact =
++    { world = World.World(scope), source = source, atom = atom, target = target }
+ 
+ def seed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
+ 
+ /// The authored shop graph: two seeds with a shared child and a lateral edge
+ /// from one seed to the other.
+-def shopFacts(): List[View.ViewFact] = List#{
++def shopFacts(): List[Fact] = List#{
+     fact("shop", "receipt.rb", Atom.Imports, "pricing.rb"),
+     fact("shop", "checkout.rb", Atom.Imports, "pricing.rb"),
+     fact("shop", "receipt.rb", Atom.Imports, "checkout.rb")
+@@ -124,7 +125,7 @@
+ def proofAndRouteMeaningsStayDistinct(): Unit \ Assert = {
+     let premise = { role = "pair", text = "Imports(shop, receipt.rb, pricing.rb)", holds = true, bindings = List#{("x", "receipt.rb")} };
+     let application = { head = "ViewImport(shop, x, y)", scope = "shop", premises = List#{premise} };
+-    let proof = { goal = "ViewImport", scope = "shop", outcome = View.Outcome.Witness, detail = "", application = application, alternatives = Nil };
++    let proof = { goal = "ViewImport", scope = "shop", outcome = Outcome.Witness, detail = "", application = application, alternatives = Nil };
+     let proofText = match View.renderProof(limits(), proof) {
+         case Ok(text) => text
+         case Err(_)   => ""
+diff --git a/attune/test/proposals/P10Artifacts.flix b/attune/test/proposals/P10Artifacts.flix
+deleted file mode 100644
+index f9cb026717..0000000000
+--- a/attune/test/proposals/P10Artifacts.flix
++++ /dev/null
+@@ -1,194 +0,0 @@
+-use Seam.{Outcome, outcome}
+-
+-import attune.inference.AttuneInference
+-
+-/// P10 - typed artifacts and effect/handler seams.
+-///
+-/// Question. What identifies a produced artifact, and how do schema, producer
+-/// and input keep an evaluator's gold out of a prediction?
+-///
+-///   artifact identity = (schema, producer, input)
+-///     Embedding  producer=fixture-embed  input=corpus-1
+-///
+-///   acquisition  request -> recorded fake exchange -> decoded envelope
+-///                (approved SDK seam; no provider, credential or socket)
+-///   round trip   reread identity == stored identity    -> the same artifact
+-///   wrong schema Prediction     != Embedding           -> rejected
+-///   wrong input  corpus-2       != corpus-1            -> rejected
+-///
+-///   prediction input <- only an Embedding artifact
+-///   evaluator gold   <- only the evaluator type; no constructor into prediction
+-///
+-/// Proposition. An artifact is identified by its declared schema, its producer
+-/// and its exact input, never by its bytes alone. A replay is admitted only when
+-/// that identity matches, so a wrong schema or a different input rejects instead
+-/// of masquerading as the stored artifact. A gold label is a different nominal
+-/// type and only an embedding artifact yields a prediction input, so an
+-/// evaluator-gold-shaped value has no typed path into prediction.
+-///
+-/// Reused seam. The one effect is the approved LangChain4j embedding seam
+-/// `AttuneInference.embed` against a deterministic recorded exchange; no
+-/// provider is contacted and no credential is read. This proposal adds only the
+-/// typed artifact identity, the replay boundary and the prediction separation;
+-/// it adds no store, schema registry, scheduler or security framework.
+-///
+-/// Enforcement. RUNTIME. `acquire`, `accept` and `predictInput` are ordinary
+-/// typed functions; the compiler checks the record shapes but cannot see that a
+-/// replay identity is honest, so the laws below are executed native fixtures.
+-/// `predict` consumes only `PredictionInput`, which has no constructor from
+-/// `GoldLabel`, so the gold separation holds by nominal type; it is demonstrated
+-/// at runtime here and no isolated compiler-negative fixture is claimed.
+-///
+-/// Open. Final materialization granularity, shared build stages, parallel
+-/// runtime and production storage stay undecided.
+-
+-/// The declared schema of a produced artifact. Closed: an evaluator's gold and a
+-/// prediction input are different schemas, not interchangeable labels.
+-pub enum Schema with Eq, ToString {
+-    case Embedding
+-    case Prediction
+-    case Gold
+-}
+-
+-/// One produced artifact: declared schema, producer identity, exact input
+-/// identity and the producer's recorded payload bytes. The first three are the
+-/// artifact's identity; the payload is evidence, not the artifact's name.
+-pub type alias Artifact = { schema = Schema, producer = String, input = String, payload = String }
+-
+-/// The exact identity of one artifact.
+-pub def artifactIdentity(artifact: Artifact): (Schema, String, String) =
+-    (artifact#schema, artifact#producer, artifact#input)
+-
+-/// A prediction input is a distinct nominal type. Only an `Embedding` artifact
+-/// yields one, and no constructor accepts a gold label.
+-pub enum PredictionInput with Eq, ToString {
+-    case PredictionInput(String)
+-}
+-
+-/// An evaluator gold label is its own type, sealed off from prediction.
+-pub enum GoldLabel with Eq {
+-    case GoldLabel(String)
+-}
+-
+-/// The typed result of one acquisition: a produced artifact or a classified
+-/// rejection. A rejection is never an empty successful artifact.
+-pub enum Acquired {
+-    case Produced(Artifact)
+-    case Rejected(String)
+-}
+-
+-/// The single typed prediction entry point; it consumes only a prediction input.
+-pub def predict(input: PredictionInput): String = match input {
+-    case PredictionInput.PredictionInput(payload) => "prediction:" + payload
+-}
+-
+-/// Admit a prediction input from an artifact. Only the embedding schema yields
+-/// one; a gold- or prediction-schema artifact has no path here.
+-pub def predictInput(artifact: Artifact): Option[PredictionInput] =
+-    if (artifact#schema == Schema.Embedding) Some(PredictionInput.PredictionInput(artifact#payload))
+-    else None
+-
+-/// The recorded fake embedding request for one authored input identity.
+-def request(model: String, input: String): String =
+-    "{\"model\":\"" + model + "\",\"inputs\":[\"" + input + "\"]}"
+-
+-/// The one effect: acquire one artifact through the approved SDK seam against a
+-/// recorded fake exchange. A classified rejection is a typed value, never a
+-/// fabricated or empty artifact.
+-pub def acquire(model: String, input: String, status: Int32, body: String): Acquired \ IO = {
+-    let envelope = AttuneInference.embed(request(model, input), status, body);
+-    match outcome(envelope) {
+-        case Outcome.Rejected(kind) => Acquired.Rejected(kind)
+-        case Outcome.Decoded(_)     => Acquired.Produced(
+-            { schema = Schema.Embedding, producer = model, input = input, payload = envelope })
+-    }
+-}
+-
+-/// The typed identity of an acquisition, or `None` for a rejection.
+-pub def acquiredIdentity(acquired: Acquired): Option[(Schema, String, String)] = match acquired {
+-    case Acquired.Produced(artifact) => Some(artifactIdentity(artifact))
+-    case Acquired.Rejected(_)        => None
+-}
+-
+-/// The recorded payload of a produced artifact, or `None` for a rejection.
+-pub def acquiredPayload(acquired: Acquired): Option[String] = match acquired {
+-    case Acquired.Produced(artifact) => Some(artifact#payload)
+-    case Acquired.Rejected(_)        => None
+-}
+-
+-/// The classified rejection kind, or `None` for a produced artifact.
+-pub def acquiredRejection(acquired: Acquired): Option[String] = match acquired {
+-    case Acquired.Produced(_)    => None
+-    case Acquired.Rejected(kind) => Some(kind)
+-}
+-
+-/// The replay boundary: a re-read artifact is admitted only when its exact
+-/// identity equals the stored one, so a wrong schema or a different input
+-/// rejects instead of masquerading as the stored artifact.
+-pub def accept(stored: Artifact, candidate: Artifact): Result[String, Artifact] =
+-    if (artifactIdentity(stored) != artifactIdentity(candidate)) Err("artifact identity mismatch") else Ok(stored)
+-
+-/// The only route by which a gold label becomes an artifact: a gold-schema
+-/// artifact, which `predictInput` refuses.
+-pub def goldArtifact(label: GoldLabel, task: String): Artifact = match label {
+-    case GoldLabel.GoldLabel(text) =>
+-        { schema = Schema.Gold, producer = "evaluator", input = task, payload = text }
+-}
+-
+-/// One recorded embedding response, reused by the fixtures below.
+-def recordedBody(): String =
+-    "{\"object\":\"list\",\"data\":[{\"object\":\"embedding\",\"index\":0,\"embedding\":[0.5,-0.25]}],\"model\":\"fixture-embed\",\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":0,\"total_tokens\":1}}"
+-
+-/// The authored artifact round-trips through the fake handler: two acquisitions
+-/// of the same identity are the same artifact, carrying the same payload.
+-@Test
+-def anAuthoredArtifactRoundTripsThroughTheFakeHandler(): Unit \ {Assert, IO} = {
+-    let stored = acquire("fixture-embed", "corpus-1", 200, recordedBody());
+-    let reread = acquire("fixture-embed", "corpus-1", 200, recordedBody());
+-    Assert.assertEq(expected = Some((Schema.Embedding, "fixture-embed", "corpus-1")), acquiredIdentity(stored));
+-    Assert.assertEq(expected = acquiredIdentity(stored), acquiredIdentity(reread));
+-    Assert.assertEq(expected = acquiredPayload(stored), acquiredPayload(reread))
+-}
+-
+-/// A failed acquisition is a classified rejection, never an empty artifact.
+-@Test
+-def aFailedAcquisitionIsNotAnEmptyArtifact(): Unit \ {Assert, IO} = {
+-    let failed = acquire("fixture-embed", "corpus-1", 500, "{\"error\":\"upstream\"}");
+-    Assert.assertEq(expected = Some("transport"), acquiredRejection(failed));
+-    Assert.assertEq(expected = None, acquiredIdentity(failed))
+-}
+-
+-/// A wrong schema does not round-trip: the same payload under a prediction
+-/// schema is a different artifact identity and is refused.
+-@Test
+-def aWrongSchemaDoesNotRoundTrip(): Unit \ Assert = {
+-    let stored = { schema = Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
+-    let wrong = { schema = Schema.Prediction, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
+-    Assert.assertEq(expected = false, artifactIdentity(stored) == artifactIdentity(wrong));
+-    Assert.assertErr(accept(stored, wrong))
+-}
+-
+-/// A changed input or producer identity does not reuse the stored artifact, even
+-/// when every payload byte is identical.
+-@Test
+-def aChangedIdentityDoesNotReuseTheStoredArtifact(): Unit \ Assert = {
+-    let stored = { schema = Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
+-    let otherInput = { schema = Schema.Embedding, producer = "fixture-embed", input = "corpus-2", payload = "vectors" };
+-    let otherProducer = { schema = Schema.Embedding, producer = "fixture-other", input = "corpus-1", payload = "vectors" };
+-    Assert.assertEq(expected = stored#payload, otherInput#payload);
+-    Assert.assertErr(accept(stored, otherInput));
+-    Assert.assertErr(accept(stored, otherProducer))
+-}
+-
+-/// A gold-shaped evaluator input has no path into prediction: the gold artifact
+-/// yields no prediction input and is not an acceptable replay candidate for one.
+-@Test
+-def goldShapedInputHasNoPathIntoPrediction(): Unit \ Assert = {
+-    let gold = goldArtifact(GoldLabel.GoldLabel("modified-pricing.rb"), "task-1");
+-    let embedding = { schema = Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
+-    Assert.assertEq(expected = Schema.Gold, gold#schema);
+-    Assert.assertEq(expected = None, predictInput(gold));
+-    Assert.assertEq(expected = Some(PredictionInput.PredictionInput("vectors")), predictInput(embedding));
+-    Assert.assertEq(expected = "prediction:vectors", predict(PredictionInput.PredictionInput("vectors")));
+-    Assert.assertEq(expected = false, Result.isOk(accept(gold, embedding)))
+-}
+diff --git a/attune/test/seam/ParquetSeamTest.flix b/attune/test/seam/ParquetSeamTest.flix
+index 92d0b8e75d..eca2bc54b9 100644
+--- a/attune/test/seam/ParquetSeamTest.flix
++++ b/attune/test/seam/ParquetSeamTest.flix
+@@ -34,3 +34,30 @@
+     Assert.assertEq(expected = Outcome.Rejected("schema"), outcome(out));
+     Assert.assertEq(expected = false, String.contains(substr = "\"rows\"", out))
+ }
++
++/// The evidence schema keeps a tri-state observation and a classified error
++/// separate: `observed` is nullable, so an unmeasured or failed observation is
++/// null and can never read back as a boolean `false`.
++def evidenceSchema(): String =
++    "{\"format\":\"attune-evidence-rows-v1\",\"columns\":[{\"name\":\"scope\",\"type\":\"string\",\"nullable\":false},{\"name\":\"subject\",\"type\":\"string\",\"nullable\":false},{\"name\":\"atom\",\"type\":\"string\",\"nullable\":false},{\"name\":\"outcome\",\"type\":\"string\",\"nullable\":false},{\"name\":\"observed\",\"type\":\"boolean\",\"nullable\":true},{\"name\":\"error\",\"type\":\"string\",\"nullable\":true}]}"
++
++def evidenceRows(): String =
++    "[{\"scope\":\"shop-v1\",\"subject\":\"pricing.rb\",\"atom\":\"defines\",\"outcome\":\"WITNESS\",\"observed\":true,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"receipt.rb\",\"atom\":\"defines\",\"outcome\":\"NO-MATCH\",\"observed\":false,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"ghost.rb\",\"atom\":\"defines\",\"outcome\":\"UNKNOWN\",\"observed\":null,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"pricing.rb\",\"atom\":\"calls\",\"outcome\":\"FAILED\",\"observed\":null,\"error\":\"acquisition-error\"}]"
++
++/// Witness/no-match/unknown/failure and the tri-state observation/error survive
++/// the real Arrow Dataset write/read. A missing row is not invented, and an
++/// unmeasured observation stays null rather than becoming false.
++@Test
++def parquetPreservesEvidenceAndTriStateDistinctions(): Unit \ {Assert, IO} = {
++    let expected = "{\"version\":1,\"status\":\"ok\",\"kind\":\"parquet\",\"rows\":" + evidenceRows() + "}";
++    let written = AttuneParquet.writeTable("evidence-rows.parquet", evidenceSchema(), evidenceRows());
++    let read = AttuneParquet.readTable("evidence-rows.parquet", evidenceSchema());
++    Assert.assertEq(expected = expected, written);
++    Assert.assertEq(expected = expected, read);
++    Assert.assertEq(expected = Outcome.Decoded("parquet"), outcome(read));
++    Assert.assertTrue(String.contains(substr = "\"outcome\":\"UNKNOWN\",\"observed\":null", read));
++    Assert.assertTrue(String.contains(substr = "\"outcome\":\"NO-MATCH\",\"observed\":false", read));
++    Assert.assertTrue(String.contains(substr = "\"outcome\":\"FAILED\",\"observed\":null,\"error\":\"acquisition-error\"", read));
++    Assert.assertEq(expected = false,
++        String.contains(substr = "\"outcome\":\"UNKNOWN\",\"observed\":false", read))
++}
+diff --git a/attune/test/spine/BUILD.bazel b/attune/test/spine/BUILD.bazel
+index 80591fc818..806a74fd24 100644
+--- a/attune/test/spine/BUILD.bazel
++++ b/attune/test/spine/BUILD.bazel
+@@ -54,3 +54,54 @@
+     ],
+     expected = "Unable to unify the types",
+ )
++
++# VAL-CORE-001: exact nominal identity. Reordering one exact set is the same
++# observation; equal cardinality, a shared basename, another world and another
++# domain stay distinct, and world identity carries origin, content and semantics.
++native_flix_test(
++    name = "core_identity_test",
++    srcs = [
++        "CoreIdentityLaw.flix",
++        "//src:Attune.flix",
++        "//src:Attune/Envelope.flix",
++    ],
++)
++
++# VAL-CORE-002: the one exact six-atom application. All six primitive signatures
++# apply, a legal empty answer keeps its world and domain, and an illegal domain
++# composition or a foreign-world fact is a classified rejection.
++native_flix_test(
++    name = "core_apply_test",
++    srcs = [
++        "CoreApplyLaw.flix",
++        "//src:Attune.flix",
++        "//src:Attune/Apply.flix",
++        "//src:Attune/Envelope.flix",
++    ],
++)
++
++# VAL-CORE-003: the measured local exact memo. The declared serial fixture has
++# exact hit/miss counts, a real empty reuse, a repeated producer reuse, and
++# equal-output/different-input and cross-world lookups that do not count.
++native_flix_test(
++    name = "core_memo_test",
++    srcs = [
++        "CoreMemoLaw.flix",
++        "//src:Attune.flix",
++        "//src:Attune/Apply.flix",
++        "//src:Attune/Envelope.flix",
++    ],
++)
++
++# VAL-CORE-004: typed evidence and artifact values. Witness/no-match/unknown/
++# failure, the tri-state observation, distinct-entity support and artifact
++# identity stay distinct. The Parquet round trip is `//test/seam`.
++native_flix_test(
++    name = "core_evidence_test",
++    srcs = [
++        "CoreEvidenceLaw.flix",
++        "//src:Attune.flix",
++        "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
++    ],
++)
+diff --git a/attune/test/spine/CoreApplyLaw.flix b/attune/test/spine/CoreApplyLaw.flix
+new file mode 100644
+index 0000000000..d6bb470bbb
+--- /dev/null
++++ b/attune/test/spine/CoreApplyLaw.flix
+@@ -0,0 +1,87 @@
++use Attune.Apply
++use Attune.Envelope
++use Attune.Envelope.{Atom, Fact, Frontier, World}
++
++/// Native `@Test` laws for the one exact six-atom application (VAL-CORE-002).
++///
++/// The same evaluator applies each of the six directed atoms to one exact
++/// frontier against one world's facts. A legal route preserves the world and the
++/// atom's declared target domain; a legal empty answer stays an empty frontier in
++/// that domain rather than a rejection; an illegal domain composition or a
++/// foreign-world fact is a classified rejection, never an empty success.
++
++def w(): World = World.World("shop-v1")
++
++def fact(source: String, atom: Atom, target: String): Fact =
++    { world = w(), source = source, atom = atom, target = target }
++
++def facts(): List[Fact] = List#{
++    fact("shop/pricing.rb", Atom.Defines, "Pricing.total"),
++    fact("Pricing.total", Atom.DefinedIn, "shop/pricing.rb"),
++    fact("shop/receipt.rb", Atom.Imports, "shop/pricing.rb"),
++    fact("shop/pricing.rb", Atom.ImportedBy, "shop/receipt.rb"),
++    fact("Shop.Receipt.render", Atom.Calls, "Pricing.total"),
++    fact("Pricing.total", Atom.Callers, "Shop.Receipt.render")
++}
++
++def files(names: List[String]): Frontier = Envelope.files(w(), names)
++
++def symbols(names: List[String]): Frontier = Envelope.symbols(w(), names)
++
++/// All six primitive signatures apply to their exact source domain and produce
++/// their declared target frontier.
++@Test
++def allSixAtomsApplyWithTheirDeclaredDomains(): Unit \ Assert = {
++    Assert.assertEq(expected = Ok(symbols(List#{"Pricing.total"})),
++        Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines));
++    Assert.assertEq(expected = Ok(files(List#{"shop/pricing.rb"})),
++        Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.DefinedIn));
++    Assert.assertEq(expected = Ok(files(List#{"shop/pricing.rb"})),
++        Apply.apply(facts(), files(List#{"shop/receipt.rb"}), Atom.Imports));
++    Assert.assertEq(expected = Ok(files(List#{"shop/receipt.rb"})),
++        Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.ImportedBy));
++    Assert.assertEq(expected = Ok(symbols(List#{"Pricing.total"})),
++        Apply.apply(facts(), symbols(List#{"Shop.Receipt.render"}), Atom.Calls));
++    Assert.assertEq(expected = Ok(symbols(List#{"Shop.Receipt.render"})),
++        Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Callers))
++}
++
++/// A legal route composes Files -> defines -> Symbols -> defined_in -> Files
++/// through the one evaluator.
++@Test
++def aLegalRouteComposesThroughOneEvaluator(): Unit \ Assert = {
++    match Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines) {
++        case Err(error) => Assert.fail(error)
++        case Ok(symbolsFrontier) => match Apply.apply(facts(), symbolsFrontier, Atom.DefinedIn) {
++            case Err(error)   => Assert.fail(error)
++            case Ok(filesFrontier) => Assert.assertEq(expected = files(List#{"shop/pricing.rb"}), filesFrontier)
++        }
++    }
++}
++
++/// A legal empty continuation keeps its world and its declared target domain,
++/// and the two empty domains stay distinct values.
++@Test
++def legalEmptinessKeepsItsWorldAndDomain(): Unit \ Assert = {
++    let empty = Apply.apply(facts(), files(List#{"shop/ghost.rb"}), Atom.Imports);
++    Assert.assertEq(expected = Ok(files(Nil)), empty);
++    Assert.assertEq(expected = "shop-v1", match empty {
++        case Ok(frontier) => match Envelope.worldOf(frontier) { case World.World(name) => name }
++        case Err(_)       => "rejected"
++    });
++    Assert.assertEq(expected = false, files(Nil) == symbols(Nil))
++}
++
++/// An illegal domain composition is a classified rejection, never an empty success.
++@Test
++def illegalDomainCompositionIsRejection(): Unit \ Assert = {
++    Assert.assertErr(Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Imports));
++    Assert.assertErr(Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.DefinedIn))
++}
++
++/// A fact from another world cannot apply here.
++@Test
++def aForeignWorldFactIsRejection(): Unit \ Assert = {
++    let foreign = { world = World.World("shop-v2"), source = "shop/receipt.rb", atom = Atom.Imports, target = "shop/pricing.rb" };
++    Assert.assertErr(Apply.apply(foreign :: Nil, files(List#{"shop/receipt.rb"}), Atom.Imports))
++}
+diff --git a/attune/test/spine/CoreEvidenceLaw.flix b/attune/test/spine/CoreEvidenceLaw.flix
+new file mode 100644
+index 0000000000..7d242f349d
+--- /dev/null
++++ b/attune/test/spine/CoreEvidenceLaw.flix
+@@ -0,0 +1,91 @@
++use Attune.Envelope.{Atom, Fact, World}
++use Attune.Study
++
++/// Native `@Test` laws for the typed evidence and artifact values (VAL-CORE-004).
++///
++/// A witness, a complete no-match, unknown and failure stay four distinct
++/// outcomes; the tri-state observation is not a boolean; support counts distinct
++/// observed entities rather than proof paths; and an artifact is identified by
++/// its declared schema, producer and exact input. The serialization round trip
++/// through the real Parquet seam is a separate law in `//test/seam`.
++
++def w(): World = World.World("shop-v1")
++
++def fact(source: String, atom: Atom, target: String): Fact =
++    { world = w(), source = source, atom = atom, target = target }
++
++def support(entity: String, branch: String, status: Study.Status): Study.Support =
++    { fact = fact(entity, Atom.Calls, branch), status = status }
++
++/// A positive match, a complete no-match, unknown and failure stay distinct.
++@Test
++def witnessNoMatchUnknownAndFailureStayDistinct(): Unit \ Assert = {
++    let facts = List#{ fact("pricing.rb", Atom.Defines, "Pricing") };
++    let own = { scope = w(), subject = "pricing.rb", atom = Atom.Defines };
++    let missing = { scope = w(), subject = "receipt.rb", atom = Atom.Defines };
++    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(own, Study.Coverage.Complete, facts));
++    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(missing, Study.Coverage.Complete, facts));
++    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(missing, Study.Coverage.Partial, facts));
++    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(own, Study.Coverage.Missing, Nil));
++    Assert.assertEq(expected = Study.Outcome.Failed, Study.observe(own, Study.Coverage.Failure("acquisition-error"), Nil));
++    Assert.assertEq(expected = false, Study.observe(missing, Study.Coverage.Missing, Nil) == Study.Outcome.NoMatch)
++}
++
++/// A similarly named file in another scope cannot donate a witness.
++@Test
++def aForeignScopeCannotDonateAWitness(): Unit \ Assert = {
++    let facts = List#{ fact("pricing.rb", Atom.Defines, "Pricing") };
++    let foreign = { scope = World.World("shop-v2"), subject = "pricing.rb", atom = Atom.Defines };
++    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
++    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(foreign, Study.Coverage.Partial, facts))
++}
++
++/// Support counts distinct observed entities, never proof paths, and proposed
++/// evidence cannot meet an observed guard.
++@Test
++def supportCountsDistinctEntitiesNotPaths(): Unit \ Assert = {
++    let items = List#{
++        support("Pricing.total", "calls-pricing", Study.Status.Observed),
++        support("Pricing.total", "calls-pricing", Study.Status.Observed),
++        support("Pricing.rate", "calls-pricing", Study.Status.Observed)
++    };
++    Assert.assertEq(expected = 3, List.length(List.filter(item -> item#fact#target == "calls-pricing", items)));
++    Assert.assertEq(expected = 2, List.length(Study.witnesses(w(), "calls-pricing", items)));
++    Assert.assertEq(expected = false, Study.meets(3, w(), "calls-pricing", items));
++    Assert.assertEq(expected = false, Study.meets(1, w(), "calls-pricing",
++        List#{ support("Pricing.total", "calls-pricing", Study.Status.Proposed) }))
++}
++
++/// The tri-state observation is not a boolean: unmeasured is distinct from false.
++@Test
++def observationTriStateIsNotABoolean(): Unit \ Assert = {
++    Assert.assertEq(expected = "true", Study.observationName(Study.Observation.ObservedTrue));
++    Assert.assertEq(expected = "false", Study.observationName(Study.Observation.ObservedFalse));
++    Assert.assertEq(expected = "unmeasured", Study.observationName(Study.Observation.Unmeasured));
++    Assert.assertEq(expected = false, Study.Observation.Unmeasured == Study.Observation.ObservedFalse)
++}
++
++/// An artifact is identified by schema, producer and exact input; a wrong schema
++/// or a changed identity does not round-trip.
++@Test
++def artifactIdentityRejectsAChangedSchemaOrInput(): Unit \ Assert = {
++    let stored = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
++    let wrongSchema = { schema = Study.Schema.Prediction, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
++    let otherInput = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-2", payload = "vectors" };
++    Assert.assertEq(expected = false, Study.artifactIdentity(stored) == Study.artifactIdentity(wrongSchema));
++    Assert.assertErr(Study.accept(stored, wrongSchema));
++    Assert.assertErr(Study.accept(stored, otherInput));
++    Assert.assertEq(expected = true, Result.isOk(Study.accept(stored, stored)))
++}
++
++/// A gold-shaped evaluator input has no path into prediction.
++@Test
++def goldHasNoPathIntoPrediction(): Unit \ Assert = {
++    let gold = Study.goldArtifact(Study.GoldLabel.GoldLabel("modified-pricing.rb"), "task-1");
++    let embedding = { schema = Study.Schema.Embedding, producer = "fixture-embed", input = "corpus-1", payload = "vectors" };
++    Assert.assertEq(expected = Study.Schema.Gold, gold#schema);
++    Assert.assertEq(expected = None, Study.predictInput(gold));
++    Assert.assertEq(expected = Some(Study.PredictionInput.PredictionInput("vectors")), Study.predictInput(embedding));
++    Assert.assertEq(expected = "prediction:vectors", Study.predict(Study.PredictionInput.PredictionInput("vectors")));
++    Assert.assertEq(expected = false, Result.isOk(Study.accept(gold, embedding)))
++}
+diff --git a/attune/test/spine/CoreIdentityLaw.flix b/attune/test/spine/CoreIdentityLaw.flix
+new file mode 100644
+index 0000000000..fcd0881670
+--- /dev/null
++++ b/attune/test/spine/CoreIdentityLaw.flix
+@@ -0,0 +1,65 @@
++use Attune.Envelope
++use Attune.Envelope.{World, WorldId}
++
++/// Native `@Test` laws for exact nominal identity (VAL-CORE-001).
++///
++/// A frontier is identified by its world, its nominal domain and its complete
++/// finite member set. Reordering one exact set is the same observation, but an
++/// equal cardinality, a shared display basename, another world or another domain
++/// is a different one. World identity carries the canonical origin, the exact
++/// content/source epoch and the frontend/admission semantics, so dirty content
++/// cannot reuse a clean world's identity. A failure here is a real assertion
++/// failure, not a swallowed log line.
++
++/// Reordering one exact finite set is the same observation.
++@Test
++def reorderingOneExactSetPreservesIdentity(): Unit \ Assert = {
++    let world = World.World("shop-v1");
++    Assert.assertEq(
++        expected = Envelope.files(world, List#{"a/pricing.rb", "b/pricing.rb"}),
++        Envelope.files(world, List#{"b/pricing.rb", "a/pricing.rb"}))
++}
++
++/// Equal size is not identity: two sets with the same cardinality stay distinct.
++@Test
++def equalSizedUnequalSetsDoNotMerge(): Unit \ Assert = {
++    let world = World.World("shop-v1");
++    Assert.assertEq(expected = false,
++        Envelope.files(world, List#{"a.flix", "b.flix"}) == Envelope.files(world, List#{"a.flix", "c.flix"}))
++}
++
++/// A shared display basename does not merge two entities.
++@Test
++def sameBasenamesAtDifferentPathsStayDistinct(): Unit \ Assert = {
++    let world = World.World("shop-v1");
++    Assert.assertEq(expected = false,
++        Envelope.files(world, List#{"a/pricing.rb"}) == Envelope.files(world, List#{"b/pricing.rb"}))
++}
++
++/// Same-name declarations with different qualifications stay distinct, and the
++/// nominal domains never merge.
++@Test
++def qualificationsAndDomainsStayDistinct(): Unit \ Assert = {
++    let world = World.World("shop-v1");
++    Assert.assertEq(expected = false,
++        Envelope.symbols(world, List#{"A.render"}) == Envelope.symbols(world, List#{"B.render"}));
++    Assert.assertEq(expected = false,
++        Envelope.symbols(world, List#{"render"}) == Envelope.symbols(world, List#{"A.render"}));
++    Assert.assertEq(expected = false,
++        Envelope.files(world, List#{"x"}) == Envelope.symbols(world, List#{"x"}))
++}
++
++/// World identity carries origin, exact content epoch and semantics, so a dirty
++/// content or a changed semantic recipe never reuses a clean world's identity.
++@Test
++def worldIdentityIncludesContentAndSemantics(): Unit \ Assert = {
++    let clean = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v1" });
++    let same = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v1" });
++    let dirty = Envelope.worldId({ origin = "repo", content = "dirty", semantics = "v1" });
++    let other = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v2" });
++    let fork = Envelope.worldId({ origin = "fork", content = "clean", semantics = "v1" });
++    Assert.assertEq(expected = true, clean == same);
++    Assert.assertEq(expected = false, clean == dirty);
++    Assert.assertEq(expected = false, clean == other);
++    Assert.assertEq(expected = false, clean == fork)
++}
+diff --git a/attune/test/spine/CoreMemoLaw.flix b/attune/test/spine/CoreMemoLaw.flix
+new file mode 100644
+index 0000000000..5683095e6a
+--- /dev/null
++++ b/attune/test/spine/CoreMemoLaw.flix
+@@ -0,0 +1,67 @@
++use Attune.Apply
++use Attune.Envelope
++use Attune.Envelope.{Atom, Fact, Frontier, World}
++
++/// Native `@Test` laws for the measured local exact memo (VAL-CORE-003).
++///
++/// The same evaluator runs enabled and disabled over one declared serial fixture
++/// with repeated exact lookups, a legal empty reuse, equal-output/different-input
++/// lookups and a cross-world lookup. The key is the world/semantic namespace, the
++/// exact typed input frontier and the next atom; the value keeps the exact output
++/// frontier. The recorded events are the real lookups, so the hit and miss counts
++/// and the producer order are not fabricated.
++
++def w(): World = World.World("shop-v1")
++
++def w2(): World = World.World("shop-v2")
++
++def fact(source: String, atom: Atom, target: String): Fact =
++    { world = w(), source = source, atom = atom, target = target }
++
++def facts(): List[Fact] = List#{
++    fact("Shop.Receipt.render", Atom.DefinedIn, "shop/receipt.rb"),
++    fact("shop/receipt.rb", Atom.Imports, "shop/pricing.rb")
++}
++
++def files(names: List[String]): Frontier = Envelope.files(w(), names)
++
++def files2(names: List[String]): Frontier = Envelope.files(w2(), names)
++
++def symbols(names: List[String]): Frontier = Envelope.symbols(w(), names)
++
++def lookupAt(memo: Apply.Memo, next: Int32, input: Frontier, atom: Atom): (Result[String, Frontier], Apply.Memo, List[Apply.Lookup], Int32) =
++    Apply.lookup(memo, next, "demo", input, atom, facts())
++
++/// The declared serial run: five cold lookups, one empty reuse and one repeated
++/// producer reuse. The events, the ordinals and the answers are all checked.
++@Test
++def theSerialFixtureRecordsExactHitsAndMisses(): Unit \ Assert = {
++    let (a1, m1, e1, n1) = lookupAt(Nil, 0, symbols(List#{"Shop.Receipt.render"}), Atom.DefinedIn);
++    let (a2, m2, e2, n2) = lookupAt(m1, n1, files(List#{"shop/receipt.rb"}), Atom.Imports);
++    let (a3, m3, e3, n3) = lookupAt(m2, n2, files(List#{"shop/pricing.rb"}), Atom.Imports);
++    let (a4, m4, e4, n4) = lookupAt(m3, n3, files(List#{"shop/pricing.rb"}), Atom.Imports);
++    let (a5, m5, e5, n5) = lookupAt(m4, n4, symbols(List#{"Shop.Receipt.render"}), Atom.DefinedIn);
++    let (a6, m6, e6, n6) = lookupAt(m5, n5, files(List#{"shop/checkout.rb"}), Atom.Imports);
++    let (a7, _, e7, _) = Apply.lookup(m6, n6, "demo", files2(List#{"shop/pricing.rb"}), Atom.Imports, Nil);
++    let events = e1 ::: e2 ::: e3 ::: e4 ::: e5 ::: e6 ::: e7;
++    Assert.assertEq(expected = 5, Apply.misses(events));
++    Assert.assertEq(expected = 2, Apply.hits(events));
++    Assert.assertEq(expected = List#{
++        Apply.Lookup.Miss(0), Apply.Lookup.Miss(1), Apply.Lookup.Miss(2),
++        Apply.Lookup.Hit(2), Apply.Lookup.Hit(0), Apply.Lookup.Miss(3), Apply.Lookup.Miss(4)
++    }, events);
++    // Cached and uncached answers agree through the one evaluator.
++    Assert.assertEq(expected = Apply.apply(facts(), symbols(List#{"Shop.Receipt.render"}), Atom.DefinedIn), a1);
++    Assert.assertEq(expected = Apply.apply(facts(), files(List#{"shop/receipt.rb"}), Atom.Imports), a2);
++    Assert.assertEq(expected = Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Imports), a3);
++    Assert.assertEq(expected = Apply.apply(facts(), files(List#{"shop/checkout.rb"}), Atom.Imports), a6);
++    Assert.assertEq(expected = Apply.apply(Nil, files2(List#{"shop/pricing.rb"}), Atom.Imports), a7);
++    // The repeated empty answer really hits the producer, and the repeated
++    // non-empty answer really hits its own producer.
++    Assert.assertEq(expected = Ok(files(Nil)), a3);
++    Assert.assertEq(expected = a3, a4);
++    Assert.assertEq(expected = a1, a5);
++    // Equal outputs from unequal inputs and another world are not reuse.
++    Assert.assertEq(expected = a3, a6);
++    Assert.assertEq(expected = false, a3 == a7)
++}
+diff --git a/attune/test/view/BUILD.bazel b/attune/test/view/BUILD.bazel
+index 9774ac64e7..cbf44e4ecd 100644
+--- a/attune/test/view/BUILD.bazel
++++ b/attune/test/view/BUILD.bazel
+@@ -29,6 +29,7 @@
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -42,6 +43,7 @@
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -55,6 +57,7 @@
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+@@ -68,6 +71,7 @@
+         "//src:Attune.flix",
+         "//src:Attune/AsciiTree.flix",
+         "//src:Attune/Envelope.flix",
++        "//src:Attune/Study.flix",
+         "//src:Attune/View.flix",
+     ],
+ )
+diff --git a/attune/test/view/ProofViewLaw.flix b/attune/test/view/ProofViewLaw.flix
+index fd91717ca3..63a6042f67 100644
+--- a/attune/test/view/ProofViewLaw.flix
++++ b/attune/test/view/ProofViewLaw.flix
+@@ -1,4 +1,5 @@
+ use Attune.AsciiTree
++use Attune.Study.{Outcome, outcomeName}
+ use Attune.View
+ 
+ /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.
+@@ -56,7 +57,7 @@
+             List#{("s", "good"), ("b", "receipt.rb"), ("center", "pricing.rb")}),
+         premise("", "a != b", true, Nil)
+     });
+-    let proof = { goal = "Pair", scope = "good", outcome = View.Outcome.Witness, detail = "",
++    let proof = { goal = "Pair", scope = "good", outcome = Outcome.Witness, detail = "",
+         application = main, alternatives = alternative :: Nil };
+     let expected = lines(
+         "graph=proof goal=Pair scope=good" ::
+@@ -81,7 +82,7 @@
+     let facts = #{ Imports("one", "receipt.rb", "pricing.rb"). };
+     let rows = query facts, pairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
+     Assert.assertTrue(Vector.isEmpty(rows));
+-    let proof = { goal = "Pair", scope = "one", outcome = View.Outcome.NoMatch, detail = "",
++    let proof = { goal = "Pair", scope = "one", outcome = Outcome.NoMatch, detail = "",
+         application = app("Pair(s, a, b, center)", "one", List#{
+             premise("left", "Imports(s, a, center)", true,
+                 List#{("s", "one"), ("a", "receipt.rb"), ("center", "pricing.rb")}),
+@@ -105,9 +106,9 @@
+ @Test
+ def unknownAndFailureStayDistinct(): Unit \ Assert = {
+     let noApplication = app("Pair(s, a, b, center)", "good", Nil);
+-    let unknown = { goal = "Pair", scope = "good", outcome = View.Outcome.Unknown,
++    let unknown = { goal = "Pair", scope = "good", outcome = Outcome.Unknown,
+         detail = "evidence-incomplete", application = noApplication, alternatives = Nil };
+-    let failed = { goal = "Pair", scope = "good", outcome = View.Outcome.Failed,
++    let failed = { goal = "Pair", scope = "good", outcome = Outcome.Failed,
+         detail = "extractor-error", application = noApplication, alternatives = Nil };
+     Assert.assertEq(
+         expected = Ok(lines("graph=proof goal=Pair scope=good" :: "outcome=UNKNOWN" ::
+@@ -117,6 +118,6 @@
+         expected = Ok(lines("graph=proof goal=Pair scope=good" :: "outcome=FAILED" ::
+             "detail=extractor-error" :: Nil)),
+         View.renderProof(limits(), failed));
+-    Assert.assertEq(expected = false, View.outcomeName(unknown#outcome) == View.outcomeName(failed#outcome));
+-    Assert.assertEq(expected = false, View.outcomeName(unknown#outcome) == View.outcomeName(View.Outcome.Witness))
++    Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(failed#outcome));
++    Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(Outcome.Witness))
+ }
+diff --git a/attune/test/view/SemanticViewLaw.flix b/attune/test/view/SemanticViewLaw.flix
+index 61b14ed867..e8dfe1b013 100644
+--- a/attune/test/view/SemanticViewLaw.flix
++++ b/attune/test/view/SemanticViewLaw.flix
+@@ -1,4 +1,4 @@
+-use Attune.Envelope.{Atom, Domain}
++use Attune.Envelope.{Atom, Domain, Fact, World}
+ use Attune.AsciiTree
+ use Attune.View
+ 
+@@ -14,8 +14,8 @@
+ 
+ def lines(xs: List[String]): String = List.join("\n", xs) + "\n"
+ 
+-def fact(scope: String, source: String, atom: Atom, target: String): View.ViewFact =
+-    { scope = scope, source = source, atom = atom, target = target }
++def fact(scope: String, source: String, atom: Atom, target: String): Fact =
++    { world = World.World(scope), source = source, atom = atom, target = target }
+ 
+ def seed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
+ 

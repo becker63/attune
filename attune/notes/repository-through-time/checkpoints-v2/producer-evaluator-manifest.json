@@ -1,0 +1,70 @@
+{
+  "program-producer": {
+    "jar_path": "/tmp/attune-checkpoints-v2/program-producer/artifact/program-producer.jar",
+    "jar_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9",
+    "source_archive": "program-producer-source.tar.gz",
+    "source_archive_sha256": "f1a9ae718bd8fbf599528e4c988ea368e832077a00e7a12e5dd352d0ec5597c1",
+    "source_files": {
+      "src/AcquisitionDriver.flix": "05d315b697dfcd3f1c547ef1935f573fb3ceff8f9a240faacef872c46c72463e",
+      "src/AcquisitionFacts.flix": "d155db3d556abb0c4d9f4f05cfb478b7f04b09f772c44f8f9b4e23e6b4adec4a",
+      "src/Atlas/Signature/Summary.flix": "88a8a9fed8624091ed2eaade450165767385089129b3630b1eb6a653560652b5",
+      "src/Atlas/Signature/Table.flix": "b98aeedae972223baffa9c9be5e9752328454883d76fb6aab069ab6d2cdc6193",
+      "src/Atlas/Signature.flix": "2b5ac79776bf30d1e46caaaee8c44edefa038bd47c7b1d6cfb21baa8d6f92dfa",
+      "src/Atlas.flix": "9a269f349ac45a078e86389c2f12f109d94f50ad7e8a22a491b4a14795cadffe",
+      "src/ControlIdentity.flix": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+      "src/ControlMap.flix": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+      "src/ControlSignature.flix": "bc93012ed72ade0095a6c9eed0b7ba04191c021bbed691626986f485a0d091ba",
+      "src/Experiment.flix": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+      "src/Main.flix": "2937786d5358f9e424a77db717f3f0ca32abb2063cc0d5dcfa6c79be32a764a1",
+      "src/Radii.flix": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+      "src/Repository/Acquire.flix": "6599e1c22416ef6e0106a9eed5b0550e2fec5c19008c4f3c34afef7968ed3384",
+      "src/Repository/Grit.flix": "1e0812b8e7ba1e5d48604b1a12e630ed4d24672083f7b779a535d1caa54189e4",
+      "src/Repository/Location.flix": "9706d1703f80d5764b22eac6209dad0ecb251c98e22368d35a57f87196046e20",
+      "src/Repository/Physical.flix": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+      "src/Repository/Structure.flix": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+      "src/Repository/Table.flix": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+      "src/Repository.flix": "d6d6251354face58934c855e252496fac327a0c09eaa18ee12b5cb75f06709ab",
+      "src/ScientificIdentity.flix": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+      "src/ScientificTable/Columns.flix": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731",
+      "src/ScientificTable.flix": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba"
+    },
+    "signature_evaluator_changed": false,
+    "adaptation": "Select one of the original three programs per file. After genuine Grit returns zero normalized facts, emit an explicit empty-table marker; controller writes the existing typed Arrow schema. No query/admission/Atlas algorithm changes."
+  },
+  "locations-instrument": {
+    "jar_path": "/tmp/attune-checkpoints-v2/locations-instrument/artifact/locations-instrument.jar",
+    "jar_sha256": "3755253f7498d21afd0f1ceaa767287433856f527a35b869661ee51bc2dc34a3",
+    "source_archive": "locations-instrument-source.tar.gz",
+    "source_archive_sha256": "226b5be078a6555428589659eb4ea8bf44f71e58b3c41d93ecdec0df47b8bfbb",
+    "source_files": {
+      "src/AcquisitionFacts.flix": "7d551a4616ab4fadfe4b7db258fb7ca0b94c2506ed6090cdbcd7336c8cfbf186",
+      "src/Atlas/Signature/Summary.flix": "88a8a9fed8624091ed2eaade450165767385089129b3630b1eb6a653560652b5",
+      "src/Atlas/Signature/Table.flix": "b98aeedae972223baffa9c9be5e9752328454883d76fb6aab069ab6d2cdc6193",
+      "src/Atlas/Signature.flix": "2b5ac79776bf30d1e46caaaee8c44edefa038bd47c7b1d6cfb21baa8d6f92dfa",
+      "src/Atlas.flix": "9a269f349ac45a078e86389c2f12f109d94f50ad7e8a22a491b4a14795cadffe",
+      "src/ControlIdentity.flix": "574bd61c0d94eddd7e3187afab3abf24719cd471bcd37180f607dc947da50e56",
+      "src/ControlMap.flix": "88fdda37a05d35674803691a0626911bbe4e61453c5fe56ff6f037541b5af4f7",
+      "src/ControlSignature.flix": "345c33485bf56d058172105bc8500ba1d102a43255195c26119c4beab5d23679",
+      "src/Experiment.flix": "97fd32677dd09f94e612b23eb76f9e33fc45c46c688c782afe21c88db3bff7cc",
+      "src/Main.flix": "602862e9f465be8c4018ced9462cabee4a01476c19d720abc46522148416603d",
+      "src/Radii.flix": "25916068f8f362e6e46c08488b3f13d38690185627102b75ad1290d12c31c31a",
+      "src/Repository/Grit.flix": "1e0812b8e7ba1e5d48604b1a12e630ed4d24672083f7b779a535d1caa54189e4",
+      "src/Repository/Location/Table.flix": "625122523ffa1a8d9548380c919fe10ca7026af76deb85a7f2a41f30f01d39ca",
+      "src/Repository/Location.flix": "9706d1703f80d5764b22eac6209dad0ecb251c98e22368d35a57f87196046e20",
+      "src/Repository/Physical.flix": "40735e02bdd2c9509fe08d5f61a8b4e2b88aee6324d052c3c5b76688e7a824f1",
+      "src/Repository/Structure.flix": "8ab3f3746166e1480439837d65df06748a87d68428fc36c3bf82a5c81c4c9524",
+      "src/Repository/Table.flix": "37a910b252e8514e22e4dfae603466d13da7d93ebe602bc0ec55b48920b9d07d",
+      "src/Repository.flix": "d6d6251354face58934c855e252496fac327a0c09eaa18ee12b5cb75f06709ab",
+      "src/ScientificIdentity.flix": "9dc463de708134fa605d9f96abc18e0bb609ffb85421eeede3d38a3189121d4a",
+      "src/ScientificTable/Columns.flix": "4d99a6b784f939333e3c9c15a0206628c403769b033bd9b9e6a019f63c064731",
+      "src/ScientificTable.flix": "a84817e93f974b8166ef0e1a86d372030dced0594dc017e1860a3cb07be0b2ba"
+    },
+    "signature_evaluator_changed": false
+  },
+  "program-producer-v1": {
+    "jar_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76",
+    "source_archive": "program-producer-v1-source.tar.gz",
+    "source_archive_sha256": "024b0e5f539ea47a5cfe8c0a1e002a282b37f468f01d9d42e4c548b2f6619cec",
+    "role": "earlier producer attempts; pre-zero-table transport handling"
+  }
+}

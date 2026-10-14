@@ -1,0 +1,71 @@
+[
+  {
+    "common_language_signature": "same as full graph",
+    "common_language_signature_missing_reason": null,
+    "common_language_source_files": 72,
+    "full_available_graph_files": 72,
+    "full_available_graph_languages": {
+      "flix": 41,
+      "java": 11,
+      "starlark": 20
+    },
+    "repository": "attuneflix",
+    "revision": "bcfc126db7b7c7f535353ccc8afca44465903571"
+  },
+  {
+    "common_language_signature": "same as full graph",
+    "common_language_signature_missing_reason": null,
+    "common_language_source_files": 75,
+    "full_available_graph_files": 75,
+    "full_available_graph_languages": {
+      "flix": 42,
+      "java": 11,
+      "starlark": 22
+    },
+    "repository": "attuneflix",
+    "revision": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1"
+  },
+  {
+    "common_language_signature": "same as full graph",
+    "common_language_signature_missing_reason": null,
+    "common_language_source_files": 81,
+    "full_available_graph_files": 81,
+    "full_available_graph_languages": {
+      "flix": 48,
+      "java": 11,
+      "starlark": 22
+    },
+    "repository": "attuneflix",
+    "revision": "eca979f524661cbe400d22b90c7e3c305b32052e"
+  },
+  {
+    "common_language_signature": null,
+    "common_language_signature_missing_reason": "raw acquisition facts unavailable; no projected graph substituted",
+    "common_language_source_files": 168,
+    "full_available_graph_files": 272,
+    "full_available_graph_languages": {
+      "flix": 109,
+      "java": 12,
+      "javascript": 12,
+      "starlark": 47,
+      "typescript": 92
+    },
+    "repository": "attuneflix",
+    "revision": "88f97599901df1be52ce8cb06f2a701c464cbbbe"
+  },
+  {
+    "candidate_languages": {
+      "flix": 95,
+      "java": 14,
+      "ruby": 11,
+      "starlark": 54
+    },
+    "common_language_candidate_sources": 163,
+    "common_language_signature": null,
+    "full_available_graph_files": null,
+    "missing_reason": "no self extraction recovered; localization is an external JS/TS-only route",
+    "repository": "attune",
+    "revision": "140d1b2d1805a1b55c22c7c1953aa36eb866be98",
+    "supported_candidate_sources": 174
+  }
+]

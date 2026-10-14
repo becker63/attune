@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 8734,
+    "language": "flix",
+    "path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+    "physical_lines": 157,
+    "repository_path": "experiments/atlas-work-topology/ControlSignatureTest.flix",
+    "sha256": "0bdc998f252e07a6ed6e19285ed6dc35cdb85ef5d7ce7a393c4999a112ae86d8"
+  },
+  "program": "calls",
+  "root_revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

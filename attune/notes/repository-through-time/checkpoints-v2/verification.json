@@ -1,0 +1,249 @@
+{
+  "checkpoints": [
+    {
+      "checkpoint": "attune-fb13fb76bb21",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-71101348442e",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-06e6fc33480c",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-6995e36c5035",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-d64da42bf897",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-dd2c93dea27c",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-7a32afb53a37",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-d901935b03f1",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-b28fc778dc09",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-eab5dbbb49d3",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-b21b97bf7184",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-83764734852a",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-6db53dfc043d",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-ba6b750b2f08",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-c7e5de3bd68c",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-438d73d0a344",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-66e98a16b741",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-7fe69f31af3f",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-954158b2fde5",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-8fd3ba083cdb",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-480b53493a23",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-3d1ad9014f17",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-c6b5bd7bb66c",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attune-140d1b2d1805",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-eca979f52466",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-52da64241a61",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-10f3a212d0c4",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-73b870983147",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-c236a3aabfa1",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    },
+    {
+      "checkpoint": "attuneflix-88f97599901d",
+      "source_archive_hashes": "passed",
+      "fact_source_identity_ranges": "passed",
+      "route_family_population": "passed",
+      "asset_hashes": "passed",
+      "directory_population": "passed"
+    }
+  ],
+  "raw_route_rows": 1573920,
+  "source_instances": 2788,
+  "all_selected_completed": true,
+  "latest_downstream_replay": "passed",
+  "original_control_response_parity": true
+}

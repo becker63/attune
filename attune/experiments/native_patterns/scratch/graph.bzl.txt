@@ -1,0 +1,470 @@
+flix_action(
+    name = 'extract_scratch_base',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-base-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_base',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_base', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_base',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_base', 'ranking': '@native_campaign_inputs//:scratch-base-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_base',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-base-ranking.json', 'matches': ':match_scratch_base', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_base',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_base', 'labels': '@native_campaign_inputs//:scratch-base-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_rule',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-rule-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_rule',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_rule', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_rule',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'scratch/Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_rule', 'ranking': '@native_campaign_inputs//:scratch-rule-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_rule',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-rule-ranking.json', 'matches': ':match_scratch_rule', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_rule',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_rule', 'labels': '@native_campaign_inputs//:scratch-rule-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_scoring',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-scoring-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_scoring',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_scoring', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_scoring',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_scoring', 'ranking': '@native_campaign_inputs//:scratch-scoring-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_scoring',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'scratch/PredictScratch.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-scoring-ranking.json', 'matches': ':match_scratch_scoring', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_scoring',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_scoring', 'labels': '@native_campaign_inputs//:scratch-scoring-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-body-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_body', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_body', 'ranking': '@native_campaign_inputs//:scratch-body-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-body-ranking.json', 'matches': ':match_scratch_body', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_body', 'labels': '@native_campaign_inputs//:scratch-body-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_import',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-import-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_import',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_import', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_import',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_import', 'ranking': '@native_campaign_inputs//:scratch-import-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_import',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-import-ranking.json', 'matches': ':match_scratch_import', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_import',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_import', 'labels': '@native_campaign_inputs//:scratch-import-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_filename',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-filename-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_filename',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_filename', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_filename',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_filename', 'ranking': '@native_campaign_inputs//:scratch-filename-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_filename',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-filename-ranking.json', 'matches': ':match_scratch_filename', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_filename',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_filename', 'labels': '@native_campaign_inputs//:scratch-filename-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_ambiguity',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-ambiguity-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_ambiguity',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_ambiguity', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_ambiguity',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_ambiguity', 'ranking': '@native_campaign_inputs//:scratch-ambiguity-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_ambiguity',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-ambiguity-ranking.json', 'matches': ':match_scratch_ambiguity', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_ambiguity',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_ambiguity', 'labels': '@native_campaign_inputs//:scratch-ambiguity-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_ranking',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-ranking-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_ranking',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_ranking', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_ranking',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_ranking', 'ranking': '@native_campaign_inputs//:scratch-ranking-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_ranking',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-ranking-ranking.json', 'matches': ':match_scratch_ranking', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_ranking',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_ranking', 'labels': '@native_campaign_inputs//:scratch-ranking-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'extract_scratch_label',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Extract.flix'],
+    inputs = {'source': '@native_campaign_inputs//:scratch-label-source.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+    native_libs = ['//platform/support/grit:attune_grit_abi'],
+)
+
+flix_action(
+    name = 'admit_scratch_label',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', 'Admit.flix'],
+    inputs = {'observations': ':extract_scratch_label', 'world': '@native_campaign_inputs//:scratch-world.json', 'recipe': '@native_campaign_inputs//:scratch-recipe.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'match_scratch_label',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//src:Attune/Patterns.flix', 'Match.flix'],
+    inputs = {'admitted': ':admit_scratch_label', 'ranking': '@native_campaign_inputs//:scratch-label-ranking.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'predict_scratch_label',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Coverage.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', 'Predict.flix'],
+    inputs = {'ranking': '@native_campaign_inputs//:scratch-label-ranking.json', 'matches': ':match_scratch_label', 'configs': '@native_campaign_inputs//:scratch-configs.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+    java_deps = ['//platform/tools/grit:attune_grit'],
+)
+
+flix_action(
+    name = 'eval_scratch_label',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', '//src:Attune/Study.flix', 'Evaluate.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-task.json', 'predictions': ':predict_scratch_label', 'labels': '@native_campaign_inputs//:scratch-label-labels.json'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_query',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-query-source.json', 'query': '@native_campaign_inputs//:probe-query-query.json', 'query-vector': '@native_campaign_inputs//:probe-query-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-query-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_vector',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-vector-source.json', 'query': '@native_campaign_inputs//:probe-vector-query.json', 'query-vector': '@native_campaign_inputs//:probe-vector-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-vector-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_missing',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-missing-source.json', 'query': '@native_campaign_inputs//:probe-missing-query.json', 'query-vector': '@native_campaign_inputs//:probe-missing-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-missing-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_corrupt',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-corrupt-source.json', 'query': '@native_campaign_inputs//:probe-corrupt-query.json', 'query-vector': '@native_campaign_inputs//:probe-corrupt-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-corrupt-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_dimension',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-dimension-source.json', 'query': '@native_campaign_inputs//:probe-dimension-query.json', 'query-vector': '@native_campaign_inputs//:probe-dimension-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-dimension-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_recipe',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-recipe-source.json', 'query': '@native_campaign_inputs//:probe-recipe-query.json', 'query-vector': '@native_campaign_inputs//:probe-recipe-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-recipe-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_world',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-world-source.json', 'query': '@native_campaign_inputs//:probe-world-query.json', 'query-vector': '@native_campaign_inputs//:probe-world-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-world-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+flix_action(
+    name = 'probe_body',
+    srcs = ['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', 'Campaign.flix', 'Campaign/Replay.flix', 'Rank.flix'],
+    inputs = {'task': '@native_campaign_inputs//:scratch-real-sindresorhus__got-114-task.json', 'source': '@native_campaign_inputs//:probe-body-source.json', 'query': '@native_campaign_inputs//:probe-body-query.json', 'query-vector': '@native_campaign_inputs//:probe-body-query-vector.tsv', 'code-vectors': '@native_campaign_inputs//:probe-body-code-vectors.tsv'},
+    timeout_seconds = 600,
+    tags = ["manual"],
+)
+
+filegroup(name="scratch_payloads",tags=["manual"],srcs=[':extract_scratch_base', ':admit_scratch_base', ':match_scratch_base', ':predict_scratch_base', ':eval_scratch_base', ':extract_scratch_rule', ':admit_scratch_rule', ':match_scratch_rule', ':predict_scratch_rule', ':eval_scratch_rule', ':extract_scratch_scoring', ':admit_scratch_scoring', ':match_scratch_scoring', ':predict_scratch_scoring', ':eval_scratch_scoring', ':extract_scratch_body', ':admit_scratch_body', ':match_scratch_body', ':predict_scratch_body', ':eval_scratch_body', ':extract_scratch_import', ':admit_scratch_import', ':match_scratch_import', ':predict_scratch_import', ':eval_scratch_import', ':extract_scratch_filename', ':admit_scratch_filename', ':match_scratch_filename', ':predict_scratch_filename', ':eval_scratch_filename', ':extract_scratch_ambiguity', ':admit_scratch_ambiguity', ':match_scratch_ambiguity', ':predict_scratch_ambiguity', ':eval_scratch_ambiguity', ':extract_scratch_ranking', ':admit_scratch_ranking', ':match_scratch_ranking', ':predict_scratch_ranking', ':eval_scratch_ranking', ':extract_scratch_label', ':admit_scratch_label', ':match_scratch_label', ':predict_scratch_label', ':eval_scratch_label', ':probe_query', ':probe_vector', ':probe_missing', ':probe_corrupt', ':probe_dimension', ':probe_recipe', ':probe_world', ':probe_body'])

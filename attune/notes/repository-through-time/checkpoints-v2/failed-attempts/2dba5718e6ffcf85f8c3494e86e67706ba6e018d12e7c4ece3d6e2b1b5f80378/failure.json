@@ -1,0 +1,12 @@
+{
+  "source": {
+    "bytes": 40,
+    "language": "starlark",
+    "path": "REPO.bazel",
+    "physical_lines": 1,
+    "repository_path": "REPO.bazel",
+    "sha256": "f66b93ddb3381f1d8503230d82e7dfe896cc0d867f227682801a82bbb7d7eb59"
+  },
+  "program": "defines",
+  "reason": "WARNING: A terminally deprecated method in sun.misc.Unsafe has been called\nWARNING: sun.misc.Unsafe::arrayBaseOffset has been called by org.apache.arrow.memory.util.MemoryUtil (file:/tmp/attune-checkpoints-v2/program-producer/artifact/program-producer.jar)\nWARNING: Please consider reporting this to the maintainers of class org.apache.arrow.memory.util.MemoryUtil\nWARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release\nException in thread \"main\" java.lang.IllegalStateException: cannot write typed Parquet table: /tmp/attune-checkpoints-v2/program-acquisitions/2dba5718e6ffcf85f8c3494e86e67706ba6e018d12e7c4ece3d6e2b1b5f80378/fresh-facts.parquet\n\tat attune.parquet.AttuneParquet.writeTable(AttuneParquet.java:61)\n\tat ScientificTable.Def$write.staticApply(/tmp/attune-checkpoints-v2/program-producer/src/ScientificTable.flix:54)\n\tat AcquisitionFacts.Def$writeFacts.staticApply(/tmp/attune-checkpoints-v2/program-producer/src/AcquisitionFacts.flix:1411)\n\tat AcquisitionDriver.Def$acquire.staticApply(/tmp/attune-checkpoints-v2/program-producer/src/AcquisitionDriver.flix:10)\n\tat AcquisitionDriver.Def$acquire.invoke(/tmp/attune-checkpoints-v2/program-producer/src/AcquisitionDriver.flix)\n\tat Main.main(Main)\nCaused by: java.io.IOException: Arrow writer did not produce one file\n\tat attune.parquet.AttuneParquet.write(AttuneParquet.java:223)\n\tat attune.parquet.AttuneParquet.writeTable(AttuneParquet.java:58)\n\t... 5 more\n"
+}

@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 3253,
+    "language": "starlark",
+    "path": "experiments/atlas-work-topology/topology.bzl",
+    "physical_lines": 96,
+    "repository_path": "experiments/atlas-work-topology/topology.bzl",
+    "sha256": "7a0441d00c4ad9b3c65e2b5a8e387166b0cd9db1dd3157ab4ff49e886a75f22c"
+  },
+  "program": "imports",
+  "root_revision": "c236a3aabfa13e5f36162e895d1ca4742f9730c0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

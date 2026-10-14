@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 10723,
+    "language": "starlark",
+    "path": "MODULE.bazel",
+    "physical_lines": 221,
+    "repository_path": "attune/MODULE.bazel",
+    "sha256": "78e6426b12a57100cda7b8043b4327026ff25eb20e0e9f4d83af1c4279356baf"
+  },
+  "program": "imports",
+  "root_revision": "c6b5bd7bb66c395eebb1d0c7d7e9fa0876e23f96",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

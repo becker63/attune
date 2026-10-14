@@ -13,7 +13,7 @@
 pub mod Attune.Study {
 
     /// One exact non-negative rational. The denominator is never zero.
-    pub type alias Ratio = { numerator = Int32, denominator = Int32 }
+    pub type alias Ratio = { numerator = BigInt, denominator = BigInt }
 
     /// The declared retrieval metric families, in report order.
     pub enum LocalizationMetric with Eq, Order, ToString {
@@ -51,32 +51,27 @@ pub mod Attune.Study {
 
     // --------------------------------------------------------- exact ratios
 
-    def greatestCommonDivisor(a: Int32, b: Int32): Int32 =
-        if (b == 0) a else greatestCommonDivisor(b, Int32.modulo(a, b))
+    /// Public counts stay Int32; intermediate fractions use arbitrary precision.
+    pub def ratio(numerator: Int32, denominator: Int32): Ratio =
+        wideRatio(Int32.toBigInt(numerator), Int32.toBigInt(denominator))
 
-    /// One exact rational in lowest terms. A negative or zero denominator is a
-    /// programming error rather than a metric, so it is reduced from its absolute
-    /// value and a zero numerator is pinned to the canonical `0/1`.
-    pub def ratio(numerator: Int32, denominator: Int32): Ratio = {
-        let n = Int32.abs(numerator);
-        let d = Int32.abs(denominator);
-        if (d == 0) { numerator = n, denominator = 1 }
-        else if (n == 0) { numerator = 0, denominator = 1 }
+    def wideRatio(numerator: BigInt, denominator: BigInt): Ratio = {
+        let n = BigInt.abs(numerator);
+        let d = BigInt.abs(denominator);
+        if (d == 0ii) { numerator = n, denominator = 1ii }
+        else if (n == 0ii) { numerator = 0ii, denominator = 1ii }
         else {
-            let g = greatestCommonDivisor(n, d);
+            let g = BigInt.gcd(n, d);
             { numerator = n / g, denominator = d / g }
         }
     }
 
-    /// The exact sum of two rationals, in lowest terms. The denominators are
-    /// scaled by the *least* common multiple rather than their product, so the
-    /// intermediate numerator stays as small as the exact value allows and a
-    /// task-micro mean over many tasks cannot overflow the 32-bit numerator.
+    /// Reduction limits growth; BigInt makes heterogeneous denominators exact.
     pub def addRatio(a: Ratio, b: Ratio): Ratio = {
-        let common = greatestCommonDivisor(a#denominator, b#denominator);
+        let common = BigInt.gcd(a#denominator, b#denominator);
         let leftScale = b#denominator / common;
         let rightScale = a#denominator / common;
-        ratio(a#numerator * leftScale + b#numerator * rightScale, a#denominator * leftScale)
+        wideRatio(a#numerator * leftScale + b#numerator * rightScale, a#denominator * leftScale)
     }
 
     /// The exact arithmetic mean of a non-empty rational population, or nothing
@@ -86,7 +81,7 @@ pub mod Attune.Study {
         if (List.isEmpty(ratios)) None
         else {
             let total = List.foldLeft(addRatio, ratio(0, 1), ratios);
-            Some(ratio(total#numerator, total#denominator * List.length(ratios)))
+            Some(wideRatio(total#numerator, total#denominator * Int32.toBigInt(List.length(ratios))))
         }
 
     // ------------------------------------------------------- metric values
@@ -101,7 +96,7 @@ pub mod Attune.Study {
 
     /// The task's eligible gold paths that appear inside the first k positions.
     pub def retrievedGold(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): List[String] =
-        List.filter(path -> List.memberOf(path, topPaths(ranking, k)), gold)
+        List.filter(path -> List.memberOf(path, topPaths(ranking, k)), List.distinct(gold))
 
     /// The reciprocal of the first gold path's rank inside the first k positions,
     /// or zero when no gold path is inside k.
@@ -122,7 +117,7 @@ pub mod Attune.Study {
     /// cannot hold more than k paths. This is the FileAcc@k statement
     /// (`VAL-STRICT-001`), kept distinct from the Hit family.
     pub def fileAccuracy(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): Bool =
-        not List.isEmpty(gold) and List.length(retrievedGold(ranking, gold, k)) == List.length(gold)
+        not List.isEmpty(gold) and List.length(retrievedGold(ranking, gold, k)) == List.length(List.distinct(gold))
 
     /// The exact value of one metric over one immutable ranking and one task's
     /// eligible gold paths. Recall is undefined (nothing) when the task has no
@@ -135,7 +130,7 @@ pub mod Attune.Study {
                 Some(ratio(if (List.isEmpty(retrievedGold(ranking, gold, k))) 0 else 1, 1))
             case LocalizationMetric.RecallAt(k) =>
                 if (List.isEmpty(gold)) None
-                else Some(ratio(List.length(retrievedGold(ranking, gold, k)), List.length(gold)))
+                else Some(ratio(List.length(retrievedGold(ranking, gold, k)), List.length(List.distinct(gold))))
             case LocalizationMetric.ReciprocalRankAt(k) =>
                 Some(reciprocalRankRatio(ranking, gold, k))
             case LocalizationMetric.FileAccAt(k) =>
@@ -146,18 +141,17 @@ pub mod Attune.Study {
     // ---------------------------------------------------------- rendering
 
     /// One ratio as its exact integer pair, so a TSV record never loses precision.
-    pub def ratioPair(value: Ratio): (Int32, Int32) = (value#numerator, value#denominator)
+    pub def ratioPair(value: Ratio): (BigInt, BigInt) = (value#numerator, value#denominator)
 
     /// One ratio as a one-decimal percentage, rounded half away from zero. The
     /// exact pair is always reported beside it; this string is presentation only.
-    /// The scaling is done in 64-bit because a task-micro mean's exact
-    /// denominator can exceed the 32-bit range once scaled by a thousand.
+    /// The rendering uses the same arbitrary-precision integers as reduction.
     pub def ratioPercentage(value: Ratio): String = {
-        let numerator = Int32.toInt64(value#numerator);
-        let denominator = Int32.toInt64(value#denominator);
-        let tenths = (numerator * 1000i64 + denominator / 2i64) / denominator;
-        let whole = tenths / 10i64;
-        "${whole}.${tenths - whole * 10i64}%"
+        let numerator = value#numerator;
+        let denominator = value#denominator;
+        let tenths = (numerator * 1000ii + denominator / 2ii) / denominator;
+        let whole = tenths / 10ii;
+        "${whole}.${tenths - whole * 10ii}%"
     }
 
     // ----------------------------------------------------- population reduction

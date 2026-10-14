@@ -137,12 +137,14 @@ def _action_impl(ctx):
     args.add("-cp")
     args.add_joined(launcher, join_with = ":")
     for name, value in {
-        "mode": "run",
+        "mode": "compiled" if ctx.attr.compiled else "run",
         "tests": ",".join([file.path for file in ctx.files.srcs]),
         "jars": jar_manifest.path,
         "fixtures": bindings.path,
         "output": out.path,
         "isolation": ctx.attr.isolation,
+        "libs": ",".join([file.path for file in ctx.files.native_libs]),
+        "timeoutSeconds": str(ctx.attr.timeout_seconds),
     }.items():
         args.add("-Dattune." + name + "=" + value)
     if ctx.file.unshare:
@@ -152,7 +154,7 @@ def _action_impl(ctx):
     ctx.actions.run(
         executable = runtime.java_executable_exec_path,
         arguments = [args],
-        inputs = depset(inputs + ctx.files.srcs + launcher + jars + [jar_manifest, bindings], transitive = [runtime.files]),
+        inputs = depset(inputs + ctx.files.srcs + ctx.files.native_libs + launcher + jars + [jar_manifest, bindings], transitive = [runtime.files]),
         outputs = [out],
         env = {"LANG": "C.UTF-8"},
         mnemonic = "FlixArtifact",
@@ -166,6 +168,9 @@ _flix_action = rule(
         "srcs": attr.label_list(allow_files = [".flix"]),
         "inputs": attr.label_keyed_string_dict(allow_files = True),
         "java_deps": attr.label_list(providers = [JavaInfo]),
+        "native_libs": attr.label_list(allow_files = True),
+        "timeout_seconds": attr.int(default = 0),
+        "compiled": attr.bool(default = False),
         "isolation": attr.string(values = ["unshare", "platform"]),
         "unshare": attr.label(allow_single_file = True),
         "closure": attr.label(allow_files = True),
@@ -174,7 +179,7 @@ _flix_action = rule(
     toolchains = [_JAVA],
 )
 
-def flix_action(name, srcs, inputs = {}, java_deps = []):
+def flix_action(name, srcs, inputs = {}, java_deps = [], native_libs = [], timeout_seconds = 0, tags = [], compiled = False):
     """An ordinary Flix main reads named inputs and writes one declared JSON file."""
     if len(inputs.values()) != len({label: True for label in inputs.values()}):
         fail("input aliases must name distinct artifacts")
@@ -183,6 +188,10 @@ def flix_action(name, srcs, inputs = {}, java_deps = []):
         srcs = srcs,
         inputs = {label: key for key, label in inputs.items()},
         java_deps = java_deps,
+        native_libs = native_libs,
+        timeout_seconds = timeout_seconds,
+        compiled = compiled,
+        tags = tags,
         isolation = select({_PLATFORM: "platform", "//conditions:default": "unshare"}),
         unshare = select({_PLATFORM: None, "//conditions:default": _UNSHARE}),
         closure = select({_PLATFORM: None, "//conditions:default": _CLOSURE}),

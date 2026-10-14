@@ -1,0 +1,34 @@
+--- canonical/AcquisitionDriver.flix
++++ transport/AcquisitionDriver.flix
+@@ -9,6 +9,7 @@
+ /// committed artifacts written here.
+ mod AcquisitionDriver {
+     import java.nio.file.{Files, Paths}
++    import java.lang.System
+     use Repository.Grit.Program
+ 
+     pub def execute(): Unit \ IO = match Experiment.property("attune.command") {
+@@ -59,7 +60,8 @@
+         let facts = Vector.flatten(Vector.map(match (_, rows) -> rows, acquired));
+         let world = Experiment.require(AcquisitionFacts.world(sources, facts));
+         AcquisitionFacts.writeSources(Experiment.property("attune.sources"), sources);
+-        AcquisitionFacts.writeFacts(Experiment.property("attune.facts"), facts);
++        if (Vector.isEmpty(facts)) println("ACQUISITION_EMPTY_FACTS rows=0")
++        else AcquisitionFacts.writeFacts(Experiment.property("attune.facts"), facts);
+         println("ATLAS_PARALLELISM_ACQUIRE files=${Vector.length(sources)} facts=${Vector.length(facts)} " +
+             "symbols=${Vector.length(world#symbols)} defines=${Set.size(world#defines)} " +
+             "imports=${Set.size(world#imports)} calls=${Set.size(world#calls)} " +
+@@ -77,7 +79,12 @@
+         (source, Vector.flatMap(program -> factsOf(source, content, program), programs()))
+     }
+ 
+-    def programs(): Vector[Program] = Vector#{Program.Defines, Program.Imports, Program.Calls}
++    def programs(): Vector[Program] \ IO = {
++        let selected = System.getProperty("attune.program", "all");
++        let family = Vector#{Program.Defines, Program.Imports, Program.Calls};
++        if (selected == "all") family
++        else Vector.filter(program -> Repository.Grit.programName(program) == selected, family)
++    }
+ 
+     /// One relation program over one source, through the real engine and the
+     /// one fact protocol. The engine's language string and the program resource

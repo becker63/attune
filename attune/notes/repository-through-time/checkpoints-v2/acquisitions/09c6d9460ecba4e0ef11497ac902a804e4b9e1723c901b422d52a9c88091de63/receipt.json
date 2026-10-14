@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 4809,
+    "language": "flix",
+    "path": "test/Engine/AtlasSignatureTableTest.flix",
+    "physical_lines": 104,
+    "repository_path": "test/Engine/AtlasSignatureTableTest.flix",
+    "sha256": "bc1695941cbea9e911b89e975cf5ed177e01f4dea30ff6d6289806362e78c772"
+  },
+  "program": "imports",
+  "root_revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

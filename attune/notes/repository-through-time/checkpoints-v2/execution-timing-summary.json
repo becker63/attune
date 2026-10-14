@@ -1,0 +1,26 @@
+{
+  "acquire": {
+    "successful_stages": 20,
+    "median_seconds": 31.707493993497337,
+    "maximum_seconds": 177.25086783499864,
+    "total_seconds": 879.2444669409888
+  },
+  "acquire_program": {
+    "successful_stages": 630,
+    "median_seconds": 0.7138781230023596,
+    "maximum_seconds": 117.29976676500519,
+    "total_seconds": 792.9036065750261
+  },
+  "signature": {
+    "successful_stages": 33,
+    "median_seconds": 11.825615606998326,
+    "maximum_seconds": 19.265807422998478,
+    "total_seconds": 402.72112059204665
+  },
+  "world": {
+    "successful_stages": 33,
+    "median_seconds": 1.2648052740114508,
+    "maximum_seconds": 4.487691155998618,
+    "total_seconds": 47.181887449958595
+  }
+}

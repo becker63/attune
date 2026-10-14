@@ -153,6 +153,7 @@ scored **85 eligible tasks in 22 repository groups**:
 | Lexical/path prior | 11.8% | 35.3% |
 | Prior + issue-to-code anchors | 18.8% | 41.2% |
 | Prior + anchors + facts + Theory scoring | 12.9% | 41.2% |
+| CodeRankEmbed file retrieval | 18.8% | 45.9% |
 | Hosted Qwen retrieval | 41.2% | 85.9% |
 | Qwen + Jev reranking | 57.6% | 90.6% |
 | Qwen + structural context + Jev | 61.2% | 91.8% |
@@ -163,6 +164,20 @@ retriever. The results are mixed: richer deterministic scoring hurt top-one
 accuracy, while structural context in the hosted reranking prompt helped on this
 population. Finding any required file is easier than finding the complete fix:
 the last condition recovered **all required files in the top 10 on 55.3% of tasks**.
+
+**CodeRank comparison.** On this historical panel, Qwen outperformed our
+CodeRankEmbed baseline under the evaluated file-ranking recipes. These are
+retrieval results, not results from the current structural-program search.
+We tested individual source-file embeddings, without the separate CodeRankLLM
+reranker; the [CodeRank paper](https://arxiv.org/html/2412.01007v3) evaluates
+function retrieval and reranking on a different workload. This comparison does
+not establish superiority over the full CodeRank system.
+
+[CodeRankEmbed](https://huggingface.co/nomic-ai/CodeRankEmbed) learns a ranking
+representation from text. Attune's structural investigation asks which small
+procedures improve an existing ranking, and where their effects repeat. A
+stronger retriever can supply better anchors for those procedures; the two
+approaches can be combined. [Historical results and scope](LOCALIZATION_REPORT.md).
 
 This was exploratory. Eight of the original 96 tasks were excluded because two
 groups did not finish within the runtime cap; three of the remaining 88 had no

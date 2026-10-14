@@ -1,0 +1,74 @@
+--- original/src/ControlSignature.flix
++++ checkpoint/src/ControlSignature.flix
+@@ -22,7 +22,7 @@
+     import java.nio.file.{Files, Paths}
+     use ScientificTable.Value
+ 
+-    pub def signatureProtocol(): String = "atlas-signature-work-topology-v1"
++    pub def signatureProtocol(): String = "atlas-signature-checkpoint-common-v1"
+     pub def atlasProtocol(): String = "atlas-composition-depth7-v1"
+     pub def maxDepth(): Int32 = 7
+ 
+@@ -52,9 +52,9 @@
+     /// The control world's content-addressed identity, derived exactly as the
+     /// acquisition seam derives it for a Grit-acquired revision.
+     pub def identityOf(revision: String, world: Repository.World): WorldIdentity \ IO = {
+-        let sourceTreeIdentity = "attuneflix-source-tree-v2:" + revision;
++        let sourceTreeIdentity = Experiment.property("attune.source_tree_identity");
+         let factIdentity = Repository.Table.factIdentity(sourceTreeIdentity, AcquisitionFacts.gritIdentity(), world);
+-        let snapshotId = Repository.Table.snapshotIdentity("attuneflix", revision, sourceTreeIdentity, factIdentity);
++        let snapshotId = Repository.Table.snapshotIdentity(Experiment.property("attune.repository"), revision, sourceTreeIdentity, factIdentity);
+         {
+             revision = revision,
+             sourceTreeIdentity = sourceTreeIdentity,
+@@ -63,10 +63,10 @@
+         }
+     }
+ 
+-    pub def snapshotIdentity(identity: WorldIdentity): Atlas.Signature.Table.SnapshotIdentity = {
++    pub def snapshotIdentity(identity: WorldIdentity): Atlas.Signature.Table.SnapshotIdentity \ IO = {
+         signatureProtocol = signatureProtocol(),
+         atlasProtocol = atlasProtocol(),
+-        repository = "attuneflix",
++        repository = Experiment.property("attune.repository"),
+         baseRevision = identity#revision,
+         sourceTreeIdentity = identity#sourceTreeIdentity,
+         factIdentity = identity#factIdentity,
+--- original/src/AcquisitionFacts.flix
++++ checkpoint/src/AcquisitionFacts.flix
+@@ -152,6 +152,6 @@
+         }, Vector.filter(row -> row#program == program, facts))
+ 
+     /// The Grit acquisition identity recorded in every v2 world.
+-    pub def gritIdentity(): String =
+-        "grit-acquisition-v2:getgrit/gritql@c80b3026471b229f41b279c3eb0c162dcdacfdb1:frontends-defines-imports-calls"
++    pub def gritIdentity(): String \ IO =
++        Experiment.property("attune.acquisition_identity")
+ }
+--- original/src/Main.flix
++++ checkpoint/src/Main.flix
+@@ -1,3 +1,21 @@
+-/// Executable surface for the control signature instrument; the shell wrapper
+-/// passes the committed evidence and artifact paths as JVM properties.
+-def main(): Unit \ IO = ControlSignature.execute()
++/// Dispatch to the existing acquisition, admission and Atlas instruments.
++def main(): Unit \ IO = CheckpointDriver.execute()
++
++mod CheckpointDriver {
++    import java.nio.file.{Files, Paths}
++    pub def execute(): Unit \ IO = match Experiment.property("attune.stage") {
++    case "acquire" => AcquisitionDriver.execute()
++    case "signature" => ControlSignature.execute()
++    case "world" => {
++        let world = ControlSignature.world(Experiment.property("attune.sources"), Experiment.property("attune.facts"));
++        let revision = String.trim(Files.readString(Paths.get(Experiment.property("attune.revision"))));
++        let id = ControlSignature.identityOf(revision, world);
++        let _ = Repository.Table.write(Experiment.property("attune.output_metadata"), Experiment.property("attune.output_entities"), Experiment.property("attune.output_relations"), {
++            repository = Experiment.property("attune.repository"), baseRevision = revision,
++            sourceTreeIdentity = id#sourceTreeIdentity, factIdentity = id#factIdentity, snapshotId = id#snapshotId
++        }, world);
++        ()
++    }
++    case stage => bug!("unknown checkpoint stage ${stage}")
++}
++}

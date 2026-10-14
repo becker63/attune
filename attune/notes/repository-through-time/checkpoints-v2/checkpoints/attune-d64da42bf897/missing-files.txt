@@ -1,0 +1,12 @@
+BUILD.bazel
+test/policy/PolicyCases.flix
+test/proposals/BUILD.bazel
+test/proposals/P01Identity.flix
+test/proposals/P02Composition.flix
+test/proposals/P02DomainWitnessNegative.flix
+test/proposals/P03Evidence.flix
+test/proposals/P04Completeness.flix
+test/proposals/P05Datalog.flix
+test/proposals/P06Descriptors.flix
+test/proposals/P07Guards.flix
+test/proposals/P08Decisions.flix

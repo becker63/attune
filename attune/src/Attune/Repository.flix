@@ -549,6 +549,38 @@ pub mod Attune.Repository {
         base :: (List.map(suffix -> base + suffix, suffixes) ::: List.map(suffix -> base + "/index" + suffix, suffixes))
     }
 
+    /// General exact-path precedence and bounded written .js -> .ts/.tsx substitution.
+    /// No source is dropped and no target is chosen from two substituted candidates.
+    pub def importTargetWithPolicy(policy: ImportPolicy, world: List[String], file: String, value: String): Option[String] =
+        if (policy == ImportPolicy.Original) javascriptImportTarget(world, file, String.trim(value))
+        else {
+            let literal = String.trim(value);
+            let length = String.length(literal);
+            if (length < 2) None else {
+                let quote = String.charAt(0, literal);
+                let specifier = String.take(length - 2, String.drop(1, literal));
+                if ((quote != '\'' and quote != '"') or String.charAt(length - 1, literal) != quote or not String.startsWith(prefix = ".", specifier)) None
+                else {
+                    let base = normalizePath(joinPath(Grit.directory(file), specifier));
+                    let direct = firstExactResolved(world, importCandidates(base));
+                    match direct {
+                        case Some(path) => Some(path)
+                        case None => if (policy == ImportPolicy.ExactJsTs and String.endsWith(suffix = ".js", base)) {
+                            let stem = String.take(String.length(base) - 3, base);
+                            let alternatives = List.filter(p -> List.memberOf(p, world), List#{stem + ".ts", stem + ".tsx"});
+                            match alternatives { case p :: Nil => Some(p) case _ => None }
+                        } else None
+                    }
+                }
+            }
+        }
+
+    def firstExactResolved(world: List[String], candidates: List[String]): Option[String] = match candidates {
+        case Nil => None
+        case candidate :: rest => if (List.memberOf(candidate, world)) Some(candidate)
+            else match uniqueSuffix(world, candidate) { case Some(p) => Some(p) case None => firstExactResolved(world, rest) }
+    }
+
     /// Java resolves a dotted type reference to its source file. The package
     /// path is tried first, then the bare type file as a conservative fallback.
     def javaImportTarget(world: List[String], value: String): Option[String] =
@@ -699,7 +731,13 @@ pub mod Attune.Repository {
         path = String, source = String, defines = String, imports = String, calls = String
     }
 
+    /// Versioned, bounded resolver treatments; Original preserves the retained contract.
+    pub enum ImportPolicy with Eq { case Original, ExactPath, ExactJsTs }
+
     pub def fromObservations(observations: List[Observation]): Result[Grit.Error, Repository] =
+        fromObservationsWithPolicy(observations, ImportPolicy.Original)
+
+    pub def fromObservationsWithPolicy(observations: List[Observation], policy: ImportPolicy): Result[Grit.Error, Repository] =
         if (List.length(List.distinct(List.map(o -> o#path, observations))) != List.length(observations))
             Err(Grit.Error.Wire("Duplicate source path."))
         else forM (
@@ -709,7 +747,7 @@ pub mod Attune.Repository {
                 imports <- Grit.facts(o#path, o#source, o#imports);
                 calls <- Grit.facts(o#path, o#source, o#calls)
             ) yield {id = o#path, source = o#source, definitions = definitions, imports = imports, calls = calls}, observations)
-        ) yield assemble(List.map(o -> (o#path, o#source), observations), entries)
+        ) yield assembleWithPolicy(List.map(o -> (o#path, o#source), observations), entries, policy)
 
     /// One analyzed file: its id and exact source plus the three fact sets.
     ///
@@ -728,10 +766,13 @@ pub mod Attune.Repository {
 
     def emptyRelation(): Relation = { edges = Nil, refusals = Nil, witnesses = Nil }
 
-    def assemble(world: List[(String, String)], perFile: List[Entry]): Repository = {
+    def assemble(world: List[(String, String)], perFile: List[Entry]): Repository =
+        assembleWithPolicy(world, perFile, ImportPolicy.Original)
+
+    def assembleWithPolicy(world: List[(String, String)], perFile: List[Entry], policy: ImportPolicy): Repository = {
         let ids = List.map(match (id, _) -> id, world);
         let declarations = List.flatMap(entry -> declarations(entry), perFile);
-        let imports = List.map(entry -> importsOf(ids, entry), perFile);
+        let imports = List.map(entry -> importsOf(ids, entry, policy), perFile);
         let calls = List.map(entry -> callsOf(declarations, entry), perFile);
         let definedIn = dedupSorted(List.map(d -> (d#symbol, d#file), declarations));
         let importEdges = dedupSorted(List.flatMap(relation -> relation#edges, imports));
@@ -758,8 +799,9 @@ pub mod Attune.Repository {
     def declarations(entry: Entry): List[Declaration] =
         declarationsOf(entry#id, entry#source, entry#definitions)
 
-    def importsOf(ids: List[String], entry: Entry): Relation =
-        List.foldLeft((relation, fact) -> match resolveImport(ids, entry#id, fact) {
+    def importsOf(ids: List[String], entry: Entry, policy: ImportPolicy): Relation =
+        List.foldLeft((relation, fact) -> match if (policy == ImportPolicy.Original) resolveImport(ids, entry#id, fact) else
+            optionalToRefusal(entry#id, fact#value, importTargetWithPolicy(policy, ids, entry#id, fact#value)) {
             case Ok(target)   => { edges = (entry#id, target) :: relation#edges, refusals = relation#refusals,
                 witnesses = witness(Atom.Imports, (entry#id, target), fact) :: relation#witnesses }
             case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals, witnesses = relation#witnesses }

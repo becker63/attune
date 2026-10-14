@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 681,
+    "language": "flix",
+    "path": "test/Applications/InferenceBoundaryTest.flix",
+    "physical_lines": 18,
+    "repository_path": "test/Applications/InferenceBoundaryTest.flix",
+    "sha256": "c66ddd2607749ccf54581c549339a376d197a40d476ad4d1684d594d1d6c2781"
+  },
+  "program": "defines",
+  "root_revision": "52da64241a61d9d1ebee82c8bf0f8773d63092b0",
+  "repository": "attuneflix",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "6a259b4514438fb22aa8069fb5a346d961c6b2f4eae8e1d1932df8248658ff76"
+}

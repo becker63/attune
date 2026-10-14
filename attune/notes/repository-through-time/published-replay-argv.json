@@ -1,0 +1,16 @@
+[
+  "/tmp/attuneflix-oracle-fab7e731/execroot/_main/bazel-out/aarch64-opt-exec-ST-cbdd3fe8ffb5/bin/experiments/atlas-swe-explore/signature",
+  "--jvm_flag=-Dattune.command=signature",
+  "--jvm_flag=-Dattune.manifest_case_count=1",
+  "--jvm_flag=-Dattune.repository=attuneflix",
+  "--jvm_flag=-Dattune.base_revision=88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "--jvm_flag=-Dattune.source_tree_identity=attuneflix-source-tree-v2:88f97599901df1be52ce8cb06f2a701c464cbbbe",
+  "--jvm_flag=-Dattune.fact_identity=repository-facts-v2:51fd0342852e771b588edcd4ef89b105b57e8ec400741aa562c7fbabfb6c95a5",
+  "--jvm_flag=-Dattune.snapshot_id=repository-snapshot-v1:6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a",
+  "--jvm_flag=-Dattune.world_metadata=/home/becker/projects/attuneflix/.attune/atlas-live-self-v1/6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a/metadata.parquet",
+  "--jvm_flag=-Dattune.world_entities=/home/becker/projects/attuneflix/.attune/atlas-live-self-v1/6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a/entities.parquet",
+  "--jvm_flag=-Dattune.world_relations=/home/becker/projects/attuneflix/.attune/atlas-live-self-v1/6bae5cbc218b494824fd4dbdd23e62cdad23301dc9243ee7040a32728daef59a/relations.parquet",
+  "--jvm_flag=-Dattune.output_observations=/tmp/attune-longitudinal/published-replay/observations.parquet",
+  "--jvm_flag=-Dattune.output_physical=/tmp/attune-longitudinal/published-replay/physical.parquet",
+  "--jvm_flag=-Dattune.output_snapshot=/tmp/attune-longitudinal/published-replay/snapshot.parquet"
+]

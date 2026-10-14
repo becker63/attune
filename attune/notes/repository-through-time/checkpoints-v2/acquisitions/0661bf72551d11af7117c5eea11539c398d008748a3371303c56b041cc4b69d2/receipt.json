@@ -1,0 +1,15 @@
+{
+  "source": {
+    "bytes": 36932,
+    "language": "flix",
+    "path": "test/localization/LocalizationStages.flix",
+    "physical_lines": 666,
+    "repository_path": "attune/test/localization/LocalizationStages.flix",
+    "sha256": "614f1e995fc1f86f75aa63892dc6d614b198505ed07f9c49ab1d03f7afe2fcc1"
+  },
+  "program": "imports",
+  "root_revision": "480b53493a23c6dcf84ac4f264ef9a6357b9646a",
+  "repository": "attune",
+  "acquisition_identity": "grit-checkpoint-acquisition-v1:40c4be3e694e6c1c0f2acda453289c3998691a7badbff4d049c10e360f6f8aa0",
+  "producer_sha256": "529b2e7bd5152cef29bea4eb69831e83028753644780dd1a8edd57c842f645e9"
+}

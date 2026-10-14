@@ -1,0 +1,15 @@
+BUILD.bazel
+MODULE.bazel
+platform/build/study.bzl
+platform/tools/parquet/AttuneParquet.java
+src/Attune/Study.flix
+test/catalog/BUILD.bazel
+test/catalog/CatalogAcquire.flix
+test/catalog/CatalogNormalize.flix
+test/catalog/CatalogPinLaw.flix
+test/catalog/NormalizeArtifactLaw.flix
+test/catalog/NormalizeLaw.flix
+test/study/BUILD.bazel
+test/study/BoundsLaw.flix
+test/study/FirewallLaw.flix
+test/study/Stages.flix
