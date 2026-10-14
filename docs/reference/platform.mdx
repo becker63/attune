@@ -1,0 +1,35 @@
+---
+title: "Platform and distribution reference"
+description: "Locate the narrow native, JVM, browser, editor, and deployment boundaries."
+---
+
+| Source owner | Purpose |
+| --- | --- |
+| `platform/tools/boundary/NativeLaunch.java` | Bootstrap the pinned compiler and declared JVM execution. |
+| `platform/tools/boundary/NativeTester.java` | Execute native test boundaries and report failures. |
+| `platform/tools/boundary/Manifest.java` | Inventory path metadata for source policy. |
+| `platform/tools/grit/AttuneGritNative.java` | Java FFM input/output ownership for native Grit. |
+| `platform/support/grit/lib.rs` | Native extraction ABI and observation envelope mechanics. |
+| `platform/support/grit/main.rs` | Fixed-program standalone runner used by Studio. |
+| `platform/support/grit/patches/` | Maintained grammar/binding extensions and matcher patch. |
+| `platform/browser/CompileFlix.java` | Compile actual Flix code for the browser toolchain. |
+| `platform/browser/CompileWasm.java` | Produce browser WASM through TeaVM. |
+| `platform/browser/Browser.java`, `Port.java`, `Entry.flix` | Synchronous string boundary into `Attune.Studio.evaluate`. |
+| `platform/build/native.bzl` | Declared Flix binaries, tests, and artifact actions. |
+| `platform/build/grit_repository.bzl` | Pinned extraction engine and language materialization. |
+| `platform/zed/` | Flix language configuration, highlighting and outline assets. |
+| `web/deploy/studio.mjs` | Existing protected-preview and production publisher. |
+
+The browser entrypoint installs the compiled Flix program and exports its `evaluate` call. Calls are serial. Java catches runtime exceptions as readable transport errors rather than empty successful answers. Algorithmic decisions stay in Flix.
+
+The standalone Studio extractor is a statically linked ARM64 Linux musl executable. It packages grammar/program dependencies without a JVM or Nix dynamic loader on the Function. The ordinary library runner remains independently buildable.
+
+Compiler, JDK, Grit grammars, Maven closure, Rust toolchains, and browser dependencies are pinned by the relevant module/lock files. The documented core compiler is Flix 0.76.1. Pins from a historical checkpoint are not claims about later dependency releases.
+
+Build inputs exclude private configuration, agent state, personal packs, and the sibling reference checkout. The existing narrow credential helpers handle their own fields; credentials are not copied into build artifacts.
+
+Distribution notices live in `web/THIRD_PARTY.md`. Frozen website assets are recorded by `web/release.json`. Generated outputs, inherited dependencies, and authored integration code have separate code-accounting roles.
+
+## Sources
+
+[design.md](https://github.com/becker63/attune/blob/d71e033/attune/notes/design.md) · [Port.java](https://github.com/becker63/attune/blob/d71e033/attune/platform/browser/Port.java) · [Browser.java](https://github.com/becker63/attune/blob/d71e033/attune/platform/browser/Browser.java) · [Entry.flix](https://github.com/becker63/attune/blob/d71e033/attune/platform/browser/Entry.flix) · [MODULE.bazel](https://github.com/becker63/attune/blob/d71e033/attune/MODULE.bazel) · [THIRD_PARTY.md](https://github.com/becker63/attune/blob/d71e033/web/THIRD_PARTY.md) · [release.json](https://github.com/becker63/attune/blob/d71e033/web/release.json)
