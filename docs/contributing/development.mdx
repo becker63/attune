@@ -1,0 +1,29 @@
+---
+title: "Development and verification"
+description: "Change the responsible owner and test the semantic boundary."
+---
+
+Read the applicable `AGENTS.md` before changing a workspace. The library and web application have separate instructions.
+
+Flix owns identities, relationships, effects, decisions, failure classification, cache validity, and metrics. Java/native code owns narrow runtime mechanics. Do not move ranking or admission algorithms into glue to meet a line budget.
+
+Use the pinned Nix environment. Run the relevant semantic, compiler-negative, isolation, and parity checks for your change. Coordinate one owner for the shared Bazel output base. Avoid paid acquisition when saved inputs can establish the required contract.
+
+```sh
+nix run
+nix run .#test
+```
+
+Web verification commands live in `web/README.md`; browser parity and production UI checks have different purposes. Live inference tests are explicitly opt-in and are not required to validate these docs.
+
+## Preserve the record
+
+Do not delete preserved user files, clear shared caches, weaken source admission, or edit frozen measurements to pass a gate. Register owned source packages in `policy_sources`. Report existing workspace-audit failures separately from passing targets.
+
+Count authored semantics, native patches, and handwritten build machinery. Separate tests, generated files, inherited dependencies, the website, and research evidence. A package named `experiments` does not make its authored logic free.
+
+When updating docs, cite the producing revision and evidence, retain negative outcomes, and distinguish a proposed change from an observed result. The [maintenance guide](/contributing/documentation) gives site-specific checks.
+
+## Sources
+
+[AGENTS.md](https://github.com/becker63/attune/blob/d71e033/attune/AGENTS.md) · [AGENTS.md](https://github.com/becker63/attune/blob/d71e033/web/AGENTS.md) · [design.md](https://github.com/becker63/attune/blob/d71e033/attune/notes/design.md)

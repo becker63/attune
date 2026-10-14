@@ -1,0 +1,26 @@
+---
+title: "Exact reuse"
+description: "Distinguish semantic memoization, action caching, and shared web artifacts."
+---
+
+Reuse is a claim about inputs and a boundary. Similar-looking results do not prove a cache hit.
+
+| Mechanism | Identity and lifetime |
+| --- | --- |
+| Attune transition memoization | World, semantic scope, exact typed frontier, relation; evaluator-local. |
+| Saved embedding answers | Exact provider/model, recipe, and prepared text. |
+| Bazel action results | Declared sources, tools, dependencies, parameters, and outputs. |
+| Next.js cached functions | Verified immutable file locator or model recipe plus function/build identity; expires or evicts. |
+| Private Studio worker maps | Current session's question vectors and judgments; cleared by reload. |
+
+Attune's transition key prevents changed worlds or scopes from reusing stale answers. Empty successful outputs can be reused too. Memo tests exercise both hits and misses.
+
+Scientific action graphs can reuse unchanged stages while re-executing changed ranking or evaluation. Labels belong to evaluator inputs; a changed label must not force acquisition or alter the prediction.
+
+Studio's current shared file identity includes the immutable commit. A new commit receives a new cache namespace even when some file content is unchanged. This is narrower than cross-commit content-addressed reuse.
+
+Receipt CPU and provider usage describe the producing execution. Returning that receipt to a later visitor does not mean the later request spent that CPU or incurred that charge. See [Studio caching](/architecture/studio) and [timing evidence](/experiments/waits).
+
+## Sources
+
+[Attune.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune.flix) · [CoreMemoLaw.flix](https://github.com/becker63/attune/blob/d71e033/attune/test/spine/CoreMemoLaw.flix) · [README.md](https://github.com/becker63/attune/blob/d71e033/web/README.md)

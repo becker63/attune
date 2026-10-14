@@ -1,0 +1,41 @@
+{
+  "snapshot": "d71e033",
+  "reports": [
+    {
+      "path": "assets/reports/native-patterns-report.txt",
+      "source": "/home/becker/experiments/attune-native-patterns-20261013/REPORT.md",
+      "sha256": "ac6cd2775d8da553702fe09715135c7d43d64e3ce626ba8353248262958e558d",
+      "bytes": 14850
+    },
+    {
+      "path": "assets/reports/native-patterns-protocol.txt",
+      "source": "/home/becker/experiments/attune-native-patterns-20261013/PROTOCOL.md",
+      "sha256": "bc096f6be71cb3a6edc6fc7941bff746ebcd6d241d7e0ee4331da2ad9fb97962",
+      "bytes": 5875
+    },
+    {
+      "path": "assets/reports/specialization-report.txt",
+      "source": "/home/becker/experiments/attune-repository-specialization-20261013/REPORT.md",
+      "sha256": "53222ff02d95f84ed6562c5dce7de15af5f00002fbd010ae837b4c5e88bdda9d",
+      "bytes": 14947
+    },
+    {
+      "path": "assets/reports/specialization-protocol.txt",
+      "source": "/home/becker/experiments/attune-repository-specialization-20261013/PROTOCOL.md",
+      "sha256": "ca2d7bf20d4331fcd2e0d4ba6a129765d8594425bae6ff74944ba33c8d7128e1",
+      "bytes": 7879
+    },
+    {
+      "path": "assets/reports/agreement-report.txt",
+      "source": "/home/becker/experiments/attune-agreement-recovery-20261013-v2/REPORT.md",
+      "sha256": "6328cc02fc94f5f4e6a64ebb82530d842fd73c962d8a468ce035c4155a491c0e",
+      "bytes": 12020
+    },
+    {
+      "path": "assets/reports/agreement-protocol.txt",
+      "source": "/home/becker/experiments/attune-agreement-recovery-20261013-v2/PROTOCOL.md",
+      "sha256": "e6a404e62638c32ec34372d88e1c28c5232d5364ef15519385ab35c501b72c16",
+      "bytes": 3149
+    }
+  ]
+}

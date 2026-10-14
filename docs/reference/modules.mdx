@@ -1,0 +1,287 @@
+---
+title: "Flix module reference"
+description: "A source-linked declaration index for the core implementation."
+---
+
+This index links every core Flix module in checkpoint `d71e033`. Signatures below are exact declaration starts from that snapshot; multiline declarations continue in the linked source. Read the source for full types, laws, and behavior.
+
+## Attune
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune.flix)
+
+```flix
+pub enum World with Eq, Order, ToString, Hash {
+pub type alias WorldId = { origin = String, content = String, semantics = String }
+pub def worldId(id: WorldId): World =
+pub enum FileId with Eq, Order, ToString, Hash {
+pub enum SymbolId with Eq, Order, ToString, Hash {
+pub enum Domain with Eq, Order, ToString, Hash {
+pub enum Atom with Eq, Order, ToString, Hash {
+pub type alias Fact = { world = World, source = String, atom = Atom, target = String }
+pub enum Frontier with Eq, Order, ToString, Hash {
+pub def files(world: World, paths: List[String]): Frontier =
+pub def symbols(world: World, names: List[String]): Frontier =
+pub def worldOf(frontier: Frontier): World = match frontier {
+pub def domainOf(frontier: Frontier): Domain = match frontier {
+pub def domainName(domain: Domain): String = match domain {
+pub def atomName(atom: Atom): String = match atom {
+pub def atomSource(atom: Atom): Domain = match atom {
+pub def atomTarget(atom: Atom): Domain = match atom {
+pub def atoms(): List[Atom] =
+pub def inverse(atom: Atom): Atom = match atom {
+pub type alias TransitionKey = (World, String, Frontier, Atom)
+pub def frontierOf(world: World, domain: Domain, texts: List[String]): Frontier =
+pub def holds(frontier: Frontier, text: String): Bool = match frontier {
+pub def apply(facts: List[Fact], input: Frontier, atom: Atom): Result[String, Frontier] = {
+pub enum Lookup with Eq, ToString {
+pub type alias Memo = List[(TransitionKey, Int32, Frontier)]
+pub def lookup(
+pub def misses(events: List[Lookup]): Int32 = List.length(List.filter(isMiss, events))
+pub def hits(events: List[Lookup]): Int32 = List.length(List.filter(isHit, events))
+```
+
+## Attune/Agent
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Agent.flix)
+
+```flix
+pub enum Failure with Eq, ToString {
+pub type alias Grant = {
+pub type alias Model = { endpoint = String, name = String }
+pub eff Conversation {
+pub def withModel(program: Unit -> a \ ef, identity: Model, model: ChatModel): a \ (ef - Conversation) + IO =
+pub def withSavedReplies(program: Unit -> a \ ef, saved: List[(Model, ChatRequest, ChatResponse)]): a \ (ef - Conversation) + IO =
+pub def specification(): ToolSpecification \ IO = {
+pub def talk(model: Model, question: String, regions: List[Grant], budget: Int32): Result[Failure, List[ChatMessage]] \ {Conversation, IO} =
+pub def request(model: Model, messages: List[ChatMessage]): ChatRequest \ IO = {
+pub def read(arguments: String, regions: List[Grant]): Result[Failure, String] \ IO =
+pub def sha256(text: String): String \ IO =
+```
+
+## Attune/Artifacts
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Artifacts.flix)
+
+```flix
+pub def encodeRequest(request: Request): String =
+pub def decodeRequest(text: String): Result[String, Request] =
+pub def encodeAnswer(request: Request, vector: List[Float64]): String =
+pub def decodeAnswer(text: String): Result[String, (Request, List[Float64])] = forM (
+pub def declare(text: String): Unit \ IO = {
+pub def input(name: String): String \ IO = {
+pub def write(text: String): Unit \ IO =
+pub def required(result: Result[String, a]): a \ IO = match result {
+```
+
+## Attune/Coverage
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Coverage.flix)
+
+```flix
+pub enum Coverage with Eq, ToString {
+pub type alias WorldFacts = { world = World, facts = List[Fact] }
+pub def scoped(world: World, facts: List[Fact]): WorldFacts = { world = world, facts = facts }
+pub enum Outcome with Eq, ToString {
+pub def outcomeName(outcome: Outcome): String = match outcome {
+pub type alias Query = { scope = World, subject = String, atom = Atom }
+pub def observe(ask: Query, coverage: Coverage, facts: List[Fact]): Outcome = match coverage {
+pub enum Status with Eq {
+pub type alias Support = { fact = Fact, status = Status }
+pub def witnesses(scope: World, branch: String, items: List[Support]): List[String] =
+pub def meets(threshold: Int32, scope: World, branch: String, items: List[Support]): Bool =
+pub enum Observation with Eq, ToString {
+pub def observationName(observation: Observation): String = match observation {
+```
+
+## Attune/Decisions
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Decisions.flix)
+
+```flix
+pub enum Request with Eq, ToString { case Request(String, String, String, String) }
+pub eff Choice { def decide(request: Request): Result[String, String] }
+pub def withSaved(program: Unit -> a \ ef, saved: List[(Request, String)]): a \ ef - Choice =
+pub def decode(body: String, legal: List[String]): Result[String,(String,Map[String,Float64],Float64)] = forM (
+pub def validDistribution(legal: List[String], probabilities: Map[String,Float64]): Bool = {
+pub def smoothed(legal: List[String], probabilities: Map[String,Float64]): Map[String,Float64] =
+pub def uniform(legal: List[String]): Map[String,Float64] =
+```
+
+## Attune/Effects
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Effects.flix)
+
+```flix
+pub enum Request with Eq, ToString {
+pub eff Embedding {
+pub def modelIdentity(): String = "openrouter|qwen/qwen3-embedding-8b|Qwen/Qwen3-Embedding-8B"
+pub def recipeIdentity(): String = "attune-small:raw-source:query-instruction:32768:v1"
+pub def capCodeUnits(): Int32 = 32768
+pub def queryInstruction(): String = "Given a code issue, retrieve the relevant source files that should be modified to resolve it."
+pub def vectorFor(text: String): Result[String, List[Float64]] \ Embedding =
+pub def withSavedAnswers(program: Unit -> a \ ef, saved: List[(Request, List[Float64])]): a \ ef - Embedding =
+pub def locate(issue: String, files: List[(String, String)]): Result[String, List[(String, Float64)]] \ Embedding =
+pub def queryText(issue: String): String =
+pub def rank(question: List[Float64], candidates: List[(String, List[Float64])]): Result[String, List[(String, Float64)]] =
+pub def valid(vector: List[Float64]): Bool =
+```
+
+## Attune/Isolation
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Isolation.flix)
+
+```flix
+pub type alias Facts = {
+pub def observe(): Result[String, Facts] \ IO = try {
+pub def holds(facts: Facts): Bool =
+```
+
+## Attune/Jvm
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Jvm.flix)
+
+```flix
+pub def withEmbeddingModel(program: Unit -> a \ ef, identity: String, recipe: String, model: EmbeddingModel):
+```
+
+## Attune/Patterns
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Patterns.flix)
+
+```flix
+pub enum Participant with Eq, Order, ToString, Hash {
+pub type alias Witness = (String, FileId, FileId, List[Participant])
+pub def names(): List[String]  // see source for the declaration body
+pub def matches(world: Attune.Coverage.WorldFacts, anchors: Frontier): Result[String, List[Witness]] =
+pub def rules(): #{ Seed(FileId), I(FileId, FileId), D(FileId, SymbolId), C(SymbolId, SymbolId), Match(String, FileId, FileId, List[Participant]) } = #{
+```
+
+## Attune/Policy
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Policy.flix)
+
+```flix
+pub type alias Entry = {
+pub type alias Inventory = {root = String, boundaries = List[String], entries = List[Entry]}
+pub def owned(path: String): Bool =
+pub def protected(path: String): Bool =
+pub def findings(root: String, entries: List[Entry]): List[String] =
+pub def inventory(text: String): Result[String, Inventory] = {
+pub def read(): Result[String, Inventory] \ IO =
+pub def report(errors: List[String]): String =
+```
+
+## Attune/Repository
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Repository.flix)
+
+```flix
+pub enum Refusal with Eq {
+pub def refusalCode(refusal: Refusal): String = match refusal {
+pub def refusalSite(refusal: Refusal): String = match refusal {
+pub def refusalSubject(refusal: Refusal): String = match refusal {
+pub def refusalText(refusal: Refusal): String =
+pub type alias Declaration = {
+pub def declarationText(declaration: Declaration): String =
+pub type alias Repository = {
+pub type alias Witness = {
+pub def edgeTexts(edges: List[(String, String)]): List[String] =
+pub def declarationTexts(repository: Repository): List[String] =
+pub def refusalTexts(repository: Repository): List[String] =
+pub def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
+pub def importTargetWithPolicy(policy: ImportPolicy, world: List[String], file: String, value: String): Option[String] =
+pub def analyze(world: List[(String, String)]): Result[Grit.Error, Repository] \ IO =
+pub type alias Observation = {
+pub enum ImportPolicy with Eq { case Original, ExactPath, ExactJsTs }
+pub def fromObservations(observations: List[Observation]): Result[Grit.Error, Repository] =
+pub def fromObservationsWithPolicy(observations: List[Observation], policy: ImportPolicy): Result[Grit.Error, Repository] =
+pub def worldFacts(world: World, repository: Repository): List[Fact] =
+pub def scopeCoverage(repository: Repository): Attune.Coverage.Coverage =
+pub def scopedFacts(world: World, repository: Repository): WorldFacts =
+pub def ask(world: World, repository: Repository, subject: String, atom: Atom): Outcome =
+```
+
+## Attune/Repository/Grit
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Repository/Grit.flix)
+
+```flix
+pub enum Language with Eq, Order, ToString, Hash {
+pub enum Program with Eq, Order, ToString, Hash {
+pub type alias Span = {
+pub type alias Log = {
+pub type alias Evaluation = {
+pub type alias Fact = {
+pub enum Error with Eq, ToString {
+pub def name(language: Language): String = match language {
+pub def programName(program: Program): String = match program {
+pub def languages(): List[Language] =
+pub def programs(): List[Program] =
+pub def language(path: String): Option[Language] = {
+pub def basename(path: String): String =
+pub def directory(path: String): String =
+pub def decode(wire: String): Result[Error, Evaluation] = forM (
+pub def program(language: Language, operation: Program): Result[Error, String] \ IO = {
+pub def substring(source: String, start: Int32, end: Int32): String = {
+pub def facts(path: String, source: String, wire: String): Result[Error, List[Fact]] =
+```
+
+## Attune/Studio
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Studio.flix)
+
+```flix
+pub def version(): String = "studio-v4"
+pub type alias Hit = {path = String, score = Float64, witnesses = List[String]}
+pub def evaluate(input: String): String =
+pub def lexical(question: String, files: List[(String, String)]): List[Hit] = {
+pub def structural(anchors: List[String], world: World, edges: List[Fact]): List[Hit] = {
+pub def sorted(hits: List[Hit]): List[Hit] = List.sortWith((a, b) ->
+pub def combine(left: List[Hit], right: List[Hit]): List[Hit] = {
+pub def probe(): Json.Json = {
+```
+
+## Attune/Study
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Study.flix)
+
+```flix
+pub type alias Ratio = { numerator = BigInt, denominator = BigInt }
+pub enum LocalizationMetric with Eq, Order, ToString {
+pub def localizationMetrics(): List[LocalizationMetric] =
+pub def strictMetrics(): List[LocalizationMetric] =
+pub def localizationMetricName(metric: LocalizationMetric): String = match metric {
+pub def ratio(numerator: Int32, denominator: Int32): Ratio =
+pub def addRatio(a: Ratio, b: Ratio): Ratio = {
+pub def meanRatio(ratios: List[Ratio]): Option[Ratio] =
+pub def rankedPaths(ranking: List[(Int32, String, Int32)]): List[String] =
+pub def topPaths(ranking: List[(Int32, String, Int32)], k: Int32): List[String] =
+pub def retrievedGold(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): List[String] =
+pub def reciprocalRankRatio(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): Ratio = {
+pub def fileAccuracy(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): Bool =
+pub def metricRatio(metric: LocalizationMetric, ranking: List[(Int32, String, Int32)], gold: List[String]): Option[Ratio] =
+pub def ratioPair(value: Ratio): (BigInt, BigInt) = (value#numerator, value#denominator)
+pub def ratioPercentage(value: Ratio): String = {
+pub type alias Ranking = List[(Int32, String, Int32)]
+pub type alias LocalizationOutcome = {
+pub type alias MetricSummary = {
+pub def outcomeRanking(arm: String, outcome: LocalizationOutcome): Option[Ranking] =
+pub def outcomeMetric(metric: LocalizationMetric, arm: String, outcome: LocalizationOutcome): Option[Ratio] =
+pub def eligibleOutcomes(outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+pub def coveredOutcomes(arm: String, outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+pub def splitOutcomes(split: String, outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+pub def isEligible(status: String, gold: List[String]): Bool =
+pub def microSummary(metric: LocalizationMetric, arm: String, outcomes: List[LocalizationOutcome]): MetricSummary = {
+pub def macroSummary(metric: LocalizationMetric, arm: String, outcomes: List[LocalizationOutcome]): MetricSummary = {
+```
+
+## Attune/Theory
+
+[Read source](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Theory.flix)
+
+```flix
+pub def follow(facts: List[Fact], start: Frontier, route: List[Atom]): Result[String, Frontier] =
+pub def sharedRules(): #{ Imports(FileId, FileId), Shared(FileId, FileId, FileId) } = #{
+pub def sharedImports(world: WorldFacts): Result[String, List[(FileId, FileId, FileId)]] =
+pub def describe(facts: List[Fact], start: Frontier, questions: List[List[Atom]]):
+```

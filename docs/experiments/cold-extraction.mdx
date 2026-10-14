@@ -1,0 +1,33 @@
+---
+title: "Making cold extraction cheaper"
+description: "A controlled comparison supported native execution while retaining the queries."
+---
+
+Studio's large Preact fixture dominated indexing even after request fan-out. The next experiment compared runtime and query shape on identical retained source bytes, using three fresh processes per cell.
+
+| Runtime and query | Suspense median | Hydration median |
+| --- | ---: | ---: |
+| Bounded WASM, original | 37.536 s | 19.990 s |
+| Bounded WASM, direct node | 37.188 s | 19.661 s |
+| Native GNU, original | 16.084 s | 8.292 s |
+| Native GNU, direct node | 15.863 s | 8.134 s |
+| Native GNU, original + patch | 13.605 s | 6.983 s |
+| Selected static musl, original + patch | 12.236 s | 6.093 s |
+
+The first four rows form the controlled runtime/query comparison. Patch and static-build measurements happened afterward. Three repetitions do not establish tail latency.
+
+The direct query saved only about 1–2%, so production retained the original programs. Profiling identified expensive binding-state allocation. A maintained patch avoids a clone when `contains` has no `until` clause; rollback copies remain. Some synthetic probes regressed, so the patch is not universally faster.
+
+The selected executable matched all 120 retained Preact observations exactly, including order, multiplicity, ranges, logs, and diagnostics. No files or source bytes were removed.
+
+## Cloud observations
+
+The native preview indexed the same 120 files in 53.44 seconds cold and 5.21 seconds in a fresh browser with warm artifacts. The earlier WASM preview took 151.85 seconds cold and 4.14 seconds warm. Instance allocation differed: these pairs are observations, not a controlled cloud timing distribution. Warm latency did not improve.
+
+The second visitor reused all 120 original receipts, 96 across producing/serving instances. Whole-Function memory and billing were unavailable. Source-ready interaction remains deferred until complete indexing.
+
+This experiment made no model calls and changed neither Flix admission nor Next's per-file cache semantics. [Every sample, identity, and reproduction command](https://github.com/becker63/attune/blob/d71e033/web/test/cold-grit/README.md).
+
+## Sources
+
+[README.md](https://github.com/becker63/attune/blob/d71e033/web/test/cold-grit/README.md) · [results-2026-10-13.json](https://github.com/becker63/attune/blob/d71e033/web/test/cold-grit/results-2026-10-13.json)

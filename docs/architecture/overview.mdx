@@ -1,0 +1,33 @@
+---
+title: "Architecture"
+description: "Separate semantics, acquisition, scheduling, and presentation."
+---
+
+The same repository calculation can consume a saved answer, a shared website artifact, or a declared scientific output. These are distinct execution paths around Flix-owned semantics.
+
+```mermaid
+flowchart LR
+  S[Source bytes] --> G[Native Grit observations]
+  G --> R[Flix admission]
+  R --> T[Typed facts and queries]
+  V[Saved or acquired vectors] --> L[Flix ranking]
+  T --> L
+  L --> E[Evaluator with held labels]
+  L --> U[Browser presentation]
+```
+
+| Owner | What belongs there |
+| --- | --- |
+| Flix | Identities, effects, admission, agent policy, relations, joins, ranking, failures, metrics. |
+| Native/Java boundary | Memory ownership, pinned compiler bootstrapping, declared paths, process isolation, narrow browser ABI. |
+| Bazel and BuildBuddy | Dependency identity, declared actions, remote workers and action reuse. |
+| Next.js | Trusted public acquisition, shared cached artifacts, bounded provider transport. |
+| Browser | Flix computation, transient session state, source/graph presentation. |
+
+The library is independently buildable inside `attune/`; the root graph also builds `web/`. TeaVM exports actual Flix classes through the browser boundary. TypeScript does not substitute a second ranking implementation.
+
+The [build chapter](/architecture/build) explains static stages. [Studio](/architecture/studio) explains request-time work. [Extraction](/architecture/extraction) explains the observation/admission split. [Evolution](/architecture/evolution) connects these decisions to the experiments.
+
+## Sources
+
+[design.md](https://github.com/becker63/attune/blob/d71e033/attune/notes/design.md) · [README.md](https://github.com/becker63/attune/blob/d71e033/README.md)

@@ -1,0 +1,88 @@
+# Frozen native-pattern campaign, 2026-10-13
+
+This is repository-grouped validation on previously exposed SWE-rebench-V2 data.
+No inference is authorized. Missing exact replay data is an error. The original
+96-task population, runtime exclusions and unscored tasks remain in the inventory.
+The prediction universe is each retained complete candidate list, including tests.
+Gold remains the historical eligible existing modified/deleted JS/TS source paths;
+new files, tests, generated and unsupported entries keep their original treatment.
+
+## Frozen search
+
+Enumerate connected positive Imports conjunctions with 1–3 distinct atoms, at most
+four File variables, fixed anchor a and candidate b, and a != b. Canonicalize only
+atom ordering and permutations of internal variables; retain role-sensitive heads.
+No negative facts, recursion or corpus-equivalence pruning. Self-edges are permitted
+in data; no self-edge atom is generated. Named seeds include direct/inverse chains,
+shared dependency/consumer, triangle, cycle, four-edge diamond, owned calls, shared
+specific callee/caller, mixed imports/calls and same-caller versus same-file calls.
+Named rules use at most six primitive atoms and six variables, except the explicit
+same-file/two-distinct-callers contrast (six atoms, seven variables); its expanded
+size is retained. Named seeds come first, followed by complexity and lexical native
+rule identity, capped at 64 unique candidates. The complete enumerated inventory
+and cut tier are retained. Empty and unhelpful patterns remain candidates.
+
+Use top 3 and top 5 Qwen anchors. Per-pattern support deduplicates (anchor,candidate).
+Votes = number of distinct anchors; normalized support = sum over supporting anchors
+of 1 / number of distinct candidates that anchor supports under that pattern.
+Witness multiplicity never changes either support. A small declared agreement arm
+requires at least two distinct anchor files for each named seed, with top 5 anchors,
+both support measures and both applications. Total configurations <= 1,024.
+
+RRF uses current Studio.combine, k=60, equal weights and path ties. No scale or k
+search. Empty structural ranking returns Qwen byte-for-byte. Fixed-pool treatments
+fuse Qwen32 and structural order restricted to Qwen32, then retain the Qwen tail.
+Expansion fuses the complete Qwen order and structural order, takes exactly the
+first min(32,N) as pool, then appends the original Qwen tail excluding that pool.
+Evaluate final top 10 separately from pool coverage and FileAcc@32.
+Controls: Qwen, identity, current five-route Studio recipe (five anchors), one-hop
+imports with each anchor count/support/application. The viewer lexical method is
+not historical BM25 and is not renamed.
+
+## Sealing, selection and metrics
+
+Predictions are sealed by SHA256 before labels enter evaluation. Prediction actions
+declare no labels or gold-bearing inventory. Every repository is one leave-one-
+repository-out fold, all revisions together. Choose on training repository macro
+Recall@10, then macro MRR@10, primitive atom count, measured cost if comparable,
+then lexical configuration ID. Selections are written before held-out tables.
+All frozen candidates receive descriptive results; OOF selection is separate.
+No adaptive refinement or combination is required or planned. Oracle-best is
+headroom only. Report task-micro, repository-macro, single/multifile, exclusions,
+pool displacement, and leave-one-group-out sensitivity; no best-of-many p-value.
+
+Canonical Flix Study metrics are compared with Python Fraction reference reductions.
+Scores remain Float64, cosine absolute tolerance 1e-12, relative tolerance 1e-10;
+rank sequences must match exactly. Differences within tolerance still retain ranks
+and near-tie diagnostics. Refactor parity and localization gains are independent.
+
+## Execution
+
+Source bundles -> real Grit envelopes -> Flix admission -> native anchored Datalog;
+saved vectors -> canonical cosine; witnesses + Qwen -> sealed rankings -> labels.
+World/source/admission, task-vector and prediction actions have separate inputs.
+Initial world sharding uses one action per world and one per task per stage, with
+at most eight remote jobs, reducing concurrency if memory/latency warrants it.
+Compilation/setup is reported separately where observable. Maximum per scientific
+action: 10 minutes; failures remain typed unavailable entries. No viewer file cap.
+
+Six full-recompute worlds are selected before outcomes by candidate count quantiles
+(minimum, 20%, 40%, 60%, 80%, maximum), lexical world ties. Language composition and
+retained coverage are reported. The representative rule panel is DirectImport,
+DirectImporter, SharedDependency, SharedConsumer, SharedCallee, SameCaller,
+SameFileDistinctCallers, ImportDiamond, ImportCallAgreement; unavailable names stay
+explicit. Independent recomputation runs the frozen baseline and panel cohort.
+
+Cold means deterministic scientific action cache misses, retained acquisitions and
+toolchains allowed. Warm identical, fresh-client remote reconstruction, independent
+recomputation, scratch mutations and rollback are separate observations. Use an
+experiment remote_instance_name, never purge global caches. Verify action execution.
+Expected invalidation: rule -> patterns/prediction/evaluation; scoring -> prediction/
+evaluation; body/import/name/ambiguity -> extraction/admission/patterns/prediction,
+plus embedding refusal for changed source; query/vector -> Qwen/patterns/prediction;
+label -> evaluation only. Whole-world admission is expected on definition ambiguity.
+Missing/corrupt vectors, foreign world/recipe and partial outputs must fail closed.
+
+Jev is secondary, replay only on exact pool/source/model/recipe/context identity.
+No historical receipt is assigned to newly generated witnesses. Preact hooks is a
+qualitative viewer diagnostic, not an added labeled task.

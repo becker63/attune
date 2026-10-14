@@ -1,0 +1,119 @@
+# Repository specialization protocol v1 — frozen 2026-10-13
+
+Primary question: whether repository response differences repeat across independent
+issues and whether a policy learned locally transfers better to its own repository
+than policies learned elsewhere. All retained 595 configurations remain candidates.
+No new patterns, embeddings, Jev calls, or extractor changes are authorized here.
+The old outcomes have already been exposed. This is frozen cross-fitting on exposed
+data, not a pristine holdout. Original scores and the strict account stay immutable.
+
+## Inputs and availability
+
+Use only hash-verified sealed task predictions and canonical BigInt metrics from
+the native-pattern campaign. Retain all 96 tasks and exclusions in the population;
+evaluate the inherited eligible population. All-fallback repositories are structurally
+unmeasured. Current admission version is fixed. Four pruned timeout worlds are not
+retried. Fallback v1: when the attempted configuration is unavailable or input-invalid,
+return exact Qwen if Qwen is valid, retaining attempted state/reason/cost. A completed
+empty pattern preserves its frozen behavior. Invalid Qwen has no invented answer.
+Keep strict, full fallback, and common-completed views separate.
+
+## Related issues and splits
+
+Union within repository: identical reference patch digest, identical normalized query,
+or demonstrated query token-trigram Jaccard >=0.90 with >=20 tokens and length ratio
+>=0.80. Record all reasons. A shared base/source world alone is not a duplicate.
+Group IDs hash sorted task IDs. Deterministically order groups by SHA256 of
+`specialization-20261013-v1` plus group ID, allocate balanced fold slots in that order,
+and synchronize slots across repositories. Each held issue group is evaluated once.
+Average related issues within their group before repository aggregation. Too few
+independent groups retain a default operational prediction but no within-repository
+transfer claim. Seal the complete split manifest before fitting.
+
+Main episode: leave one group out per repository and fold. Only calibration records
+are declared to the fitting action; held records must not appear in its inputs.
+Leave-world-out companion excludes calibration groups sharing any held source world.
+Disjoint-target-path companion filters evaluable held cases whose ordinary calibration
+and held target sets are disjoint; it does not supply held target paths to prediction.
+Temporal companion requires independently established label/fix availability dates;
+created_at, issue numbers, hashes and file order cannot stand in for resolution time.
+Unknown chronology is unavailable and does not block cross-fitting.
+
+## Selectors
+
+Select one configuration per repository/calibration profile. Primary shrinkage:
+n/(n+2)*local mean Recall@10 delta + 2/(n+2)*repository-equal mean delta from other
+repositories' calibration groups. Constant 2 is never tuned. No local: pooled default;
+no pooled: local; neither: Qwen. Secondary local uses only local calibration, with
+Qwen default when empty. Qwen and Identity have zero effect and remain candidates.
+Pooled universal uses repository-equal means of all allowed calibration groups.
+Tie-break: the corresponding calibration MRR delta, primitive-atom simplicity, then
+lexical configuration ID. No estimated marginal runtime tie-break. Retain exact
+Recall ties, full ties, and estimates within 1/1000 of the best Recall estimate.
+Retain calibration prediction-equivalence classes using complete ordered-path/pool
+hashes: local classes and the full allowed calibration basis for pooled procedures.
+Equal calibration behavior is not general logical equivalence.
+
+Simple selector uses the same shrinkage procedure restricted to Qwen/Identity and
+Imports-only configurations with <=3 primitive atoms. Fixed StudioCurrent fallback,
+Qwen, pooled universal, shrinkage, local, and Imports-only are mandatory controls.
+Common-completed refit is an explicitly separate attribution companion; primary
+operational fitting uses all eligible calibration groups with status-only fallback.
+
+Calibration curves enumerate all admissible local calibration subsets of sizes 1,2,3;
+other-repository pooling uses that fold's allowed calibration records. Average repeated
+subset predictions per held issue before aggregation. Matched donor comparisons use
+1 or 2 groups per donor, selected by the same identity order; pooled calibration is
+also limited to that size. Exclude unmatched donors explicitly.
+
+## Transfer and controls
+
+For each fold transfer each donor's learned primary and local policy to each recipient's
+held issue. Use recipient predictions, worlds, vectors, anchors and fallback; no donor
+facts or paths cross the boundary. Report own versus donor distribution, pooled and
+Studio defaults. All learned profiles are sealed before test outcomes are joined.
+
+Frozen seed: 20261013. Generate 1,000 profile-assignment shuffles, holding learned
+policies and per-fold frequencies fixed. Unmatched assignments use one repository
+permutation across folds. Matched assignments shuffle within each fold's equal
+(calibration group count, completed calibration count, held-completion class) blocks.
+Singleton/constant blocks are visible, not invented exchangeability. Statistic is
+repository-macro own-policy effect minus uniform donor-policy effect; the latter is
+a fixed reference mean. Shuffles are descriptive assignment controls, not causal tests.
+
+Generate 32 pseudo-repository regroupings before new evaluation. Shuffle intact issue
+response blocks within fold slot and equal (block size, completion status, single/multi
+file task mix) strata. Preserve each pseudo bucket's issue-group count and the intact
+configuration vector. Rerun native pooled/local/simple selection. No regrouping is
+selected from its accuracy. Publish uniqueness, balance, and fixed assignments.
+
+## Response analysis and explanations
+
+Signed exact effects are Recall@10(configuration with fallback) minus Qwen; never
+send negative values through the nonnegative Ratio constructor. Add negative,
+cancellation and heterogeneous-denominator laws. Show absolute metrics, full effect
+vectors, within-repository variation, and descriptive configuration centering by the
+all-repository equal mean. Predictive centers use calibration only.
+
+Family representatives are each pattern's five-anchor normalized fixed-pool variant
+without agreement2. Show all within-family variant ranges separately; no hindsight
+best variant masquerades as a fixed family. Report tie-aware calibration/test response
+correlation (constant profiles unavailable), pairwise effect signs, regret, repository
+jackknife sensitivity, benefits/harms and worst losses. Hindsight oracles are labeled.
+
+After numerical sealing inspect two strongest supported held contrasts, one shared-
+policy pair, one harmful specialization, and one no-support/unresolved case, if present.
+Use deterministic metric/ID order to choose cases and retain missing categories. Record
+calibration evidence, held outcomes, source revisions, participants and gold rank/pool
+changes. Graph witnesses alone do not prove source bindings or causal architecture.
+
+## Execution and reproducibility
+
+Flix owns fallback, signed arithmetic, selection, application, transfer and canonical
+metrics. Python assembles immutable training-only slices, checks independently, reduces
+results and draws figures. Reuse prior source/vector caches; do not repeat the cold
+campaign. Existing authorized arm64 RBE, 80-job maximum, one Bazel owner. Scientific
+actions have a 600-second cap. New selected-policy marginal cost is measured only if
+straightforward, otherwise unknown; old all-pattern cost is not marginal deployment cost.
+Run warm replay and independent recomputation of new outputs and calibration/held-label/
+profile/split mutation tests. Preserve failures and the known research audit.

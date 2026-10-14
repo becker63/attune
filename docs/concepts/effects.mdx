@@ -1,0 +1,30 @@
+---
+title: "Effects and saved answers"
+description: "An outside-work request is a value that a handler must answer."
+---
+
+An effect tells the compiler what outside work a function may request. A handler supplies the answer and resumes the calculation. That separates ranking logic from provider access and replay.
+
+The embedding request contains three identities: provider/model, preparation recipe, and exact input. `withSavedAnswers` requires exactly one matching vector. Missing, duplicate, or invalid vectors return errors.
+
+```flix
+pub enum Request with Eq, ToString {
+    case Request(String, String, String)
+}
+
+pub eff Embedding {
+    def vectorFor(request: Request): Result[String, List[Float64]]
+}
+```
+
+`locate` prepares the issue, obtains candidate vectors, and ranks by cosine similarity. Vectors must be finite, nonzero, and have matching dimensions. Candidate paths must be unique. Equal scores sort by path.
+
+`forM` and `Result.traverse` sequence dependent work and stop on failure. They provide no parallel execution. An effect itself is neither a cache key nor a Bazel action.
+
+The JVM handler uses the pinned low-level embedding SDK. The walkthrough handler uses saved fixtures. Declared scientific actions can materialize request and answer files, then rerun the same calculation; they do not serialize its continuation.
+
+Decision and conversation effects follow the same broad separation, with their own validation and failure contracts. See [agent permissions](/architecture/agents).
+
+## Sources
+
+[Effects.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Effects.flix) · [Jvm.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Jvm.flix) · [Decisions.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Decisions.flix)

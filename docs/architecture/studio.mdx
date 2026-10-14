@@ -1,0 +1,34 @@
+---
+title: "Attune Studio"
+description: "Run Flix in the browser while sharing exact public acquisition work."
+---
+
+Studio acquires public repository source and Grit observations through Next.js, then admits facts and ranks files using browser Flix. Repository relationships and answers stay inspectable in the source and graph views.
+
+## Shared and private state
+
+| Shared server artifact | Private browser state |
+| --- | --- |
+| Verified repository inventory and source | Current admitted index |
+| Complete per-file extraction results | Question vectors and JEv observations |
+| Verified public file embeddings | Comparisons, current selection and timing trace |
+
+A full reload clears private session state. Resetting one session does not evict shared artifacts. Questions and judgments never populate the public cache.
+
+The browser dispatches up to eight single-file extraction requests, largest first. Each Function allows at most four native children, bounded by available CPUs. HTTP concurrency does not guarantee separate CPUs.
+
+## Limits and identities
+
+The acquisition boundary admits at most 120 files, 128 KiB per file, 5 MiB source, and an 8 MiB tree response. Omissions, truncation, failures, and partial world identities remain visible. Failed files can retain text and embeddings while contributing no admitted edges.
+
+The extractor digest includes executable, grammar/envelope identity, and fixed programs. File cache entries use verified repository/commit/path locators. A new commit gets a new namespace. Expiring Next cache entries and Bazel action results have different lifetimes.
+
+Qwen batches at most 16 inputs / 128 KiB, with eight batches in flight. Private questions and JEv answers remain session-scoped. Server-side inference uses the existing provider boundary; no key enters the browser.
+
+## Timing
+
+The timing export describes current HTTP waits and Flix wall time, not sampled CPU stacks. Reused child receipts describe the original run. Source inspection currently waits for complete indexing. [Cold extraction](/experiments/cold-extraction) explains the measured improvements and remaining critical path.
+
+## Sources
+
+[README.md](https://github.com/becker63/attune/blob/d71e033/web/README.md) · [Studio.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune/Studio.flix) · [Entry.flix](https://github.com/becker63/attune/blob/d71e033/attune/platform/browser/Entry.flix)

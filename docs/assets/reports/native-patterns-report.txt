@@ -1,0 +1,102 @@
+# Native Datalog, localization, and refactor replay — 2026-10-13
+
+The existing Studio structural fusion was the strongest treatment where a complete graph was available. Some individual native patterns improved retrieval, but the new distinctions did not beat that existing recipe. Across the full eligible population, grouped selection chose the Qwen-equivalent identity arm in every fold. Graph availability, not just ranking quality, is a substantial limitation.
+
+No embedding or Jev acquisition ran. Production extraction, admission, joins, ranking, and metrics executed as native Flix Bazel actions on BuildBuddy. Launchers compiling were not counted as completed experiments.
+
+## Four separate verdicts
+
+| Question | Observed result |
+|---|---|
+| Refactor parity | `ParityPass` on compatible tested inputs: 88 complete Qwen rankings and exact scores against the retained implementation, 49 admitted worlds, 108 typed core cases, and 832 finite rule/fixture comparisons. Availability differences and unavailable references remain explicit. |
+| Pattern utility | Useful descriptive gains exist. Import/call agreement added five gold files outside Qwen32 without displacing gold in the completed subset. Simple direct-import reranking was essentially tied on Recall@10. Existing Studio fusion was stronger. |
+| Group-held-out selection | All 22 folds chose `Identity`, whose predictions equal Qwen exactly. Out-of-fold repository-macro Recall@10 is **63.8909%**, with no improvement. These are previously exposed repositories. |
+| Cache correctness | 707 fresh-client reconstructed payloads, 272 independently recomputed payloads, and 53 scratch rollback payloads matched exact bytes. Mutation boundaries and label isolation passed. Four extraction timeouts were retained and pruned from retries at the user's instruction. |
+
+The final library gate has 21 passing targets and one expected failing live audit of 4,004 preserved research files. The browser parity target passed after supplying the installed Chromium path; native Datalog remains explicitly unsupported in the browser. See [PARITY.md](PARITY.md) and [CACHE-AUDIT.md](CACHE-AUDIT.md).
+
+## Population and acquisition
+
+The source is `nebius/SWE-rebench-V2`, revision `10483de0f50fe5da545942705a76c6150171af7f`, parquet `data/train-00000-of-00001.parquet`, SHA256 `0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad`. This reuses the retained `localization-attune-panel-2026-10-06` selection: 24 repository groups with four tasks each. Exact selection provenance, producer modules, manifests, and source snapshots are retained; no fresh random panel was drawn.
+
+| Account | Tasks | Repository groups | Source worlds |
+|---|---:|---:|---:|
+| Retained population | 96 | 24 | 92 |
+| Tasks with replayable Qwen vectors | 88 | 22 | 84 |
+| Original eligible scored population | 85 | 22 | 81 |
+| Current completed eligible structural comparison | 47 | 14 | See world inventory |
+
+The original exclusions remain: eight runtime-unavailable tasks, two unsupported-gold tasks, and one empty-gold task. The scored cohort has 41 single-file and 44 multi-file tasks, with 218 eligible fixing paths: 213 modified, four deleted, and one renamed. The two tasks with 11 and 13 required files remain visible and cannot achieve FileAcc@10. Fixing paths measure retrieval of eligible changed files, not architectural truth or successful issue resolution. New files and tests retain the original label exclusions; candidates can still include tests. Generated files were not universally excluded by a new policy.
+
+All 92 recoverable source worlds were attempted. Raw extraction completed for 88; four exceeded 600 seconds. Strict current admission completed for 49 worlds and returned explicit failure evidence for 39. In the eligible task account this leaves 47 completed structural tasks, 36 tasks with extraction/admission errors, and two extraction timeouts. The unavailable tasks remain in the primary denominator, with unavailable structural predictions scored as misses. Qwen remains available for all 85 eligible tasks. Complete-case results are a separate diagnostic and can be optimistic because missingness is not random.
+
+The 905 retained fixture files supplied 27,733 logical associations: 88 queries and 27,645 world/file entries, including 213 explicitly unmeasured empty-source entries. There were 10,555 unique prepared requests and no duplicate or conflicting logical receipts. Historical acquisition was 351 requests and recorded cost $0.1409903; this campaign made zero new provider calls. All 88 complete rankings contain 29,493 task/file candidate occurrences.
+
+Historical identity is `openrouter|qwen/qwen3-embedding-8b|Qwen/Qwen3-Embedding-8B`, 4,096 dimensions, unnormalized vectors with cosine ranking, raw truncation at 32,768 UTF-16 code units, and the retained instruction prefix for queries. The current Studio request recipe differs. The replay adapter validates the historical identity, prepared-text digest, raw digest, candidate association, dimensions, and finite values; it does not pretend old vectors came from the current live request.
+
+## Frozen treatments
+
+[PROTOCOL.md](PROTOCOL.md) froze the grammar, metric, folds, support, fusion, empty-pattern behavior, and budgets before outcomes. [PROTOCOL-AMENDMENT-RBE80.md](PROTOCOL-AMENDMENT-RBE80.md) changes execution concurrency only. Sixty-four native patterns were selected deterministically from 113 candidates; 49 cap-excluded candidates remain inventoried. The 595 configurations include all controls. There was no adaptive refinement or combination search.
+
+Rules use typed File/Symbol participants and a validated single world. They are native first-class Datalog fragments, not interpreted descriptors. The named catalogue includes chains, shared dependencies/consumers, triangles, cycles, a distinct-intermediate diamond, owned calls, specific shared callers/callees, same-caller versus same-file evidence, and mixed import/call agreement. The six-atom, seven-variable same-file contrast is a disclosed exception to the suggested six-variable seed bound. [PATTERNS.md](PATTERNS.md) gives all identities, readable rules, native syntax, requirements, and witnesses.
+
+Anchors are Qwen's first three or five files. Support either counts distinct anchors or computes
+
+`support(candidate) = sum(1 / distinct_supported_candidates(anchor))`
+
+over supporting anchors. Repeated proof paths do not add votes. Agreement variants require at least two distinct anchor files. Fusion uses current Studio reciprocal-rank fusion, constant 60 and deterministic path ties. Fixed-pool arms reorder Qwen32 and retain the original tail. Expansion arms use the frozen fused order to choose at most 32 files and retain the remaining Qwen order. A completed empty pattern returns the baseline unchanged; an execution failure is not an empty successful pattern.
+
+## What helped, and what did not
+
+The following are repository-macro percentages over the **47 completed eligible tasks / 14 groups**. These configurations were frozen, but highlighting the best individual configuration is descriptive outcome selection, not a deployable selector.
+
+| Treatment | Recall@10 | MRR@10 | FileAcc@10 | Pool Recall@32 | FileAcc@32 |
+|---|---:|---:|---:|---:|---:|
+| Qwen | 62.424 | 65.238 | 43.452 | 81.387 | 70.238 |
+| Current Studio fusion | **73.810** | 62.689 | **54.762** | 80.330 | 63.095 |
+| ImportCallAgreement, five anchors, votes, expansion | 67.781 | 50.357 | 48.810 | **86.149** | **75.595** |
+| DirectImport, five anchors, votes, fixed pool | 67.767 | 64.404 | 47.024 | 81.387 | 70.238 |
+| DirectImport, five anchors, votes, expansion | 62.425 | 57.971 | 45.238 | 85.073 | 73.214 |
+| SharedCallee, five anchors, normalized, fixed pool | 66.920 | 49.328 | 45.833 | 81.387 | 70.238 |
+
+ImportCallAgreement improved Recall@10 on five tasks and harmed one. Its 0.014 percentage-point advantage over direct-import fixed-pool reranking is not persuasive evidence that the extra constraint is generally better. Against equally budgeted direct-import expansion it improved both final Recall@10 and pool coverage on this subset. It added five gold and 62 non-gold files outside Qwen32, displacing no gold. Those are real candidate recoveries within the same 32-file budget.
+
+Current Studio fusion improved Recall@10 on 12 tasks and harmed none in this subset. Gains occurred in eight of 14 groups; six were unchanged. Leaving out one group changes its mean improvement from 9.70 to 12.26 percentage points. It added eight gold and displaced six while adding 488 non-gold files to pools. Pool macro Recall@32 nevertheless decreased: heterogeneous task denominators and repository weighting mean added/displaced file totals do not determine a macro score. Its MRR also decreased. The score is not an across-the-board win.
+
+SharedCallee and SharedConsumer show complementary gains and losses. SameCaller and SameFileDistinctCallers produced different witnesses and outcomes: their best descriptive Recall@10 values were 63.317% and 62.180%, respectively. This validates the distinction's operational meaning without establishing a general localization benefit. SharedDependency performed poorly even in its best variant: 46.171% Recall@10, four improved tasks and 14 harmed. Some cycle/agreement arms had no support and correctly returned Qwen unchanged. Full per-pattern and per-configuration results retain all of these null and negative observations.
+
+![Per-repository differences](figures/repository-deltas.png)
+
+## Selection and uncertainty
+
+The primary 85-task / 22-group population gives Qwen and Identity 63.8909% repository-macro Recall@10, compared with 42.9928% for StudioCurrent when its unavailable executions remain misses. Every leave-one-repository-out training selection chose Identity, including the prescribed MRR, complexity, and lexical tie-breaks. All revisions of a repository stay together. Selections were sealed before held-out outcome tables were inspected.
+
+The primary out-of-fold procedure therefore reproduces Qwen: macro Recall@10 `306983/480480`; task-micro Recall@10 `198127/309400`. No pristine holdout is claimed. Individual configuration tables are descriptive; no uncorrected best-of-hundreds significance claim is made. The completed subset contains uneven numbers of tasks per group, which are explicit in the tables.
+
+Hindsight task-wise and repository-wise oracle selection reach 75.7801% and 74.0755% macro Recall@10 across all eligible tasks. These are headroom diagnostics with access to labels, not selectors. Improvements are partly complementary and concentrated; the full-cohort held-out selector erases them because availability and reliability matter.
+
+## Execution and cost
+
+The first full deterministic cold scientific pass took 1,134.297 seconds (18.9 minutes). It attempted extraction on every world, with acquired vectors and prepared toolchains retained. The witness-order repair took a separate 69.702 seconds. Identical warm reconstruction took 0.439 seconds; a new empty client took 62.032 seconds and received all 707 scientific payloads from remote cache. Independent recomputation took 564.443 seconds, including six whole-world extractions and all 88 Qwen rankings plus 86 pattern/fusion runs. These are different workload accounts, not a claimed whole-system speedup ratio.
+
+The campaign used 80 Bazel jobs on authorized arm64 RBE, with local CPU restricted to orchestration. An initially hidden host-sized input-upload semaphore was diagnosed and disabled with the installed Bazel flag `--noexperimental_throttle_remote_action_building`. World-level extraction remains a coarse boundary: one slow world can dominate a tail even with 80 available cores. The four worlds exceeding the frozen ten-minute limit were pruned from retries by execution cost, before outcome selection.
+
+Join work is shared across all 64 patterns per task; ranking work is shared across 595 configurations. Per-pattern marginal execution cost was not separately measured. [The cost figure](figures/quality-shared-cost.png) explicitly uses the measured shared action cost. Java timing encloses the consumed serialized Flix result; compilation is recorded separately. Cache hits are replay observations, not new compute samples. There is no warmed local-kernel or whole-agent speed claim.
+
+## Viewer and Jev
+
+[VIEWER-AUDIT.md](VIEWER-AUDIT.md) reconstructs the retained Preact diagnostic at revision `8ff8785bac0749c8129f2a76920b3f10b9d6766f`, with 120 files and the exact “Where are hooks defined?” request. All 120 fused positions and 60 displayed scores were checked. The fusion top three are nearly flat around 0.032; the sharper Jev scores and display rescaling have different producers. They are not calibrated probabilities and were not the optimization target.
+
+Jev is wired as a secondary exact-receipt arm with a fixed 30-candidate budget and separate recorded costs. It is disabled by default. Historical judgments with different pools, source text, recipes, or structural context were not reused as today's measurements. The future matched replay command is in [REPRODUCE.md](REPRODUCE.md); acquisition still requires separate authorization and exact receipts.
+
+## Evidence and limits
+
+- [PARITY.md](PARITY.md): exact comparisons, reference limits, and repairs.
+- [CACHE-AUDIT.md](CACHE-AUDIT.md): action identities, invalidation, replay, and timings.
+- [REPRODUCE.md](REPRODUCE.md): tested commands, pins, and invocation links.
+- [tables/configuration-performance.json](tables/configuration-performance.json): all 595 configurations, every requested metric, task-micro and repository-macro, single/multi-file and completed-subset accounts.
+- [tables/pattern-performance.json](tables/pattern-performance.json): all 113 candidate states and descriptive pattern results.
+- [prediction-seal.json](prediction-seal.json), [selection-seal.json](selection-seal.json), [cache-payload-seal.json](cache-payload-seal.json): complete rankings, pools, witnesses, selections, and payload identities. Payloads remain under `bazel-cold/execroot/_main/bazel-out/aarch64-opt/bin/experiments/native_patterns/`.
+- [tasks.json](tasks.json), [worlds.json](worlds.json), [folds.json](folds.json), [input-manifest.json](input-manifest.json): populations, exclusions, exact snapshots, and frozen provenance.
+
+The main unavailable comparisons are historical end-to-end graph parity where the current extractor refuses a world, four malformed historical nominal-symbol TSV exports, the missing older nominal Atlas reference revision, historical-vector browser replay under the different live recipe, matched Jev judgments, marginal per-pattern costs, and direct concurrent duplicate remote-execution requests. None is represented as a successful empty answer. There was no frontend rewrite or deployment.

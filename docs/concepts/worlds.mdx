@@ -1,0 +1,30 @@
+---
+title: "Worlds and typed relationships"
+description: "Keep repository identity and relation direction explicit."
+---
+
+A world identifies source origin, content, and analysis semantics. Its display name is insufficient for reuse. Changing the resolver, source bytes, or semantic namespace can change the world even when the repository name stays the same.
+
+Files and symbols have different nominal types. A frontier is a set of one entity type within one world.
+
+| Relation | Input | Output | Inverse |
+| --- | --- | --- | --- |
+| `defines` | Files | Symbols | `defined_in` |
+| `imports` | Files | Files | `imported_by` |
+| `calls` | Symbols | Symbols | `callers` |
+
+A route composes these operations. Starting with a symbol, `defined_in` finds its file; `imports` follows that file's dependencies. Applying `calls` directly to a file frontier is invalid.
+
+```text
+Symbols(render) -> defined_in -> Files(receipt.rb)
+                -> imports -> Files(pricing.rb)
+                -> imported_by -> Files(receipt.rb, checkout.rb)
+```
+
+The Ruby shop fixtures demonstrate these relationships with actual extraction. A literal, uniquely resolved `require_relative` supports an import. Dynamic behavior outside the resolver's contract remains unresolved.
+
+World checks prevent foreign facts from entering a calculation. Deterministic set identity allows two routes reaching the same frontier to share a later transition, provided all [reuse inputs](/concepts/reuse) match.
+
+## Sources
+
+[Attune.flix](https://github.com/becker63/attune/blob/d71e033/attune/src/Attune.flix) · [GritSeamTest.flix](https://github.com/becker63/attune/blob/d71e033/attune/test/grit/GritSeamTest.flix)
