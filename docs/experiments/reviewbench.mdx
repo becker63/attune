@@ -14,9 +14,90 @@ The comparison was plain source access versus the same access with optional stru
 
 Inclusive precision was 56.3% versus 63.0%. Checkpoint recovery is not final delivery.
 
+## What a packet is, mechanically
+
+A **packet** is our name for a precomputed, source-bearing response to a
+specific review question. It combines the changed entrypoints being reviewed,
+the review intent, supported contract/reachability cues, unresolved questions,
+and **actual source excerpts**. Each excerpt carries its repository world,
+base/head revision, path, inclusive line range, SHA-256, byte count, and coverage
+status. It is not just a list of graph edges or a generated summary.
+
+Mechanically, the packet condition had one extra tool, `attune_packet_operation`,
+while retaining the same ordinary source-reading tools as the plain condition.
+The reviewer requested a declared packet ID and a disclosure mode. The tool
+looked up the precomputed packet, checked its source identities and permissions,
+verified the excerpt bytes, and returned metadata plus source text in bounded
+pages, with a continuation cursor when necessary. `progressive` returned the
+packet's selected spans; `full-source` expanded to all declared regions of that
+changed world. `whole-file` and `region` allowed a particular declared file or
+line range to be read. Unsupported cues stayed absent and unanswered questions
+stayed explicit. The tool supplied evidence; the reviewer still had to decide
+whether the code contained a defect.
+
+### Preparing the bundle
+
+The archived Flix evidence stage materialized packet records, source-region
+manifests, and sealed source copies. Each packet named an **obligation**: which
+operation or changed entrypoint needed which kind of evidence in which
+repository world. It also recorded the intent, changed entrypoints, supported
+cues, selected evidence references, and questions still unanswered.
+
+A contract cue describes a supported obligation or boundary; a reachability cue
+describes a supported connection. The record uses an absent value when the
+world cannot support either cue. Neither field is a verdict that a bug exists.
+The mandatory changed-entrypoint manifest checks that referenced entrypoints
+were declared rather than silently invented or omitted.
+
+### Requesting and delivering it
+
+This is an **illustrative request shape**, not one of the three measured calls.
+`example-packet-id` must be replaced with an ID from the task's declared packet
+records:
+
+```json
+{
+  "packet": "example-packet-id",
+  "disclosure": "progressive",
+  "path": "-",
+  "revision": "-",
+  "cursor": "-"
+}
+```
+
+`-` is the tool's declared absent/start value. For a `whole-file` request, `path`
+and `revision` name the actual declared file and revision. For `region`, the
+path has the form `src/cart.ts@20-45`. A continuation request supplies the byte
+offset returned by the previous page; page boundaries preserve UTF-8 characters.
+
+| Response member | What the reviewer receives |
+| --- | --- |
+| `operation`, `entrypoints`, `intent` | The review question and changed code boundaries the bundle addresses. |
+| `contract`, `reachability`, `missing` | Supported cues and unresolved questions. |
+| `spans` | World, revision, file path, inclusive lines, SHA-256, bytes, and coverage status for each excerpt. |
+| `source` | Actual sealed source text delivered on this page, separately from span metadata. |
+| `uniqueBytes`, `totalBytes`, `deliveredBytes`, `omittedBytes` | Evidence size and page-delivery accounting. |
+| `continuation` | Next byte offset, or `-` when no page remains. |
+
+The boundary rejects unknown packet IDs, undeclared worlds/revisions/regions,
+invalid modes or file arguments, denied permissions, unsafe paths, and source
+identity mismatches. It checks identity and delivery, not whether a defect is
+valid. A refusal returns an error instead of an accepted evidence bundle.
+
+### What the two conditions differed in
+
+Both conditions could read ordinary source. Only R1 had the additional packet
+operation. The hypothesis was that delivering related evidence together could
+save separate acquisitions and context gathering. A packet was not forced into
+every review, and it did not replace the reviewer's source access.
+
 ## Why the negative result matters
 
-All three packet calls across pilot and holdout were refused. No accepted packet established treatment uptake. Therefore the study cannot claim packet-induced token savings, a review speedup, or validation of the proposed 5×/10× efficiency targets.
+All three packet calls across pilot and holdout were refused by the tool
+boundary: no accepted packet was delivered. “Refused” does not mean a reviewer
+read the bundle and declined to use its evidence. The refused-call count alone
+does not identify a single common refusal cause. No accepted packet established
+treatment uptake. Therefore the study cannot claim packet-induced token savings, a review speedup, or validation of the proposed 5×/10× efficiency targets.
 
 A within-arm matching correction reinstated four packet-arm findings. A later denominator repair retained every heldout task and all 224 positives in each micro-recall view, including failed or empty tasks. Earlier values remain historical.
 
@@ -27,3 +108,5 @@ The lesson is operational: an available tool is not an adopted treatment. A loca
 ## Sources
 
 [LOCALIZATION_REPORT.md](https://github.com/becker63/attune/blob/d71e033/LOCALIZATION_REPORT.md) · [README.md](https://github.com/becker63/attune/blob/d71e033/evidence/README.md)
+
+[Packet record and validation](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Study/EvidenceSubstrate.flix#L594) · [Tool schema and delivery](https://github.com/becker63/attune/blob/c0ed1329/attune/platform/dsh/tool/packet_tool.mjs) · [Source boundary](https://github.com/becker63/attune/blob/c0ed1329/attune/platform/dsh/tool/packet_boundary.mjs) · [Same plain rights in both conditions](https://github.com/becker63/attune/blob/c0ed1329/attune/src/Attune/Study/ReviewPilotBinding.flix).
