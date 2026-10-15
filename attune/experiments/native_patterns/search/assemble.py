@@ -82,6 +82,20 @@ def flush():
     # Reserved evaluator labels remain absent until archives are frozen.
     dev=set(json.loads((O/'protocol.json').read_text())['development'])
     allowed={ 'label-'+t['task']+'.json' for t in json.loads((O/'tasks.json').read_text()) if t['group'] in dev}
+    seal=O/'archives-sealed.json'
+    if seal.exists():
+        archives=json.loads(seal.read_text())
+        assert len(archives)==9
+        for archive in archives.values():
+            path=Path(archive['native_output'])
+            assert hashlib.sha256(path.read_bytes()).hexdigest()==archive['output_sha256']
+        reserved=set(json.loads((O/'protocol.json').read_text())['reserved'])
+        allowed.update('label-'+t['task']+'.json' for t in json.loads((O/'tasks.json').read_text()) if t['group'] in reserved)
+    reference=O/'reference-labels-authorized.json'
+    if reference.exists():
+        receipt=json.loads(reference.read_text())
+        assert hashlib.sha256(seal.read_bytes()).hexdigest()==receipt['archive_seal_sha256']
+        allowed.update('label-'+task+'.json' for task in receipt['tasks'])
     exports=sorted(p.name for p in (O/'inputs').glob('*.json') if p.exists() and (not p.name.startswith('label-') or p.name in allowed))
     (O/'inputs/BUILD.bazel').write_text('package(default_visibility=["//visibility:public"])\nexports_files('+repr(exports)+')\n')
 

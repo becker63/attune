@@ -1,0 +1,233 @@
+{
+  "timestamp": "2026-10-15T22:25:18.351557+00:00",
+  "git_revision": "4d9964102a9cbeaf32a527623d0a8df5866e4071",
+  "git_branch": "infra/three-node-research",
+  "requested_flake": "path:./infra",
+  "source_snapshot": "/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source",
+  "working_tree": "Source hash records infrastructure under test; report may precede delivery commit.",
+  "source_sha256": "cd7e6bda6808df5ff3e32eb06059d97bfddb53c85fabaa03e7c637931703ca39",
+  "lock_sha256": "4e8c8cc3ea3ce15998fb7aaa3e2a58fa14c2a1665eae007f06118719d2a79121",
+  "architecture": "aarch64-linux",
+  "tools": {
+    "nix": "nix (Nix) 2.34.8",
+    "kernel": "Linux 7.1.5",
+    "python": "Python 3.13.14",
+    "git": "git version 2.55.0"
+  },
+  "results": [
+    {
+      "name": "evaluation",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.evaluation",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/evaluation.log",
+      "seconds": 11.93,
+      "derivation": "/nix/store/0gfgl0kzzki3szixrczymqc9713y6axz-attune-evaluation.drv",
+      "store_path": "/nix/store/p1qqbyc9fid4jscvvfvb57vnrhqr8gmy-attune-evaluation"
+    },
+    {
+      "name": "installer-guard",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.installer-guard",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/installer-guard.log",
+      "seconds": 1.4,
+      "derivation": "/nix/store/vpm6x5jb6z7qzvrb1nszk2ap8x55lwj5-attune-guard.drv",
+      "store_path": "/nix/store/ki62sjrh1kl2pr9im4nfs1xcpvg7p01g-attune-guard"
+    },
+    {
+      "name": "science",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.science",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/science.log",
+      "seconds": 1.69,
+      "derivation": "/nix/store/c280slaa14wjsnqsw4f38a9hf1cflgzr-attune-science.drv",
+      "store_path": "/nix/store/wpr0bgz7dw81sifc4fiwjfiq6g2zmh7n-attune-science"
+    },
+    {
+      "name": "worker",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.worker",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/worker.log",
+      "seconds": 1.4,
+      "derivation": "/nix/store/h9smy07v038s7awi071q8dy010ci9xvr-attune-worker.drv",
+      "store_path": "/nix/store/pm0wjz8950b4w46aqxvwwfjxqng02g2p-attune-worker"
+    },
+    {
+      "name": "receipts",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.receipts",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/receipts.log",
+      "seconds": 1.46,
+      "derivation": "/nix/store/v4r05afg4pghgk0yhygficmqi24diiqc-attune-receipts.drv",
+      "store_path": "/nix/store/q0z4k8da7shhj1csa4l5arpg9ha5wgy3-attune-receipts"
+    },
+    {
+      "name": "dashboards",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.dashboards",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/dashboards.log",
+      "seconds": 0.16,
+      "derivation": "/nix/store/fib565kv15hk0fi6iyq68sisiyi7v1zf-attune-dashboards.drv",
+      "store_path": "/nix/store/r685228pb7ai7nprisqfia1vb8xd9gmn-attune-dashboards"
+    },
+    {
+      "name": "queries",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.queries",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/queries.log",
+      "seconds": 0.42,
+      "derivation": "/nix/store/4dk5b4qyi22a21hklw8qq18gyyfpxjsr-attune-queries.drv",
+      "store_path": "/nix/store/15wx87y5r5sa8sxgyv56zchhra1d7jp7-attune-queries"
+    },
+    {
+      "name": "secrets",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.secrets",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/secrets.log",
+      "seconds": 0.75,
+      "derivation": "/nix/store/f72dzsb34c2zp161k0jpn82nknj906zm-attune-secret-audit.drv",
+      "store_path": "/nix/store/l284g56v290qba37mwjy9ffpi3287b8m-attune-secret-audit"
+    },
+    {
+      "name": "git-signatures",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.git-signatures",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/git-signatures.log",
+      "seconds": 0.43,
+      "derivation": "/nix/store/xwb2g2alg0pns3badl1bpv43sc3lw97n-attune-git-signature-policy.drv",
+      "store_path": "/nix/store/y9rphwvndf0581wlhql3qi5fsdayhv73-attune-git-signature-policy"
+    },
+    {
+      "name": "emulation",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.emulation",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/emulation.log",
+      "seconds": 0.38,
+      "derivation": "/nix/store/xij7n601agl4gdb8p4ig4k2szdz75vbk-attune-x86-execution-probe.drv",
+      "store_path": "/nix/store/r1z1qya9xbafh9p03klzparc9c9w269s-attune-x86-execution-probe"
+    },
+    {
+      "name": "services",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.services",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/services.log",
+      "seconds": 2.69,
+      "derivation": "/nix/store/4sc97h5zhidlwxz4bjnwcjqsarkvph0v-vm-test-run-attune-native-services.drv",
+      "store_path": "/nix/store/2yid21n4gq9lirv250kbc0ywbx5y1shc-vm-test-run-attune-native-services"
+    },
+    {
+      "name": "garage",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.garage",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/garage.log",
+      "seconds": 147.02,
+      "derivation": "/nix/store/s8id6kyih9dll9pdbhg3la25a19wad00-vm-test-run-attune-garage-three-node.drv",
+      "store_path": "/nix/store/m9jwcpdpq2qy8dg5v6ysjn8f8wy859gn-vm-test-run-attune-garage-three-node"
+    },
+    {
+      "name": "persistence",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.persistence",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/persistence.log",
+      "seconds": 100.03,
+      "derivation": "/nix/store/d871vibg76hl3hydsxkzlc76al78950q-vm-test-run-attune-btrfs-root-reset.drv",
+      "store_path": "/nix/store/7wq7bss7yqwd1y93dv0j5irnwifpkgrg-vm-test-run-attune-btrfs-root-reset"
+    },
+    {
+      "name": "science-integration",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.science-integration",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/science-integration.log",
+      "seconds": 72.99,
+      "derivation": "/nix/store/kpb7sgpwczg7cyl35j1zc6vxsbyrkxbp-vm-test-run-attune-scientific-evidence.drv",
+      "store_path": "/nix/store/ka0mq17dzfy75ih2bxq4b6b8283dnsa6-vm-test-run-attune-scientific-evidence"
+    },
+    {
+      "name": "gitops",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.gitops",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/gitops.log",
+      "seconds": 3.09,
+      "derivation": "/nix/store/2irirbzrzgbf21q0a20b61khk4b6ak6y-vm-test-run-attune-comin-signed-reconciliation.drv",
+      "store_path": "/nix/store/p626v7w8v3gcsv54dhskybpx004i3x4a-vm-test-run-attune-comin-signed-reconciliation"
+    },
+    {
+      "name": "installer",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#checks.aarch64-linux.installer",
+      "status": "NOT RUN",
+      "reason": "enable --installer"
+    },
+    {
+      "name": "installer-attune-a",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#packages.aarch64-linux.installer-attune-a",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/installer-attune-a.log",
+      "seconds": 118.96,
+      "derivation": "/nix/store/hs962pvsawlyrri8i85pdsy4j0081vwp-attune-a-installer.iso.drv",
+      "store_path": "/nix/store/kfxmnq87dzvzfp0grwf9jwzn8gqp2ipz-attune-a-installer.iso",
+      "iso": "/nix/store/kfxmnq87dzvzfp0grwf9jwzn8gqp2ipz-attune-a-installer.iso/iso/attune-a-installer.iso",
+      "iso_sha256": "02801516cb297428812248bb6136718a30c9b93a1a1e8e56f9cceac9ff1b6877"
+    },
+    {
+      "name": "installer-attune-b",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#packages.aarch64-linux.installer-attune-b",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/installer-attune-b.log",
+      "seconds": 189.9,
+      "derivation": "/nix/store/pr2lr782pzw9pbyn4bwsjmvcvvhai2p7-attune-b-installer.iso.drv",
+      "store_path": "/nix/store/89xgci1fn57nqd1gn5b8rrrz6inqcdm1-attune-b-installer.iso",
+      "iso": "/nix/store/89xgci1fn57nqd1gn5b8rrrz6inqcdm1-attune-b-installer.iso/iso/attune-b-installer.iso",
+      "iso_sha256": "baa40556791676b42526b454e0f41a1a5322873d23255a792da9c689377e2da1"
+    },
+    {
+      "name": "installer-attune-c",
+      "output": "path:/nix/store/jw6y5amb0nwzskrs86qxjrsb19i7wyi4-source#packages.aarch64-linux.installer-attune-c",
+      "status": "PASS",
+      "reason": "",
+      "log": "infra/reports/logs/installer-attune-c.log",
+      "seconds": 187.82,
+      "derivation": "/nix/store/bdmcwrqdh39q0p1712k1nm3z5gl2qqld-attune-c-installer.iso.drv",
+      "store_path": "/nix/store/h25s80wkgkjzd1c36vca5p75fzqixxya-attune-c-installer.iso",
+      "iso": "/nix/store/h25s80wkgkjzd1c36vca5p75fzqixxya-attune-c-installer.iso/iso/attune-c-installer.iso",
+      "iso_sha256": "b0b71cec9c88905a9045c8a2925b5beca171a4b2a0acda67da6578aeb94709dc"
+    }
+  ],
+  "external_requirements": [
+    {
+      "name": "Physical ThinkCentre installation",
+      "status": "NOT RUN",
+      "reason": "No physical disk operations authorized during development"
+    },
+    {
+      "name": "Host enrollment and live Garage membership",
+      "status": "BLOCKED",
+      "reason": "Requires verified physical machine identities and measured storage capacity"
+    },
+    {
+      "name": "Operational off-cluster backup",
+      "status": "BLOCKED",
+      "reason": "Requires independent destination; disposable restore fixture is tested separately"
+    },
+    {
+      "name": "BuildBuddy CAS artifact download",
+      "status": "NOT RUN",
+      "reason": "Receipt API access does not establish CAS byte retrieval; local evidence ingestion is supported"
+    }
+  ]
+}

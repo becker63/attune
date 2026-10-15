@@ -1,6 +1,6 @@
 """File/Bazel orchestration only. Flix constructs, searches, ranks, and scores."""
 from pathlib import Path
-import json, subprocess, time, hashlib, gzip, base64
+import json, subprocess, time, hashlib, gzip, base64, sys
 import assemble
 
 O=assemble.O
@@ -18,7 +18,10 @@ def read(path):
     return value
 
 def write(path,value):
-    Path(path).write_text(json.dumps(value,separators=(',',':'))+'\n')
+    path=Path(path)
+    temporary=path.with_name(path.name+'.writing')
+    temporary.write_text(json.dumps(value,separators=(',',':'))+'\n')
+    temporary.replace(path)
 
 def host(binary,work,inputs):
     work.mkdir(parents=True,exist_ok=True)
@@ -44,7 +47,12 @@ def acquisition(key,payload,actions,trial):
     request_hash=hashlib.sha256(json.dumps(['https://openrouter.ai/api/alpha/decisions',
                        'typesafe/jev-1.13',recipe,payload],separators=(',',':')).encode()).hexdigest()
     receipt=O/'decisions'/(request_hash+'.json')
-    if receipt.exists():return read(receipt)[1], 'replayed'
+    if receipt.exists():
+        saved=read(receipt)
+        assert saved[0]==['https://openrouter.ai/api/alpha/decisions','typesafe/jev-1.13',recipe,payload],'MismatchedReplayIdentity'
+        return saved[1], 'replayed'
+    if '--acquire' not in sys.argv:
+        raise RuntimeError('MissingReplay: explicit --acquire is required for a new paid native decision.')
     if disabled.exists():return json.dumps({'error':read(disabled)}),'uniform-disabled'
     ledger_path=O/'decisions/budget.latest.json'
     ledger=read(ledger_path) if ledger_path.exists() else [0,0]
@@ -90,7 +98,7 @@ def main():
     round_number=read(round_file) if round_file.exists() else 0
     while not all(t['done'] for t in states.values()):
         # Include new artifacts and logs, without charging reused corpora/cache files.
-        owned=sum(p.stat().st_size for root in [O,assemble.PACKAGE] for p in root.rglob('*') if p.is_file() and not p.is_symlink())
+        owned=sum(p.stat().st_size for root in [O,assemble.PACKAGE,B] for p in root.rglob('*') if p.is_file() and not p.is_symlink())
         if owned>=PROTOCOL['max_local_bytes']:
             raise RuntimeError('ResourceLimited: experiment-owned 512 MiB bound reached; checkpoint retained.')
         planned={};events={}

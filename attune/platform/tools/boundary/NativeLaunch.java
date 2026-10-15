@@ -83,6 +83,11 @@ public final class NativeLaunch {
         if (!property("attune.output").isEmpty()) {
             command.add("-Dattune.output=" + Path.of(property("attune.output")).toAbsolutePath());
         }
+        if (!property("attune.jfrOutput").isEmpty()) {
+            Path recording = Path.of(property("attune.jfrOutput")).toAbsolutePath();
+            command.add("-XX:StartFlightRecording=filename=" + recording
+                    + ",settings=profile,dumponexit=true");
+        }
         List<String> classpath = new ArrayList<>();
         // Exported Flix runtime classes precede the compiler's mock runtime.
         if (mode.equals("compiled")) {

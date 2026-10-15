@@ -8,6 +8,14 @@ def ordinarySourceIsAdmitted(): Unit \ Assert =
     Assert.assertEq(expected = Nil, Policy.findings("/w", List#{entry("src/Attune.flix")}))
 
 @Test
+def boundedSearchAssemblyKeepsItsNarrowException(): Unit \ Assert = {
+    Assert.assertEq(expected = Nil, Policy.findings("/w", List#{entry("experiments/native_patterns/search/assemble.py")}));
+    Assert.assertEq(expected = 1, List.length(Policy.findings("/w", List#{entry("experiments/native_patterns/search/source.ts")})));
+    Assert.assertEq(expected = 1, List.length(Policy.findings("/w", List#{entry("experiments/native_patterns/search/code.pyc")})));
+    Assert.assertEq(expected = 1, List.length(Policy.findings("/w", List#{entry("experiments/native_patterns/search/.env")})))
+}
+
+@Test
 def privatePathsAndRetainedResearchAreNotInputs(): Unit \ Assert =
     List.forEach(path -> Assert.assertEq(expected = 1, List.length(Policy.findings("/w", List#{entry(path)}))),
         List#{"src/.env", ".factory/task", "attuneflix/src/Main.flix", "notes/repository-through-time/record.json",

@@ -35,3 +35,27 @@ def replayedSearchAndPrivateFeedback(): Unit \ Assert = {
     Assert.assertEq(expected=true,sim <= 4096);
     Assert.assertEq(expected=true,Set.size(List.map(match(id,_,_) -> id,pending) |> List.toSet) <= 8)
 }
+
+@Test
+def seededTiesAndMenuVariation(): Unit \ Assert = {
+    let actions=List#{("STOP","stop",Nil),("a","a",List#{(0,0,1)}),("b","b",List#{(0,1,0)})};
+    let node: Search.Node=(Nil,6,actions,Attune.Decisions.uniform(List#{"STOP","a","b"}),Map.empty(),0);
+    Assert.assertEq(expected=Search.selectAction(node,101i64),Search.selectAction(node,101i64));
+    let choices=List.map(seed -> fst(Search.selectAction(node,Int32.toInt64(seed))),List.range(101,109)) |> List.toSet;
+    Assert.assertEq(expected=true,Set.size(choices) > 1);
+    let a=Search.menu(List#{(0,0,1)},(256,32768,true,101i64,10000));
+    let b=Search.menu(List#{(0,0,1)},(256,32768,true,102i64,10000));
+    Assert.assertEq(expected=true,a != b);
+    Assert.assertEq(expected=true,List.forAll(match(_,_,p) -> Language.importOnly(p),a));
+    Assert.assertEq(expected=true,List.length(a) <= 32)
+}
+
+@Test
+def pendingTerminalChoiceIsReserved(): Unit \ Assert = {
+    let p=List#{(0,0,1)};
+    let actions=List#{("STOP","stop",p),("reverse","reverse",List#{(0,1,0)})};
+    let node: Search.Node=(p,2,actions,Attune.Decisions.uniform(List#{"STOP","reverse"}),Map.empty(),0);
+    let(_,_,choices,_,_,_)=Search.available(node,List#{(Language.key(p),p,Nil)});
+    Assert.assertEq(expected=List#{("reverse","reverse",List#{(0,1,0)})},choices);
+    Assert.assertEq(expected=node,Search.available(node,Nil))
+}

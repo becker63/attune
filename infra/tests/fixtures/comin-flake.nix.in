@@ -1,0 +1,28 @@
+{
+  outputs = { self }: let
+    bash = builtins.appendContext "@BASH@" { "@BASH@" = { path = true; }; };
+    coreutils = builtins.appendContext "@COREUTILS@" { "@COREUTILS@" = { path = true; }; };
+  in {
+    nixosConfigurations.machine.config = {
+      services.comin.machineId = @MACHINE_ID@;
+      system.build.toplevel = builtins.derivation {
+        name = "fixture-system-@LABEL@";
+        system = "@SYSTEM@";
+        builder = "${bash}/bin/bash";
+        args = [ "-e" "-c" ''
+        @FAIL@
+        ${coreutils}/bin/mkdir -p $out/bin
+        ${coreutils}/bin/cat > $out/bin/switch-to-configuration <<'ACTIVATE'
+        #!${bash}/bin/bash
+        @ACTIVATION_FAIL@
+        printf '%s %s\n' '@LABEL@' "$1" > /var/lib/comin/fixture-activation
+        ACTIVATE
+        ${coreutils}/bin/chmod +x $out/bin/switch-to-configuration
+        # Keep bash as the builder until its children have exited. A final
+        # exec of coreutils can close the log pipe before process teardown.
+        exit 0
+        '' ];
+      };
+    };
+  };
+}

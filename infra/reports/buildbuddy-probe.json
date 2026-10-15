@@ -1,0 +1,9 @@
+{
+  "search": "PASS",
+  "accessible_invocations_in_probe": 1,
+  "execution": "PASS",
+  "logs": "PASS",
+  "cas_artifact_bytes": "NOT RUN",
+  "cpu_heap_profiles": "NOT RUN",
+  "cpu_heap_profiles_reason": "Per-action CPU/heap profile availability was not established by the bounded API probe"
+}

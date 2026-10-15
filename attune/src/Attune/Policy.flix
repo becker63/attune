@@ -38,6 +38,9 @@ pub mod Attune.Policy {
             and not String.startsWith(prefix = "test/grit/fixtures/", path)
             and not (String.startsWith(prefix = "experiments/native_patterns/tools/", path) and
                 (String.endsWith(suffix = ".py", path) or String.endsWith(suffix = ".sh", path)))
+            // The owner requested one compact search package; these are assembly/report adapters.
+            and not (String.startsWith(prefix = "experiments/native_patterns/search/", path) and
+                String.endsWith(suffix = ".py", path))
 
     /// No file content is necessary to decide these boundaries. Even a
     /// symlink pointing to a private file is classified without opening it.

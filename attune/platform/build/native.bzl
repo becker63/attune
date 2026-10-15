@@ -133,6 +133,7 @@ def _action_impl(ctx):
         lines.append(name + "\t" + files[0].path)
     ctx.actions.write(bindings, "\n".join(lines) + "\n")
     out = ctx.actions.declare_file(ctx.label.name + ".json")
+    jfr = ctx.actions.declare_file(ctx.label.name + ".jfr") if ctx.attr.profile_jfr else None
     args = ctx.actions.args()
     args.add("-cp")
     args.add_joined(launcher, join_with = ":")
@@ -147,6 +148,8 @@ def _action_impl(ctx):
         "timeoutSeconds": str(ctx.attr.timeout_seconds),
     }.items():
         args.add("-Dattune." + name + "=" + value)
+    if jfr:
+        args.add("-Dattune.jfrOutput=" + jfr.path)
     if ctx.file.unshare:
         args.add("-Dattune.unshare=" + ctx.file.unshare.path)
         inputs += [ctx.file.unshare] + ctx.files.closure
@@ -155,12 +158,12 @@ def _action_impl(ctx):
         executable = runtime.java_executable_exec_path,
         arguments = [args],
         inputs = depset(inputs + ctx.files.srcs + ctx.files.native_libs + launcher + jars + [jar_manifest, bindings], transitive = [runtime.files]),
-        outputs = [out],
+        outputs = [out] + ([jfr] if jfr else []),
         env = {"LANG": "C.UTF-8"},
         mnemonic = "FlixArtifact",
         progress_message = "Computing %{label}",
     )
-    return [DefaultInfo(files = depset([out]))]
+    return [DefaultInfo(files = depset([out] + ([jfr] if jfr else [])))]
 
 _flix_action = rule(
     implementation = _action_impl,
@@ -171,6 +174,7 @@ _flix_action = rule(
         "native_libs": attr.label_list(allow_files = True),
         "timeout_seconds": attr.int(default = 0),
         "compiled": attr.bool(default = False),
+        "profile_jfr": attr.bool(default = False),
         "isolation": attr.string(values = ["unshare", "platform"]),
         "unshare": attr.label(allow_single_file = True),
         "closure": attr.label(allow_files = True),
@@ -179,8 +183,8 @@ _flix_action = rule(
     toolchains = [_JAVA],
 )
 
-def flix_action(name, srcs, inputs = {}, java_deps = [], native_libs = [], timeout_seconds = 0, tags = [], compiled = False):
-    """An ordinary Flix main reads named inputs and writes one declared JSON file."""
+def flix_action(name, srcs, inputs = {}, java_deps = [], native_libs = [], timeout_seconds = 0, tags = [], compiled = False, profile_jfr = False):
+    """An ordinary Flix main writes JSON and optionally an inner-JVM JFR recording."""
     if len(inputs.values()) != len({label: True for label in inputs.values()}):
         fail("input aliases must name distinct artifacts")
     _flix_action(
@@ -191,6 +195,7 @@ def flix_action(name, srcs, inputs = {}, java_deps = [], native_libs = [], timeo
         native_libs = native_libs,
         timeout_seconds = timeout_seconds,
         compiled = compiled,
+        profile_jfr = profile_jfr,
         tags = tags,
         isolation = select({_PLATFORM: "platform", "//conditions:default": "unshare"}),
         unshare = select({_PLATFORM: None, "//conditions:default": _UNSHARE}),
