@@ -101,8 +101,10 @@ certifies nothing for a new revision; historical observations are marked histori
   this revision beyond the recorded public-gate reproduction; readiness-era observations
   (saved-answer graph tests, BuildBuddy invocation, Garage/ClickHouse round-trips) are
   historical and certify nothing for this branch's revisions.
-- The protected-checkout after-capture (VAL-DEL-006) is completed at delivery time and
-  archived as `mission/protected-checkouts-after.txt`; the before/after pair is the
-  evidence for that assertion.
+- The protected-checkout after-capture (VAL-DEL-006) is archived as
+  `mission/protected-checkouts-after.txt` with the delivery comparison record
+  `mission/protected-checkouts-comparison.txt`: **all protected checkouts unchanged**
+  (the owned branch's own HEAD advance `d268c9b2` → `4dc4969e` in `git worktree list` is
+  the only intended difference).
 - Sub-statuses inside each original ID (e.g., which legs of NIX-01 are operator
   checkpoints) are recorded when each milestone sets the ID's final status.

@@ -1,0 +1,12 @@
+# VAL-DEL-006 before/after comparison (M0 delivery)
+# Generated UTC: 2026-10-16T23:34:48Z
+# Method: diff of the two captures after excluding comment lines and the owned worktree's own
+# line in 'git worktree list' (its HEAD advanced d268c9b2 -> 4dc4969e by this mission's own
+# signed commit on the owned branch - the only intended change).
+#
+# Result: ALL-PROTECTED-CHECKOUTS-UNCHANGED
+# - /home/becker/projects/attune: HEAD 4d996410 and all 175 dirty entries identical
+# - all six attune-nim-* worktrees: HEADs and status identical (nim-consolidation still 12 dirty entries)
+# - attuneflix-tree-reuse: HEAD 09e78c7d and 18 dirty entries identical; attuneflix-parallelism-codex still not a git repo
+# - experiment git checkouts (flix-src v0.76.1, attune-native-patterns checkout 15cdb045/32 entries): identical
+# - cached baseline /home/becker/.cache/attune-migration/baseline-20261015: same mtime_epoch=1792106702, same 14 top-level entries

@@ -1,0 +1,414 @@
+# Protected checkout scoped metadata — AFTER capture (M0 delivery, mission 9244dbc6)
+# Captured UTC: 2026-10-16T23:34:39Z
+# Same scoped commands as the before-capture (--no-optional-locks; filenames/status only; no contents).
+
+=== /home/becker/projects/attune ===
+--- git log -1 ---
+4d9964102a9cbeaf32a527623d0a8df5866e4071  (HEAD -> infra/three-node-research, origin/studio/cold-grit-2026-10-13, studio/cold-grit-2026-10-13)
+Emphasize localization latency and explain reusable work
+--- git status --porcelain (count then listing) ---
+175
+ M attune/experiments/native_patterns/search/Acquire.flix
+ M attune/experiments/native_patterns/search/BUILD.bazel
+ M attune/experiments/native_patterns/search/Budget.flix
+ M attune/experiments/native_patterns/search/Kernel.flix
+ M attune/experiments/native_patterns/search/Language.flix
+ M attune/experiments/native_patterns/search/Reward.flix
+ M attune/experiments/native_patterns/search/Search.flix
+ M attune/experiments/native_patterns/search/SearchLaw.flix
+ M attune/experiments/native_patterns/search/assemble.py
+ M attune/experiments/native_patterns/search/batches.bzl
+ M attune/experiments/native_patterns/search/pilot.py
+ M attune/platform/build/native.bzl
+ M attune/platform/tools/boundary/NativeLaunch.java
+ M attune/src/Attune/Policy.flix
+ M attune/test/policy/PolicyCases.flix
+A  infra/.gitignore
+A  infra/OPERATIONS.md
+A  infra/README.md
+A  infra/RECONNAISSANCE.md
+A  infra/VALIDATION.md
+A  infra/dashboards/alerts.nix
+A  infra/dashboards/contracts.nix
+A  infra/dashboards/default.nix
+A  infra/dashboards/scientific-contracts.nix
+A  infra/disk.nix
+A  infra/flake.lock
+A  infra/flake.nix
+A  infra/hosts.nix
+A  infra/identities/README.md
+A  infra/ingest/archive.py
+A  infra/ingest/backup.py
+A  infra/ingest/buildbuddy.py
+A  infra/ingest/export.py
+A  infra/ingest/index.py
+A  infra/ingest/receipts.py
+A  infra/ingest/schema.sql
+A  infra/ingest/worker.py
+A  infra/installer.nix
+A  infra/installer/bootnext.py
+A  infra/installer/guard.py
+A  infra/keys/allowed-signers
+A  infra/keys/fixture.pub
+A  infra/keys/install-signers
+A  infra/keys/operator.pub
+A  infra/modules/backup.nix
+A  infra/modules/base.nix
+A  infra/modules/ingestion.nix
+A  infra/modules/monitoring.nix
+A  infra/modules/persistence.nix
+A  infra/modules/services.nix
+A  infra/reports/buildbuddy-probe.json
+AM infra/reports/validation.json
+AM infra/reports/validation.md
+A  infra/secrets/README.md
+A  infra/tests/comin.nix
+A  infra/tests/comin_fixture.py
+A  infra/tests/dashboard-contracts.nix
+A  infra/tests/default.nix
+A  infra/tests/fixtures/comin-flake.nix.in
+A  infra/tests/fixtures/evaluation-secrets.yaml
+A  infra/tests/garage.nix
+A  infra/tests/garage_client.py
+A  infra/tests/gitops.nix
+A  infra/tests/installer.nix
+A  infra/tests/persistence.nix
+A  infra/tests/science-integration.nix
+A  infra/tests/science_vm.py
+A  infra/tests/services.nix
+A  infra/tests/test_export.py
+A  infra/tests/test_guard.py
+A  infra/tests/test_receipts.py
+A  infra/tests/test_science.py
+A  infra/tests/test_worker.py
+A  infra/tools/discovery.py
+A  infra/tools/enroll.py
+A  infra/tools/garage-bootstrap.py
+A  infra/tools/garage-credentials.py
+A  infra/tools/garage-health.py
+A  infra/tools/installer-test.py
+A  infra/tools/provision-secrets.py
+A  infra/tools/secret_scan.py
+A  infra/tools/validate.py
+?? FACTORY_HANDOFF.md
+?? attune/experiments/native_patterns/search/Audit.flix
+?? attune/experiments/native_patterns/search/AuditMetrics.flix
+?? attune/experiments/native_patterns/search/CadenceAdvance.flix
+?? attune/experiments/native_patterns/search/CadenceBudget.flix
+?? attune/experiments/native_patterns/search/CadenceLaw.flix
+?? attune/experiments/native_patterns/search/CadencePreflight.flix
+?? attune/experiments/native_patterns/search/CanonicalLaw.flix
+?? attune/experiments/native_patterns/search/CanonicalReference.flix
+?? attune/experiments/native_patterns/search/Compact.flix
+?? attune/experiments/native_patterns/search/CompactLaw.flix
+?? attune/experiments/native_patterns/search/CompositionProbe.flix
+?? attune/experiments/native_patterns/search/CoreLaw.flix
+?? attune/experiments/native_patterns/search/CoreLayers.flix
+?? attune/experiments/native_patterns/search/Cost.flix
+?? attune/experiments/native_patterns/search/JevPreview.flix
+?? attune/experiments/native_patterns/search/PartitionBench.flix
+?? attune/experiments/native_patterns/search/PlanPredict.flix
+?? attune/experiments/native_patterns/search/Planner.flix
+?? attune/experiments/native_patterns/search/PlannerLaw.flix
+?? attune/experiments/native_patterns/search/PlannerMetrics.flix
+?? attune/experiments/native_patterns/search/PolicyAlgebra.flix
+?? attune/experiments/native_patterns/search/PolicyAlgebraFloorMain.flix
+?? attune/experiments/native_patterns/search/PolicyAlgebraLaw.flix
+?? attune/experiments/native_patterns/search/PolicyAlgebraMain.flix
+?? attune/experiments/native_patterns/search/PolicyProbe.flix
+?? attune/experiments/native_patterns/search/PreflightBench.flix
+?? attune/experiments/native_patterns/search/PropertySignature.flix
+?? attune/experiments/native_patterns/search/Quality.flix
+?? attune/experiments/native_patterns/search/QualityAdvance.flix
+?? attune/experiments/native_patterns/search/QualityBudget.flix
+?? attune/experiments/native_patterns/search/QualityCompose.flix
+?? attune/experiments/native_patterns/search/QualityEvaluate.flix
+?? attune/experiments/native_patterns/search/QualityLaw.flix
+?? attune/experiments/native_patterns/search/QualityNeighbors.flix
+?? attune/experiments/native_patterns/search/QualityScore.flix
+?? attune/experiments/native_patterns/search/QualitySelect.flix
+?? attune/experiments/native_patterns/search/Recover.flix
+?? attune/experiments/native_patterns/search/ResourceReplay.flix
+?? attune/experiments/native_patterns/search/RewardLaw.flix
+?? attune/experiments/native_patterns/search/ScaleAdvance.flix
+?? attune/experiments/native_patterns/search/ScaleArchive.flix
+?? attune/experiments/native_patterns/search/ScaleBudget.flix
+?? attune/experiments/native_patterns/search/ScaleEvaluate.flix
+?? attune/experiments/native_patterns/search/ScaleFailure.flix
+?? attune/experiments/native_patterns/search/ScaleMerge.flix
+?? attune/experiments/native_patterns/search/ScalePredict.flix
+?? attune/experiments/native_patterns/search/StudioCompose.flix
+?? attune/experiments/native_patterns/search/WarmScore.flix
+?? attune/experiments/native_patterns/search/archive_logs.py
+?? attune/experiments/native_patterns/search/cadence.py
+?? attune/experiments/native_patterns/search/cadence_analysis.py
+?? attune/experiments/native_patterns/search/cadence_batches.bzl
+?? attune/experiments/native_patterns/search/cadence_checks.py
+?? attune/experiments/native_patterns/search/eta.py
+?? attune/experiments/native_patterns/search/evidence.py
+?? attune/experiments/native_patterns/search/finish.py
+?? attune/experiments/native_patterns/search/finite_check.py
+?? attune/experiments/native_patterns/search/isolation.py
+?? attune/experiments/native_patterns/search/novelty.py
+?? attune/experiments/native_patterns/search/novelty_batches.bzl
+?? attune/experiments/native_patterns/search/novelty_compare.py
+?? attune/experiments/native_patterns/search/novelty_run.py
+?? attune/experiments/native_patterns/search/planner_panel.py
+?? attune/experiments/native_patterns/search/plots.py
+?? attune/experiments/native_patterns/search/preflight_analysis.py
+?? attune/experiments/native_patterns/search/quality.py
+?? attune/experiments/native_patterns/search/quality_analyze.py
+?? attune/experiments/native_patterns/search/quality_batches.bzl
+?? attune/experiments/native_patterns/search/quality_descriptors.py
+?? attune/experiments/native_patterns/search/quality_reserved.py
+?? attune/experiments/native_patterns/search/quality_search.py
+?? attune/experiments/native_patterns/search/quality_trajectories.py
+?? attune/experiments/native_patterns/search/reduce.py
+?? attune/experiments/native_patterns/search/references.py
+?? attune/experiments/native_patterns/search/replay.py
+?? attune/experiments/native_patterns/search/resource_evidence.py
+?? attune/experiments/native_patterns/search/reward_reference.py
+?? attune/experiments/native_patterns/search/scale.py
+?? attune/experiments/native_patterns/search/scale_archive_replay.py
+?? attune/experiments/native_patterns/search/scale_audit.py
+?? attune/experiments/native_patterns/search/scale_baselines.py
+?? attune/experiments/native_patterns/search/scale_batches.bzl
+?? attune/experiments/native_patterns/search/scale_finish.py
+?? attune/experiments/native_patterns/search/scale_isolation.py
+?? attune/experiments/native_patterns/search/scale_reduce.py
+?? attune/experiments/native_patterns/search/scale_report.py
+?? attune/experiments/native_patterns/search/scale_timing.py
+?? attune/experiments/native_patterns/search/scheduler_checks.py
+?? attune/experiments/native_patterns/search/source_audit.py
+?? attune/experiments/native_patterns/search/studio_compose.py
+?? attune/experiments/native_patterns/search/studio_compose_reduce.py
+?? attune/experiments/native_patterns/search/timing_panel.py
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-consolidation ===
+--- git log -1 ---
+49ec4ebc90894952a417b3328a1f8281d1f4f4d1  (HEAD -> migration/nix-nim-consolidation)
+Declare the retained localization study and its P baseline in the science DSL
+--- git status --porcelain (count then listing) ---
+12
+A  attune/experiments/native_patterns/retained/Evaluate.flix
+ M attune/experiments/native_patterns/retained/default.nix
+AM attune/experiments/native_patterns/retained/flix.nix
+A  attune/experiments/native_patterns/retained/frozen.nix
+ M attune/experiments/native_patterns/retained/study.nix
+ M attune/experiments/native_patterns/search/batches.bzl
+ M flake.nix
+ M migration/PARITY.md
+ M migration/python-coverage-mapping.nix
+?? attune/experiments/native_patterns/search/novelty_batches.bzl
+?? attune/experiments/native_patterns/search/quality_batches.bzl
+?? attune/experiments/native_patterns/search/scale_batches.bzl
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-controllers ===
+--- git log -1 ---
+47a65678f1ac2d10d94722d19ffc7ff11c3d71b5  (HEAD -> migration/nim-controllers)
+Preserve observed-cost Decimal semantics through pinned native bindings
+--- git status --porcelain (count then listing) ---
+0
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-desktop ===
+--- git log -1 ---
+fce7ad89f722ed0b384c74d6edd09f1b28cc6ce4  (HEAD -> migration/portable-desktop)
+Require an execution receipt for imported Nix data
+--- git status --porcelain (count then listing) ---
+0
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-parity ===
+--- git log -1 ---
+6c027b849ac5a600641a9e76855fae2e549c8c7f  (HEAD -> migration/nim-parity)
+audit: freeze parser candidate results and independent surrogate boundaries
+--- git status --porcelain (count then listing) ---
+0
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-parquet ===
+--- git log -1 ---
+bd295f5391ffad127f34f3a136a30fdeea974b38  (HEAD -> migration/parquet-capability)
+Compose native archive input with scoped Python-compatible JSON parsing
+--- git status --porcelain (count then listing) ---
+0
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attune-nim-substrate ===
+--- git log -1 ---
+42ef03475e9aff3d2ed1d16f9bb2cf0e460a10bb  (HEAD -> migration/nim-substrate)
+Convert yyjson real tokens with pinned native parser
+--- git status --porcelain (count then listing) ---
+0
+--- git worktree list ---
+/home/becker/projects/attune                                      4d996410 [infra/three-node-research]
+/home/becker/experiments/attune-native-patterns-20261013/checkout 15cdb045 (detached HEAD)
+/home/becker/projects/attune-flix-consolidation                   4dc4969e [migration/flix-consolidation-20261016]
+/home/becker/projects/attune-nim-consolidation                    49ec4ebc [migration/nix-nim-consolidation]
+/home/becker/projects/attune-nim-controllers                      47a65678 [migration/nim-controllers]
+/home/becker/projects/attune-nim-desktop                          fce7ad89 [migration/portable-desktop]
+/home/becker/projects/attune-nim-parity                           6c027b84 [migration/nim-parity]
+/home/becker/projects/attune-nim-parquet                          bd295f53 [migration/parquet-capability]
+/home/becker/projects/attune-nim-substrate                        42ef0347 [migration/nim-substrate]
+
+=== /home/becker/projects/attuneflix-parallelism-codex ===
+--- git log -1 ---
+fatal: not a git repository: (null)
+--- git status --porcelain (count then listing) ---
+1
+fatal: not a git repository: (null)
+--- git worktree list ---
+fatal: not a git repository: (null)
+
+=== /home/becker/projects/attuneflix-tree-reuse ===
+--- git log -1 ---
+09e78c7dc1dec0161f909b7bd398c1caf73e3116  (HEAD -> profiling, wt/20261004-201927)
+Snapshot completed AttuneFlix tree-reuse experiment
+--- git status --porcelain (count then listing) ---
+18
+ M flake.nix
+ M flix.toml
+AM native/viz/build
+ M repomix-output.xml
+ M src/TreeReuse.flix
+?? native/perf/
+?? native/viz/AttuneViz.java
+?? native/viz/AttuneVizTest.java
+?? native/viz/VizHandle.java
+?? native/viz/web/
+?? profiles/
+?? reports/
+?? src/CompiledSemantics.flix
+?? src/CompiledViz.flix
+?? src/CompiledVizTest.flix
+?? src/Viz.flix
+?? tools/
+?? web/
+--- git worktree list ---
+/home/becker/projects/attuneflix-tree-reuse                                   09e78c7 [profiling]
+/home/becker/.local/state/morph-lab/chat-config/wt/wt-20261004-201927-76b6fc9 09e78c7 [wt/20261004-201927] prunable
+
+=== /home/becker/experiments campaign dirs ===
+# Git checkouts found (nested .git within 2 levels); non-git dirs recorded by name only.
+not-a-git-checkout: /home/becker/experiments/astra-jev-trace-audit-20261011/
+not-a-git-checkout: /home/becker/experiments/astra-jev-trace-followup-20261011/
+not-a-git-checkout: /home/becker/experiments/atlas-history-20261011/
+not-a-git-checkout: /home/becker/experiments/atlas-metric-semantics-20261011/
+not-a-git-checkout: /home/becker/experiments/atlas-nonempty-reuse-20261012/
+not-a-git-checkout: /home/becker/experiments/atlas-repository-discrimination-20261012/
+not-a-git-checkout: /home/becker/experiments/atlas-representation-investigation-20261012/
+not-a-git-checkout: /home/becker/experiments/atlas-spider-revisited-20261012/
+not-a-git-checkout: /home/becker/experiments/attune-agreement-recovery-20261013/
+not-a-git-checkout: /home/becker/experiments/attune-agreement-recovery-20261013-v2/
+not-a-git-checkout: /home/becker/experiments/attune-cegis-repair-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-confidence-gate-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-coverage-fuzzer-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-enumeration-novelty-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-fast-evaluator-integration-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-feedback-history-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-fixture-search-20261015/
+
+=== /home/becker/experiments/attune-flix-parlevel-20261015/flix-src/ (under /home/becker/experiments/attune-flix-parlevel-20261015/) ===
+0832e818521c524bacef1cd3c046e2f3f0db9db9  (grafted, HEAD, tag: v0.76.1) feat: release 0.76.1 (#13300)
+1
+not-a-git-checkout: /home/becker/experiments/attune-headroom-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-heuristic-saturation-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-jev-async-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-jev-cadence-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-jev-path-only-20261011/
+not-a-git-checkout: /home/becker/experiments/attune-jev-rl-diagnostics-20261014/
+not-a-git-checkout: /home/becker/experiments/attune-jev-search-20261014/
+not-a-git-checkout: /home/becker/experiments/attune-jev-search-scale-20261014/
+not-a-git-checkout: /home/becker/experiments/attune-jev-structural-restore-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-localization-ascii-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-localization-pattern-census-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-localization-quality-20261014/
+
+=== /home/becker/experiments/attune-native-patterns-20261013/checkout/ (under /home/becker/experiments/attune-native-patterns-20261013/) ===
+15cdb0452bc86492d0f5ba1a91b753c2d56cd52b  (HEAD, studio/parallel-startup-2026-10-13) Parallelize Studio startup requests and default to Preact
+32
+not-a-git-checkout: /home/becker/experiments/attune-naturalness-localness-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-overnight-learner-selection-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-policy-algebra-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-probability-rank-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-probability-rank-fresh-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-probability-rank-scale-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-puct-jev-escape-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-quality-diversity-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-ranking-puct-pilot-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-ranking-synthesis-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-reference-evidence-jev-20261015/
+not-a-git-checkout: /home/becker/experiments/attune-relational-navigation-20261012/
+not-a-git-checkout: /home/becker/experiments/attune-repository-scaling-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-repository-specialization-20261013/
+not-a-git-checkout: /home/becker/experiments/attune-research-factory-20261016/
+not-a-git-checkout: /home/becker/experiments/attune-retained-study-inputs/
+not-a-git-checkout: /home/becker/experiments/attune-review-acquisition-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-review-evidence-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-review-hillclimb-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-review-interactive-20261010/
+not-a-git-checkout: /home/becker/experiments/attune-review-model-transfer-20261009/
+not-a-git-checkout: /home/becker/experiments/attune-thesis-feasibility-audit-20261010/
+not-a-git-checkout: /home/becker/experiments/mercury-reviewbench-20261009-high/
+not-a-git-checkout: /home/becker/experiments/mercury-reviewbench-20261009-pilot/
+
+=== cached baseline/evidence top-level existence (names only, no recursion into contents) ===
+/home/becker/.cache/attune-migration/baseline-20261015 mtime_epoch=1792106702
+14
