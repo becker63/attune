@@ -1,0 +1,20 @@
+Ruby,attune/example/cart.rb,attune/example/cart.rb,1,1,0,0,0,32,0
+Ruby,attune/example/mail.rb,attune/example/mail.rb,1,1,0,0,0,22,0
+Shell,attune/experiments/native_patterns/tools/jev_matched_replay.sh,attune/experiments/native_patterns/tools/jev_matched_replay.sh,26,24,2,0,0,1350,0
+C Header,attune/platform/support/grit/attune_grit.h,attune/platform/support/grit/attune_grit.h,35,19,10,6,0,956,0
+Patch,attune/platform/support/grit/patches/contains-state.patch,attune/platform/support/grit/patches/contains-state.patch,9,9,0,0,0,387,0
+Scheme,attune/platform/zed/languages/flix/brackets.scm,attune/platform/zed/languages/flix/brackets.scm,3,3,0,0,0,69,0
+Scheme,attune/platform/zed/languages/flix/highlights.scm,attune/platform/zed/languages/flix/highlights.scm,90,72,2,16,0,3107,0
+Scheme,attune/platform/zed/languages/flix/outline.scm,attune/platform/zed/languages/flix/outline.scm,6,6,0,0,0,293,0
+Ruby,attune/test/grit/fixtures/instance/register.rb,attune/test/grit/fixtures/instance/register.rb,13,7,5,1,0,416,0
+Ruby,attune/test/grit/fixtures/negative/ambiguous/caller.rb,attune/test/grit/fixtures/negative/ambiguous/caller.rb,17,11,4,2,0,429,0
+Ruby,attune/test/grit/fixtures/negative/ambiguous/left.rb,attune/test/grit/fixtures/negative/ambiguous/left.rb,9,7,1,1,0,191,0
+Ruby,attune/test/grit/fixtures/negative/ambiguous/right.rb,attune/test/grit/fixtures/negative/ambiguous/right.rb,11,9,1,1,0,197,0
+Ruby,attune/test/grit/fixtures/negative/computed_require.rb,attune/test/grit/fixtures/negative/computed_require.rb,5,1,3,1,0,207,0
+Ruby,attune/test/grit/fixtures/negative/dynamic_dispatch.rb,attune/test/grit/fixtures/negative/dynamic_dispatch.rb,11,7,3,1,0,301,0
+Ruby,attune/test/grit/fixtures/negative/missing_require.rb,attune/test/grit/fixtures/negative/missing_require.rb,5,1,3,1,0,197,0
+Ruby,attune/test/grit/fixtures/negative/reopened_declaration.rb,attune/test/grit/fixtures/negative/reopened_declaration.rb,24,17,4,3,0,501,0
+Ruby,attune/test/grit/fixtures/shop/checkout.rb,attune/test/grit/fixtures/shop/checkout.rb,11,8,1,2,0,219,0
+Ruby,attune/test/grit/fixtures/shop/pricing.rb,attune/test/grit/fixtures/shop/pricing.rb,12,9,2,1,0,270,0
+Ruby,attune/test/grit/fixtures/shop/receipt.rb,attune/test/grit/fixtures/shop/receipt.rb,14,10,1,3,0,306,0
+SQL,infra/ingest/schema.sql,infra/ingest/schema.sql,34,33,1,0,0,2582,0

@@ -1,0 +1,16 @@
+Java,attune/experiments/native_patterns/legacy/AttuneGrit.java,attune/experiments/native_patterns/legacy/AttuneGrit.java,127,86,32,9,0,5259,0
+Java,attune/platform/browser/Browser.java,attune/platform/browser/Browser.java,19,16,2,1,0,962,0
+Java,attune/platform/browser/CompileFlix.java,attune/platform/browser/CompileFlix.java,43,40,1,2,0,2259,0
+Java,attune/platform/browser/CompileWasm.java,attune/platform/browser/CompileWasm.java,40,37,1,2,0,1888,0
+Java,attune/platform/browser/Port.java,attune/platform/browser/Port.java,9,7,1,1,0,381,0
+Java,attune/platform/browser/TConcurrentLinkedQueue.java,attune/platform/browser/TConcurrentLinkedQueue.java,21,13,6,2,0,899,0
+Java,attune/platform/tools/boundary/Manifest.java,attune/platform/tools/boundary/Manifest.java,48,42,2,4,0,2096,0
+Java,attune/platform/tools/boundary/NativeLaunch.java,attune/platform/tools/boundary/NativeLaunch.java,158,140,5,13,0,7241,0
+Java,attune/platform/tools/boundary/NativeTester.java,attune/platform/tools/boundary/NativeTester.java,73,63,6,4,0,3263,0
+Java,attune/platform/tools/grit/AttuneGritNative.java,attune/platform/tools/grit/AttuneGritNative.java,134,99,22,13,0,6120,0
+Java,attune/platform/tools/inference/AttuneDecisions.java,attune/platform/tools/inference/AttuneDecisions.java,47,12,29,6,0,1951,0
+Java,attune/platform/tools/inference/ChoiceTransport.java,attune/platform/tools/inference/ChoiceTransport.java,22,18,1,3,0,1014,0
+Java,attune/platform/tools/inference/OpenRouterDecisions.java,attune/platform/tools/inference/OpenRouterDecisions.java,181,132,32,17,0,7559,0
+Java,attune/test/browser/GritProbe.java,attune/test/browser/GritProbe.java,15,14,1,0,0,798,0
+Java,attune/test/grit/GritFixtures.java,attune/test/grit/GritFixtures.java,59,38,16,5,0,2319,0
+Java,web/site/sources/atlas-lookup.java,web/site/sources/atlas-lookup.java,13,13,0,0,0,646,0

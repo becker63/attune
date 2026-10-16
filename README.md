@@ -9,6 +9,32 @@ Attune separates a calculation from the expensive work it asks for. The same
 Flix code can use a saved answer, a shared web result, or an artifact built for
 an experiment. Exact inputs and tests determine when reuse is valid.
 
+## Branch status: Flix/Bazel consolidation mission
+
+This checkout (branch `migration/flix-consolidation-20261016`, base
+`d268c9b2b236e229fdcec352c9116dbb7f8c801d`) hosts the 2026-10-16 Flix/Bazel
+consolidation mission: the user specification is preserved at
+[`mission/ATTUNE_FLIX_BAZEL_DROID_MISSION_2026-10-16.md`](mission/ATTUNE_FLIX_BAZEL_DROID_MISSION_2026-10-16.md),
+and the mission ledgers live at the repo root —
+[`BASE_SELECTION.md`](BASE_SELECTION.md), [`ARCHITECTURE.md`](ARCHITECTURE.md),
+[`RESPONSIBILITIES.md`](RESPONSIBILITIES.md),
+[`LANGUAGE_BOUNDARIES.md`](LANGUAGE_BOUNDARIES.md),
+[`JAVA_SEAMS.md`](JAVA_SEAMS.md), [`SIZE_AND_CLOSURE.md`](SIZE_AND_CLOSURE.md), and
+[`VALIDATION.md`](VALIDATION.md).
+
+Current state (M0): the working sources are the frozen pre-Nim baseline; no application
+rewrite has happened yet, and the executable source-policy gates arrive with M1 — the
+new `nix run .#lint` / `.#typecheck` / `.#test` entry points **do not exist yet** and
+must not be assumed. Known baseline failure, preserved as found: the public
+`bazel test //...` gate currently fails at loading (`novelty_batches.bzl` /
+`quality_batches.bzl` / `scale_batches.bzl` are absent from the frozen tree); the repair
+is planned M1 work and is not suppressed. Safe pinned commands meanwhile are the
+development commands in [`attune/AGENTS.md`](attune/AGENTS.md) (`nix run`,
+`nix run .#test` in `attune/`, saved-answer, no provider) and the manifest commands in
+the mission's `services.yaml`, which pin Bazel 8.6.0 and a dedicated output base. The
+original, Nim-era, and campaign checkouts are read-only references; never reset, clean,
+or stage in them.
+
 ## One program, two execution models
 
 ```mermaid

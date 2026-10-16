@@ -8,3 +8,9 @@ Python baseline is retained in this commit and an external source snapshot.
 
 No campaign, production service, paid inference request or physical disk operation
 is authorized by parity validation. Tests use isolated frozen offline fixtures.
+
+`python-coverage-ledger.json` (added 2026-10-16, M0): verified copy of the per-path
+Python coverage ledger prepared for exactly this baseline revision — its
+`baseline_revision` field is `d268c9b2b236e229fdcec352c9116dbb7f8c801d` and all 115
+recorded sha256 entries were re-verified against this checkout's files. It backs
+`RESPONSIBILITIES.md`; it is evidence, not new-scope authority.
