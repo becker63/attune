@@ -1,0 +1,78 @@
+# Feature-branch CI for the frozen source-policy gate.
+#
+# The scanner is independently compiled on this runner from the pushed
+# sources with the pinned Flix compiler; no prebuilt scanner artifact is
+# trusted from anywhere else. The proposed tree is then data to that
+# scanner: the gate reads Git metadata and file bytes and never executes
+# what it scans.
+#
+# This workflow file never marks enforcement PASS. A run outcome is only
+# recorded from the actual run (or escalated as BLOCKED when no run is
+# possible); the YAML's presence proves nothing.
+name: Source policy
+on:
+  push:
+    branches: [migration/flix-consolidation-20261016]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: source-policy-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: DeterminateSystems/nix-installer-action@v16
+
+      # Independently compiled trusted scanner bootstrap: compile the gate
+      # binary from the pushed tree with the pinned Flix compiler before any
+      # other step relies on it.
+      - name: Independently compile the trusted scanner from the pushed sources
+        run: |
+          nix develop --command bash -c \
+            'cd attune && bazel --output_base="$HOME/.cache/attune-ci-base" build //policy:source_policy'
+
+      # Policy-first public lint gate: materializes the fresh proposed-graph
+      # aquery dump, runs the live scanner (classification, anti-smuggling
+      # content scan, declared build-input audit), then buildifier, nixfmt
+      # and the Bazel version pins.
+      - name: Policy-first lint gate
+        run: nix run .#lint
+
+      # Presubmit typecheck: the declared compilation targets of the changed
+      # authored Flix files are built and run with the pinned compiler. On a
+      # clean CI checkout there are no changed files, so this exercises the
+      # committed-tree classification and the aquery build-input audit.
+      - name: Presubmit typecheck over declared compilation targets
+        run: nix run .#typecheck
+
+      # The scanner's own laws on real data: the adversarial corpus
+      # (including the staged, modified-tracked and committed disguised-Flix
+      # negatives, the legitimate uncommitted cross-module presubmit case and
+      # the live unreadable file/directory fail-closed controls), the pin and
+      # dependency-size delta laws, the declared-source policy and the
+      # hermetic build-input laws.
+      #
+      # The live workspace-audit test is deliberately absent from this CI
+      # list: it is a workstation gate that reports the owner's unclassified
+      # preserved evidence (attune/AGENTS.md) and stays visible in every
+      # local `bazel test //...` and in `nix run .#test`. This explicit,
+      # documented scope is not a silent exclusion; the CI outcome is still
+      # recorded exactly as it lands.
+      - name: Scanner corpus and pin laws
+        run: |
+          nix develop --command bash -c \
+            'cd attune && bazel --output_base="$HOME/.cache/attune-ci-base" test \
+              //test/policy:adversarial_corpus_test \
+              //test/policy:pin_law_test \
+              //test/policy:policy_cases_test \
+              //test/policy:smuggle_law_test \
+              //test/policy:build_input_law_test \
+              //test/policy:frozen_debt_law_test \
+              //test/policy:declared_source_policy_test \
+              --test_output=errors'

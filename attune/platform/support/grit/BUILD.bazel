@@ -52,12 +52,21 @@ rust_shared_library(
 # Fixed-program server subprocess; unlike the JVM ABI it never caches answers.
 rust_binary(
     name = "grit_runner",
-    srcs = ["main.rs", "lib.rs"],
-    crate_root = "main.rs",
+    srcs = [
+        "lib.rs",
+        "main.rs",
+    ],
     aliases = aliases(package_name = "attune-grit"),
+    crate_root = "main.rs",
     edition = crate_edition(package_name = "attune-grit"),
-    proc_macro_deps = all_crate_deps(package_name = "attune-grit", proc_macro = True),
-    deps = all_crate_deps(package_name = "attune-grit", normal = True) + [
+    proc_macro_deps = all_crate_deps(
+        package_name = "attune-grit",
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        package_name = "attune-grit",
+        normal = True,
+    ) + [
         "@gritql_source//crates/core:marzano_core",
         "@gritql_source//crates/language:marzano_language",
         "@gritql_source//crates/util:marzano_util",

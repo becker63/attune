@@ -48,6 +48,11 @@ __pycache__/
 /attune/platform/zed/target/
 /attune/platform/zed/grammars/
 /attune/platform/zed/extension.wasm
+
+# The fresh proposed-graph aquery dump the public commands materialize and
+# the source-policy gate audits. It is a per-checkout derived artifact: the
+# commands regenerate it from the current graph before every gate run.
+/attune/.attune/
 result
 result-*
 *.class

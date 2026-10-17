@@ -37,10 +37,10 @@ pub mod Attune.Frozen.Check {
             case _: IOException => Err("not decodable text")
         })
 
-    def regularCarriers(files: Map[String, Frozen.FileEntry], manifested: String -> Bool): List[(String, Frozen.FileEntry)] =
+    def regularCarriers(files: Map[String, Frozen.FileEntry], manifested: String -> Bool, trusted: String -> Bool): List[(String, Frozen.FileEntry)] =
         List.filterMap(match (rel, file) ->
             if (file#kind == "file" and file#readable and not manifested(rel) and
-                not Frozen.protected(rel) and not Frozen.trustedConfig(rel) and
+                not Frozen.protected(rel) and not trusted(rel) and
                 Frozen.authoredAllowed(rel))
                 Some((rel, file))
             else None, Map.toList(files))
@@ -57,10 +57,14 @@ pub mod Attune.Frozen.Check {
     /// The anti-smuggling content scan over every manifested-or-allowed
     /// carrier: allowed-language files are the only carriers that can launder
     /// without failing classification, so they are exactly the files scanned.
-    /// Returns the number of carriers scanned and their findings.
+    /// The trustedConfig exemption is digest-checked (a detector edit without
+    /// the explicit manifest re-anchor loses its exemption). Returns the
+    /// number of carriers scanned and their findings.
     pub def contentScan(root: String, files: Map[String, Frozen.FileEntry], manifests: Frozen.Manifests): (Int32, List[Finding]) \ IO = {
         let manifestedPaths = pathSetOf(manifests);
-        let carriers = regularCarriers(files, p -> Map.memberOf(p, manifestedPaths));
+        let digests = manifests#debt#scannerDigests;
+        let carriers = regularCarriers(files, p -> Map.memberOf(p, manifestedPaths),
+            rel -> Frozen.trustedConfigExempt(rel, digests, files));
         let findings = List.flatMap(match (rel, _file) ->
             match readCarrier(root, rel) {
                 case Ok(content) => Smuggle.scanCarrier(rel, content)
@@ -79,21 +83,25 @@ pub mod Attune.Frozen.Check {
     // ------------------------------------------------------ flix compiler
 
     /// The pinned Flix compiler in `check` mode, applied where it is the only
-    /// authority. A .flix file outside the Git index (untracked and unstaged)
-    /// is never compiled by any Bazel target, so it must compile standalone
-    /// with zero errors: any error means the file only carries the extension
-    /// (the retained nim-disguised-flix escape). Indexed files are exempt
-    /// because their declared Bazel targets already compile them with the
-    /// pinned compiler; data-manifested fragments are exempt because they are
-    /// accounted content, never compiled. Returns a status string and the
-    /// findings.
+    /// authority. This closes the retained nim-disguised-flix escape for
+    /// good: neither staging nor committing a file proves its content valid
+    /// (the retained historical bypass added a Nim program named .flix to the
+    /// Git index and the index membership exempted it). Every authored .flix
+    /// file must either be covered by an actual declared compilation group —
+    /// a target of the proposed graph whose pinned compilation action names
+    /// the file, cross-module dependencies included — or compile standalone
+    /// with zero errors. A committed-but-undeclared file is uncovered and is
+    /// compiled standalone wherever it sits; a merely staged file likewise.
+    /// Data-manifested fragments (including the benign documented immutable
+    /// Flix examples) are exempt because they are accounted content, never
+    /// compiled. Returns a status string and the findings.
     pub def flixParse(root: String, javaBin: String, flixJar: String, files: Map[String, Frozen.FileEntry],
-        manifested: String -> Bool, index: Map[String, Bool]): Result[String, (String, List[Finding])] \ IO = {
+        manifested: String -> Bool, trusted: String -> Bool, declared: Map[String, Bool]): Result[String, (String, List[Finding])] \ IO = {
         let paths = List.filterMap(match (rel, file) ->
             if (file#kind == "file" and file#readable and not manifested(rel) and
-                not Frozen.protected(rel) and not Frozen.trustedConfig(rel) and
+                not Frozen.protected(rel) and not trusted(rel) and
                 String.endsWith(suffix = ".flix", rel) and
-                not Map.memberOf(rel, index))
+                not Map.memberOf(rel, declared))
                 Some(rel)
             else None, Map.toList(files));
         let results = List.map(path -> checkStandalone(javaBin, flixJar, root, path), paths);
@@ -102,7 +110,7 @@ pub mod Attune.Frozen.Check {
             case Ok(_) => false
         }, results) {
             case Some(Err(reason)) => Err(reason)
-            case _ => Ok((Int32.toString(List.length(paths)) + " unindexed files checked",
+            case _ => Ok((Int32.toString(List.length(paths)) + " uncovered files checked",
                 List.flatMap(r -> Result.getWithDefault(Nil, r), results)))
         }
     }
@@ -159,15 +167,22 @@ pub mod Attune.Frozen.Check {
 
     // -------------------------------------------------------- build inputs
 
-    /// The declared build-input scan: the aquery dump is read as data and
-    /// every declared input must belong to the inventoried population.
-    /// Returns a status string and the findings.
-    pub def buildInputs(aqueryDump: String, scan: Frozen.Scan): Result[String, (String, List[Finding])] \ IO =
-        FileRead.runWithIO(() -> forM (
-            text <- Result.mapErr(_ -> "cannot read the aquery dump", FileRead.read(aqueryDump));
-            inputs <- Inputs.parseInputs(text)
-        ) yield (Int32.toString(List.length(inputs)) + " declared inputs checked",
-            Inputs.inputFindings(inputs, scan)))
+    /// Parse the aquery dump once: the resolved dump feeds both the declared
+    /// Flix compilation coverage and the input audit. Any structural failure
+    /// fails the dump.
+    pub def buildInputRecords(dumpText: String): Result[String, Inputs.Dump] =
+        Inputs.parseActions(dumpText)
+
+    /// The declared build-input audit over the parsed dump: every declared
+    /// input must belong to the inventoried population. Returns a status
+    /// string and the findings.
+    pub def buildInputs(dump: Inputs.Dump, scan: Frozen.Scan, workspacePrefix: String): (String, List[Finding]) =
+        match Inputs.allInputPaths(dump) {
+            case Err(reason) => ("failed", List#{Finding.InventoryFailure("aquery dump failed: " + reason)})
+            case Ok(inputs) =>
+                (Int32.toString(List.length(inputs)) + " declared inputs checked",
+                    Inputs.inputFindings(inputs, scan, workspacePrefix))
+        }
 
     // ----------------------------------------------------------- processes
 

@@ -6,4 +6,7 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-exports_files(glob(["*.rs", "*.patch"]))
+exports_files(glob([
+    "*.rs",
+    "*.patch",
+]))

@@ -34,8 +34,31 @@ native_flix_checkout_binary(
         "@flix_compiler//jar:downloaded.jar",
     ],
     git_bin = "@local_checkout//:git.txt",
+    platform_isolation = True,
 )
 
 exports_files([
     "PolicyMain.flix",
 ])
+
+# The presubmit typecheck plan: maps changed and new authored Flix files
+# onto their declared compilation targets from the proposed graph's fresh
+# aquery dump (.attune/aquery-dump.json). The public typecheck command runs
+# the source-policy gate first, then builds and runs the targets this plan
+# prints, so valid uncommitted cross-module work passes before commit
+# through its declared target with the pinned compiler.
+native_flix_checkout_binary(
+    name = "typecheck_plan",
+    srcs = [
+        "TypecheckPlan.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Inputs.flix",
+        "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
+    ],
+    checkout_root = "@local_checkout//:checkout_root.txt",
+    git_bin = "@local_checkout//:git.txt",
+    platform_isolation = True,
+)

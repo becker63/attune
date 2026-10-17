@@ -54,7 +54,8 @@ pub mod Attune.Frozen {
         baselineDebtCount = String,
         entries = List[DebtEntry],
         retirements = List[Retirement],
-        seams = List[Seam]
+        seams = List[Seam],
+        scannerDigests = List[(String, String)]
     }
 
     /// Shared class semantics for data and generated provenance entries.
@@ -155,6 +156,7 @@ pub mod Attune.Frozen {
         case ProtectedPresent(String)
         case RevivedRetirement(String)
         case SchemaError(String)
+        case ScannerDigestDrift(String)
         case SmuggledContent(String, String)
         case StagedFrozenChange(String)
         case SymlinkEscape(String, String)
@@ -191,26 +193,57 @@ pub mod Attune.Frozen {
     /// Authored allowed source: the four allowed languages plus documentation
     /// and the exact, enumerated build/config file names. No directory or
     /// extension admits anything else; a new data-shaped path needs an
-    /// explicit provenance record in a manifest first.
+    /// explicit provenance record in a manifest first. Trusted configuration
+    /// is admitted by classify through the digest-checked exemption, not
+    /// here, so a new path smuggled into the trusted list cannot pass
+    /// classification on list membership alone.
     pub def authoredAllowed(path: String): Bool =
         List.exists(suffix -> String.endsWith(suffix = suffix, path), List#{".flix", ".nix", ".bzl", ".md", ".mdx"}) or
         List.memberOf(baseName(path), List#{
             "BUILD.bazel", "MODULE.bazel", "REPO.bazel",
             ".gitignore", ".bazelrc", ".bazelignore", ".bazelversion", ".repomixignore", ".mintignore"
-        }) or
-        trustedConfig(path)
+        })
 
     /// The policy's own files: trusted configuration, read as data, never
     /// classified against themselves or content-scanned. The three manifests
-    /// are schema-validated data; the content detector's own source must
-    /// carry its markers and corpus shapes as quoted literals, so it cannot
-    /// be content-scanned by itself. Both are exact enumerated paths, part
-    /// of the independently compiled trusted scanner, and Git-tracked.
-    pub def trustedConfig(path: String): Bool =
+    /// are schema-validated data. The detector source must carry its markers
+    /// and corpus shapes as quoted literals, so it cannot be content-scanned
+    /// by itself; its exemption applies only while the file's bytes still
+    /// match the digest recorded in the debt manifest at the trusted scanner
+    /// revision (see trustedConfigExempt). All are exact enumerated paths,
+    /// part of the independently compiled trusted scanner, and Git-tracked.
+    pub def trustedConfigPaths(): List[String] = List#{
+        "policy/debt-manifest.json", "policy/data-manifest.json", "policy/generated-manifest.json",
+        "attune/src/Attune/Frozen/Smuggle.flix"
+    }
+
+    pub def trustedConfig(path: String): Bool = List.memberOf(path, trustedConfigPaths())
+
+    /// The three manifest files: exempt as schema-validated data. They
+    /// cannot pin their own digests without self-reference.
+    def trustedManifestPath(path: String): Bool =
         List.memberOf(path, List#{
-            "policy/debt-manifest.json", "policy/data-manifest.json", "policy/generated-manifest.json",
-            "attune/src/Attune/Frozen/Smuggle.flix"
+            "policy/debt-manifest.json", "policy/data-manifest.json", "policy/generated-manifest.json"
         })
+
+    /// The trustedConfig exemption is not self-authorizing: for a
+    /// non-manifest path it applies only when the worktree digest equals the
+    /// digest recorded in the debt manifest's scannerDigests at the trusted
+    /// scanner revision. A detector file modified without an explicit,
+    /// reviewed manifest edit loses its exemption and is judged like any
+    /// other carrier.
+    pub def trustedConfigExempt(path: String, digests: List[(String, String)], files: Map[String, FileEntry]): Bool =
+        if (not trustedConfig(path))
+            false
+        else if (trustedManifestPath(path))
+            true
+        else match List.find(pair -> fst(pair) == path, digests) {
+            case Some(pair) => match Map.get(path, files) {
+                case Some(file) => file#kind == "file" and file#readable and file#sha256 == snd(pair)
+                case None => false
+            }
+            case None => false
+        }
 
     /// Protected paths are never read or hashed; contents stay unknown.
     pub def protected(path: String): Bool =
@@ -272,7 +305,7 @@ pub mod Attune.Frozen {
             List#{Finding.BaselineEvidenceChanged(debt#evidenceDigest, scan#evidenceDigest)};
 
         // Schema and accountability invariants.
-        let schema = schemaFindings(manifests, baseCount);
+        let schema = schemaFindings(manifests, baseCount, scan#files);
 
         // Protected paths are reported present and never read.
         let protectedFound = List.filterMap(p ->
@@ -290,7 +323,12 @@ pub mod Attune.Frozen {
 
         // Classification: every path is authored allowed, manifested, or refused.
         let unclassified = List.filterMap(p ->
-            classify(p, entryMap, dataMap, generatedMap), allPaths);
+            classify(p, entryMap, dataMap, generatedMap, debt#scannerDigests, scan#files), allPaths);
+
+        // The pinned scanner sources must still match the digests recorded at
+        // the trusted scanner revision; a detector edit without the explicit
+        // manifest edit is a finding (a detector cannot self-authorize).
+        let scannerDrift = scannerDigestFindings(debt#scannerDigests, scan#files);
 
         // Symlinks are never followed into reads; an escaping raw target is
         // refused outright.
@@ -335,9 +373,22 @@ pub mod Attune.Frozen {
                 None, Map.toList(retiredMap));
 
         pushAll(evidenceFinding, Nil) ++ schema ++ protectedFound ++ escapes ++ missing ++
-            unclassified ++ symlinkEscapes ++ dropped ++ relabeled ++ identity ++ growth ++ revived |>
+            unclassified ++ symlinkEscapes ++ dropped ++ relabeled ++ identity ++ growth ++ revived ++
+            scannerDrift |>
             composeWalk(scan#findings)
     }
+
+    /// Every pinned scanner source must still match its recorded digest.
+    /// The recorded digests live in the debt manifest (trusted configuration,
+    /// schema-checked); a mismatch means a detector source was edited without
+    /// the explicit, reviewed manifest edit that re-anchors it.
+    def scannerDigestFindings(digests: List[(String, String)], files: Map[String, FileEntry]): List[Finding] =
+        List.filterMap(pair -> match Map.get(fst(pair), files) {
+            case Some(file) =>
+                if (file#kind == "file" and file#readable and file#sha256 == snd(pair)) None
+                else Some(Finding.ScannerDigestDrift(fst(pair)))
+            case None => None
+        }, digests)
 
     /// The walker's own findings (unreadable directories, files, and other
     /// paths it could not classify) are part of the verdict: composing them
@@ -371,15 +422,24 @@ pub mod Attune.Frozen {
         case None => false
     }
 
-    def classify(path: String, entryMap: Map[String, DebtEntry], dataMap: Map[String, DataEntry], generatedMap: Map[String, GeneratedEntry]): Option[Finding] =
+    def classify(path: String, entryMap: Map[String, DebtEntry], dataMap: Map[String, DataEntry], generatedMap: Map[String, GeneratedEntry],
+        digests: List[(String, String)], files: Map[String, FileEntry]): Option[Finding] =
         if (protected(path)) None
         else if (Map.memberOf(path, entryMap) or Map.memberOf(path, dataMap) or Map.memberOf(path, generatedMap)) None
+        else if (trustedConfigExempt(path, digests, files)) None
         else if (authoredAllowed(path)) None
         else match debtLanguage(path) {
             case Some(language) => Some(Finding.ForbiddenLanguage(path, language))
             case None => Some(Finding.PathUnclassified(path))
         }
 
+    /// Debt is anchored in the immutable baseline evidence and may never be
+    /// edited at all (it only shrinks through recorded retirements), so a
+    /// staged or worktree-modified debt file is a finding outright. Data and
+    /// generated paths are anchored by their manifest digests instead: an
+    /// edit without the manifest re-anchor already fails the content hash,
+    /// and a legitimate re-anchor (file and manifest changed together, the
+    /// reviewable provenance change) must be able to pass before commit.
     def debtIdentityFindings(entries: List[DebtEntry], evidence: Evidence, scan: Scan): List[Finding] =
         List.foldLeft((acc, entry) -> {
             let path = entry#path;
@@ -408,7 +468,7 @@ pub mod Attune.Frozen {
                 case Some(file) => fileFindings(path, file, entry#sha256)
                 case None => Nil
             };
-            pushAll(content, pushAll(stagedFindings(path, scan), acc))
+            pushAll(content, acc)
         }, Nil, Map.toList(entries))
 
     def generatedIdentityFindings(entries: Map[String, GeneratedEntry], scan: Scan): List[Finding] =
@@ -418,13 +478,8 @@ pub mod Attune.Frozen {
                 case Some(file) => fileFindings(path, file, entry#sha256)
                 case None => Nil
             };
-            pushAll(content, pushAll(stagedFindings(path, scan), acc))
+            pushAll(content, acc)
         }, Nil, Map.toList(entries))
-
-    def stagedFindings(path: String, scan: Scan): List[Finding] =
-        if (List.memberOf(path, scan#staged) or List.memberOf(path, scan#modified))
-            List#{Finding.StagedFrozenChange(path)}
-        else Nil
 
     def fileFindings(path: String, file: FileEntry, expected: String): List[Finding] =
         if (file#kind != "file") List#{Finding.NotRegularFile(path, file#kind)}
@@ -434,7 +489,7 @@ pub mod Attune.Frozen {
 
     // ------------------------------------------------------------ schema laws
 
-    def schemaFindings(manifests: Manifests, baseCount: Int32): List[Finding] = {
+    def schemaFindings(manifests: Manifests, baseCount: Int32, files: Map[String, FileEntry]): List[Finding] = {
         let debt = manifests#debt;
         let countField = match Int32.fromString(debt#baselineDebtCount) {
             case Some(value) =>
@@ -447,9 +502,35 @@ pub mod Attune.Frozen {
         else
             List#{Finding.SchemaError("manifest kind fields do not match their files")};
         countField ++ kindCheck ++ debtSchema(debt) ++ retirementSchema(debt#retirements) ++
-            seamSchema(debt#seams) ++ classSchema(manifests#data#classes) ++ classSchema(manifests#generated#classes) ++
+            seamSchema(debt#seams) ++ scannerDigestSchema(debt#scannerDigests, files) ++
+            classSchema(manifests#data#classes) ++ classSchema(manifests#generated#classes) ++
             dataSchema(manifests#data#entries, manifests#data#classes) ++
             generatedSchema(manifests#generated#entries, manifests#generated#classes)
+    }
+
+    /// The scanner digest pins: every entry needs a hex digest, every
+    /// trustedConfig path present in the scanned population that is not a
+    /// self-referential manifest must be pinned (its exemption is otherwise
+    /// unanchored), and no other path may self-authorize an exemption by
+    /// being pinned.
+    def scannerDigestSchema(digests: List[(String, String)], files: Map[String, FileEntry]): List[Finding] = {
+        let invalid = List.filterMap(pair ->
+            if (not hex(snd(pair)))
+                Some(Finding.SchemaError("scanner digest invalid: " + fst(pair)))
+            else None, digests);
+        let unpinned = List.filterMap(path ->
+            if (trustedConfig(path) and not trustedManifestPath(path) and
+                Map.memberOf(path, files) and
+                not List.exists(pair -> fst(pair) == path, digests))
+                Some(Finding.SchemaError("trusted-config path has no trusted-revision digest: " + path))
+            else None, trustedConfigPaths());
+        let foreign = List.filterMap(pair ->
+            if (trustedConfig(fst(pair)) and not trustedManifestPath(fst(pair)))
+                None
+            else
+                Some(Finding.SchemaError("scanner digest pins a non-detector path: " + fst(pair))),
+            digests);
+        invalid ++ unpinned ++ foreign
     }
 
     def debtSchema(debt: DebtManifest): List[Finding] =
@@ -547,6 +628,7 @@ pub mod Attune.Frozen {
         case Finding.ProducerMissing(path) => "producer-missing " + path
         case Finding.ProtectedPresent(path) => "protected-present (never read) " + path
         case Finding.RevivedRetirement(path) => "revived-retirement " + path
+        case Finding.ScannerDigestDrift(path) => "scanner-digest-drift (detector edit needs the recorded trusted-revision digest) " + path
         case Finding.SchemaError(reason) => "schema-error " + reason
         case Finding.SmuggledContent(path, shape) => "smuggled-content " + shape + " " + path
         case Finding.StagedFrozenChange(path) => "staged-frozen-change " + path

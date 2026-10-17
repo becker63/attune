@@ -9,6 +9,7 @@ pub mod Attune.Frozen.Scan {
     use Attune.Frozen
     use Attune.Frozen.Check
     use Attune.Frozen.Finding
+    use Attune.Frozen.Inputs
     use Attune.Frozen.{ClassRule, DataEntry, DebtEntry, FileEntry, GeneratedEntry, Retirement, Seam}
     use Fs.FileRead
 
@@ -134,7 +135,7 @@ pub mod Attune.Frozen.Scan {
             ".git", ".factory", ".pi", "attuneflix", "node_modules",
             ".venv", "venv", "__pycache__", ".direnv",
             ".pytest_cache", ".mypy_cache", ".ruff_cache",
-            ".next", ".vercel", ".artifacts", "test-results", "grammars"
+            ".next", ".vercel", ".artifacts", "test-results", "grammars", ".attune"
         }) or
         String.startsWith(prefix = "bazel-", name) or
         name == "result" or String.startsWith(prefix = "result-", name) or
@@ -142,6 +143,14 @@ pub mod Attune.Frozen.Scan {
         rel == "attune/platform/zed/extension.wasm" or
         rel == "web/next-env.d.ts" or
         rel == "web/tsconfig.tsbuildinfo"
+
+    /// The declared build-input audit's dump bytes, read as data at the
+    /// materialized path. An unreadable dump is a leg failure, never a skip.
+    def readAqueryDump(path: String): Result[String, String] \ IO = FileRead.runWithIO(() -> try
+        Ok(Files.readString(Paths.get(path), StandardCharsets.UTF_8))
+    catch {
+        case _: IOException => Err("aquery dump unreadable at " + path)
+    })
 
     /// Hash one regular file's bytes with the JVM digest.
     def hashFile(path: Path): Result[String, String] \ IO = FileRead.runWithIO(() -> try
@@ -351,12 +360,21 @@ pub mod Attune.Frozen.Scan {
         retirementValues <- listField(fields, "retirements");
         retirements <- parseAll(parseRetirement, retirementValues);
         seamValues <- listField(fields, "seams");
-        seams <- parseAll(parseSeam, seamValues)
+        seams <- parseAll(parseSeam, seamValues);
+        scannerObject <- match Map.get("scannerDigests", fields) {
+            case Some(Util.Json.Json.JObject(digestFields)) => Ok(digestFields)
+            case _ => Err("debt manifest has no scannerDigests object")
+        };
+        scannerDigests = List.map(match (path, value) -> match value {
+            case Util.Json.Json.JString(sha) => (path, sha)
+            case _ => (path, "-")
+        }, Map.toList(scannerObject))
     ) yield {
         schema = "attune-source-policy/1", kind = "debt",
         frozenAt = "", frozenAtHead = "", evidenceFile = evidenceFile,
         evidenceDigest = evidenceDigest, baselineDebtCount = baselineDebtCount,
-        entries = entries, retirements = retirements, seams = seams
+        entries = entries, retirements = retirements, seams = seams,
+        scannerDigests = scannerDigests
     }
 
     def parseDataManifest(text: String): Result[String, Frozen.DataManifest] = forM (
@@ -421,14 +439,6 @@ pub mod Attune.Frozen.Scan {
         }, Map.empty(), Map.toList(fileObject))
     }
 
-    /// The Git index as the committing population: every tracked path plus
-    /// every staged (added-to-index) path. Membership exempts a .flix file
-    /// from the standalone compiler check because a declared target compiles it.
-    pub def indexOf(trackedMap: Map[String, String], staged: List[String]): Map[String, Bool] =
-        List.foldLeft((m, p) -> Map.insert(p, true, m),
-            List.foldLeft((m, p) -> Map.insert(p, true, m), Map.empty(), staged),
-            List.map(match (k, _mode) -> k, Map.toList(trackedMap)))
-
     // ------------------------------------------------------------ composition
 
     /// One declared binding value: the launcher resolves each runfile path to
@@ -475,16 +485,52 @@ pub mod Attune.Frozen.Scan {
     /// compiler in check mode.
     pub def javaBin(): String \ IO = System.getProperty("java.home") + "/bin/java"
 
-    /// The pinned tools the content checks run with. The aquery dump is
-    /// optional: when absent the build-input leg reports not-run instead of
-    /// pretending it checked anything. The population root is the runfiles
-    /// directory holding the expanded declared-source population; when absent
-    /// the compiler leg reports not-run for the same reason.
+    /// The pinned tools the content checks run with. The aquery dump is the
+    /// declared build-input audit's data: the live gate requires a fresh dump
+    /// from the proposed graph and fails closed without one; the synthetic
+    /// corpus cases judge source shapes and run without a dump, which the
+    /// legs line reports honestly. The workspace prefix maps the dump's
+    /// workspace-relative input paths into the checkout-relative population
+    /// form ("attune/" for the nested workspace, "" for synthetic checkouts).
     pub type alias Tools = {
         javaBin = String,
         flixJar = String,
         nixInstantiate = String,
-        aqueryDump = Option[String]
+        aqueryDump = Option[String],
+        workspacePrefix = String
+    }
+
+    /// The live declared build-input audit reads the fresh dump the public
+    /// commands materialize from the proposed graph at this exact path:
+    /// inside the nested attune workspace when the checkout root hosts one
+    /// (the aquery runs from that workspace), or at the root itself for a
+    /// flat synthetic checkout.
+    pub def aqueryDumpPath(root: String): String \ IO =
+        if (new File(root, "attune/MODULE.bazel").exists())
+            root + "/attune/.attune/aquery-dump.json"
+        else
+            root + "/.attune/aquery-dump.json"
+
+    /// The changed and new authored Flix files of the checkout: staged,
+    /// worktree-modified, and eligible-untracked .flix paths that are not
+    /// manifested data, not protected, and not trusted configuration. The
+    /// presubmit plan maps these onto their declared compilation targets so
+    /// valid uncommitted cross-module work passes before commit through its
+    /// declared target.
+    pub def changedAuthoredFlix(git: String, root: String): Result[String, List[String]] \ IO = forM (
+        untracked <- others(git, root);
+        stagedModified <- status(git, root);
+        manifests <- loadManifests(root)
+    ) yield {
+        let (staged, modified) = stagedModified;
+        let manifested = Check.pathSetOf(manifests);
+        List.filterMap(p ->
+            if (String.endsWith(suffix = ".flix", p) and
+                not Map.memberOf(p, manifested) and
+                not Frozen.protected(p) and
+                not Frozen.trustedConfig(p))
+                Some(p)
+            else None, staged ++ modified ++ untracked)
     }
 
     /// The full scan of one checkout: Git populations, worktree census,
@@ -513,28 +559,62 @@ pub mod Attune.Frozen.Scan {
             let (contentCount, contentFindings) = Check.contentScan(root, files, manifests);
             // A pinned-tool failure is itself a finding (fail closed), never
             // a silent skip and never a scan-level Err that would hide the
-            // already-collected walker and manifest findings. The index is
-            // the committing population: untracked .flix files must compile
-            // standalone (they are compiled by no declared target).
-            let (flixStatus, flixFindings) = match Check.flixParse(root, tools#javaBin, tools#flixJar, files,
-                p -> Map.memberOf(p, Check.pathSetOf(manifests)), indexOf(trackedMap, staged)) {
-                case Ok((status, fs)) => (status, fs)
-                case Err(reason) => ("failed", List#{Finding.InventoryFailure("flix check failed: " + reason)})
+            // already-collected walker and manifest findings.
+            //
+            // The declared build-input audit parses the proposed graph's
+            // aquery dump once (the Tools binding carries the dump's path;
+            // the bytes are read here as data). The same records feed the
+            // declared Flix compilation coverage that closes the
+            // staged-disguised-flix escape: index or commit membership is
+            // not validity, so every authored .flix file must be covered by
+            // an actual declared compilation group (cross-module
+            // dependencies included) or pass the standalone pinned
+            // zero-error check. Without a dump no file has declared
+            // coverage, so the compiler leg standalone-checks every authored
+            // .flix file while only the build-input leg reports not-run
+            // honestly (the synthetic corpus cases judge source shapes; the
+            // live gate requires the dump and never reaches this arm).
+            let (flixStatus, inputsStatus, flixAndInputFindings) = match tools#aqueryDump {
+                case None => match Check.flixParse(root, tools#javaBin, tools#flixJar, files,
+                    p -> Map.memberOf(p, Check.pathSetOf(manifests)),
+                    rel -> Frozen.trustedConfigExempt(rel, manifests#debt#scannerDigests, files),
+                    Map.empty()) {
+                    case Ok((_status, fs)) => ("standalone-only (no declared aquery dump)", "not-run (no declared aquery dump)", fs)
+                    case Err(reason) =>
+                        ("failed", "not-run (no declared aquery dump)", List#{Finding.InventoryFailure("flix check failed: " + reason)})
+                }
+                case Some(dumpPath) => match readAqueryDump(dumpPath) {
+                    case Err(reason) =>
+                        ("failed", "failed", List#{Finding.InventoryFailure("aquery dump failed: " + reason)})
+                    case Ok(dumpText) => match Check.buildInputRecords(dumpText) {
+                        case Err(reason) =>
+                            ("failed", "failed", List#{Finding.InventoryFailure("aquery dump failed: " + reason)})
+                        case Ok(dump) => {
+                            let (inputsOk, inputFs) = Check.buildInputs(dump, scan, tools#workspacePrefix);
+                            match Inputs.declaredFlixPaths(dump, tools#workspacePrefix) {
+                                case Err(reason) =>
+                                    ("failed", inputsOk, List#{Finding.InventoryFailure("aquery dump failed: " + reason)} ++ inputFs)
+                                case Ok(declaredMap) =>
+                                    match Check.flixParse(root, tools#javaBin, tools#flixJar, files,
+                                        p -> Map.memberOf(p, Check.pathSetOf(manifests)),
+                                        rel -> Frozen.trustedConfigExempt(rel, manifests#debt#scannerDigests, files),
+                                        declaredMap) {
+                                        case Ok((status, fs)) => (status, inputsOk, fs ++ inputFs)
+                                        case Err(reason) =>
+                                            ("failed", inputsOk, List#{Finding.InventoryFailure("flix check failed: " + reason)} ++ inputFs)
+                                    }
+                            }
+                        }
+                    }
+                }
             };
             let (nixCount, nixFindings) = match Check.nixParse(root, tools#nixInstantiate, files) {
                 case Ok((count, fs)) => (count, fs)
                 case Err(reason) => (0, List#{Finding.InventoryFailure("nix parse failed: " + reason)})
             };
-            let (inputsStatus, inputFindings) = match tools#aqueryDump {
-                case Some(dump) => match Check.buildInputs(dump, scan) {
-                    case Ok((status, fs)) => (status, fs)
-                    case Err(reason) => ("failed", List#{Finding.InventoryFailure("build-input scan failed: " + reason)})
-                }
-                case None => ("not-run (no declared aquery dump)", Nil)
-            };
             let findings = Frozen.dedupe(
                 Frozen.verify(manifests, evidence, scan) ++
-                contentFindings ++ flixFindings ++ nixFindings ++ inputFindings);
+                contentFindings ++ flixAndInputFindings ++ nixFindings);
             let legs = "checks run: inventory " + Int32.toString(List.length(Map.toList(trackedMap))) + " tracked + " +
                 Int32.toString(List.length(untracked)) + " untracked, manifests, content-scan " +
                 Int32.toString(contentCount) + " carriers, flix " + flixStatus +

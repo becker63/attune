@@ -3302,5 +3302,8 @@
       "owner": "M7 boundary worker",
       "milestone": "M7"
     }
-  ]
+  ],
+  "scannerDigests": {
+    "attune/src/Attune/Frozen/Smuggle.flix": "7271663663d0fdde98d6c8cb850e3630c8ac417788d8f2adea264f6c7db03a6d"
+  }
 }

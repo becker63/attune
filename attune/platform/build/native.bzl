@@ -12,11 +12,18 @@ _PLATFORM = "//platform/build:platform_native_isolation"
 _LAUNCHER = "//platform/tools/boundary:native_launch"
 _JAVA = "@bazel_tools//tools/jdk:runtime_toolchain_type"
 
-def _isolation(host = False):
+def _isolation(host = False, force_platform = False):
+    if host:
+        data = [_UNSHARE, _CLOSURE]
+        return data, ["-Dattune.isolation=unshare", "-Dattune.unshare=$(rlocationpath %s)" % _UNSHARE]
+    if force_platform:
+        # Explicit platform isolation: no user namespace. Required by the
+        # source-policy fail-closed controls — the unshare namespace grants
+        # DAC override, under which every unreadable file would be readable
+        # and an unreadable-input control could never fail closed.
+        return [], ["-Dattune.isolation=platform"]
     data = [_UNSHARE, _CLOSURE]
     flags = ["-Dattune.isolation=unshare", "-Dattune.unshare=$(rlocationpath %s)" % _UNSHARE]
-    if host:
-        return data, flags
     return (
         select({_PLATFORM: [], "//conditions:default": data}),
         select({_PLATFORM: ["-Dattune.isolation=platform"], "//conditions:default": flags}),
@@ -58,8 +65,8 @@ declared_manifest = rule(
     attrs = {"srcs": attr.label_list(allow_files = True)},
 )
 
-def _program(name, srcs, java_deps = [], declared_files = [], native_libs = [], mode = "test", flags = [], data = [], tags = [], host = False, binary = False, size = "small"):
-    boundary, isolation_flags = _isolation(host)
+def _program(name, srcs, java_deps = [], declared_files = [], native_libs = [], mode = "test", flags = [], data = [], tags = [], host = False, binary = False, size = "small", platform_isolation = False):
+    boundary, isolation_flags = _isolation(host, platform_isolation)
     extra = list(data) + native_libs
     properties = flags + ["-Dattune.mode=" + mode, "-Dattune.tests=" + _locations(srcs)]
     if java_deps:
@@ -134,13 +141,16 @@ _binding_manifest = rule(
     attrs = {"srcs": attr.label_list(allow_files = True)},
 )
 
-def native_flix_checkout_test(name, srcs, checkout_root, git_bin, extra_data = [], declared_files = [], size = "medium"):
+def native_flix_checkout_test(name, srcs, checkout_root, git_bin, extra_data = [], declared_files = [], size = "medium", platform_isolation = False):
     """The live checkout gate: an uncached, local test that scans the whole
     checkout as data. The root and git bindings may come from an external
     repository rule; the Flix program itself never resolves runfiles.
     `extra_data` carries additional declared bindings, such as the pinned
     Flix compiler jar, by file basename; `declared_files` are ordinary
-    declared test fixtures."""
+    declared test fixtures. `platform_isolation` opts out of the user
+    namespace: the fail-closed unreadable-input controls need a process
+    with no DAC override.
+    """
     _binding_manifest(name = name + "_bindings", srcs = [checkout_root, git_bin] + extra_data)
     _program(
         name,
@@ -150,9 +160,10 @@ def native_flix_checkout_test(name, srcs, checkout_root, git_bin, extra_data = [
         flags = ["-Dattune.fixtures=$(rlocationpath :%s_bindings)" % name],
         tags = ["local", "external"],
         size = size,
+        platform_isolation = platform_isolation,
     )
 
-def native_flix_checkout_binary(name, srcs, checkout_root, git_bin, extra_data = []):
+def native_flix_checkout_binary(name, srcs, checkout_root, git_bin, extra_data = [], platform_isolation = False):
     """The live checkout gate as a runnable CLI, with the same declared
     bindings and uncached, local re-scan semantics as the checkout test."""
     _binding_manifest(name = name + "_bindings", srcs = [checkout_root, git_bin] + extra_data)
@@ -164,6 +175,7 @@ def native_flix_checkout_binary(name, srcs, checkout_root, git_bin, extra_data =
         mode = "run",
         binary = True,
         tags = ["local", "external"],
+        platform_isolation = platform_isolation,
     )
 
 def _action_impl(ctx):

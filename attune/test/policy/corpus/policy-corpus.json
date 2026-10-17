@@ -267,6 +267,57 @@
       "expected": "reject",
       "mutation": "none",
       "expectedShape": "dynamic-exec-in-starlark"
+    },
+    {
+      "name": "staged-disguised-flix",
+      "path": "Evil.flix",
+      "body": "import std/os\necho \"smuggled\"",
+      "expected": "reject",
+      "mutation": "stage-add",
+      "expectedShape": ""
+    },
+    {
+      "name": "modified-tracked-disguised-flix",
+      "path": "Valid.flix",
+      "body": "import std/os\necho \"smuggled\"",
+      "expected": "reject",
+      "mutation": "change-file",
+      "expectedShape": ""
+    },
+    {
+      "name": "committed-undeclared-disguised-flix",
+      "path": "Undeclared.flix",
+      "body": "import std/os\necho \"smuggled\"",
+      "expected": "reject",
+      "mutation": "commit-file",
+      "expectedShape": ""
+    },
+    {
+      "name": "cross-module-declared-group-presubmit",
+      "path": "Cross.flix",
+      "body": "pub def call(): Int32 = Helper.answer()",
+      "expected": "accept",
+      "mutation": "stage-add",
+      "expectedShape": "",
+      "declaredInputs": ["Cross.flix"]
+    },
+    {
+      "name": "unreadable-fresh-owned-file",
+      "path": "locked-data.bin",
+      "body": "opaque",
+      "expected": "reject",
+      "mutation": "chmod-file",
+      "expectedShape": "",
+      "expectedFinding": "unreadable-source"
+    },
+    {
+      "name": "unreadable-fresh-owned-directory",
+      "path": "locked-dir",
+      "body": "",
+      "expected": "reject",
+      "mutation": "chmod-dir",
+      "expectedShape": "",
+      "expectedFinding": "unreadable-source"
     }
   ]
 }

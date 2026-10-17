@@ -110,6 +110,11 @@
       "classId": "authored-configuration"
     },
     {
+      "path": ".github/workflows/source-policy.yml",
+      "sha256": "f43b9860ea2028ea47c32496eeb1c0f2631fd681b1aa2f7d2b871b64f066bdae",
+      "classId": "authored-configuration"
+    },
+    {
       "path": "LICENSE",
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
       "classId": "license-texts"
@@ -19660,6 +19665,11 @@
       "classId": "authored-configuration"
     },
     {
+      "path": "attune/test/policy/corpus/policy-corpus.json",
+      "sha256": "9f7eb195e934c0cdfd5688372258172b5fa88e472100f1fa666ae7cb2f6d13b5",
+      "classId": "adversarial-corpus"
+    },
+    {
       "path": "docs/assets/figures/native-patterns-repository-deltas.png",
       "sha256": "56cba6dadd2f4d1643860183a9ad313f028760e6c604bebbafebfc6c79f328e2",
       "classId": "published-reports"
@@ -19905,6 +19915,51 @@
       "classId": "migration-evidence"
     },
     {
+      "path": "web/authoring/atlas-facts.flix",
+      "sha256": "a61719994dc254983517ffd7c257bce8a64c83e5ff0d98e526ff80ebb86b0afd",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/atlas-readable.flix",
+      "sha256": "43bfe58008681abb575c5b11df64dd21265906640849b09413b5c5667783b0dd",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/datalog-primer.flix",
+      "sha256": "0d9cf401a9dcd1f13bfe30396d318066817dac639da524cc500ea6cbdc7b8d3c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/embedding-effect.flix",
+      "sha256": "f1396b6023db46d0c5506cb5576cbadd01fe3fd7bd7db5a22fb6ac83550d874d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/memo-contrast.flix",
+      "sha256": "7927ce90a45f02a310f4cbd71efe583cff4d6258e2fd5a16ce661247fc85cc1c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/path-example.flix",
+      "sha256": "9f4a2acb49cdec6ed6217fc5907094b879b32fcd7c4b6f45be0313f6840ea2c3",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/peers.flix",
+      "sha256": "0a976e5f0e4d207d757a9dcc72278c0ac0b0393a4134e8503d2945689347ea44",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/shared-import.flix",
+      "sha256": "cb790f29d88e18fb5986d9cb642bc71eec4518611586797ab44c0f1fc2a7ebe9",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/theory-examples.flix",
+      "sha256": "951ccb3cfa2c66bad25667f12b78c209940892c781a043e015e547b157c598d2",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
       "path": "web/flake.lock",
       "sha256": "1dcb23e6820875a38d0a19c9e2e29276fd9f35ebdc0c6cd5480d89cb4be98d1c",
       "classId": "captured-data"
@@ -20075,121 +20130,6 @@
       "classId": "site-and-example-content"
     },
     {
-      "path": "web/site/sources/local-grammar-evidence.txt",
-      "sha256": "34f8c4c9bbd2e09287d4bb52830275e43efe7347b95d9d0680d48de7b98270b2",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/sources/sol_inspected_metrics.tsv",
-      "sha256": "4665caa2a1155f26e3c46c270cd0a921692acbbc7a5ac86ed5653c227545f052",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/sources/strict_metrics.tsv",
-      "sha256": "2cfb6db404426d5a2d05cc2165acf73aa3e1960397e071f5eca4e5f838c071bb",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/theory.json",
-      "sha256": "3bc6f85d1c696b62b9ab073255984692d0418d443136b2a5db9fca0b83e259dc",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/time-scale.json",
-      "sha256": "b396f91ecf210d2a4aaca8e8dcbad01eb136f9ead81af8d8f0c6f45ae4decd23",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/trace-timing.json",
-      "sha256": "aeea776ea08bbfec6353f36dd642d33b098944bcfe2852a0fe213e21f970ec3c",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/site/vendor/cosmograph.js.LEGAL.txt",
-      "sha256": "1ba79c917684307e980c039d38d0d104765ea568b9ca487463965d6585af5866",
-      "classId": "license-texts"
-    },
-    {
-      "path": "web/site/wait-classes.json",
-      "sha256": "202723db21bac441b13da57822601796917adf97f4f4c48a204e13785bbdad80",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/test/cold-grit/results-2026-10-13.json",
-      "sha256": "65f4986de87948d239a97b335cb563e869bdabe86e3d6ad285123eac530bf0d2",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/test/grit-browser.json",
-      "sha256": "18a9dcf7132af133a733ed3392ea14216e95f72acee1c7fef77b7aceb858dceb",
-      "classId": "site-and-example-content"
-    },
-    {
-      "path": "web/tsconfig.json",
-      "sha256": "7912f8235097d8493c6de7b215b05e7dc740e33db1ea55a65adeede7c5cb0298",
-      "classId": "authored-configuration"
-    },
-    {
-      "path": "web/vercel.json",
-      "sha256": "584f286a40a8248e3db3594c254812445fb0e096aff464c65a1c3b9d3e39f0da",
-      "classId": "authored-configuration"
-    },
-    {
-      "path": "x",
-      "sha256": "6245b37bc876be0cf0c138ab9838d5484de016eb3f9d40497dbd4efc7b7bd3e2",
-      "classId": "captured-data"
-    },
-    {
-      "path": "attune/test/policy/corpus/policy-corpus.json",
-      "sha256": "8696ad6de4bdfc2e45546185750722e668538b1bf097d37a2c523128a04a1861",
-      "classId": "adversarial-corpus"
-    },
-    {
-      "path": "web/authoring/atlas-facts.flix",
-      "sha256": "a61719994dc254983517ffd7c257bce8a64c83e5ff0d98e526ff80ebb86b0afd",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/atlas-readable.flix",
-      "sha256": "43bfe58008681abb575c5b11df64dd21265906640849b09413b5c5667783b0dd",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/datalog-primer.flix",
-      "sha256": "0d9cf401a9dcd1f13bfe30396d318066817dac639da524cc500ea6cbdc7b8d3c",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/embedding-effect.flix",
-      "sha256": "f1396b6023db46d0c5506cb5576cbadd01fe3fd7bd7db5a22fb6ac83550d874d",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/memo-contrast.flix",
-      "sha256": "7927ce90a45f02a310f4cbd71efe583cff4d6258e2fd5a16ce661247fc85cc1c",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/path-example.flix",
-      "sha256": "9f4a2acb49cdec6ed6217fc5907094b879b32fcd7c4b6f45be0313f6840ea2c3",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/peers.flix",
-      "sha256": "0a976e5f0e4d207d757a9dcc72278c0ac0b0393a4134e8503d2945689347ea44",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/shared-import.flix",
-      "sha256": "cb790f29d88e18fb5986d9cb642bc71eec4518611586797ab44c0f1fc2a7ebe9",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
-      "path": "web/authoring/theory-examples.flix",
-      "sha256": "951ccb3cfa2c66bad25667f12b78c209940892c781a043e015e547b157c598d2",
-      "classId": "web-flix-doc-fragments"
-    },
-    {
       "path": "web/site/sources/anchorOnly.flix",
       "sha256": "989e514a40f8c32f56e6b5d6d8f3da1374589d556ea1ba8baa08700b5cc1cf55",
       "classId": "web-flix-doc-fragments"
@@ -20308,6 +20248,11 @@
       "path": "web/site/sources/inverse.flix",
       "sha256": "3fdfd7b93cab041365c4afaadb4f9e3e6974950abd8db6b456b8138cbe20b794",
       "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/local-grammar-evidence.txt",
+      "sha256": "34f8c4c9bbd2e09287d4bb52830275e43efe7347b95d9d0680d48de7b98270b2",
+      "classId": "site-and-example-content"
     },
     {
       "path": "web/site/sources/memo-apply.flix",
@@ -20465,9 +20410,19 @@
       "classId": "web-flix-doc-fragments"
     },
     {
+      "path": "web/site/sources/sol_inspected_metrics.tsv",
+      "sha256": "4665caa2a1155f26e3c46c270cd0a921692acbbc7a5ac86ed5653c227545f052",
+      "classId": "site-and-example-content"
+    },
+    {
       "path": "web/site/sources/stable-promotion.flix",
       "sha256": "b464792a3a027787a3da6e5a39f32e587356b91e016a2622160252f0a863ad93",
       "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/strict_metrics.tsv",
+      "sha256": "2cfb6db404426d5a2d05cc2165acf73aa3e1960397e071f5eca4e5f838c071bb",
+      "classId": "site-and-example-content"
     },
     {
       "path": "web/site/sources/theory-examples.flix",
@@ -20478,6 +20433,56 @@
       "path": "web/site/sources/transitionKey.flix",
       "sha256": "e12207846f6466c7693bfa38eb35ea63b68b8a79436b661d1eb9ad225c783b6a",
       "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/theory.json",
+      "sha256": "3bc6f85d1c696b62b9ab073255984692d0418d443136b2a5db9fca0b83e259dc",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/site/time-scale.json",
+      "sha256": "b396f91ecf210d2a4aaca8e8dcbad01eb136f9ead81af8d8f0c6f45ae4decd23",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/site/trace-timing.json",
+      "sha256": "aeea776ea08bbfec6353f36dd642d33b098944bcfe2852a0fe213e21f970ec3c",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/site/vendor/cosmograph.js.LEGAL.txt",
+      "sha256": "1ba79c917684307e980c039d38d0d104765ea568b9ca487463965d6585af5866",
+      "classId": "license-texts"
+    },
+    {
+      "path": "web/site/wait-classes.json",
+      "sha256": "202723db21bac441b13da57822601796917adf97f4f4c48a204e13785bbdad80",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/test/cold-grit/results-2026-10-13.json",
+      "sha256": "65f4986de87948d239a97b335cb563e869bdabe86e3d6ad285123eac530bf0d2",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/test/grit-browser.json",
+      "sha256": "18a9dcf7132af133a733ed3392ea14216e95f72acee1c7fef77b7aceb858dceb",
+      "classId": "site-and-example-content"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "sha256": "7912f8235097d8493c6de7b215b05e7dc740e33db1ea55a65adeede7c5cb0298",
+      "classId": "authored-configuration"
+    },
+    {
+      "path": "web/vercel.json",
+      "sha256": "584f286a40a8248e3db3594c254812445fb0e096aff464c65a1c3b9d3e39f0da",
+      "classId": "authored-configuration"
+    },
+    {
+      "path": "x",
+      "sha256": "6245b37bc876be0cf0c138ab9838d5484de016eb3f9d40497dbd4efc7b7bd3e2",
+      "classId": "captured-data"
     }
   ]
 }

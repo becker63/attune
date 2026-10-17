@@ -10,6 +10,14 @@
 // synthetic candidate and never executed. The scanner reads them as data.
 // The first case is the positive control: if a clean checkout does not pass,
 // the negative outcomes prove nothing, so the run aborts before them.
+//
+// Cases that declare `declaredInputs` also get a synthetic aquery dump
+// materialized at the candidate's .attune path (the same location the live
+// public commands use), exercising the declared-compilation coverage rule:
+// a staged cross-module file covered by a declared group is accepted while
+// the same content uncovered is compiled standalone and refused. The
+// unreadable fresh-owned file and directory controls prove the fail-closed
+// walk on a scanner-built candidate, with no Nix fetch in the loop.
 use Attune.Frozen.Corpus
 use Attune.Frozen.Finding
 use Attune.Frozen.Smuggle
@@ -36,6 +44,19 @@ def write(root: String, rel: String, content: String): Unit \ IO = {
     let parent = path.getParent();
     if (Objects.isNull(parent)) () else discard Files.createDirectories(parent);
     discard Files.writeString(path, content, StandardCharsets.UTF_8)
+}
+
+/// Make the candidate deletable again: an unreadable control case must not
+/// leave a candidate that the cleanup cannot remove.
+def restoreRec(file: File): Unit \ IO = {
+    discard file.setReadable(true);
+    discard file.setWritable(true);
+    if (file.isDirectory()) {
+        discard file.setExecutable(true);
+        let listed = file.listFiles();
+        if (Objects.isNull(listed)) () else List.forEach(f -> restoreRec(f), Array.toList(listed))
+    } else ();
+    ()
 }
 
 def deleteRec(file: File): Unit \ IO = {
@@ -83,7 +104,7 @@ def debtManifestJson(evidenceSha: String, count: Int32, entries: List[(String, S
         "\"frozenAtHead\": \"synthetic\", \"evidenceFile\": \"policy/baseline-evidence.json\", " +
         "\"evidenceDigest\": \"" + evidenceSha + "\", \"baselineDebtCount\": \"" + Int32.toString(count) + "\", " +
         "\"entries\": [" + List.join(", ", List.map(match (p, s) -> debtEntryJson(p, s), entries)) + "], " +
-        "\"retirements\": [], \"seams\": []}"
+        "\"retirements\": [], \"seams\": [], \"scannerDigests\": {}}"
 
 def dataManifestJson(entries: List[(String, String)]): String =
     "{\"schema\": \"attune-source-policy/1\", \"kind\": \"data\", \"frozenAt\": \"synthetic\", " +
@@ -97,13 +118,37 @@ def generatedManifestJson(): String =
     "{\"schema\": \"attune-source-policy/1\", \"kind\": \"generated\", \"frozenAt\": \"synthetic\", " +
         "\"frozenAtHead\": \"synthetic\", \"classes\": [], \"entries\": []}"
 
-/// The synthetic seed: one tracked legacy debt file, one manifested data
-/// file, the frozen manifests that account for both, and the baseline
-/// evidence anchoring the debt. Every seed file classifies cleanly, so the
-/// unchanged slice is the positive control.
+/// A synthetic aquery dump in the real compact jsonproto shape: one declared
+/// TestRunner action of a java_test group whose runfiles carry exactly the
+/// declared inputs. This is the coverage evidence the live gate reads from
+/// the proposed graph's dump.
+pub def syntheticDump(paths: List[String]): String = {
+    let built = List.foldLeft((acc, p) -> {
+        let (pairs, i) = acc;
+        let id = i + 1;
+        (pairs ++ List#{(Int32.toString(id), p)}, id)
+    }, (Nil, 0), paths);
+    let (pairs, _count) = built;
+    let fragments = List.map(match (id, p) -> "{\"id\": " + id + ", \"label\": \"" + p + "\"}", pairs);
+    let artifacts = List.map(match (id, _p) -> "{\"id\": " + id + ", \"pathFragmentId\": " + id + "}", pairs);
+    let idsCsv = List.join(", ", List.map(match (id, _p) -> id, pairs));
+    "{\"targets\": [{\"id\": 1, \"label\": \"//synthetic:declared_group\", \"ruleClassId\": 1}], " +
+        "\"ruleClasses\": [{\"id\": 1, \"name\": \"java_test\"}], " +
+        "\"actions\": [{\"targetId\": 1, \"mnemonic\": \"TestRunner\", \"inputDepSetIds\": [1]}], " +
+        "\"artifacts\": [" + List.join(", ", artifacts) + "], " +
+        "\"pathFragments\": [" + List.join(", ", fragments) + "], " +
+        "\"depSetOfFiles\": [{\"id\": 1, \"directArtifactIds\": [" + idsCsv + "]}]}"
+}
+
+/// The synthetic seed: one tracked legacy debt file, one tracked
+/// standalone-valid Flix file, one manifested data file, the frozen
+/// manifests that account for them, and the baseline evidence anchoring the
+/// debt. Every seed file classifies cleanly, so the unchanged slice is the
+/// positive control.
 def seed(root: String, gitBin: String): Result[String, Unit] \ IO = {
     let legacyBody = "print(1)";
     let legacySha = sha256Text(legacyBody);
+    let validFlix = "pub def answer(): Int32 = 42";
     let dataSha = sha256Text("{}");
     let evidence = "{\"files\": {\"legacy/old.py\": \"" + legacySha + "\"}}";
     let evidenceSha = sha256Text(evidence);
@@ -111,7 +156,12 @@ def seed(root: String, gitBin: String): Result[String, Unit] \ IO = {
     discard Files.createDirectories(Paths.get(root, "policy"));
     discard Files.createDirectories(Paths.get(root, "reports"));
     write(root, "legacy/old.py", legacyBody);
+    write(root, "Valid.flix", validFlix);
     write(root, "reports/summary.json", "{}");
+    // The synthetic checkout mirrors the real one: the derived .attune
+    // directory (the corpus's synthetic aquery dump lives there) is ignored,
+    // so Git's populations and the pruning walk agree.
+    write(root, ".gitignore", ".attune/\n");
     write(root, "policy/baseline-evidence.json", evidence);
     write(root, "policy/debt-manifest.json", debtManifestJson(evidenceSha, 1, List#{("legacy/old.py", legacySha)}));
     write(root, "policy/data-manifest.json", dataManifestJson(List#{("policy/baseline-evidence.json", evidenceSha), ("reports/summary.json", dataSha)}));
@@ -126,7 +176,7 @@ def seed(root: String, gitBin: String): Result[String, Unit] \ IO = {
 
 /// Rewrite the synthetic manifests for one mutation, then plant the case
 /// file. Every manifest is recomposed whole; nothing is string-patched.
-def mutate(root: String, one: Corpus.Case): Result[String, Unit] \ IO = {
+def mutate(root: String, gitBin: String, one: Corpus.Case): Result[String, Unit] \ IO = {
     let evidence = "{\"files\": {\"legacy/old.py\": \"" + sha256Text("print(1)") + "\"}}";
     let evidenceSha = sha256Text(evidence);
     match one#mutation {
@@ -159,6 +209,44 @@ def mutate(root: String, one: Corpus.Case): Result[String, Unit] \ IO = {
         }
         case "change-legacy" => {
             write(root, "legacy/old.py", one#body);
+            Ok(())
+        }
+        case "change-file" => {
+            // Modify a tracked file in the worktree without staging.
+            write(root, one#path, one#body);
+            Ok(())
+        }
+        case "stage-add" => {
+            // Stage the planted file: index membership must not exempt it.
+            write(root, one#path, one#body);
+            git(root, gitBin, List#{"add", one#path})
+        }
+        case "commit-file" => {
+            // Commit the planted file: commit membership must not exempt it.
+            write(root, one#path, one#body);
+            forM (
+                _add <- git(root, gitBin, List#{"add", one#path});
+                _commit <- git(root, gitBin, List#{"-c", "user.email=corpus@attune.invalid", "-c", "user.name=Attune Corpus",
+                    "-c", "commit.gpgsign=false", "commit", "-m", one#name})
+            ) yield ()
+        }
+        case "chmod-file" => {
+            // A fresh-owned unreadable regular file: the walk must report it
+            // and fail closed, never skip it.
+            write(root, one#path, one#body);
+            let file = Paths.get(root, one#path).toFile();
+            discard file.setReadable(false);
+            discard file.setWritable(false);
+            Ok(())
+        }
+        case "chmod-dir" => {
+            // A fresh-owned unreadable directory: the walk must report the
+            // listing failure and fail closed, never enter or skip it.
+            discard Files.createDirectories(Paths.get(root, one#path));
+            let dir = Paths.get(root, one#path).toFile();
+            discard dir.setReadable(false);
+            discard dir.setWritable(false);
+            discard dir.setExecutable(false);
             Ok(())
         }
         case "reclassify-legacy" => {
@@ -195,26 +283,56 @@ def detectorMatches(one: Corpus.Case): Bool =
 
 /// Materialize one case into a fresh disposable synthetic checkout and judge
 /// it with the live scanner. Ok(true) when the observed verdict matches the
-/// expectation and the pure detector independently agrees. The candidate
-/// tree is removed before returning.
-def runCase(gitBin: String, tools: Scan.Tools, one: Corpus.Case): Result[String, Bool] \ IO = {
+/// expectation, the pure detector independently agrees, and the report names
+/// the expected finding shape. The candidate tree is removed before
+/// returning.
+def runCase(gitBin: String, flixJar: String, nixBin: String, one: Corpus.Case): Result[String, Bool] \ IO = {
     let candidate = Files.createTempDirectory("attune-corpus-candidate").toString();
     let observed = match seed(candidate, gitBin) {
         case Err(reason) => Err("seed failed in " + one#name + ": " + reason)
-        case Ok(_) => match mutate(candidate, one) {
+        case Ok(_) => match mutate(candidate, gitBin, one) {
             case Err(reason) => Err("mutation failed in " + one#name + ": " + reason)
-            case Ok(_) => match Scan.check(gitBin, candidate, tools) {
-                case Err(reason) => Err("scan failure in " + one#name + ": " + reason)
-                case Ok((_report, findings)) => {
-                    let accepted = List.length(findings) == 0;
-                    let wantsAccept = one#expected == "accept";
-                    let endToEnd = (accepted and wantsAccept) or (not accepted and not wantsAccept);
-                    Ok(endToEnd and detectorMatches(one))
+            case Ok(_) => {
+                // Cases with declared inputs get the synthetic declared-group
+                // dump at the same .attune path the live commands use; the
+                // walk prunes it, exactly like the live checkout.
+                let dumpPath = Scan.aqueryDumpPath(candidate);
+                if (List.isEmpty(one#declaredInputs)) () else {
+                    discard Files.createDirectories(Paths.get(candidate, ".attune"));
+                    discard Files.writeString(Paths.get(dumpPath), syntheticDump(one#declaredInputs), StandardCharsets.UTF_8);
+                    ()
+                };
+                let tools = {
+                    javaBin = Scan.javaBin(),
+                    flixJar = flixJar,
+                    nixInstantiate = nixBin,
+                    aqueryDump = if (List.isEmpty(one#declaredInputs)) None else Some(dumpPath),
+                    workspacePrefix = ""
+                };
+                match Scan.check(gitBin, candidate, tools) {
+                    case Err(reason) => Err("scan failure in " + one#name + ": " + reason)
+                    case Ok((report, findings)) => {
+                        let accepted = List.length(findings) == 0;
+                        let wantsAccept = one#expected == "accept";
+                        let endToEnd = (accepted and wantsAccept) or (not accepted and not wantsAccept);
+                        let findingNamed = one#expectedFinding == "" or String.contains({substr = one#expectedFinding}, report);
+                        let passed = endToEnd and findingNamed and detectorMatches(one);
+                        // A failing case prints its full live report so the
+                        // corpus failure is diagnosable without re-running.
+                        if (not passed) {
+                            println("=== corpus case " + one#name + " (expected " + one#expected +
+                                (if (one#expectedFinding == "") "" else ", finding containing: " + one#expectedFinding) + ") ===");
+                            println(report)
+                        };
+                        Ok(passed)
+                    }
                 }
             }
         }
     };
-    deleteRec(new File(candidate));
+    let candidateDir = new File(candidate);
+    restoreRec(candidateDir);
+    deleteRec(candidateDir);
     observed
 }
 
@@ -224,16 +342,12 @@ def runCase(gitBin: String, tools: Scan.Tools, one: Corpus.Case): Result[String,
 def adversarialCorpusDetectsAllApprovedEvasions(): Unit \ {Assert, IO} = {
     let corpusText = String.trim(Scan.declaredValue("policy-corpus.json"));
     let gitBin = String.trim(Scan.declaredValue("git.txt"));
-    let tools = {
-        javaBin = Scan.javaBin(),
-        flixJar = Scan.declaredBinding("downloaded.jar"),
-        nixInstantiate = String.trim(Scan.declaredValue("nix.txt")),
-        aqueryDump = None
-    };
+    let nixBin = String.trim(Scan.declaredValue("nix.txt"));
+    let flixJar = Scan.declaredBinding("downloaded.jar");
     match Corpus.parse(corpusText) {
         case Err(reason) => Assert.assertEq(expected = "corpus parsed", reason)
         case Ok(cases) => {
-            let observed = List.map(one -> match runCase(gitBin, tools, one) {
+            let observed = List.map(one -> match runCase(gitBin, flixJar, nixBin, one) {
                 case Ok(true) => (one#name, "PASS")
                 case Ok(false) => (one#name, "FAIL")
                 case Err(reason) => (one#name, "FAIL: " + reason)

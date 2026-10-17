@@ -1,5 +1,33 @@
-load("@rules_java//java:defs.bzl", "java_library", "java_binary")
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
 package(default_visibility = ["//visibility:public"])
-filegroup(name="policy_files", srcs=glob(["*.java", "*.bazel"]))
-java_library(name="attune_inference",srcs=["AttuneDecisions.java","OpenRouterDecisions.java"],deps=["@attune_maven//:com_fasterxml_jackson_core_jackson_databind","@attune_maven//:dev_langchain4j_langchain4j_core","@attune_maven//:dev_langchain4j_langchain4j_http_client","@attune_maven//:dev_langchain4j_langchain4j_http_client_jdk"],runtime_deps=["@attune_maven//:org_slf4j_slf4j_nop"])
-java_binary(name="choice_transport",srcs=["ChoiceTransport.java"],main_class="attune.inference.ChoiceTransport",deps=[":attune_inference"])
+
+filegroup(
+    name = "policy_files",
+    srcs = glob([
+        "*.java",
+        "*.bazel",
+    ]),
+)
+
+java_library(
+    name = "attune_inference",
+    srcs = [
+        "AttuneDecisions.java",
+        "OpenRouterDecisions.java",
+    ],
+    runtime_deps = ["@attune_maven//:org_slf4j_slf4j_nop"],
+    deps = [
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@attune_maven//:dev_langchain4j_langchain4j_core",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client_jdk",
+    ],
+)
+
+java_binary(
+    name = "choice_transport",
+    srcs = ["ChoiceTransport.java"],
+    main_class = "attune.inference.ChoiceTransport",
+    deps = [":attune_inference"],
+)

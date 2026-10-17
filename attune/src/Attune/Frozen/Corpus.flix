@@ -7,14 +7,20 @@ pub mod Attune.Frozen.Corpus {
     /// One corpus case: name, planted path, planted body, expected verdict,
     /// the seed mutation it applies ("" means none), and the pure content
     /// scan shape that must flag it ("" means the case is not a smuggle
-    /// shape, so the pure detector is not asserted for it).
+    /// shape, so the pure detector is not asserted for it). Cases may
+    /// declare a synthetic aquery dump (`declaredInputs`): the declared
+    /// compilation group that covers the planted file, exercising the
+    /// coverage rule. `expectedFinding` names a finding prefix the report
+    /// must contain ("" means any rejection counts).
     pub type alias Case = {
         name = String,
         path = String,
         body = String,
         expected = String,
         mutation = String,
-        expectedShape = String
+        expectedShape = String,
+        declaredInputs = List[String],
+        expectedFinding = String
     }
 
     def obj(value: Util.Json.Json): Result[String, Map[String, Util.Json.Json]] = match value {
@@ -27,6 +33,15 @@ pub mod Attune.Frozen.Corpus {
         case _ => ""
     }
 
+    def strList(fields: Map[String, Util.Json.Json], key: String): List[String] = match Map.get(key, fields) {
+        case Some(Util.Json.Json.JArray(values)) =>
+            List.filterMap(v -> match v {
+                case Util.Json.Json.JString(s) => Some(s)
+                case _ => None
+            }, Vector.toList(values))
+        case _ => Nil
+    }
+
     def parseCase(value: Util.Json.Json): Result[String, Case] = forM (
         fields <- obj(value)
     ) yield {
@@ -35,7 +50,9 @@ pub mod Attune.Frozen.Corpus {
         body = str(fields, "body"),
         expected = str(fields, "expected"),
         mutation = str(fields, "mutation"),
-        expectedShape = str(fields, "expectedShape")
+        expectedShape = str(fields, "expectedShape"),
+        declaredInputs = strList(fields, "declaredInputs"),
+        expectedFinding = str(fields, "expectedFinding")
     }
 
     def parseCases(values: List[Util.Json.Json], acc: Result[String, List[Case]]): Result[String, List[Case]] =

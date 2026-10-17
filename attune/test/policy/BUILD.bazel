@@ -110,6 +110,29 @@ native_flix_checkout_test(
         "@flix_compiler//jar:downloaded.jar",
     ],
     git_bin = "@local_checkout//:git.txt",
+    platform_isolation = True,
+)
+
+# The named pin and dependency-size delta laws, checked against the live
+# checkout as data: root and attune .bazelversion pins, the exact Flix
+# compiler jar digest in MODULE.bazel, the Maven artifact count bound, and
+# the locked Nixpkgs revisions of both flake locks. Local and uncached: a
+# pin drift cannot hide behind a stale snapshot.
+native_flix_checkout_test(
+    name = "pin_law_test",
+    srcs = [
+        "PinLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Corpus.flix",
+        "//src:Attune/Frozen/Inputs.flix",
+        "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
+    ],
+    checkout_root = "@local_checkout//:checkout_root.txt",
+    git_bin = "@local_checkout//:git.txt",
+    platform_isolation = True,
 )
 
 # The adversarial corpus: the retained historical 25-case corpus plus the
@@ -138,4 +161,5 @@ native_flix_checkout_test(
         "corpus/policy-corpus.json",
     ],
     git_bin = "@local_checkout//:git.txt",
+    platform_isolation = True,
 )

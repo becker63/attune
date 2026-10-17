@@ -1,173 +1,2041 @@
-load(":scale_batches.bzl","scale_targets")
-load(":batches.bzl","targets")
 load("@rules_java//java:defs.bzl", "java_binary")
-load("//platform/browser:browser.bzl","flix_library")
-load("//platform/build:native.bzl","flix_action","native_flix_test")
-package(default_visibility=["//visibility:public"])
-filegroup(name="policy_files",srcs=glob(["*.flix","*.py","*.bazel","*.bzl"],allow_empty=True))
-flix_action(name="constructor_probe",srcs=["//src:Attune.flix","//src:Attune/Artifacts.flix","//src:Attune/Effects.flix","Fragments.flix","Probe.flix"],timeout_seconds=120,tags=["manual"])
+load("//platform/browser:browser.bzl", "flix_library")
+load("//platform/build:native.bzl", "flix_action", "native_flix_test")
+load(":batches.bzl", "targets")
+load(":cadence_batches.bzl", "cadence_targets")
+load(":novelty_batches.bzl", "novelty_targets")
+load(":quality_batches.bzl", "quality_targets")
+load(":scale_batches.bzl", "scale_targets")
 
-flix_action(name="language_probe",srcs=["//src:Attune.flix","//src:Attune/Artifacts.flix","//src:Attune/Effects.flix","Language.flix","LanguageProbe.flix"],timeout_seconds=180,tags=["manual"])
+package(default_visibility = ["//visibility:public"])
 
-flix_action(name="kernel_probe",srcs=["//src:Attune.flix","//src:Attune/Artifacts.flix","//src:Attune/Effects.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","KernelProbe.flix"],inputs={"fixtures":"@native_campaign_inputs//:finite.json"},timeout_seconds=180,tags=["manual"])
+filegroup(
+    name = "policy_files",
+    srcs = glob(
+        [
+            "*.flix",
+            "*.py",
+            "*.bazel",
+            "*.bzl",
+        ],
+        allow_empty = True,
+    ),
+)
 
-native_flix_test(name="choice_law_test",srcs=["//src:Attune.flix","//src:Attune/Decisions.flix","Budget.flix","ChoiceLaw.flix"])
+flix_action(
+    name = "constructor_probe",
+    srcs = [
+        "Fragments.flix",
+        "Probe.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Effects.flix",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 120,
+)
 
-flix_action(name="integrated_controls",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Predict.flix'],inputs={'jobs': '@native_campaign_inputs//:probe-jobs.json', 'programs': '@native_campaign_inputs//:controls8.json', 'unmeasured': '@native_campaign_inputs//:empty-unmeasured.json', 'graph-w69': '@native_campaign_inputs//:graph-w69.json', 'q-sindresorhus__got-114': '@native_campaign_inputs//:q-sindresorhus__got-114.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json'},java_deps=["//platform/tools/grit:attune_grit"],timeout_seconds=180,tags=["manual"])
+flix_action(
+    name = "language_probe",
+    srcs = [
+        "Language.flix",
+        "LanguageProbe.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Effects.flix",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 180,
+)
 
-flix_library(name="predict_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Predict.flix'],deps=["//platform/tools/grit:attune_grit"])
+flix_action(
+    name = "kernel_probe",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "KernelProbe.flix",
+        "Language.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+    inputs = {"fixtures": "@native_campaign_inputs//:finite.json"},
+    tags = ["manual"],
+    timeout_seconds = 180,
+)
 
-flix_action(name="compiled_controls",srcs=[],inputs={'jobs': '@native_campaign_inputs//:probe-jobs.json', 'programs': '@native_campaign_inputs//:controls8.json', 'unmeasured': '@native_campaign_inputs//:empty-unmeasured.json', 'graph-w69': '@native_campaign_inputs//:graph-w69.json', 'q-sindresorhus__got-114': '@native_campaign_inputs//:q-sindresorhus__got-114.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json'},java_deps=[":predict_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual"])
+native_flix_test(
+    name = "choice_law_test",
+    srcs = [
+        "Budget.flix",
+        "ChoiceLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Decisions.flix",
+    ],
+)
 
-flix_action(name="development_basis",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Basis.flix'],inputs={'jobs': '@native_campaign_inputs//:basis-jobs.json', 'q-joshuakgoldberg__create-typescript-app-1000': '@native_campaign_inputs//:q-joshuakgoldberg__create-typescript-app-1000.json', 'label-joshuakgoldberg__create-typescript-app-1000': '@native_campaign_inputs//:label-joshuakgoldberg__create-typescript-app-1000.json', 'q-joshuakgoldberg__tslint-to-eslint-config-121': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-121.json', 'label-joshuakgoldberg__tslint-to-eslint-config-121': '@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-121.json', 'q-joshuakgoldberg__tslint-to-eslint-config-24': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-24.json', 'label-joshuakgoldberg__tslint-to-eslint-config-24': '@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-24.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'label-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-26': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-26.json', 'label-joshuakgoldberg__tslint-to-eslint-config-26': '@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-26.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'label-sage__carbon-5432': '@native_campaign_inputs//:label-sage__carbon-5432.json', 'q-vuejs__eslint-plugin-vue-1001': '@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1001.json', 'label-vuejs__eslint-plugin-vue-1001': '@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1001.json', 'q-vuejs__eslint-plugin-vue-1015': '@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1015.json', 'label-vuejs__eslint-plugin-vue-1015': '@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1015.json', 'q-vuejs__eslint-plugin-vue-1016': '@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1016.json', 'label-vuejs__eslint-plugin-vue-1016': '@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1016.json', 'q-vuejs__eslint-plugin-vue-1019': '@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1019.json', 'label-vuejs__eslint-plugin-vue-1019': '@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1019.json', 'q-solid__community-server-1170': '@native_campaign_inputs//:q-solid__community-server-1170.json', 'label-solid__community-server-1170': '@native_campaign_inputs//:label-solid__community-server-1170.json', 'q-solid__community-server-148': '@native_campaign_inputs//:q-solid__community-server-148.json', 'label-solid__community-server-148': '@native_campaign_inputs//:label-solid__community-server-148.json', 'q-solid__community-server-168': '@native_campaign_inputs//:q-solid__community-server-168.json', 'label-solid__community-server-168': '@native_campaign_inputs//:label-solid__community-server-168.json', 'q-ember-cli__eslint-plugin-ember-1000': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1000.json', 'label-ember-cli__eslint-plugin-ember-1000': '@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1000.json', 'q-ember-cli__eslint-plugin-ember-1055': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1055.json', 'label-ember-cli__eslint-plugin-ember-1055': '@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1055.json', 'q-ember-cli__eslint-plugin-ember-107': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json', 'label-ember-cli__eslint-plugin-ember-107': '@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-107.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json', 'label-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1079.json', 'q-sindresorhus__got-114': '@native_campaign_inputs//:q-sindresorhus__got-114.json', 'label-sindresorhus__got-114': '@native_campaign_inputs//:label-sindresorhus__got-114.json', 'q-sindresorhus__got-172': '@native_campaign_inputs//:q-sindresorhus__got-172.json', 'label-sindresorhus__got-172': '@native_campaign_inputs//:label-sindresorhus__got-172.json', 'q-sindresorhus__got-183': '@native_campaign_inputs//:q-sindresorhus__got-183.json', 'label-sindresorhus__got-183': '@native_campaign_inputs//:label-sindresorhus__got-183.json', 'q-sindresorhus__got-2043': '@native_campaign_inputs//:q-sindresorhus__got-2043.json', 'label-sindresorhus__got-2043': '@native_campaign_inputs//:label-sindresorhus__got-2043.json', 'q-firebase__firebase-tools-2214': '@native_campaign_inputs//:q-firebase__firebase-tools-2214.json', 'label-firebase__firebase-tools-2214': '@native_campaign_inputs//:label-firebase__firebase-tools-2214.json', 'q-firebase__firebase-tools-2271': '@native_campaign_inputs//:q-firebase__firebase-tools-2271.json', 'label-firebase__firebase-tools-2271': '@native_campaign_inputs//:label-firebase__firebase-tools-2271.json', 'q-firebase__firebase-tools-2291': '@native_campaign_inputs//:q-firebase__firebase-tools-2291.json', 'label-firebase__firebase-tools-2291': '@native_campaign_inputs//:label-firebase__firebase-tools-2291.json', 'q-firebase__firebase-tools-2321': '@native_campaign_inputs//:q-firebase__firebase-tools-2321.json', 'label-firebase__firebase-tools-2321': '@native_campaign_inputs//:label-firebase__firebase-tools-2321.json', 'q-pinojs__pino-1127': '@native_campaign_inputs//:q-pinojs__pino-1127.json', 'label-pinojs__pino-1127': '@native_campaign_inputs//:label-pinojs__pino-1127.json', 'q-pinojs__pino-1137': '@native_campaign_inputs//:q-pinojs__pino-1137.json', 'label-pinojs__pino-1137': '@native_campaign_inputs//:label-pinojs__pino-1137.json', 'q-pinojs__pino-1199': '@native_campaign_inputs//:q-pinojs__pino-1199.json', 'label-pinojs__pino-1199': '@native_campaign_inputs//:label-pinojs__pino-1199.json', 'q-pinojs__pino-121': '@native_campaign_inputs//:q-pinojs__pino-121.json', 'label-pinojs__pino-121': '@native_campaign_inputs//:label-pinojs__pino-121.json'},timeout_seconds=180,tags=["manual"])
+flix_action(
+    name = "integrated_controls",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Predict.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    inputs = {
+        "jobs": "@native_campaign_inputs//:probe-jobs.json",
+        "programs": "@native_campaign_inputs//:controls8.json",
+        "unmeasured": "@native_campaign_inputs//:empty-unmeasured.json",
+        "graph-w69": "@native_campaign_inputs//:graph-w69.json",
+        "q-sindresorhus__got-114": "@native_campaign_inputs//:q-sindresorhus__got-114.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+    },
+    java_deps = ["//platform/tools/grit:attune_grit"],
+    tags = ["manual"],
+    timeout_seconds = 180,
+)
 
-flix_library(name="choice_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Decisions.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Budget.flix","Acquire.flix"],deps=["//platform/tools/inference:attune_inference"])
-java_binary(name="acquire",main_class="Main",runtime_deps=[":choice_kernel","//platform/tools/inference:attune_inference"])
+flix_library(
+    name = "predict_kernel",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Predict.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="search_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Decisions.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Search.flix","Advance.flix"])
-java_binary(name="advance",main_class="Main",runtime_deps=[":search_kernel"])
+flix_action(
+    name = "compiled_controls",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "jobs": "@native_campaign_inputs//:probe-jobs.json",
+        "programs": "@native_campaign_inputs//:controls8.json",
+        "unmeasured": "@native_campaign_inputs//:empty-unmeasured.json",
+        "graph-w69": "@native_campaign_inputs//:graph-w69.json",
+        "q-sindresorhus__got-114": "@native_campaign_inputs//:q-sindresorhus__got-114.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+    },
+    java_deps = [
+        ":predict_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 180,
+)
 
-flix_library(name="evaluation_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Language.flix', 'Payload.flix', 'Reward.flix', 'Evaluate.flix'])
+flix_action(
+    name = "development_basis",
+    srcs = [
+        "Basis.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+    inputs = {
+        "jobs": "@native_campaign_inputs//:basis-jobs.json",
+        "q-joshuakgoldberg__create-typescript-app-1000": "@native_campaign_inputs//:q-joshuakgoldberg__create-typescript-app-1000.json",
+        "label-joshuakgoldberg__create-typescript-app-1000": "@native_campaign_inputs//:label-joshuakgoldberg__create-typescript-app-1000.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-121": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-121.json",
+        "label-joshuakgoldberg__tslint-to-eslint-config-121": "@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-121.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-24": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-24.json",
+        "label-joshuakgoldberg__tslint-to-eslint-config-24": "@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-24.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "label-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-26": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-26.json",
+        "label-joshuakgoldberg__tslint-to-eslint-config-26": "@native_campaign_inputs//:label-joshuakgoldberg__tslint-to-eslint-config-26.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "label-sage__carbon-5432": "@native_campaign_inputs//:label-sage__carbon-5432.json",
+        "q-vuejs__eslint-plugin-vue-1001": "@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1001.json",
+        "label-vuejs__eslint-plugin-vue-1001": "@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1001.json",
+        "q-vuejs__eslint-plugin-vue-1015": "@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1015.json",
+        "label-vuejs__eslint-plugin-vue-1015": "@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1015.json",
+        "q-vuejs__eslint-plugin-vue-1016": "@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1016.json",
+        "label-vuejs__eslint-plugin-vue-1016": "@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1016.json",
+        "q-vuejs__eslint-plugin-vue-1019": "@native_campaign_inputs//:q-vuejs__eslint-plugin-vue-1019.json",
+        "label-vuejs__eslint-plugin-vue-1019": "@native_campaign_inputs//:label-vuejs__eslint-plugin-vue-1019.json",
+        "q-solid__community-server-1170": "@native_campaign_inputs//:q-solid__community-server-1170.json",
+        "label-solid__community-server-1170": "@native_campaign_inputs//:label-solid__community-server-1170.json",
+        "q-solid__community-server-148": "@native_campaign_inputs//:q-solid__community-server-148.json",
+        "label-solid__community-server-148": "@native_campaign_inputs//:label-solid__community-server-148.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+        "label-solid__community-server-168": "@native_campaign_inputs//:label-solid__community-server-168.json",
+        "q-ember-cli__eslint-plugin-ember-1000": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1000.json",
+        "label-ember-cli__eslint-plugin-ember-1000": "@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1000.json",
+        "q-ember-cli__eslint-plugin-ember-1055": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1055.json",
+        "label-ember-cli__eslint-plugin-ember-1055": "@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1055.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "label-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-107.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+        "label-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:label-ember-cli__eslint-plugin-ember-1079.json",
+        "q-sindresorhus__got-114": "@native_campaign_inputs//:q-sindresorhus__got-114.json",
+        "label-sindresorhus__got-114": "@native_campaign_inputs//:label-sindresorhus__got-114.json",
+        "q-sindresorhus__got-172": "@native_campaign_inputs//:q-sindresorhus__got-172.json",
+        "label-sindresorhus__got-172": "@native_campaign_inputs//:label-sindresorhus__got-172.json",
+        "q-sindresorhus__got-183": "@native_campaign_inputs//:q-sindresorhus__got-183.json",
+        "label-sindresorhus__got-183": "@native_campaign_inputs//:label-sindresorhus__got-183.json",
+        "q-sindresorhus__got-2043": "@native_campaign_inputs//:q-sindresorhus__got-2043.json",
+        "label-sindresorhus__got-2043": "@native_campaign_inputs//:label-sindresorhus__got-2043.json",
+        "q-firebase__firebase-tools-2214": "@native_campaign_inputs//:q-firebase__firebase-tools-2214.json",
+        "label-firebase__firebase-tools-2214": "@native_campaign_inputs//:label-firebase__firebase-tools-2214.json",
+        "q-firebase__firebase-tools-2271": "@native_campaign_inputs//:q-firebase__firebase-tools-2271.json",
+        "label-firebase__firebase-tools-2271": "@native_campaign_inputs//:label-firebase__firebase-tools-2271.json",
+        "q-firebase__firebase-tools-2291": "@native_campaign_inputs//:q-firebase__firebase-tools-2291.json",
+        "label-firebase__firebase-tools-2291": "@native_campaign_inputs//:label-firebase__firebase-tools-2291.json",
+        "q-firebase__firebase-tools-2321": "@native_campaign_inputs//:q-firebase__firebase-tools-2321.json",
+        "label-firebase__firebase-tools-2321": "@native_campaign_inputs//:label-firebase__firebase-tools-2321.json",
+        "q-pinojs__pino-1127": "@native_campaign_inputs//:q-pinojs__pino-1127.json",
+        "label-pinojs__pino-1127": "@native_campaign_inputs//:label-pinojs__pino-1127.json",
+        "q-pinojs__pino-1137": "@native_campaign_inputs//:q-pinojs__pino-1137.json",
+        "label-pinojs__pino-1137": "@native_campaign_inputs//:label-pinojs__pino-1137.json",
+        "q-pinojs__pino-1199": "@native_campaign_inputs//:q-pinojs__pino-1199.json",
+        "label-pinojs__pino-1199": "@native_campaign_inputs//:label-pinojs__pino-1199.json",
+        "q-pinojs__pino-121": "@native_campaign_inputs//:q-pinojs__pino-121.json",
+        "label-pinojs__pino-121": "@native_campaign_inputs//:label-pinojs__pino-121.json",
+    },
+    tags = ["manual"],
+    timeout_seconds = 180,
+)
 
-flix_library(name="merge_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Payload.flix","Merge.flix"])
+flix_library(
+    name = "choice_kernel",
+    srcs = [
+        "Acquire.flix",
+        "Budget.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+    deps = ["//platform/tools/inference:attune_inference"],
+)
+
+java_binary(
+    name = "acquire",
+    main_class = "Main",
+    runtime_deps = [
+        ":choice_kernel",
+        "//platform/tools/inference:attune_inference",
+    ],
+)
+
+flix_library(
+    name = "search_kernel",
+    srcs = [
+        "Advance.flix",
+        "Language.flix",
+        "Search.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+java_binary(
+    name = "advance",
+    main_class = "Main",
+    runtime_deps = [":search_kernel"],
+)
+
+flix_library(
+    name = "evaluation_kernel",
+    srcs = [
+        "Evaluate.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Reward.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+flix_library(
+    name = "merge_kernel",
+    srcs = [
+        "Merge.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
 targets()
 
-native_flix_test(name="search_law_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Decisions.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","Search.flix","SearchLaw.flix"],size="medium")
+native_flix_test(
+    name = "search_law_test",
+    size = "medium",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Search.flix",
+        "SearchLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="archive_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//src:Attune/Study.flix","//experiments/native_patterns:Campaign.flix","//experiments/native_patterns/specialization:Specialization.flix","Language.flix","Archive.flix"])
+flix_library(
+    name = "archive_kernel",
+    srcs = [
+        "Archive.flix",
+        "Language.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
 
-native_flix_test(name="reward_law_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//src:Attune/Study.flix","//experiments/native_patterns:Campaign.flix","//experiments/native_patterns/specialization:Specialization.flix","Reward.flix","RewardLaw.flix"])
+native_flix_test(
+    name = "reward_law_test",
+    srcs = [
+        "Reward.flix",
+        "RewardLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
 
-flix_library(name="audit_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Audit.flix'],deps=["//platform/tools/grit:attune_grit"])
+flix_library(
+    name = "audit_kernel",
+    srcs = [
+        "Audit.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="composition_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","CompositionProbe.flix"])
+flix_library(
+    name = "composition_kernel",
+    srcs = [
+        "CompositionProbe.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="recovery_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Payload.flix","Recover.flix"])
+flix_library(
+    name = "recovery_kernel",
+    srcs = [
+        "Language.flix",
+        "Payload.flix",
+        "Recover.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="cost_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Budget.flix","Cost.flix"])
+flix_library(
+    name = "cost_kernel",
+    srcs = [
+        "Budget.flix",
+        "Cost.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="scale_search_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Decisions.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Search.flix","Payload.flix","ScaleAdvance.flix"])
-java_binary(name="scale_advance",main_class="Main",runtime_deps=[":scale_search_kernel"])
-flix_library(name="scale_evaluation_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Language.flix', 'Payload.flix', 'Reward.flix', 'Compact.flix', 'ScaleEvaluate.flix'])
+flix_library(
+    name = "scale_search_kernel",
+    srcs = [
+        "Language.flix",
+        "Payload.flix",
+        "ScaleAdvance.flix",
+        "Search.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="scale_predict_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'ScalePredict.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_library(name="scale_budget_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Budget.flix","ScaleBudget.flix"])
-java_binary(name="scale_budget",main_class="Main",runtime_deps=[":scale_budget_kernel"])
+java_binary(
+    name = "scale_advance",
+    main_class = "Main",
+    runtime_deps = [":scale_search_kernel"],
+)
 
-flix_library(name="warm_score_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Language.flix', 'Payload.flix', 'Reward.flix', 'Compact.flix', 'WarmScore.flix'])
-java_binary(name="warm_score",main_class="Main",runtime_deps=[":warm_score_kernel"])
+flix_library(
+    name = "scale_evaluation_kernel",
+    srcs = [
+        "Compact.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Reward.flix",
+        "ScaleEvaluate.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
 
-flix_library(name="scale_merge_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Payload.flix","Compact.flix","ScaleMerge.flix"])
+flix_library(
+    name = "scale_predict_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "ScalePredict.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
+
+flix_library(
+    name = "scale_budget_kernel",
+    srcs = [
+        "Budget.flix",
+        "ScaleBudget.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+java_binary(
+    name = "scale_budget",
+    main_class = "Main",
+    runtime_deps = [":scale_budget_kernel"],
+)
+
+flix_library(
+    name = "warm_score_kernel",
+    srcs = [
+        "Compact.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Reward.flix",
+        "WarmScore.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+java_binary(
+    name = "warm_score",
+    main_class = "Main",
+    runtime_deps = [":warm_score_kernel"],
+)
+
+flix_library(
+    name = "scale_merge_kernel",
+    srcs = [
+        "Compact.flix",
+        "Payload.flix",
+        "ScaleMerge.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
 scale_targets()
 
-flix_library(name="scale_failure_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Payload.flix","Compact.flix","Language.flix","ScaleFailure.flix"])
+flix_library(
+    name = "scale_failure_kernel",
+    srcs = [
+        "Compact.flix",
+        "Language.flix",
+        "Payload.flix",
+        "ScaleFailure.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-native_flix_test(name="compact_law_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Compact.flix","CompactLaw.flix"])
+native_flix_test(
+    name = "compact_law_test",
+    srcs = [
+        "Compact.flix",
+        "CompactLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="plan_predict_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PlanPredict.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_library(name="policy_probe_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PolicyProbe.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_library(name="policy_algebra_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PolicyAlgebra.flix','PolicyAlgebraMain.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_action(name="profile_policy_algebra_ember_107",srcs=[],inputs={'programs': '@native_campaign_inputs//:pa-programs.json', 'policies': '@native_campaign_inputs//:pa-policies.json', 'jobs': '@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json', 'graph-w63': '@native_campaign_inputs//:graph-w63.json', 'q-ember-cli__eslint-plugin-ember-107': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json'},java_deps=[":policy_algebra_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"],profile_jfr=True)
-native_flix_test(name="policy_algebra_law_test",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Planner.flix','PolicyAlgebra.flix','PolicyAlgebraLaw.flix'],java_deps=["//platform/tools/grit:attune_grit"])
+flix_library(
+    name = "plan_predict_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "PlanPredict.flix",
+        "Planner.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="partition_bench_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PartitionBench.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_action(name="partition_bench_ember_107_47",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-47.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"],profile_jfr=True)
-flix_action(name="partition_bench_ember_107_16",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-16.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"],profile_jfr=True)
-flix_action(name="partition_bench_ember_107_8",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-8.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"],profile_jfr=True)
-flix_action(name="partition_bench_ember_107_4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"],profile_jfr=True)
-native_flix_test(name="planner_law_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","Planner.flix","PlannerLaw.flix"])
+flix_library(
+    name = "policy_probe_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "PolicyProbe.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="planner_metrics_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Language.flix', 'Payload.flix', 'Reward.flix', 'Compact.flix', 'PlannerMetrics.flix'])
+flix_library(
+    name = "policy_algebra_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "PolicyAlgebra.flix",
+        "PolicyAlgebraMain.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="scale_archive_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//src:Attune/Study.flix","//experiments/native_patterns:Campaign.flix","//experiments/native_patterns/specialization:Specialization.flix","Language.flix","ScaleArchive.flix"])
+flix_action(
+    name = "profile_policy_algebra_ember_107",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+    },
+    java_deps = [
+        ":policy_algebra_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    profile_jfr = True,
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_library(name="resource_replay_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","ResourceReplay.flix"])
-java_binary(name="resource_replay",main_class="Main",runtime_deps=[":resource_replay_kernel"])
+native_flix_test(
+    name = "policy_algebra_law_test",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Planner.flix",
+        "PolicyAlgebra.flix",
+        "PolicyAlgebraLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)
 
-native_flix_test(name="canonical_law_test",srcs=["Language.flix","CanonicalReference.flix","CanonicalLaw.flix"],size="medium")
+flix_library(
+    name = "partition_bench_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "PartitionBench.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="audit_metrics_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//src:Attune/Study.flix","//experiments/native_patterns:Campaign.flix","//experiments/native_patterns/specialization:Specialization.flix","Payload.flix","AuditMetrics.flix"])
+flix_action(
+    name = "partition_bench_ember_107_47",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-47.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    profile_jfr = True,
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_library(name="quality_score_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Quality.flix', 'Payload.flix', 'QualityScore.flix'])
-java_binary(name="quality_score",main_class="Main",runtime_deps=[":quality_score_kernel"])
-native_flix_test(name="quality_law_test",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//src:Attune/Study.flix', '//experiments/native_patterns:Campaign.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Quality.flix', 'QualityLaw.flix'])
+flix_action(
+    name = "partition_bench_ember_107_16",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-16.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    profile_jfr = True,
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-load(":quality_batches.bzl","quality_targets")
+flix_action(
+    name = "partition_bench_ember_107_8",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-8.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    profile_jfr = True,
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "partition_bench_ember_107_4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    profile_jfr = True,
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+native_flix_test(
+    name = "planner_law_test",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Planner.flix",
+        "PlannerLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+flix_library(
+    name = "planner_metrics_kernel",
+    srcs = [
+        "Compact.flix",
+        "Language.flix",
+        "Payload.flix",
+        "PlannerMetrics.flix",
+        "Reward.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+flix_library(
+    name = "scale_archive_kernel",
+    srcs = [
+        "Language.flix",
+        "ScaleArchive.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+flix_library(
+    name = "resource_replay_kernel",
+    srcs = [
+        "ResourceReplay.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+java_binary(
+    name = "resource_replay",
+    main_class = "Main",
+    runtime_deps = [":resource_replay_kernel"],
+)
+
+native_flix_test(
+    name = "canonical_law_test",
+    size = "medium",
+    srcs = [
+        "CanonicalLaw.flix",
+        "CanonicalReference.flix",
+        "Language.flix",
+    ],
+)
+
+flix_library(
+    name = "audit_metrics_kernel",
+    srcs = [
+        "AuditMetrics.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+flix_library(
+    name = "quality_score_kernel",
+    srcs = [
+        "Payload.flix",
+        "Quality.flix",
+        "QualityScore.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+java_binary(
+    name = "quality_score",
+    main_class = "Main",
+    runtime_deps = [":quality_score_kernel"],
+)
+
+native_flix_test(
+    name = "quality_law_test",
+    srcs = [
+        "Quality.flix",
+        "QualityLaw.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
 quality_targets()
 
-flix_library(name="quality_search_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Decisions.flix', 'Language.flix', 'Search.flix', 'Payload.flix', 'QualityAdvance.flix'])
-java_binary(name="quality_advance",main_class="Main",runtime_deps=[":quality_search_kernel"])
-flix_library(name="quality_budget_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Budget.flix', 'QualityBudget.flix'])
-java_binary(name="quality_budget",main_class="Main",runtime_deps=[":quality_budget_kernel"])
-flix_library(name="quality_evaluation_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Study.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Language.flix', 'Payload.flix', 'Quality.flix', 'Compact.flix', 'QualityEvaluate.flix'])
+flix_library(
+    name = "quality_search_kernel",
+    srcs = [
+        "Language.flix",
+        "Payload.flix",
+        "QualityAdvance.flix",
+        "Search.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="studio_compose_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix', 'StudioCompose.flix'],deps=["//platform/tools/grit:attune_grit"])
+java_binary(
+    name = "quality_advance",
+    main_class = "Main",
+    runtime_deps = [":quality_search_kernel"],
+)
 
-flix_library(name="jev_preview_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'JevPreview.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_action(name="jev_preview_state_0",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-0.json', 'programs': '@native_campaign_inputs//:programs-0.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_1",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-1.json', 'programs': '@native_campaign_inputs//:programs-1.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_2",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-2.json', 'programs': '@native_campaign_inputs//:programs-2.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_3",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-3.json', 'programs': '@native_campaign_inputs//:programs-3.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_4",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-4.json', 'programs': '@native_campaign_inputs//:programs-4.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_5",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-5.json', 'programs': '@native_campaign_inputs//:programs-5.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_6",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-6.json', 'programs': '@native_campaign_inputs//:programs-6.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_7",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-7.json', 'programs': '@native_campaign_inputs//:programs-7.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_8",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-8.json', 'programs': '@native_campaign_inputs//:programs-8.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_9",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-9.json', 'programs': '@native_campaign_inputs//:programs-9.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_10",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-10.json', 'programs': '@native_campaign_inputs//:programs-10.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_11",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-11.json', 'programs': '@native_campaign_inputs//:programs-11.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_12",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-12.json', 'programs': '@native_campaign_inputs//:programs-12.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_13",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-13.json', 'programs': '@native_campaign_inputs//:programs-13.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_14",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-14.json', 'programs': '@native_campaign_inputs//:programs-14.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
-flix_action(name="jev_preview_state_15",srcs=[],inputs={'fixtures': '@native_campaign_inputs//:fixtures-15.json', 'programs': '@native_campaign_inputs//:programs-15.json', 'graph-w28': '@native_campaign_inputs//:graph-w28.json', 'q-sage__carbon-5432': '@native_campaign_inputs//:q-sage__carbon-5432.json', 'graph-w25': '@native_campaign_inputs//:graph-w25.json', 'q-joshuakgoldberg__tslint-to-eslint-config-25': '@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json', 'graph-w64': '@native_campaign_inputs//:graph-w64.json', 'q-ember-cli__eslint-plugin-ember-1079': '@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json'},java_deps=[":jev_preview_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=900,tags=["manual"])
+flix_library(
+    name = "quality_budget_kernel",
+    srcs = [
+        "Budget.flix",
+        "QualityBudget.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-flix_library(name="quality_neighbors_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Payload.flix', 'Language.flix', 'QualityNeighbors.flix'])
-flix_library(name="quality_select_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Payload.flix', 'Language.flix', '//src:Attune/Study.flix', '//experiments/native_patterns/specialization:Specialization.flix', 'Quality.flix', 'QualitySelect.flix'])
+java_binary(
+    name = "quality_budget",
+    main_class = "Main",
+    runtime_deps = [":quality_budget_kernel"],
+)
+
+flix_library(
+    name = "quality_evaluation_kernel",
+    srcs = [
+        "Compact.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Quality.flix",
+        "QualityEvaluate.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
+
+flix_library(
+    name = "studio_compose_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "StudioCompose.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
+
+flix_library(
+    name = "jev_preview_kernel",
+    srcs = [
+        "Fragments.flix",
+        "JevPreview.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
+
+flix_action(
+    name = "jev_preview_state_0",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-0.json",
+        "programs": "@native_campaign_inputs//:programs-0.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_1",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-1.json",
+        "programs": "@native_campaign_inputs//:programs-1.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_2",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-2.json",
+        "programs": "@native_campaign_inputs//:programs-2.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_3",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-3.json",
+        "programs": "@native_campaign_inputs//:programs-3.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-4.json",
+        "programs": "@native_campaign_inputs//:programs-4.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_5",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-5.json",
+        "programs": "@native_campaign_inputs//:programs-5.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_6",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-6.json",
+        "programs": "@native_campaign_inputs//:programs-6.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_7",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-7.json",
+        "programs": "@native_campaign_inputs//:programs-7.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_8",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-8.json",
+        "programs": "@native_campaign_inputs//:programs-8.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_9",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-9.json",
+        "programs": "@native_campaign_inputs//:programs-9.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_10",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-10.json",
+        "programs": "@native_campaign_inputs//:programs-10.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_11",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-11.json",
+        "programs": "@native_campaign_inputs//:programs-11.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_12",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-12.json",
+        "programs": "@native_campaign_inputs//:programs-12.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_13",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-13.json",
+        "programs": "@native_campaign_inputs//:programs-13.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_14",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-14.json",
+        "programs": "@native_campaign_inputs//:programs-14.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_action(
+    name = "jev_preview_state_15",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "fixtures": "@native_campaign_inputs//:fixtures-15.json",
+        "programs": "@native_campaign_inputs//:programs-15.json",
+        "graph-w28": "@native_campaign_inputs//:graph-w28.json",
+        "q-sage__carbon-5432": "@native_campaign_inputs//:q-sage__carbon-5432.json",
+        "graph-w25": "@native_campaign_inputs//:graph-w25.json",
+        "q-joshuakgoldberg__tslint-to-eslint-config-25": "@native_campaign_inputs//:q-joshuakgoldberg__tslint-to-eslint-config-25.json",
+        "graph-w64": "@native_campaign_inputs//:graph-w64.json",
+        "q-ember-cli__eslint-plugin-ember-1079": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-1079.json",
+    },
+    java_deps = [
+        ":jev_preview_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = ["manual"],
+    timeout_seconds = 900,
+)
+
+flix_library(
+    name = "quality_neighbors_kernel",
+    srcs = [
+        "Language.flix",
+        "Payload.flix",
+        "QualityNeighbors.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+flix_library(
+    name = "quality_select_kernel",
+    srcs = [
+        "Language.flix",
+        "Payload.flix",
+        "Quality.flix",
+        "QualitySelect.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/specialization:Specialization.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Study.flix",
+    ],
+)
 
 # Proven-core identities and complete core layers (language core-v1).
-native_flix_test(name="core_law_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","CoreLaw.flix"],size="medium")
-native_flix_test(name="property_signature_test",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Language.flix","Fragments.flix","Kernel.flix","PropertySignature.flix"],size="medium")
-flix_library(name="core_layers_kernel",srcs=["//src:Attune.flix","//src:Attune/Effects.flix","//src:Attune/Artifacts.flix","//src:Attune/Coverage.flix","//experiments/native_patterns:Campaign.flix","Payload.flix","Language.flix","CoreLayers.flix"])
-load(":novelty_batches.bzl","novelty_targets")
+native_flix_test(
+    name = "core_law_test",
+    size = "medium",
+    srcs = [
+        "CoreLaw.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+native_flix_test(
+    name = "property_signature_test",
+    size = "medium",
+    srcs = [
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "PropertySignature.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+flix_library(
+    name = "core_layers_kernel",
+    srcs = [
+        "CoreLayers.flix",
+        "Language.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
 novelty_targets()
 
-flix_library(name="preflight_bench_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PreflightBench.flix'],deps=["//platform/tools/grit:attune_grit"])
+flix_library(
+    name = "preflight_bench_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "PreflightBench.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
 
-flix_library(name="cadence_search_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Decisions.flix', 'Language.flix', 'Search.flix', 'Payload.flix', 'CadenceAdvance.flix'])
-java_binary(name="cadence_advance",main_class="Main",runtime_deps=[":cadence_search_kernel"])
-flix_library(name="cadence_budget_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Budget.flix', 'CadenceBudget.flix'])
-java_binary(name="cadence_budget",main_class="Main",runtime_deps=[":cadence_budget_kernel"])
-flix_library(name="cadence_preflight_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', 'Language.flix', 'Payload.flix', 'CadencePreflight.flix'])
-java_binary(name="cadence_preflight",main_class="Main",runtime_deps=[":cadence_preflight_kernel"])
-native_flix_test(name="cadence_law_test",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Decisions.flix', 'Language.flix', 'Search.flix', 'Budget.flix', 'CadenceLaw.flix'])
+flix_library(
+    name = "cadence_search_kernel",
+    srcs = [
+        "CadenceAdvance.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Search.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
 
-load(":cadence_batches.bzl","cadence_targets")
+java_binary(
+    name = "cadence_advance",
+    main_class = "Main",
+    runtime_deps = [":cadence_search_kernel"],
+)
+
+flix_library(
+    name = "cadence_budget_kernel",
+    srcs = [
+        "Budget.flix",
+        "CadenceBudget.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+java_binary(
+    name = "cadence_budget",
+    main_class = "Main",
+    runtime_deps = [":cadence_budget_kernel"],
+)
+
+flix_library(
+    name = "cadence_preflight_kernel",
+    srcs = [
+        "CadencePreflight.flix",
+        "Language.flix",
+        "Payload.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
+java_binary(
+    name = "cadence_preflight",
+    main_class = "Main",
+    runtime_deps = [":cadence_preflight_kernel"],
+)
+
+native_flix_test(
+    name = "cadence_law_test",
+    srcs = [
+        "Budget.flix",
+        "CadenceLaw.flix",
+        "Language.flix",
+        "Search.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Decisions.flix",
+        "//src:Attune/Effects.flix",
+    ],
+)
+
 cadence_targets()
 
-flix_action(name="partition_bench_ember_107_p0_w47",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-47.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p0_w8",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-8.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p0_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p0_w2",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-2.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p0_w1",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-1.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p2_w47",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-47.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p2_w8",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-8.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p2_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p2_w2",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-2.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_ember_107_p2_w1",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json','width':'@native_campaign_inputs//:partition-width-1.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="partition_bench_solid168_p0_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-168.json','graph-w53':'@native_campaign_inputs//:graph-w53.json','q-solid__community-server-168':'@native_campaign_inputs//:q-solid__community-server-168.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
-flix_action(name="partition_bench_solid1170_p0_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-1170.json','graph-w51':'@native_campaign_inputs//:graph-w51.json','q-solid__community-server-1170':'@native_campaign_inputs//:q-solid__community-server-1170.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p0_w47",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-47.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_action(name="partition_bench_solid168_p2_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-168.json','graph-w53':'@native_campaign_inputs//:graph-w53.json','q-solid__community-server-168':'@native_campaign_inputs//:q-solid__community-server-168.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p0_w8",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-8.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_action(name="partition_bench_solid1170_p2_w4",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-1170.json','graph-w51':'@native_campaign_inputs//:graph-w51.json','q-solid__community-server-1170':'@native_campaign_inputs//:q-solid__community-server-1170.json','width':'@native_campaign_inputs//:partition-width-4.json'},java_deps=[":partition_bench_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p0_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
+flix_action(
+    name = "partition_bench_ember_107_p0_w2",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-2.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_library(name="policy_algebra_floor_kernel",srcs=['//src:Attune.flix', '//src:Attune/Effects.flix', '//src:Attune/Artifacts.flix', '//src:Attune/Coverage.flix', '//experiments/native_patterns:Campaign.flix', '//src:Attune/Repository.flix', '//src:Attune/Repository/Grit.flix', '//src:Attune/Patterns.flix', '//src:Attune/Theory.flix', '//src:Attune/Studio.flix', '//experiments/native_patterns/agreement:Rules.flix', '//experiments/native_patterns/agreement:Rank.flix', 'Language.flix', 'Fragments.flix', 'Kernel.flix', 'Payload.flix', 'Compact.flix', 'Planner.flix','PolicyAlgebra.flix','PolicyAlgebraFloorMain.flix'],deps=["//platform/tools/grit:attune_grit"])
-flix_action(name="policy_algebra_floor_ember_107",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','policies':'@native_campaign_inputs//:pa-policies.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json'},java_deps=[":policy_algebra_floor_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p0_w1",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-1.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_action(name="policy_algebra_floor_solid168_p0",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','policies':'@native_campaign_inputs//:pa-policies.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-168.json','graph-w53':'@native_campaign_inputs//:graph-w53.json','q-solid__community-server-168':'@native_campaign_inputs//:q-solid__community-server-168.json'},java_deps=[":policy_algebra_floor_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
-flix_action(name="policy_algebra_floor_solid168_p2",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','policies':'@native_campaign_inputs//:pa-policies.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-168.json','graph-w53':'@native_campaign_inputs//:graph-w53.json','q-solid__community-server-168':'@native_campaign_inputs//:q-solid__community-server-168.json'},java_deps=[":policy_algebra_floor_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=180,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p2_w47",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-47.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
 
-flix_action(name="policy_algebra_baseline_ember_107",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','policies':'@native_campaign_inputs//:pa-policies.json','jobs':'@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json','graph-w63':'@native_campaign_inputs//:graph-w63.json','q-ember-cli__eslint-plugin-ember-107':'@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json'},java_deps=[":policy_algebra_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
-flix_action(name="policy_algebra_baseline_solid168",srcs=[],inputs={'programs':'@native_campaign_inputs//:pa-programs.json','policies':'@native_campaign_inputs//:pa-policies.json','jobs':'@native_campaign_inputs//:pa-jobs-solid__community-server-168.json','graph-w53':'@native_campaign_inputs//:graph-w53.json','q-solid__community-server-168':'@native_campaign_inputs//:q-solid__community-server-168.json'},java_deps=[":policy_algebra_kernel","//platform/tools/grit:attune_grit"],compiled=True,timeout_seconds=300,tags=["manual","no-cache"])
+flix_action(
+    name = "partition_bench_ember_107_p2_w8",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-8.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "partition_bench_ember_107_p2_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "partition_bench_ember_107_p2_w2",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-2.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "partition_bench_ember_107_p2_w1",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+        "width": "@native_campaign_inputs//:partition-width-1.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "partition_bench_solid168_p0_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-168.json",
+        "graph-w53": "@native_campaign_inputs//:graph-w53.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_action(
+    name = "partition_bench_solid1170_p0_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-1170.json",
+        "graph-w51": "@native_campaign_inputs//:graph-w51.json",
+        "q-solid__community-server-1170": "@native_campaign_inputs//:q-solid__community-server-1170.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_action(
+    name = "partition_bench_solid168_p2_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-168.json",
+        "graph-w53": "@native_campaign_inputs//:graph-w53.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_action(
+    name = "partition_bench_solid1170_p2_w4",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-1170.json",
+        "graph-w51": "@native_campaign_inputs//:graph-w51.json",
+        "q-solid__community-server-1170": "@native_campaign_inputs//:q-solid__community-server-1170.json",
+        "width": "@native_campaign_inputs//:partition-width-4.json",
+    },
+    java_deps = [
+        ":partition_bench_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_library(
+    name = "policy_algebra_floor_kernel",
+    srcs = [
+        "Compact.flix",
+        "Fragments.flix",
+        "Kernel.flix",
+        "Language.flix",
+        "Payload.flix",
+        "Planner.flix",
+        "PolicyAlgebra.flix",
+        "PolicyAlgebraFloorMain.flix",
+        "//experiments/native_patterns:Campaign.flix",
+        "//experiments/native_patterns/agreement:Rank.flix",
+        "//experiments/native_patterns/agreement:Rules.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Artifacts.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Effects.flix",
+        "//src:Attune/Patterns.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Studio.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    deps = ["//platform/tools/grit:attune_grit"],
+)
+
+flix_action(
+    name = "policy_algebra_floor_ember_107",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+    },
+    java_deps = [
+        ":policy_algebra_floor_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "policy_algebra_floor_solid168_p0",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-168.json",
+        "graph-w53": "@native_campaign_inputs//:graph-w53.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+    },
+    java_deps = [
+        ":policy_algebra_floor_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_action(
+    name = "policy_algebra_floor_solid168_p2",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-168.json",
+        "graph-w53": "@native_campaign_inputs//:graph-w53.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+    },
+    java_deps = [
+        ":policy_algebra_floor_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 180,
+)
+
+flix_action(
+    name = "policy_algebra_baseline_ember_107",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-ember-cli__eslint-plugin-ember-107.json",
+        "graph-w63": "@native_campaign_inputs//:graph-w63.json",
+        "q-ember-cli__eslint-plugin-ember-107": "@native_campaign_inputs//:q-ember-cli__eslint-plugin-ember-107.json",
+    },
+    java_deps = [
+        ":policy_algebra_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)
+
+flix_action(
+    name = "policy_algebra_baseline_solid168",
+    srcs = [],
+    compiled = True,
+    inputs = {
+        "programs": "@native_campaign_inputs//:pa-programs.json",
+        "policies": "@native_campaign_inputs//:pa-policies.json",
+        "jobs": "@native_campaign_inputs//:pa-jobs-solid__community-server-168.json",
+        "graph-w53": "@native_campaign_inputs//:graph-w53.json",
+        "q-solid__community-server-168": "@native_campaign_inputs//:q-solid__community-server-168.json",
+    },
+    java_deps = [
+        ":policy_algebra_kernel",
+        "//platform/tools/grit:attune_grit",
+    ],
+    tags = [
+        "manual",
+        "no-cache",
+    ],
+    timeout_seconds = 300,
+)

@@ -29,8 +29,8 @@ use_repo(llvm_runtime, "llvm-project")
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = "2024",
-    versions = ["1.98.0"],
     extra_target_triples = ["wasm32-unknown-unknown"],
+    versions = ["1.98.0"],
 )
 use_repo(rust, "rust_toolchains")
 
@@ -57,8 +57,8 @@ gritql_repository(
 
 gritql_repository(
     name = "grit_browser_source",
-    browser = True,
     attune_lib = "//platform/support/grit:lib.rs",
+    browser = True,
     cargo_lock = "//platform/browser:grit-Cargo.lock",
     language_patches = [
         "//platform/support/grit/patches:flix.rs",
@@ -68,12 +68,17 @@ gritql_repository(
         "//platform/support/grit/patches:textual_metavariable.rs",
     ],
 )
+
 crate.from_cargo(
     name = "grit_browser_crates",
     cargo_lockfile = "@grit_browser_source//:Cargo.lock",
     lockfile = "//platform/browser:grit-cargo-bazel-lock.json",
     manifests = ["@grit_browser_source//:Cargo.toml"],
-    supported_platform_triples = ["aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"],
+    supported_platform_triples = [
+        "aarch64-unknown-linux-gnu",
+        "x86_64-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+    ],
 )
 use_repo(crate, "grit_browser_crates")
 
@@ -115,8 +120,8 @@ maven.install(
         "org.teavm:teavm-tooling:0.16.0",
         "org.teavm:teavm-jso:0.16.0",
     ],
-    repositories = ["https://repo.maven.apache.org/maven2"],
     lock_file = "//:browser_maven_install.json",
+    repositories = ["https://repo.maven.apache.org/maven2"],
 )
 use_repo(maven, "browser_maven")
 
@@ -150,24 +155,32 @@ use_repo(buildbuddy, "buildbuddy_toolchain")
 bazel_dep(name = "bazel_lib", version = "3.7.2")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "rules_rust_wasm_bindgen", version = "0.74.0")
+
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 http_archive(
     name = "bindgen_arm64",
-    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"],
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
     sha256 = "079731dd1bc7798c1efa4f08fcc45130827cbcc9ff60a0b4c6047d64fc6fd25c",
     strip_prefix = "wasm-bindgen-0.2.128-aarch64-unknown-linux-musl",
-    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-aarch64-unknown-linux-musl.tar.gz"],
 )
+
 http_archive(
     name = "bindgen_amd64",
-    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"],
+    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
     sha256 = "b51f0208fdff83515a787bd8ab9ac5865ed84dabb66d0c709957bb59793c645f",
     strip_prefix = "wasm-bindgen-0.2.128-x86_64-unknown-linux-musl",
-    build_file_content = 'load("@bazel_skylib//rules:native_binary.bzl", "native_binary")\nnative_binary(name="cli", src="wasm-bindgen", out="bindgen", visibility=["//visibility:public"])',
+    urls = ["https://github.com/wasm-bindgen/wasm-bindgen/releases/download/0.2.128/wasm-bindgen-0.2.128-x86_64-unknown-linux-musl.tar.gz"],
 )
+
 register_toolchains("//platform/browser:bindgen_arm64", "//platform/browser:bindgen_amd64")
 
 # Optional, retained science inputs. Ordinary library tests need no corpus.
 # Campaign commands override this empty repository with the frozen input bundle.
 campaign_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-campaign_repository(name = "native_campaign_inputs", path = "experiments/native_patterns/data")
+
+campaign_repository(
+    name = "native_campaign_inputs",
+    path = "experiments/native_patterns/data",
+)

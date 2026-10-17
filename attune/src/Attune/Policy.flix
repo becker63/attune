@@ -12,6 +12,8 @@ pub mod Attune.Policy {
 
     /// These are the maintained roots. Research directories under notes are
     /// deliberately absent: a broad glob must not send retained work to a CAS.
+    /// The live audit therefore reports preserved notes/repository-through-time/
+    /// as unowned user files by design; report failures, never suppress them.
     pub def owned(path: String): Bool =
         List.memberOf(path, List#{
             "AGENTS.md", "BUILD.bazel", "MODULE.bazel", "MODULE.bazel.lock",

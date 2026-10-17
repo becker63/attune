@@ -44,7 +44,7 @@ def manifestsWith(debt: List[Frozen.DebtEntry], retired: List[Frozen.Retirement]
     debt = {
         schema = "attune-source-policy/1", kind = "debt", frozenAt = "t", frozenAtHead = "t",
         evidenceFile = "migration/baseline-manifest.json", evidenceDigest = h1(), baselineDebtCount = count,
-        entries = debt, retirements = retired, seams = Nil
+        entries = debt, retirements = retired, seams = Nil, scannerDigests = Nil
     },
     data = {schema = "attune-source-policy/1", kind = "data", frozenAt = "t", frozenAtHead = "t", classes = dataClass(), entries = data},
     generated = {schema = "attune-source-policy/1", kind = "generated", frozenAt = "t", frozenAtHead = "t", classes = dataClass(), entries = generated}
@@ -299,4 +299,34 @@ def dataEntryWithExecutableExtensionFails(): Unit \ Assert = {
     let scan = scanOf(List#{("tables/impl.py", fileEntry(h1()))});
     let findings = Frozen.verify(manifestsWith(Nil, Nil, data, Nil, "0"), evidenceOf(Nil), scan);
     Assert.assertTrue(has(findings, Finding.SchemaError("data entry carries forbidden python extension: tables/impl.py")))
+}
+
+@Test
+def scannerDigestSchemaLaws(): Unit \ Assert = {
+    // A trusted detector path present in the scan without a pinned digest is
+    // an unanchored exemption: a detector cannot self-authorize, so the
+    // schema refuses it outright.
+    let scan = scanOf(List#{("attune/src/Attune/Frozen/Smuggle.flix", fileEntry(h1()))});
+    let unpinned = Frozen.verify(manifestsWith(Nil, Nil, Nil, Nil, "0"), evidenceOf(Nil), scan);
+    Assert.assertTrue(List.exists(f -> match f {
+        case Finding.SchemaError(reason) => String.contains({substr = "no trusted-revision digest"}, reason)
+        case _ => false
+    }, unpinned));
+    // A digest pinned for a path that is not trusted configuration cannot
+    // grant itself an exemption: schema error.
+    let foreign = manifestsWith(Nil, Nil, Nil, Nil, "0");
+    let baseDebt = foreign#debt;
+    let debtForeign = {scannerDigests = List#{("legacy/old.py", h1())} | baseDebt};
+    let msForeign = {debt = debtForeign | foreign};
+    Assert.assertTrue(List.exists(f -> match f {
+        case Finding.SchemaError(reason) => String.contains({substr = "pins a non-detector path"}, reason)
+        case _ => false
+    }, Frozen.verify(msForeign, evidenceOf(Nil), scanOf(Nil))));
+    // A non-hex digest is invalid: schema error.
+    let debtBad = {scannerDigests = List#{("attune/src/Attune/Frozen/Smuggle.flix", "not-hex")} | baseDebt};
+    let msBad = {debt = debtBad | foreign};
+    Assert.assertTrue(List.exists(f -> match f {
+        case Finding.SchemaError(reason) => String.contains({substr = "scanner digest invalid"}, reason)
+        case _ => false
+    }, Frozen.verify(msBad, evidenceOf(Nil), scanOf(Nil))))
 }
