@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_audit_test", "native_flix_declared_test", "native_flix_test")
+load("//platform/build:native.bzl", "native_flix_audit_test", "native_flix_checkout_test", "native_flix_declared_test", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -50,4 +50,30 @@ native_flix_audit_test(
     # to the audit. The Flix audit test asserts this set equals the policy's own
     # declaration, so the two cannot drift apart silently.
     workspace_root = "@local_workspace//:workspace_root.txt",
+)
+
+# The frozen-debt laws: manifest schema, hash identity, monotonic retirement,
+# and fail-closed classification, over synthetic manifests and inventories.
+native_flix_test(
+    name = "frozen_debt_law_test",
+    srcs = [
+        "FrozenDebtLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+    ],
+)
+
+# The live checkout gate: the whole checkout (tracked, index, eligible
+# untracked) against the frozen debt/data/generated manifests. The declared
+# bindings carry the checkout root and git binary; the scan is read-only.
+native_flix_checkout_test(
+    name = "checkout_source_policy_test",
+    srcs = [
+        "CheckoutGate.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Scan.flix",
+    ],
+    checkout_root = "@local_checkout//:checkout_root.txt",
+    git_bin = "@local_checkout//:git.txt",
 )

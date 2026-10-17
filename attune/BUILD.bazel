@@ -46,6 +46,7 @@ filegroup(
         "//platform/tools/grit:policy_files",
         "//platform/tools/inference:policy_files",
         "//platform/zed:policy_files",
+        "//policy:policy_files",
         "//src:policy_files",
         "//src/grit:policy_files",
         "//test:policy_files",

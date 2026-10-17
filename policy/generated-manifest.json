@@ -1,0 +1,129 @@
+{
+  "schema": "attune-source-policy/1",
+  "kind": "generated",
+  "frozenAt": "2026-10-16T23:59:48Z",
+  "frozenAtHead": "3f91d6e2b2913259811498fbaa4c72df5591207d",
+  "classes": [
+    {
+      "id": "pinned-lockfile",
+      "provenance": "dependency lock/pin artifacts regenerated only by the pinned producer tool invoked explicitly; never edited by hand",
+      "reason": "supply-chain pins; the source policy checks their identity so an unreviewed regeneration fails closed",
+      "owner": "M1 policy worker",
+      "milestone": "M1"
+    }
+  ],
+  "entries": [
+    {
+      "path": "flake.lock",
+      "sha256": "1dcb23e6820875a38d0a19c9e2e29276fd9f35ebdc0c6cd5480d89cb4be98d1c",
+      "producer": "flake.nix",
+      "tool": "nix flake lock (pinned Nix 2.34.8)",
+      "mapping": "inputs resolved from the root flake.nix; flake.lock is the recorded resolution",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/flake.lock",
+      "sha256": "1dcb23e6820875a38d0a19c9e2e29276fd9f35ebdc0c6cd5480d89cb4be98d1c",
+      "producer": "attune/flake.nix",
+      "tool": "nix flake lock (pinned Nix 2.34.8)",
+      "mapping": "inputs resolved from the attune workspace flake.nix",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "infra/flake.lock",
+      "sha256": "4e8c8cc3ea3ce15998fb7aaa3e2a58fa14c2a1665eae007f06118719d2a79121",
+      "producer": "infra/flake.nix",
+      "tool": "nix flake lock (pinned Nix 2.34.8)",
+      "mapping": "inputs resolved from the infra flake.nix",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "web/flake.lock",
+      "sha256": "1dcb23e6820875a38d0a19c9e2e29276fd9f35ebdc0c6cd5480d89cb4be98d1c",
+      "producer": "web/flake.nix",
+      "tool": "nix flake lock (pinned Nix 2.34.8)",
+      "mapping": "inputs resolved from the web flake.nix",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "MODULE.bazel.lock",
+      "sha256": "bc940ce1ef22fcf29f532e2032d8b953ea092cf73d0eff124202bf3bf2e46ca4",
+      "producer": "MODULE.bazel",
+      "tool": "bazel sync (pinned Bazel 8.6.0)",
+      "mapping": "module extension resolutions recorded by Bazel for the root workspace",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/MODULE.bazel.lock",
+      "sha256": "b43c2eb2e0eeaa6d59c3ff3c2b9b46fcabea3236b38d71453672011d9f3693d4",
+      "producer": "attune/MODULE.bazel",
+      "tool": "bazel sync (pinned Bazel 8.6.0)",
+      "mapping": "module extension resolutions recorded by Bazel for the attune workspace",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/maven_install.json",
+      "sha256": "345e2512759012e6c190cfa33f88f2e2bf724bb5fde8e1ad4791b9c6dc2ca843",
+      "producer": "attune/MODULE.bazel",
+      "tool": "rules_jvm_external maven.install pin (Bazel 8.6.0)",
+      "mapping": "the pinned Maven artifact list declared in attune/MODULE.bazel",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/browser_maven_install.json",
+      "sha256": "ec689c7e37a2b03b356c4226fe97389775cc8a0333570576516060ff6aa5a806",
+      "producer": "attune/MODULE.bazel",
+      "tool": "rules_jvm_external maven.install pin (Bazel 8.6.0)",
+      "mapping": "the pinned browser Maven artifact list declared in attune/MODULE.bazel",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/platform/support/grit/Cargo.lock",
+      "sha256": "abffe50e26e7c9666b170f574fbfaaaffd1d495826966ae4c950e3411a21176b",
+      "producer": "attune/platform/support/grit/Cargo.toml",
+      "tool": "cargo (pinned Rust 1.98.0 toolchain)",
+      "mapping": "dependency resolution of the Grit native library manifest",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/platform/browser/grit-Cargo.lock",
+      "sha256": "ecfa70369ff28c08b535348e9e2ccd0e191e79da9137c1dc77efcdcba071a9b1",
+      "producer": "attune/platform/support/grit/Cargo.toml",
+      "tool": "cargo (pinned Rust 1.98.0 toolchain)",
+      "mapping": "dependency resolution of the browser Grit build manifest",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/platform/support/grit/cargo-bazel-lock.json",
+      "sha256": "18047a7b1218a3f0f7e45f43e34fc55051d8462bf9a324934d35cd7da62cdef7",
+      "producer": "attune/platform/support/grit/Cargo.toml",
+      "tool": "crate_universe (rules_rust 0.74.0)",
+      "mapping": "generated crate repository lock for the Grit native build",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "attune/platform/browser/grit-cargo-bazel-lock.json",
+      "sha256": "10c8ded96c9336813b0747a56e37c24c280007091435b4599ba23dbf5cb1a851",
+      "producer": "attune/platform/support/grit/Cargo.toml",
+      "tool": "crate_universe (rules_rust 0.74.0)",
+      "mapping": "generated crate repository lock for the browser Grit build",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "web/pnpm-lock.yaml",
+      "sha256": "f865d9efd096bab26c1ff2371a788ae2c5b5bf0fd5d8b410eacfb43b650ef27a",
+      "producer": "web/package.json",
+      "tool": "pnpm 10.34.5 (frozen-lockfile)",
+      "mapping": "the frozen dependency resolution of the web workspace",
+      "classId": "pinned-lockfile"
+    },
+    {
+      "path": "docs/package-lock.json",
+      "sha256": "3077acbc026ec5e45bbbf66b49b43a35dad92822953e9a4623262741c1687f51",
+      "producer": "docs/package.json",
+      "tool": "npm install (pinned Node 24.18.0 toolchain)",
+      "mapping": "the frozen dependency resolution of the docs workspace",
+      "classId": "pinned-lockfile"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+load("//platform/build:native.bzl", "native_flix_checkout_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population. The
+# gate modules live under src/Attune/ so the pinned Flix module-path rule holds;
+# this package owns the CLI entry point.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The frozen source-policy CLI: classify the whole checkout (Git tracked,
+# index, eligible untracked) against the frozen debt/data/generated manifests
+# and fail closed on unknown or unreadable input. Read-only: Git metadata and
+# worktree bytes as data; nothing scanned is ever executed.
+native_flix_checkout_binary(
+    name = "source_policy",
+    srcs = [
+        "PolicyMain.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Scan.flix",
+    ],
+    checkout_root = "@local_checkout//:checkout_root.txt",
+    git_bin = "@local_checkout//:git.txt",
+)
+
+exports_files([
+    "PolicyMain.flix",
+])
+

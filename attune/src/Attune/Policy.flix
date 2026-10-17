@@ -18,7 +18,7 @@ pub mod Attune.Policy {
             "maven_install.json", "browser_maven_install.json", ".bazelrc", ".bazelversion", ".gitignore",
             ".bazelignore", "flake.nix", "flake.lock", "notes/BUILD.bazel", "notes/design.md"
         }) or List.exists(prefix -> String.startsWith(prefix = prefix, path),
-            List#{"src/", "test/", "example/", "experiments/native_patterns/", "platform/browser/", "platform/build/", "platform/tools/", "platform/support/", "platform/zed/"})
+            List#{"src/", "test/", "example/", "experiments/native_patterns/", "platform/browser/", "platform/build/", "platform/tools/", "platform/support/", "platform/zed/", "policy/"})
 
     pub def protected(path: String): Bool =
         List.exists(part -> List.memberOf(part, List#{".git", ".jj", ".factory", "attuneflix"}) or

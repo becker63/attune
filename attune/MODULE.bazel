@@ -131,6 +131,12 @@ local_workspace = use_repo_rule("//platform/build:workspace_root.bzl", "local_wo
 
 local_workspace(name = "local_workspace")
 
+# The live checkout root (the parent of this nested workspace) and the resolved
+# git client, for the read-only source-policy gate over the whole checkout.
+local_checkout = use_repo_rule("//platform/build:checkout_root.bzl", "local_checkout")
+
+local_checkout(name = "local_checkout")
+
 # Opt-in remote execution uses an immutable container digest with networking off.
 # Default tests run locally.
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
