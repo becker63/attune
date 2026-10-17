@@ -84,6 +84,7 @@ jobs:
       - name: Materialize the proposed-graph aquery dump
         run: |
           cd attune
+          mkdir -p .attune
           nix develop --command bash -c \
             'bazel --output_base="$HOME/.cache/attune-ci-base" aquery "//... + //test/spine:false_assertion_test" --output=jsonproto > .attune/aquery-dump.json'
 

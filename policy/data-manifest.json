@@ -1,7 +1,7 @@
 {
   "schema": "attune-source-policy/1",
   "kind": "data",
-  "frozenAt": "2026-10-17T05:17:06Z",
+  "frozenAt": "2026-10-17T05:54:40Z",
   "frozenAtHead": "3f91d6e2b2913259811498fbaa4c72df5591207d",
   "classes": [
     {
@@ -118,7 +118,7 @@
     },
     {
       "path": ".github/workflows/source-policy.yml",
-      "sha256": "bda5cbe5bd73780cc2d7bf50e342fb715a35262acc2b56f4fcb25a541f1e2bbb",
+      "sha256": "c2489d63164affd9fe8d012e946aa3bd69326150dc284e9250913f074421ad52",
       "classId": "authored-configuration"
     },
     {
