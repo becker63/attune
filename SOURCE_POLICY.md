@@ -22,12 +22,13 @@ freeze was taken at:
   retiring milestone, the recorded parity and the caller switch) and the four
   counted reviewed shell seams (BuildBuddy credential helper, Bazel launcher,
   public commands, systemd unit commands).
-- `policy/data-manifest.json` — 4,007 non-debt, non-authored paths, each
+- `policy/data-manifest.json` — 4,075 non-debt, non-authored paths, each
   classified into a named class with provenance, reason, owner and milestone
   (preserved evidence archive, captured data, science tables, migration
   evidence, operation reports, public key material, license texts,
   site/example content, published reports, test fixtures, one preserved
-  campaign capture, authored configuration).
+  campaign capture, authored configuration, the hash-frozen adversarial
+  corpus, and the website's Flix-language documentation fragments).
 - `policy/generated-manifest.json` — 14 dependency lock/pin artifacts, each
   naming its producer, the pinned tool that regenerates it, and the mapping
   to the manifest it pins.
@@ -49,6 +50,41 @@ untracked paths — against a full worktree walk, hashes every manifested
 regular file, classifies symlinks by their raw targets (never followed into
 reads), and verifies the manifests' own accountability schema.
 
+Beyond the filename-and-manifest classification, the gate runs four
+content-level legs, none of which executes the content it judges:
+
+- **Anti-smuggling content scan.** Every allowed-language carrier (`.flix`,
+  `.nix`, `.bzl`, `.md`, `.mdx`, declared build files) that is not
+  manifested data has its bytes read as inert data and matched against the
+  approved evasion shapes: shebangs in carriers, Nix generation sinks
+  writing forbidden extensions, dynamic download-and-eval imports (including
+  unpinned `fetchGit`), dynamic process execution in Starlark, and Python
+  main-guards in non-Python carriers. The detector's own source and the
+  corpus JSON are exact enumerated exceptions (a content detector must carry
+  its markers; the corpus is manifested data read as data).
+- **Pinned Flix compiler, standalone mode.** A `.flix` file outside the Git
+  index is compiled by no declared Bazel target, so it must compile
+  standalone with the pinned compiler (`flix check`, parse-and-resolution
+  only, no main ever runs) with zero errors. This closes the retained
+  historical escape (Nim source named `.flix`): any compiler rejection is a
+  finding. Indexed files are exempt because their declared targets already
+  compile them, and manifested data fragments are exempt because they are
+  accounted content.
+- **Pinned Nix parser.** Every `.nix` file is validated with
+  `nix-instantiate --parse` (syntax only; nothing is evaluated, so untrusted
+  Nix never runs).
+- **Declared build-input scan.** When an `aquery.json` binding (a
+  `bazel aquery --output=jsonproto` dump) is provided, it is parsed strictly
+  as data and every declared build input must belong to the inventoried
+  population; inputs outside it (alias, re-export, or undeclared generation
+  seams) fail. Without a dump the leg reports `not-run` honestly instead of
+  pretending it checked anything.
+
+A pinned-tool failure is itself a finding: the gate never silently skips a
+leg it could not run, and the closing `checks run:` line reports exactly
+which legs ran and what each examined. The PASS line names only the
+guarantees the checks that ran can make.
+
 Exit codes: `0` the checkout matches the frozen provenance; `1` findings were
 reported (printed first, each on one line); `2` the scan itself failed
 (unreadable or malformed input) and the checkout cannot be judged. Every
@@ -62,9 +98,22 @@ worktree, or an incomplete accountability record.
 The same check runs as a Bazel test (`//test/policy:checkout_source_policy_test`,
 uncached and local, so every `bazel test` re-reads the current tree), and the
 pure laws behind it run as `//test/policy:frozen_debt_law_test` on synthetic
-manifests (19 laws: hash identity, renewal refusal, smuggling, classification,
+manifests (25 laws: hash identity, renewal refusal, smuggling, classification,
 monotonicity, retirement, symlink, protected-never-read, unreadable,
-schema).
+schema, walker-finding composition, relabel laundering, and the
+executable-extension provenance rule).
+
+The retained adversarial corpus (the 25-case historical audit corpus plus
+the approved embedding/renaming/generator/download/eval/nested-repo/alias/
+re-export/fixture/vendor classes and the benign systemd/package seam
+control, 33 cases) runs as `//test/policy:adversarial_corpus_test`: each
+case is materialized into a disposable synthetic Git checkout and judged by
+the live scanner, with the pure content detector asserted independently on
+every smuggle-shaped case body. The corpus itself is hash-frozen manifested
+data (`attune/test/policy/corpus/policy-corpus.json`) and its bodies are
+inert strings that are never executed. `//test/policy:smuggle_law_test`
+covers the benign no-over-refusal laws and
+`//test/policy:build_input_law_test` covers the declared build-input scan.
 
 ## Bootstrap trust limits
 

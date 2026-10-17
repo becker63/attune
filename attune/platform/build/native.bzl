@@ -41,6 +41,7 @@ _jar_manifest = rule(
 
 def _declared_manifest_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".txt")
+
     # Logical names stay workspace-relative when this library is an external
     # module of the Studio build. Runfiles locations retain their repo prefix.
     lines = []
@@ -133,29 +134,33 @@ _binding_manifest = rule(
     attrs = {"srcs": attr.label_list(allow_files = True)},
 )
 
-def native_flix_checkout_test(name, srcs, checkout_root, git_bin, size = "medium"):
+def native_flix_checkout_test(name, srcs, checkout_root, git_bin, extra_data = [], declared_files = [], size = "medium"):
     """The live checkout gate: an uncached, local test that scans the whole
     checkout as data. The root and git bindings may come from an external
-    repository rule; the Flix program itself never resolves runfiles."""
-    _binding_manifest(name = name + "_inputs", srcs = [checkout_root, git_bin])
+    repository rule; the Flix program itself never resolves runfiles.
+    `extra_data` carries additional declared bindings, such as the pinned
+    Flix compiler jar, by file basename; `declared_files` are ordinary
+    declared test fixtures."""
+    _binding_manifest(name = name + "_bindings", srcs = [checkout_root, git_bin] + extra_data)
     _program(
         name,
         srcs,
-        data = [checkout_root, git_bin, ":" + name + "_inputs"],
-        flags = ["-Dattune.fixtures=$(rlocationpath :%s_inputs)" % name],
+        declared_files = declared_files,
+        data = [checkout_root, git_bin] + extra_data + [":" + name + "_bindings"],
+        flags = ["-Dattune.fixtures=$(rlocationpath :%s_bindings)" % name],
         tags = ["local", "external"],
         size = size,
     )
 
-def native_flix_checkout_binary(name, srcs, checkout_root, git_bin):
+def native_flix_checkout_binary(name, srcs, checkout_root, git_bin, extra_data = []):
     """The live checkout gate as a runnable CLI, with the same declared
     bindings and uncached, local re-scan semantics as the checkout test."""
-    _binding_manifest(name = name + "_inputs", srcs = [checkout_root, git_bin])
+    _binding_manifest(name = name + "_bindings", srcs = [checkout_root, git_bin] + extra_data)
     _program(
         name,
         srcs,
-        data = [checkout_root, git_bin, ":" + name + "_inputs"],
-        flags = ["-Dattune.fixtures=$(rlocationpath :%s_inputs)" % name],
+        data = [checkout_root, git_bin] + extra_data + [":" + name + "_bindings"],
+        flags = ["-Dattune.fixtures=$(rlocationpath :%s_bindings)" % name],
         mode = "run",
         binary = True,
         tags = ["local", "external"],

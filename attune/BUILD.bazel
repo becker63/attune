@@ -33,12 +33,12 @@ filegroup(
         "//example:policy_files",
         "//experiments/native_patterns:policy_files",
         "//experiments/native_patterns/agreement:policy_files",
+        "//experiments/native_patterns/data:policy_files",
         "//experiments/native_patterns/search:policy_files",
         "//experiments/native_patterns/specialization:policy_files",
-        "//experiments/native_patterns/data:policy_files",
         "//notes:policy_files",
-        "//platform/build:policy_files",
         "//platform/browser:policy_files",
+        "//platform/build:policy_files",
         "//platform/support/grit:policy_files",
         "//platform/support/grit/patches:policy_files",
         "//platform/tools:policy_files",
@@ -76,8 +76,12 @@ test_suite(
 test_suite(
     name = "policy_tests",
     tests = [
+        "//test/policy:adversarial_corpus_test",
+        "//test/policy:build_input_law_test",
         "//test/policy:declared_source_policy_test",
+        "//test/policy:frozen_debt_law_test",
         "//test/policy:policy_cases_test",
+        "//test/policy:smuggle_law_test",
         "//test/policy:workspace_audit_test",
     ],
 )

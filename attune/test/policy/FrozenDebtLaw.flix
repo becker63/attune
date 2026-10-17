@@ -229,3 +229,74 @@ def evidenceTamperFailsClosed(): Unit \ Assert = {
     let findings = Frozen.verify(manifests(Nil), evidenceOf(Nil), scan);
     Assert.assertTrue(has(findings, Finding.BaselineEvidenceChanged(h1(), h2())))
 }
+
+// ------------------------------------------------- walker-composition laws
+
+@Test
+def walkFindingsAreNeverDropped(): Unit \ Assert = {
+    // The walker records an unreadable directory. The verify result must
+    // compose the walk finding into the reported outcome, never drop it:
+    // a dropped walk finding is a fail-open that accepts unreadable input.
+    let scan = {findings = List#{Finding.UnreadableSource("evidence/unreadable", "directory listing failed")} | scanOf(Nil)};
+    let findings = Frozen.verify(manifests(Nil), evidenceOf(Nil), scan);
+    Assert.assertTrue(has(findings, Finding.UnreadableSource("evidence/unreadable", "directory listing failed")))
+}
+
+@Test
+def unreadablePathStaysClassified(): Unit \ Assert = {
+    // The walker records the unreadable entry in the census (so the path
+    // stays classified) and reports its own finding. An unreadable planted
+    // file is therefore reported unreadable and still classified by its
+    // path: unreadability never excuses a forbidden language.
+    let scan = {findings = List#{Finding.UnreadableSource("new/tool.py", "digest unavailable")} |
+        scanOf(List#{("new/tool.py", {kind = "file", sha256 = "-", target = "-", readable = false})})};
+    let findings = Frozen.verify(manifests(Nil), evidenceOf(Nil), scan);
+    Assert.assertTrue(has(findings, Finding.UnreadableSource("new/tool.py", "digest unavailable")));
+    Assert.assertTrue(has(findings, Finding.ForbiddenLanguage("new/tool.py", "python")))
+}
+
+@Test
+def duplicateFindingsReportOnce(): Unit \ Assert = {
+    // The walker records the unreadable finding; the manifested-identity
+    // check reports the same unreadable entry. The two must deduplicate so
+    // the report states each fact once.
+    let scan = scanOf(List#{("legacy/old.py", {kind = "file", sha256 = "-", target = "-", readable = false})});
+    let (evidence, ms) = evidenceWith(1, List#{"legacy/old.py"});
+    let findings = Frozen.verify(ms, evidence, scan);
+    Assert.assertEq(expected = 1, List.length(List.filter(f -> match f {
+        case Finding.UnreadableSource("legacy/old.py", _) => true
+        case _ => false
+    }, findings)))
+}
+
+// ---------------------------------------------------- relabel-laundering laws
+
+@Test
+def dataRelabelOfDebtPathFails(): Unit \ Assert = {
+    // A baseline debt path cannot quietly become a data entry: the relabel
+    // must go through an explicit retirement with recorded parity.
+    let data = List#{{path = "legacy/old.py", sha256 = h1(), classId = "preserved-evidence"}};
+    let scan = scanOf(List#{("legacy/old.py", fileEntry(h1()))});
+    let ms = manifestsWith(Nil, Nil, data, Nil, "1");
+    let findings = Frozen.verify(ms, evidenceOf(List#{"legacy/old.py"}), scan);
+    Assert.assertTrue(has(findings, Finding.ManifestRelabel("legacy/old.py")))
+}
+
+@Test
+def generatedRelabelOfDebtPathFails(): Unit \ Assert = {
+    let generated = List#{{path = "legacy/old.py", sha256 = h1(), producer = "gen", tool = "tool", mapping = "build", classId = "preserved-evidence"}};
+    let scan = scanOf(List#{("legacy/old.py", fileEntry(h1()))});
+    let ms = manifestsWith(Nil, Nil, Nil, generated, "1");
+    let findings = Frozen.verify(ms, evidenceOf(List#{"legacy/old.py"}), scan);
+    Assert.assertTrue(has(findings, Finding.ManifestRelabel("legacy/old.py")))
+}
+
+@Test
+def dataEntryWithExecutableExtensionFails(): Unit \ Assert = {
+    // A data class can never self-authorize a forbidden code population:
+    // executable-language extensions are refused outright.
+    let data = List#{{path = "tables/impl.py", sha256 = h1(), classId = "preserved-evidence"}};
+    let scan = scanOf(List#{("tables/impl.py", fileEntry(h1()))});
+    let findings = Frozen.verify(manifestsWith(Nil, Nil, data, Nil, "0"), evidenceOf(Nil), scan);
+    Assert.assertTrue(has(findings, Finding.SchemaError("data entry carries forbidden python extension: tables/impl.py")))
+}

@@ -63,17 +63,79 @@ native_flix_test(
     ],
 )
 
+# The anti-smuggling content laws: the retained adversarial corpus shapes
+# and the benign minimal seams that must keep working.
+native_flix_test(
+    name = "smuggle_law_test",
+    srcs = [
+        "SmuggleLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
+    ],
+)
+
+# The declared build-input laws: aquery jsonproto consumed as data, with
+# inputs outside the inventoried population refused.
+native_flix_test(
+    name = "build_input_law_test",
+    srcs = [
+        "InputsLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Inputs.flix",
+    ],
+)
+
 # The live checkout gate: the whole checkout (tracked, index, eligible
 # untracked) against the frozen debt/data/generated manifests. The declared
-# bindings carry the checkout root and git binary; the scan is read-only.
+# bindings carry the checkout root, git binary, and pinned Flix compiler
+# jar; the scan is read-only and every check is non-evaluating.
 native_flix_checkout_test(
     name = "checkout_source_policy_test",
+    size = "large",
     srcs = [
         "CheckoutGate.flix",
         "//src:Attune.flix",
         "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Corpus.flix",
+        "//src:Attune/Frozen/Inputs.flix",
         "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
     ],
     checkout_root = "@local_checkout//:checkout_root.txt",
+    extra_data = [
+        "@local_checkout//:nix.txt",
+        "@flix_compiler//jar:downloaded.jar",
+    ],
+    git_bin = "@local_checkout//:git.txt",
+)
+
+# The adversarial corpus: the retained historical 25-case corpus plus the
+# approved additional attack classes, each materialized into a synthetic
+# checkout by the Flix runner and judged by the live scanner. The corpus
+# itself is manifested data (class adversarial-corpus) and is never executed.
+native_flix_checkout_test(
+    name = "adversarial_corpus_test",
+    size = "large",
+    srcs = [
+        "CorpusRunner.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Corpus.flix",
+        "//src:Attune/Frozen/Inputs.flix",
+        "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
+    ],
+    checkout_root = "@local_checkout//:checkout_root.txt",
+    # The corpus JSON is a declared binding like the tools: the runner reads
+    # its bytes as data via the launcher's binding manifest.
+    extra_data = [
+        "@local_checkout//:nix.txt",
+        "@flix_compiler//jar:downloaded.jar",
+        "corpus/policy-corpus.json",
+    ],
     git_bin = "@local_checkout//:git.txt",
 )

@@ -141,21 +141,26 @@ pub mod Attune.Frozen {
         case BaselineDropped(String)
         case BaselineRenewed(String)
         case DebtGrowth(Int32, Int32)
+        case DisguisedFlix(String)
         case ForbiddenLanguage(String, String)
         case HashMismatch(String)
         case InventoryFailure(String)
+        case ManifestRelabel(String)
         case MissingFrozen(String, String)
         case ModeMismatch(String)
+        case NestedRepository(String)
         case NotRegularFile(String, String)
         case PathUnclassified(String)
         case ProducerMissing(String)
         case ProtectedPresent(String)
         case RevivedRetirement(String)
         case SchemaError(String)
+        case SmuggledContent(String, String)
         case StagedFrozenChange(String)
         case SymlinkEscape(String, String)
         case SymlinkProtected(String)
         case UnreadableSource(String, String)
+        case UnscannedBuildInput(String)
         case WalkEscape(String)
     }
 
@@ -166,6 +171,7 @@ pub mod Attune.Frozen {
     pub def debtLanguage(path: String): Option[String] = {
         let language = extension(path);
         if (language == "py") Some("python")
+        else if (language == "nim") Some("nim")
         else if (language == "ts" or language == "tsx") Some("typescript")
         else if (language == "js" or language == "mjs") Some("javascript")
         else if (language == "rs") Some("rust")
@@ -194,11 +200,16 @@ pub mod Attune.Frozen {
         }) or
         trustedConfig(path)
 
-    /// The policy's own manifest files: trusted configuration, read as data,
-    /// never classified against themselves.
+    /// The policy's own files: trusted configuration, read as data, never
+    /// classified against themselves or content-scanned. The three manifests
+    /// are schema-validated data; the content detector's own source must
+    /// carry its markers and corpus shapes as quoted literals, so it cannot
+    /// be content-scanned by itself. Both are exact enumerated paths, part
+    /// of the independently compiled trusted scanner, and Git-tracked.
     pub def trustedConfig(path: String): Bool =
         List.memberOf(path, List#{
-            "policy/debt-manifest.json", "policy/data-manifest.json", "policy/generated-manifest.json"
+            "policy/debt-manifest.json", "policy/data-manifest.json", "policy/generated-manifest.json",
+            "attune/src/Attune/Frozen/Smuggle.flix"
         })
 
     /// Protected paths are never read or hashed; contents stay unknown.
@@ -297,6 +308,16 @@ pub mod Attune.Frozen {
             else
                 Some(Finding.BaselineDropped(p)), Map.toList(evidence#files));
 
+        // Manifest relabel laundering: a baseline debt path can never quietly
+        // become data or generated output. The relabel must go through an
+        // explicit retirement with recorded parity and caller switch.
+        let relabeled = List.filterMap(match (p, _e) ->
+            if (isDebtPath(p) and Map.memberOf(p, evidence#files) and
+                (Map.memberOf(p, dataMap) or Map.memberOf(p, generatedMap)))
+                Some(Finding.ManifestRelabel(p))
+            else
+                None, Map.toList(union));
+
         // Content identity of manifested entries.
         let identity = debtIdentityFindings(debt#entries, evidence, scan) ++
             plainIdentityFindings(dataMap, scan) ++
@@ -314,7 +335,23 @@ pub mod Attune.Frozen {
                 None, Map.toList(retiredMap));
 
         pushAll(evidenceFinding, Nil) ++ schema ++ protectedFound ++ escapes ++ missing ++
-            unclassified ++ symlinkEscapes ++ dropped ++ identity ++ growth ++ revived
+            unclassified ++ symlinkEscapes ++ dropped ++ relabeled ++ identity ++ growth ++ revived |>
+            composeWalk(scan#findings)
+    }
+
+    /// The walker's own findings (unreadable directories, files, and other
+    /// paths it could not classify) are part of the verdict: composing them
+    /// with the manifest findings keeps every unreadable path reported and
+    /// still classified, never silently skipped. Identical findings from the
+    /// walk and the identity checks deduplicate so each fact reports once.
+    def composeWalk(walk: List[Finding], verified: List[Finding]): List[Finding] =
+        dedupe(pushAll(walk, verified))
+
+    /// Identical findings report once; order is otherwise preserved.
+    pub def dedupe(findings: List[Finding]): List[Finding] = {
+        let deduped = List.foldLeft((acc, f) ->
+            if (List.memberOf(f, acc)) acc else f :: acc, Nil, findings);
+        List.reverse(deduped)
     }
 
     /// A raw symlink target escapes the checkout: absolute, or climbing out
@@ -453,11 +490,19 @@ pub mod Attune.Frozen {
             else List#{Finding.SchemaError("class incomplete: " + c#id)},
             classes)
 
+    /// A data or generated manifest entry can never carry an executable
+    /// language extension: provenance classes classify data and outputs, and
+    /// a class must not self-authorize a new forbidden code population.
+    def provenanceExtensionFindings(kind: String, path: String): List[Finding] = match debtLanguage(path) {
+        case Some(language) => List#{Finding.SchemaError(kind + " entry carries forbidden " + language + " extension: " + path)}
+        case None => Nil
+    }
+
     def dataSchema(entries: List[DataEntry], classes: List[ClassRule]): List[Finding] =
         List.flatMap(entry ->
             if (not hex(entry#sha256)) List#{Finding.SchemaError("data entry digest invalid: " + entry#path)}
-            else if (List.exists(c -> c#id == entry#classId, classes)) Nil
-            else List#{Finding.SchemaError("data entry unknown class: " + entry#path)},
+            else if (not List.exists(c -> c#id == entry#classId, classes)) List#{Finding.SchemaError("data entry unknown class: " + entry#path)}
+            else provenanceExtensionFindings("data", entry#path),
             entries)
 
     def generatedSchema(entries: List[GeneratedEntry], classes: List[ClassRule]): List[Finding] =
@@ -466,16 +511,19 @@ pub mod Attune.Frozen {
             else if (not List.exists(c -> c#id == entry#classId, classes)) List#{Finding.SchemaError("generated entry unknown class: " + entry#path)}
             else if (entry#producer == "-" and nonEmpty(entry#tool) and nonEmpty(entry#mapping)) Nil
             else if (nonEmpty(entry#producer) and nonEmpty(entry#mapping)) Nil
-            else List#{Finding.SchemaError("generated entry needs a producer or tool: " + entry#path)},
+            else List#{Finding.SchemaError("generated entry needs a producer or tool: " + entry#path)}
+            ++ provenanceExtensionFindings("generated", entry#path),
             entries)
 
     // ------------------------------------------------------------ report
 
-    /// One line per finding, sorted for deterministic output.
+    /// One line per finding, sorted for deterministic output. The PASS line
+    /// names only the guarantees the checks that ran can make: it never
+    /// claims a check that was not executed.
     pub def report(findings: List[Finding]): String = {
         let sorted = List.sortWith((a, b) -> Order.compare(describe(a), describe(b)), findings);
         if (List.length(sorted) == 0)
-            "source-policy: PASS - allowlist enforced, frozen hashes intact, debt count non-increasing, no smuggling admitted"
+            "source-policy: PASS - allowlist enforced, frozen hashes intact, debt count non-increasing; the checks that ran found no smuggled, disguised, or unaccounted content"
         else
             "source-policy: " + Int32.toString(List.length(sorted)) + " findings\n" +
                 List.join("\n", List.map(describe, sorted))
@@ -486,21 +534,26 @@ pub mod Attune.Frozen {
         case Finding.BaselineDropped(path) => "baseline-dropped " + path
         case Finding.BaselineRenewed(path) => "baseline-renewed " + path
         case Finding.DebtGrowth(count, base) => "debt-growth " + Int32.toString(count) + " > " + Int32.toString(base)
+        case Finding.DisguisedFlix(path) => "disguised-flix (pinned compiler rejected the content) " + path
         case Finding.ForbiddenLanguage(path, language) => "forbidden-language " + language + " " + path
         case Finding.HashMismatch(path) => "hash-mismatch " + path
         case Finding.InventoryFailure(reason) => "inventory-failure " + reason
+        case Finding.ManifestRelabel(path) => "manifest-relabel (baseline debt cannot become data/generated) " + path
         case Finding.MissingFrozen(path, reason) => "missing-frozen " + path + " " + reason
         case Finding.ModeMismatch(path) => "mode-mismatch " + path
+        case Finding.NestedRepository(path) => "nested-repository (unpinned) " + path
         case Finding.NotRegularFile(path, kind) => "not-regular-file " + kind + " " + path
         case Finding.PathUnclassified(path) => "path-unclassified " + path
         case Finding.ProducerMissing(path) => "producer-missing " + path
         case Finding.ProtectedPresent(path) => "protected-present (never read) " + path
         case Finding.RevivedRetirement(path) => "revived-retirement " + path
         case Finding.SchemaError(reason) => "schema-error " + reason
+        case Finding.SmuggledContent(path, shape) => "smuggled-content " + shape + " " + path
         case Finding.StagedFrozenChange(path) => "staged-frozen-change " + path
         case Finding.SymlinkEscape(path, target) => "symlink-escape " + path + " -> " + target
         case Finding.SymlinkProtected(path) => "symlink-protected " + path
         case Finding.UnreadableSource(path, reason) => "unreadable-source " + path + " " + reason
+        case Finding.UnscannedBuildInput(path) => "unscanned-build-input " + path
         case Finding.WalkEscape(path) => "walk-escape " + path
     }
 }

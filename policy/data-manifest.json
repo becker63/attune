@@ -87,6 +87,20 @@
       "reason": "configuration, not implementation; hash-frozen so edits are explicit provenance updates, and no config file smuggles executable logic uncounted",
       "owner": "M1 policy worker",
       "milestone": "M1"
+    },
+    {
+      "id": "adversarial-corpus",
+      "provenance": "synthetic adversarial attack vectors for the source-policy corpus test (attune/test/policy/corpus/policy-corpus.json), faithfully preserved from the read-only historical audit corpus attune-nim-consolidation/migration/source-policy-audit.nix (sha256 0639658a66cd16dac2e067bef780b740f3a17e756d8d839a2113e5b6371bd745); bodies are inert string data materialized only into disposable synthetic checkouts, never executed",
+      "reason": "the retained 25-case corpus plus approved M1 attack classes, required as regression data by VAL-SRC-003; hash-frozen test vectors, not source",
+      "owner": "M1 policy worker",
+      "milestone": "M1-policy"
+    },
+    {
+      "id": "web-flix-doc-fragments",
+      "provenance": "explanatory Flix-language fragments rendered as website documentation content (web/authoring and web/site/sources); they are never compiled and are not declared build inputs",
+      "reason": "website assets in an allowed language; accounted as data so the declared-population check can distinguish compiled source from rendered content",
+      "owner": "M1",
+      "milestone": "M1"
     }
   ],
   "entries": [
@@ -20124,6 +20138,346 @@
       "path": "x",
       "sha256": "6245b37bc876be0cf0c138ab9838d5484de016eb3f9d40497dbd4efc7b7bd3e2",
       "classId": "captured-data"
+    },
+    {
+      "path": "attune/test/policy/corpus/policy-corpus.json",
+      "sha256": "8696ad6de4bdfc2e45546185750722e668538b1bf097d37a2c523128a04a1861",
+      "classId": "adversarial-corpus"
+    },
+    {
+      "path": "web/authoring/atlas-facts.flix",
+      "sha256": "a61719994dc254983517ffd7c257bce8a64c83e5ff0d98e526ff80ebb86b0afd",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/atlas-readable.flix",
+      "sha256": "43bfe58008681abb575c5b11df64dd21265906640849b09413b5c5667783b0dd",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/datalog-primer.flix",
+      "sha256": "0d9cf401a9dcd1f13bfe30396d318066817dac639da524cc500ea6cbdc7b8d3c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/embedding-effect.flix",
+      "sha256": "f1396b6023db46d0c5506cb5576cbadd01fe3fd7bd7db5a22fb6ac83550d874d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/memo-contrast.flix",
+      "sha256": "7927ce90a45f02a310f4cbd71efe583cff4d6258e2fd5a16ce661247fc85cc1c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/path-example.flix",
+      "sha256": "9f4a2acb49cdec6ed6217fc5907094b879b32fcd7c4b6f45be0313f6840ea2c3",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/peers.flix",
+      "sha256": "0a976e5f0e4d207d757a9dcc72278c0ac0b0393a4134e8503d2945689347ea44",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/shared-import.flix",
+      "sha256": "cb790f29d88e18fb5986d9cb642bc71eec4518611586797ab44c0f1fc2a7ebe9",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/authoring/theory-examples.flix",
+      "sha256": "951ccb3cfa2c66bad25667f12b78c209940892c781a043e015e547b157c598d2",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/anchorOnly.flix",
+      "sha256": "989e514a40f8c32f56e6b5d6d8f3da1374589d556ea1ba8baa08700b5cc1cf55",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/atlas-projection.flix",
+      "sha256": "cb1663ac04b5e230a8b473e0f8d52bf701eba46d2e637fc2166de6938d9c4347",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/atomInput.flix",
+      "sha256": "c82d3129eacd3059b976a13c0d70be6a240bc05461044e0992fd1e9aaa387a26",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/atomOutput.flix",
+      "sha256": "31f6d4c7d3d06d45519276ec3d5c61481e1fce418e72c76ea24042096202a13f",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/bounds.flix",
+      "sha256": "8c75af7cf782a1d2119473c19b9c806c67469c060e3cece76792c15383513295",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/canonical.flix",
+      "sha256": "6a6fed20aadafbbe431d985bfcd3c021c9c7c72c3b1efe23070508686ace4a90",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/cosine.flix",
+      "sha256": "cea0ccc88c86b23dbf09cde39b6f9ba912d47979009e9944ac05aa25cc4b13a2",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-binding.flix",
+      "sha256": "06d9a7b1d702fcf46f61cf3cee3905ae9ac87c2499b014fd137f6d407e134fc2",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-bindingNotes.flix",
+      "sha256": "f94e556ff68f726247ac74e2bd59ef1eac3dd02e94de1d61c3dab4deb17e3695",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-fact.flix",
+      "sha256": "fe37d184ea3671963e7b6b2c61cae274606ce373199ff21f7ceb73c9e97976ad",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-facts.flix",
+      "sha256": "d4faaf332d05781a93111098d2397b6ecc500ea7ad4916e15d368e200c5baf73",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-one.flix",
+      "sha256": "1bc1b8442ae8e4d2697c857bda82cc29e89d0a1d48923ebcdd81bea85ebce86d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-output.flix",
+      "sha256": "1a36d52f5ab747f7c899f8b241818352e21f3ba20d98313ad2d6bd666ab7ded0",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-pair.flix",
+      "sha256": "ce517f72140672fadee8ca3c1efac8b2ea1441ec8cbea9cbbbf0243bd05ed8be",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-primer.flix",
+      "sha256": "0d9cf401a9dcd1f13bfe30396d318066817dac639da524cc500ea6cbdc7b8d3c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-query.flix",
+      "sha256": "1c29728c2cf3a960ce883d0deef14f5da1444d45370af087f746345efe99bc99",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-recursion.flix",
+      "sha256": "1897def231e57b0e2277a359e2225e2163b88a6b0f232df0bdfa5ce6ec07baf1",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-sharedRule.flix",
+      "sha256": "5a8a24adfe24b2ff2105c02b850e2959b479e4c10a954b643a3dc781c311f861",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-three.flix",
+      "sha256": "09d34614d53fb9cbd022c8c72f4a49bde0835b2eab6fd240f053e714eb8d5858",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/datalog-two.flix",
+      "sha256": "4ed44179d0924a2507648832b7ad7824590e4ddb59f3f3472a2a95d5c68ba1d8",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/domains.flix",
+      "sha256": "d09711955475ea94b50d338e35d258fe2dc589c12db3169d9ee4068d4c092956",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/embedding-effect.flix",
+      "sha256": "f1396b6023db46d0c5506cb5576cbadd01fe3fd7bd7db5a22fb6ac83550d874d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/importCandidates.flix",
+      "sha256": "474223d4a005e5a6a7933509c89c1105c9274724854c5aae5e23be593aacb1a6",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/inverse.flix",
+      "sha256": "3fdfd7b93cab041365c4afaadb4f9e3e6974950abd8db6b456b8138cbe20b794",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/memo-apply.flix",
+      "sha256": "a954faa5815700bb6809200204ccce171c15ccd689fc918edb6e9f43fdcf40db",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/memo-contrast.flix",
+      "sha256": "7927ce90a45f02a310f4cbd71efe583cff4d6258e2fd5a16ce661247fc85cc1c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/memo-lookup.flix",
+      "sha256": "9c899562a9cdd343ad4338afcbe016c4e892179367e9f9687e7327e2c6ecf71c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/memoApply.flix",
+      "sha256": "a8e9ea1218adfa610cd9bad8a29e964e77eff239a47a60f4ae9810ca01df9a69",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/memoLookup.flix",
+      "sha256": "dca6029362caf0355033c647dd64eea01fe05319efcf8a39c200b3951297f6c4",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/metricComplete.flix",
+      "sha256": "d65a92bc8840507f7892ec05e9800f75077703b4016f4b780ff5dc2a6645c71f",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/metricGold.flix",
+      "sha256": "8f75e596fa9ee205bb6e65ec57e105f5177a424a50dfad8c781022b83317168a",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/path-order.flix",
+      "sha256": "8920da9c7d56f6748b65196675918e5ec285ce4b155bb0f242151e0d682ce1ee",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/path-score.flix",
+      "sha256": "5858fc45a7bed829ac807cbaa531dc8ff21f7fc104ca8cd403091f479cdfa2cf",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/path-tokens.flix",
+      "sha256": "8e38d7ec7f09266c20de92ac4c40cd6ad5f80d6ab128bb8469922c6d4b00bed6",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/pathScore.flix",
+      "sha256": "9a3886d802297a5d9296d3b98f9195696a9be7286214c0f7ba781d94c69c495d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/pathTokens.flix",
+      "sha256": "5e2dd1fbaa5f114271033fd07c4e06e7b87dceb63d585beaae6544567a88d177",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/peers.flix",
+      "sha256": "0a976e5f0e4d207d757a9dcc72278c0ac0b0393a4134e8503d2945689347ea44",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/population.flix",
+      "sha256": "28e2f25f4f5b52aadf4f2745abe7f7ba37d378a8df1df008efe67383b00b918a",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/projection.flix",
+      "sha256": "c38121552fe143c3eb6645623220b9ecd83a724e03e79cfc22a00b3730d37bfc",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/promoted.flix",
+      "sha256": "569b6c9b88564532a1c38da5d80159602692e0426b36dffa6299b28682d6c3df",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/promotion.flix",
+      "sha256": "92391a4a9f8057d4f294433dee0678b8badcfe23d6409dc97ce11035ed4b6f80",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/q-branches.flix",
+      "sha256": "3a00daf1facee0652bf6fdc1ddfdb78cf2bc722c3ab4511bce8bc849f5255e85",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qBranches.flix",
+      "sha256": "84b1939ddea93e05d44f5d2fe85a0d2118fccd0e4677b6816bf63cdb3a887878",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwen.flix",
+      "sha256": "9b6ac35955b1539bd3e971699209c5b7daa995d7a822d618fc9220246a9c08ee",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwenAdmission.flix",
+      "sha256": "b795fbf092c59e0a6b59333b374634cd896a8e57674e7d5c6847c728263f94cc",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwenArtifact.flix",
+      "sha256": "15802d651de732ff80c2ecbf21f68187193dfe7d86e33d1fcbca9d0432894704",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwenIO.flix",
+      "sha256": "c7756662e8b54340cd932df0f2ff1bea2512f292e54d5017a351a45aa68b3c42",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwenRead.flix",
+      "sha256": "bdc5173c20d82f458aa8b2c6b4f6486b0f968ad8e302d1e67fb6a3c140236d65",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/qwenStage.flix",
+      "sha256": "c2aa041f321a7fe9d168cef82199929e66ca7c1b4348bb071ddd5f993dc4c24e",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/rankVectors.flix",
+      "sha256": "e59a535d3863117d0f9329f149d6416964fa05f990506bec7dad63e1a7371713",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/reuse.flix",
+      "sha256": "b92468c49595c4a48c9cfb0487e41b11607553977521f30aa98c19c17270818c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/safe.flix",
+      "sha256": "06606258ea48ce08c2e2c00fb0bb029de4f387536b1ec50243a9df224e929c9d",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/scoreOrder.flix",
+      "sha256": "dd028a6b2289ba83ec8ea65d9ce8fafd4ab071cfdc3fe00dec90d286e8918f0c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/shards.flix",
+      "sha256": "a63c7fe137486e23edb0edd55ae961744bb8618e4e0ad960cc54f038ff68ba0c",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/solFloor.flix",
+      "sha256": "d44c45a27273df742113d86d682cf085e9b5430ad272c0d7a8b43c53ee83540a",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/stable-promotion.flix",
+      "sha256": "b464792a3a027787a3da6e5a39f32e587356b91e016a2622160252f0a863ad93",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/theory-examples.flix",
+      "sha256": "951ccb3cfa2c66bad25667f12b78c209940892c781a043e015e547b157c598d2",
+      "classId": "web-flix-doc-fragments"
+    },
+    {
+      "path": "web/site/sources/transitionKey.flix",
+      "sha256": "e12207846f6466c7693bfa38eb35ea63b68b8a79436b661d1eb9ad225c783b6a",
+      "classId": "web-flix-doc-fragments"
     }
   ]
 }

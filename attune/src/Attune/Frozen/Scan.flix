@@ -7,6 +7,7 @@
 pub mod Attune.Frozen.Scan {
 
     use Attune.Frozen
+    use Attune.Frozen.Check
     use Attune.Frozen.Finding
     use Attune.Frozen.{ClassRule, DataEntry, DebtEntry, FileEntry, GeneratedEntry, Retirement, Seam}
     use Fs.FileRead
@@ -15,9 +16,10 @@ pub mod Attune.Frozen.Scan {
     import java.io.IOException
     import java.nio.charset.StandardCharsets
     import java.nio.file.{Files, Path, Paths}
+    import java.nio.file.attribute.PosixFilePermission
     import java.security.MessageDigest
     import java.util.{HexFormat, Objects}
-    import java.lang.{IllegalStateException, InterruptedException, ProcessBuilder}
+    import java.lang.{IllegalStateException, InterruptedException, ProcessBuilder, System}
 
     // ------------------------------------------------------------ git read-only
 
@@ -160,7 +162,11 @@ pub mod Attune.Frozen.Scan {
     def visit(root: Path, prefix: String, file: File, files: Map[String, FileEntry], findings: List[Finding]): (Map[String, FileEntry], List[Finding]) \ IO = {
         let name = file.getName();
         let rel = if (prefix == "") name else prefix + "/" + name;
-        if (pruned(name, rel))
+        if (name == ".git" and rel != ".git")
+            // A nested repository (directory or gitdir pointer) inside the
+            // checkout is an unpinned nested repo: never entered, refused.
+            (files, Finding.NestedRepository(rel) :: findings)
+        else if (pruned(name, rel))
             (files, findings)
         else if (Files.isSymbolicLink(file.toPath()))
             symlink(root, rel, file.toPath(), files, findings)
@@ -191,13 +197,34 @@ pub mod Attune.Frozen.Scan {
         })
 
     /// A regular file is hashed unless protected; unreadable fails closed.
+    /// The unreadable entry stays in the census with readable = false, so the
+    /// path is still classified and its identity checked; the walk finding
+    /// records the unreadability itself. An executable bit on a regular file
+    /// is a renamed-executable-asset signal reported to the pure verify.
     def regular(rel: String, path: Path, files: Map[String, FileEntry], findings: List[Finding]): (Map[String, FileEntry], List[Finding]) \ IO =
         if (Frozen.protected(rel))
             (Map.insert(rel, {kind = "file", sha256 = "-", target = "-", readable = false}, files), findings)
         else match hashFile(path) {
-            case Ok(digest) => (Map.insert(rel, {kind = "file", sha256 = digest, target = "-", readable = true}, files), findings)
-            case Err(reason) => (files, Finding.UnreadableSource(rel, reason) :: findings)
+            case Ok(digest) =>
+                (Map.insert(rel, {kind = "file", sha256 = digest, target = "-", readable = true}, files),
+                    execBit(rel, path) ++ findings)
+            case Err(reason) => (Map.insert(rel, {kind = "file", sha256 = "-", target = "-", readable = false}, files),
+                Finding.UnreadableSource(rel, reason) :: findings)
         }
+
+    /// The executable bit on a regular file: reported so a renamed executable
+    /// asset cannot enter the tree under an innocuous name. Manifested files
+    /// are identity-pinned; their findings are still reported (mode drift on
+    /// frozen debt is never silent).
+    def execBit(rel: String, path: Path): List[Finding] \ IO = FileRead.runWithIO(() -> try {
+        let perms = Files.getPosixFilePermissions(path);
+        if (perms.contains(PosixFilePermission.OWNER_EXECUTE))
+            List#{Finding.SmuggledContent(rel, "executable-bit-unaccounted")}
+        else
+            Nil
+    } catch {
+        case _: IOException => Nil
+    })
 
     // ------------------------------------------------------------ JSON parsing
 
@@ -394,6 +421,14 @@ pub mod Attune.Frozen.Scan {
         }, Map.empty(), Map.toList(fileObject))
     }
 
+    /// The Git index as the committing population: every tracked path plus
+    /// every staged (added-to-index) path. Membership exempts a .flix file
+    /// from the standalone compiler check because a declared target compiles it.
+    pub def indexOf(trackedMap: Map[String, String], staged: List[String]): Map[String, Bool] =
+        List.foldLeft((m, p) -> Map.insert(p, true, m),
+            List.foldLeft((m, p) -> Map.insert(p, true, m), Map.empty(), staged),
+            List.map(match (k, _mode) -> k, Map.toList(trackedMap)))
+
     // ------------------------------------------------------------ composition
 
     /// One declared binding value: the launcher resolves each runfile path to
@@ -423,9 +458,39 @@ pub mod Attune.Frozen.Scan {
             case Err(_) => throw new IllegalStateException("Declared binding unreadable: " + name)
         })
 
+    /// The runfile path of an optional declared binding: None when absent.
+    pub def declaredOptional(name: String): Option[String] \ IO = {
+        let lines = String.lines(readBindings());
+        let values = List.filterMap(line -> match String.split(regex = "\t", line) {
+            case key :: value :: Nil if key == name => Some(value)
+            case _ => None
+        }, lines);
+        match values {
+            case value :: _rest => Some(value)
+            case Nil => None
+        }
+    }
+
+    /// This process's own pinned JVM launcher, used to run the pinned Flix
+    /// compiler in check mode.
+    pub def javaBin(): String \ IO = System.getProperty("java.home") + "/bin/java"
+
+    /// The pinned tools the content checks run with. The aquery dump is
+    /// optional: when absent the build-input leg reports not-run instead of
+    /// pretending it checked anything. The population root is the runfiles
+    /// directory holding the expanded declared-source population; when absent
+    /// the compiler leg reports not-run for the same reason.
+    pub type alias Tools = {
+        javaBin = String,
+        flixJar = String,
+        nixInstantiate = String,
+        aqueryDump = Option[String]
+    }
+
     /// The full scan of one checkout: Git populations, worktree census,
-    /// manifests, baseline evidence, and the resulting findings.
-    pub def check(git: String, root: String): Result[String, (String, List[Finding])] \ IO = {
+    /// manifests, baseline evidence, the anti-smuggling content scan, the
+    /// pinned compiler/parser checks, and the declared build-input scan.
+    pub def check(git: String, root: String, tools: Tools): Result[String, (String, List[Finding])] \ IO = {
         let walked = walk(Paths.get(root), new File(root), "", Map.empty(), Nil);
         forM (
             trackedMap <- tracked(git, root);
@@ -445,8 +510,36 @@ pub mod Attune.Frozen.Scan {
                 findings = scanFindings,
                 evidenceDigest = evidence#digest
             };
-            let findings = Frozen.verify(manifests, evidence, scan);
-            (Frozen.report(findings), findings)
+            let (contentCount, contentFindings) = Check.contentScan(root, files, manifests);
+            // A pinned-tool failure is itself a finding (fail closed), never
+            // a silent skip and never a scan-level Err that would hide the
+            // already-collected walker and manifest findings. The index is
+            // the committing population: untracked .flix files must compile
+            // standalone (they are compiled by no declared target).
+            let (flixStatus, flixFindings) = match Check.flixParse(root, tools#javaBin, tools#flixJar, files,
+                p -> Map.memberOf(p, Check.pathSetOf(manifests)), indexOf(trackedMap, staged)) {
+                case Ok((status, fs)) => (status, fs)
+                case Err(reason) => ("failed", List#{Finding.InventoryFailure("flix check failed: " + reason)})
+            };
+            let (nixCount, nixFindings) = match Check.nixParse(root, tools#nixInstantiate, files) {
+                case Ok((count, fs)) => (count, fs)
+                case Err(reason) => (0, List#{Finding.InventoryFailure("nix parse failed: " + reason)})
+            };
+            let (inputsStatus, inputFindings) = match tools#aqueryDump {
+                case Some(dump) => match Check.buildInputs(dump, scan) {
+                    case Ok((status, fs)) => (status, fs)
+                    case Err(reason) => ("failed", List#{Finding.InventoryFailure("build-input scan failed: " + reason)})
+                }
+                case None => ("not-run (no declared aquery dump)", Nil)
+            };
+            let findings = Frozen.dedupe(
+                Frozen.verify(manifests, evidence, scan) ++
+                contentFindings ++ flixFindings ++ nixFindings ++ inputFindings);
+            let legs = "checks run: inventory " + Int32.toString(List.length(Map.toList(trackedMap))) + " tracked + " +
+                Int32.toString(List.length(untracked)) + " untracked, manifests, content-scan " +
+                Int32.toString(contentCount) + " carriers, flix " + flixStatus +
+                ", nix-parse " + Int32.toString(nixCount) + " files, build-inputs " + inputsStatus;
+            (Frozen.report(findings) + "\n" + legs, findings)
         }
     }
 }

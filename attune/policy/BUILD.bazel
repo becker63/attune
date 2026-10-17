@@ -12,21 +12,30 @@ filegroup(
 
 # The frozen source-policy CLI: classify the whole checkout (Git tracked,
 # index, eligible untracked) against the frozen debt/data/generated manifests
-# and fail closed on unknown or unreadable input. Read-only: Git metadata and
-# worktree bytes as data; nothing scanned is ever executed.
+# and fail closed on unknown or unreadable input. The anti-smuggling content
+# scan and the pinned compiler/parser checks read worktree bytes as data in
+# non-evaluating modes; nothing scanned is ever executed. Read-only: Git
+# metadata and bytes only.
 native_flix_checkout_binary(
     name = "source_policy",
     srcs = [
         "PolicyMain.flix",
         "//src:Attune.flix",
         "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Corpus.flix",
+        "//src:Attune/Frozen/Inputs.flix",
         "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
     ],
     checkout_root = "@local_checkout//:checkout_root.txt",
+    extra_data = [
+        "@local_checkout//:nix.txt",
+        "@flix_compiler//jar:downloaded.jar",
+    ],
     git_bin = "@local_checkout//:git.txt",
 )
 
 exports_files([
     "PolicyMain.flix",
 ])
-
