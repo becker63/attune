@@ -68,6 +68,7 @@ jobs:
         run: |
           nix develop --command bash -c \
             'cd attune && bazel --output_base="$HOME/.cache/attune-ci-base" test \
+              --define=attune_native_isolation=platform \
               //test/policy:adversarial_corpus_test \
               //test/policy:pin_law_test \
               //test/policy:policy_cases_test \

@@ -111,7 +111,7 @@
     },
     {
       "path": ".github/workflows/source-policy.yml",
-      "sha256": "f43b9860ea2028ea47c32496eeb1c0f2631fd681b1aa2f7d2b871b64f066bdae",
+      "sha256": "5cf00a53548e693ff6b8e381b50f37828d89e1c425edb3cf97186462dcde0177",
       "classId": "authored-configuration"
     },
     {
