@@ -22,13 +22,15 @@ freeze was taken at:
   retiring milestone, the recorded parity and the caller switch) and the four
   counted reviewed shell seams (BuildBuddy credential helper, Bazel launcher,
   public commands, systemd unit commands).
-- `policy/data-manifest.json` — 4,075 non-debt, non-authored paths, each
+- `policy/data-manifest.json` — 4,123 non-debt, non-authored paths, each
   classified into a named class with provenance, reason, owner and milestone
   (preserved evidence archive, captured data, science tables, migration
   evidence, operation reports, public key material, license texts,
   site/example content, published reports, test fixtures, one preserved
   campaign capture, authored configuration, the hash-frozen adversarial
-  corpus, and the website's Flix-language documentation fragments).
+  corpus, the website's Flix-language documentation fragments, and the 42
+  preserved experiment sources whose compilation is manual-tagged pending
+  the M3 native-campaign retirement).
 - `policy/generated-manifest.json` — 14 dependency lock/pin artifacts, each
   naming its producer, the pinned tool that regenerates it, and the mapping
   to the manifest it pins.
@@ -69,17 +71,23 @@ content-level legs, none of which executes the content it judges:
   its markers; the corpus is manifested data read as data).
 - **Pinned Flix compiler, coverage and standalone mode.** Every authored
   `.flix` file must either be covered by an actual declared compilation
-  group of the proposed graph — a `FlixLibrary`, `FlixArtifact` or
-  `TestRunner` action of the fresh `bazel aquery` dump whose resolved inputs
-  name the file (cross-module dependencies included) — or compile standalone
-  with the pinned compiler (`flix check`, parse-and-resolution only, no main
-  ever runs) with zero errors. Coverage is never inferred from Git index or
-  commit membership: the retained historical bypass staged a Nim program
-  named `.flix` into the index and index membership alone exempted it from
-  compilation. Neither staging nor committing proves content valid, so a
-  staged, worktree-modified, or committed `.flix` file that no declared
-  compilation group names is standalone-compiled exactly like an untracked
-  one. Manifested data fragments (website Flix-language documentation) are
+  input of the proposed graph — a `FlixLibrary` or `FlixArtifact` action, or
+  a launcher compile-source manifest action (one declared `Symlink` per
+  compiler source of a `java_test`/`java_binary` program) — of the fresh
+  `bazel aquery` dump whose resolved inputs name the file (cross-module
+  dependencies included), or compile standalone with the pinned compiler
+  (`flix check`, parse-and-resolution only, no main ever runs) with zero
+  errors. Coverage is never inferred from Git index or commit membership,
+  and never from rule-class runfile closure: a file that merely rides in a
+  test's or binary's runfiles as data is not thereby compiled, so a Nim
+  program named `evil.flix` passed as `java_test` data is rejected (standalone
+  check or unowned-source finding), not exempted by data membership. The
+  retained historical bypass staged a Nim program named `.flix` into the
+  index and index membership alone exempted it from compilation. Neither
+  staging nor committing proves content valid, so a staged,
+  worktree-modified, or committed `.flix` file that no declared compilation
+  input names is standalone-compiled exactly like an untracked one.
+  Manifested data fragments (website Flix-language documentation) are
   exempt because they are accounted content, and the detector/corpus files
   are digest-anchored trusted configuration (below).
 - **Pinned Nix parser.** Every `.nix` file is validated with
@@ -87,7 +95,10 @@ content-level legs, none of which executes the content it judges:
   Nix never runs).
 - **Declared build-input scan (required).** The public commands materialize
   the fresh proposed-graph dump at `.attune/aquery-dump.json` (`bazel aquery
-  //... --output=jsonproto` over the checkout's current BUILD files) before
+  '//... + //test/spine:false_assertion_test'` over the checkout's current
+  BUILD files; the manual-tagged negative fixture is named explicitly
+  because wildcard expansion skips manual targets and its declared
+  compilation must stay visible) before
   the gate runs; the live gate requires it and exits `2` when it is absent,
   so an audit that never ran can never look like a pass. The dump is parsed
   strictly as data (a dump with no declared targets, or an unresolvable
@@ -121,12 +132,26 @@ schema — including the scanner-digest pinning laws — walker-finding
 composition, relabel laundering, and the executable-extension provenance
 rule).
 
+The live nested-workspace audit (`//test/policy:workspace_audit_test`, the
+same uncached law behind `Policy.findings`) walks the attune workspace and
+admits an unowned path only when the frozen data manifest classifies that
+exact path and the audited file's live SHA-256 equals the manifest's
+recorded digest; a modified or unreadable manifested file stays out of the
+admitted set and is reported. Classification is per exact path — no owned
+prefix is widened, no directory is exempt, and a new file added under the
+preserved evidence directory still fails as unowned. The classification is
+passed by the live audit after verification; the pure boundary checks
+(forbidden language, symlink escape, invalid size, protected-never-read)
+apply to classified paths exactly as to everything else.
+
 The retained adversarial corpus (the 25-case historical audit corpus plus
 the approved embedding/renaming/generator/download/eval/nested-repo/alias/
 re-export/fixture/vendor classes, the benign systemd/package seam control,
 and the M1 staged-new/modified-tracked/committed-undeclared disguised-Flix
-negatives, the legitimate uncommitted cross-module presubmit acceptance, and
-the unreadable fresh-owned file and directory fail-closed controls, 39 cases)
+negatives, the data-as-source runfile-laundering negative (a disguised
+non-Flix program named `evil.flix` passed as `java_test` data must fail),
+the legitimate uncommitted cross-module presubmit acceptance, and
+the unreadable fresh-owned file and directory fail-closed controls, 40 cases)
 runs as `//test/policy:adversarial_corpus_test`: each case is materialized
 into a disposable synthetic Git checkout (permissions restored before
 cleanup) and judged by the live scanner, with the pure content detector
@@ -179,16 +204,26 @@ to reach green.
 
 ## Feature-branch CI bootstrap
 
-`.github/workflows/source-policy.yml` builds the scanner independently on
-the runner from the pushed sources with the pinned compiler (no prebuilt
-scanner artifact is trusted from anywhere else), then runs `nix run .#lint`,
-`nix run .#typecheck`, and the scanner's own law suite (corpus, pins,
-declared-source, build-input laws). The proposed tree is data to the
-scanner in CI exactly as locally. A workflow's YAML presence never marks
-enforcement PASS: real outcomes are recorded from actual runs only, and a
-run that cannot happen is escalated as BLOCKED. Protected remote
-enforcement (branch protection, required checks) remains an operator
-checkpoint after authorized publication.
+`.github/workflows/source-policy.yml` records one reviewed trusted scanner
+revision, compiles the gate binary from THAT revision's own tree and pinned
+Nix environment (no prebuilt scanner artifact is trusted from anywhere
+else, and the program that judges the policy phase is not compiled from the
+very bytes it judges), materializes the proposed-graph aquery dump from the
+proposed tree, and runs the trusted scanner with its declared checkout-root
+binding pointed at the proposed tree — the proposed bytes are data to it.
+It then runs `nix run .#lint`, `nix run .#typecheck`, and the scanner's own
+law suite (corpus, pins, declared-source, build-input laws and the live
+nested-workspace audit). The scanner source delta between the recorded
+revision and each push is printed for review. The recorded revision is
+named inside the workflow file, which itself ships in the proposed tree:
+nothing in CI is administrative protection, and a proposal that edits the
+workflow, the recorded revision, or the manifests is visible only as a
+reviewable diff and run log at the operator checkpoint. Advancing the
+recorded revision to a reviewed proposal is that same operator checkpoint.
+A workflow's YAML presence never marks enforcement PASS: real outcomes are
+recorded from actual runs only, and a run that cannot happen is escalated
+as BLOCKED. Protected remote enforcement (branch protection, required
+checks) remains an operator checkpoint after authorized publication.
 
 ## Bootstrap trust limits
 
@@ -238,6 +273,7 @@ historical public tests: the three loads now resolve to recorded no-op
 retirement stubs (`scale_targets`/`quality_targets`/`novelty_targets` are
 empty macros whose file docstrings record the retirement and the
 regeneration recipe), so the declared population loads and the full nested
-suite executes. The live workspace audit still reports the owner's
-unclassified preserved evidence under `notes/repository-through-time/` by
-design (`attune/AGENTS.md`): report failures, never suppress them.
+suite executes. The M1 policy feature then classified the exact preserved
+evidence paths in the frozen data manifest and made the live audit admit
+them only after digest verification (`attune/AGENTS.md`): report failures;
+never suppress them.

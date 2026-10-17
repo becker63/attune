@@ -157,12 +157,15 @@
 
           # The materialized-dump-plus-policy preamble every public gate
           # command runs before its own action. The aquery dump is the fresh
-          # proposed-graph build-input record the live gate audits; the policy
-          # run fails closed (exit 2) when the dump is missing or stale.
+          # proposed-graph build-input record the live gate audits; the
+          # manual-tagged negative fixture is named explicitly because the
+          # wildcard skips manual targets and its declared compilation must
+          # stay visible. The policy run fails closed (exit 2) when the dump
+          # is missing or stale.
           policyPreamble = ''
             mkdir -p .attune
             echo "[policy] materializing the proposed-graph aquery dump (.attune/aquery-dump.json)"
-            attune_bazel aquery //... --output=jsonproto > .attune/aquery-dump.json
+            attune_bazel aquery '//... + //test/spine:false_assertion_test' --output=jsonproto > .attune/aquery-dump.json
             echo "[policy] running the source-policy gate"
             attune_bazel run //policy:source_policy
           '';

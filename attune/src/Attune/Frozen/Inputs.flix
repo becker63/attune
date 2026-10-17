@@ -20,12 +20,15 @@
 //   saw fails the gate. The dump paths are workspace-relative; when the
 //   workspace is nested in a checkout (attune/), the caller supplies the
 //   workspace prefix and both forms are checked against the inventory.
-// - Declared Flix compilation coverage: the actions of the pinned Flix
-//   compilation rules (FlixLibrary, FlixArtifact, TestRunner) carry their
-//   Flix sources in arguments or runfiles. A .flix file covered by such an
-//   action is compiled by a declared target with the pinned compiler and its
-//   declared cross-module dependencies; an uncovered .flix file must pass
-//   the standalone pinned check instead.
+// - Declared Flix compilation coverage: the FlixLibrary and FlixArtifact
+//   actions carry their compiled sources as declared action inputs, and
+//   each launcher program (java_test, java_binary of the native `_program`
+//   macro) records its exact compiler source list through its
+//   `compile_sources` manifest target (one Symlink action per source). A
+//   .flix file covered by one of these is compiled by a declared target
+//   with the pinned compiler and its declared cross-module dependencies;
+//   an uncovered .flix file must pass the standalone pinned check instead.
+//   Runfile-closure membership (data, bindings, fixtures) never covers.
 // - The presubmit typecheck plan: the declared targets that compile the
 //   checkout's changed files.
 pub mod Attune.Frozen.Inputs {
@@ -288,23 +291,50 @@ pub mod Attune.Frozen.Inputs {
 
     /// The pinned Flix compilation shapes: the FlixLibrary action compiles a
     /// flix_library's sources as a Bazel action; the FlixArtifact action
-    /// compiles a declared artifact program's sources. The attune launcher
-    /// shapes (java_test, java_binary) compile their declared Flix sources
-    /// with the pinned compiler at run time, so their runfile closure is a
-    /// declared compilation group too.
+    /// compiles a declared artifact program's sources; and the attune
+    /// launcher programs (java_test, java_binary built by the native
+    /// `_program` macro) record their exact compiler source list through
+    /// their `compile_sources` manifest target, one Symlink action per
+    /// source. A launcher program's runfile closure also carries data,
+    /// bindings, fixtures and whole declared-population filegroups —
+    /// rule-class membership of that closure never implies compilation, so
+    /// a file smuggled as a java_test data input stays uncovered and is
+    /// standalone-checked by the pinned compiler like any floating file.
     pub def compilationMnemonic(mnemonic: String): Bool =
         List.memberOf(mnemonic, List#{"FlixLibrary", "FlixArtifact"})
 
-    pub def compilationRuleClass(ruleClass: String): Bool =
+    def programRuleClass(ruleClass: String): Bool =
         List.memberOf(ruleClass, List#{"java_test", "java_binary"})
 
+    /// The dump's launcher program labels: a java_test/java_binary target
+    /// label mapped to its rule class. Distinct actions of one target agree,
+    /// so the fold is idempotent.
+    def programLabels(actions: List[ActionRecord]): Map[String, String] =
+        List.foldLeft((m, a) ->
+            if (programRuleClass(a#ruleClass)) Map.insert(a#targetLabel, a#ruleClass, m) else m,
+            Map.empty(), actions)
+
+    def sourcesSuffix(): String = "_sources"
+
+    /// Is this action one Symlink action of a launcher program's
+    /// compile-source manifest? The manifest target label must be exactly
+    /// `<program>_sources` for a java_test/java_binary target of the same
+    /// dump, so a foreign Symlink action (or a manifest with no program
+    /// behind it) covers nothing.
+    def isSourceManifestAction(a: ActionRecord, programs: Map[String, String]): Bool =
+        a#mnemonic == "Symlink" and
+        String.endsWith(suffix = sourcesSuffix(), a#targetLabel) and
+        Map.memberOf(String.take(String.length(a#targetLabel) - String.length(sourcesSuffix()), a#targetLabel), programs)
+
     /// The declared Flix compilation population: every .flix path carried by
-    /// a compilation action, prefixed into the checkout-relative form the
-    /// scan uses. Each compilation action resolves its inputs by one bounded
-    /// traversal; no closure is shared or accumulated.
-    pub def declaredFlixPaths(dump: Dump, workspacePrefix: String): Result[String, Map[String, Bool]] =
+    /// a compilation action (or a launcher program's compile-source
+    /// manifest), prefixed into the checkout-relative form the scan uses.
+    /// Each action resolves its inputs by one bounded traversal; no closure
+    /// is shared or accumulated.
+    pub def declaredFlixPaths(dump: Dump, workspacePrefix: String): Result[String, Map[String, Bool]] = {
+        let programs = programLabels(dump#actions);
         List.foldLeft((acc, a) ->
-            if (compilationMnemonic(a#mnemonic) or compilationRuleClass(a#ruleClass))
+            if ((compilationMnemonic(a#mnemonic) and a#mnemonic != "Symlink") or isSourceManifestAction(a, programs))
                 match acc {
                     case Err(reason) => Err(reason)
                     case Ok(m) => match collectSets(dump#depSets, Map.empty(), Map.empty(), a#depSetIds) {
@@ -316,20 +346,30 @@ pub mod Attune.Frozen.Inputs {
                     }
                 }
             else acc, Ok(Map.empty()), dump#actions)
+    }
 
     /// The declared targets that compile the given .flix path, as
-    /// (label, ruleClass) pairs with duplicates removed. Each compilation
-    /// action resolves its inputs by one bounded traversal.
+    /// (label, ruleClass) pairs with duplicates removed. A FlixLibrary or
+    /// FlixArtifact action reports its own target; a compile-source manifest
+    /// reports the launcher program it records, so the typecheck plan builds
+    /// or runs the program itself. Each action resolves its inputs by one
+    /// bounded traversal.
     pub def coveringTargets(dump: Dump, flixPath: String): Result[String, List[(String, String)]] = {
+        let programs = programLabels(dump#actions);
         let found = List.foldLeft((acc, a) ->
-            if (compilationMnemonic(a#mnemonic) or compilationRuleClass(a#ruleClass))
+            if ((compilationMnemonic(a#mnemonic) and a#mnemonic != "Symlink") or isSourceManifestAction(a, programs))
                 match acc {
                     case Err(reason) => Err(reason)
                     case Ok(pairs) => match collectSets(dump#depSets, Map.empty(), Map.empty(), a#depSetIds) {
                         case Err(reason) => Err(reason)
                         case Ok(artifactSet) =>
                             if (List.memberOf(flixPath, artifactPaths(dump, artifactSet)))
-                                Ok((a#targetLabel, a#ruleClass) :: pairs)
+                                if (a#mnemonic == "Symlink")
+                                    match Map.get(String.take(String.length(a#targetLabel) - String.length(sourcesSuffix()), a#targetLabel), programs) {
+                                        case Some(ruleClass) => Ok((String.take(String.length(a#targetLabel) - String.length(sourcesSuffix()), a#targetLabel), ruleClass) :: pairs)
+                                        case None => Ok(pairs)
+                                    }
+                                else Ok((a#targetLabel, a#ruleClass) :: pairs)
                             else Ok(pairs)
                     }
                 }

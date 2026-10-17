@@ -6,7 +6,7 @@ def declaredSourcePopulationIsAccepted(): Unit \ {Assert, IO} = {
     Assert.assertOk(result);
     match result {
         case Ok(value) =>
-            let errors = Policy.findings(value#root, value#entries);
+            let errors = Policy.unclassifiedFindings(value#root, value#entries);
             println(Policy.report(errors));
             Assert.assertEq(expected = Nil, errors);
             List.forEach(required -> Assert.assertEq(expected = true,

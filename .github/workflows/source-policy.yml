@@ -1,10 +1,20 @@
 # Feature-branch CI for the frozen source-policy gate.
 #
-# The scanner is independently compiled on this runner from the pushed
-# sources with the pinned Flix compiler; no prebuilt scanner artifact is
-# trusted from anywhere else. The proposed tree is then data to that
-# scanner: the gate reads Git metadata and file bytes and never executes
-# what it scans.
+# Trusted-revision bootstrap: the workflow records one reviewed scanner
+# revision and compiles the gate binary from THAT tree, so the program that
+# judges the policy phase is not compiled from the very bytes it judges. The
+# proposed pushed tree is then data to that scanner: the gate reads Git
+# metadata and file bytes and never executes what it scans.
+#
+# Honest limits, recorded here and nowhere else papered over: the recorded
+# revision is named inside this workflow file, which itself ships in the
+# proposed tree, so nothing here is administrative protection. A proposal
+# that edits this file, the recorded revision, or the manifests it reads is
+# visible only as a reviewable diff and run log at the operator checkpoint.
+# When the proposed scanner sources differ from the recorded revision, the
+# trusted scanner judges the recorded revision's logic and the scanner
+# source delta is printed for review; advancing the recorded revision to a
+# reviewed proposal is the operator checkpoint, not an automated act.
 #
 # This workflow file never marks enforcement PASS. A run outcome is only
 # recorded from the actual run (or escalated as BLOCKED when no run is
@@ -19,6 +29,13 @@ permissions:
 concurrency:
   group: source-policy-${{ github.ref }}
   cancel-in-progress: false
+env:
+  # The recorded reviewed scanner revision: the pushed head whose lint,
+  # typecheck, corpus and live-gate outcomes are recorded green. Its
+  # workspace is compiled into the trusted scanner below; the proposed tree
+  # stays data. Advancing it is a reviewable workflow diff at the operator
+  # checkpoint.
+  TRUSTED_SCANNER_REVISION: 40a59c7d05cb05fd233b0f8a74486f29a6d019eb
 jobs:
   policy:
     runs-on: ubuntu-latest
@@ -29,18 +46,70 @@ jobs:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@v16
 
-      # Independently compiled trusted scanner bootstrap: compile the gate
-      # binary from the pushed tree with the pinned Flix compiler before any
-      # other step relies on it.
-      - name: Independently compile the trusted scanner from the pushed sources
+      # Compile the trusted scanner at the recorded revision, from that
+      # revision's own pinned Nix environment, before any other step relies
+      # on a scanner.
+      - name: Compile the scanner at the recorded trusted revision
         run: |
+          git worktree add "$RUNNER_TEMP/trusted" "$TRUSTED_SCANNER_REVISION"
+          cd "$RUNNER_TEMP/trusted/attune"
           nix develop --command bash -c \
-            'cd attune && bazel --output_base="$HOME/.cache/attune-ci-base" build //policy:source_policy'
+            'bazel --output_base="$HOME/.cache/attune-ci-trusted" build //policy:source_policy'
 
-      # Policy-first public lint gate: materializes the fresh proposed-graph
-      # aquery dump, runs the live scanner (classification, anti-smuggling
-      # content scan, declared build-input audit), then buildifier, nixfmt
-      # and the Bazel version pins.
+      # Scanner provenance, recorded for review: the anti-smuggling scanner
+      # digest the trusted revision pins against the proposed bytes, and the
+      # scanner-source delta between the recorded revision and this push. A
+      # delta means the trusted scanner judges the recorded revision's logic;
+      # advancing the recorded revision is the operator checkpoint.
+      - name: Record the scanner source delta against the trusted revision
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          TRUSTED="$RUNNER_TEMP/trusted"
+          echo "scanner digest pinned by the trusted revision:"
+          python3 - "$TRUSTED" <<'PY'
+          import hashlib, json, sys
+          trusted = sys.argv[1]
+          m = json.load(open(trusted + "/policy/debt-manifest.json"))
+          for p, d in sorted(m.get("scannerDigests", {}).items()):
+              live = hashlib.sha256(open(p, "rb").read()).hexdigest()
+              print(f"  {p}: pinned {d[:16]}... live {live[:16]}... {'match' if live == d else 'DIFFERS'}")
+          PY
+          echo "scanner source delta (recorded revision -> this push):"
+          git diff --stat "$TRUSTED_SCANNER_REVISION" HEAD -- attune/src attune/policy attune/platform/build || true
+
+      # Materialize the proposed-graph aquery dump in the proposed tree. This
+      # list is data: the trusted scanner audits the declared build inputs it
+      # records, but the proposed tree still produced the list itself, which
+      # is part of the honest limit stated at the top.
+      - name: Materialize the proposed-graph aquery dump
+        run: |
+          cd attune
+          nix develop --command bash -c \
+            'bazel --output_base="$HOME/.cache/attune-ci-base" aquery "//... + //test/spine:false_assertion_test" --output=jsonproto > .attune/aquery-dump.json'
+
+      # The policy phase proper: the trusted scanner binary, compiled at the
+      # recorded revision, runs with its declared checkout-root binding
+      # pointed at the proposed tree, so the proposed bytes are data to it.
+      # Its verdict (exit 0 clean, 1 findings, 2 scan failure) is the
+      # recorded trusted-revision outcome.
+      - name: Trusted-revision scanner judges the proposed tree
+        run: |
+          set -eu
+          B=$(ls -d "$RUNNER_TEMP"/trusted/attune/bazel-out/*/bin/policy/source_policy | head -1)
+          STAGE="$RUNNER_TEMP/trusted-scan"
+          mkdir -p "$STAGE"
+          cp "$B" "$STAGE/source_policy"
+          cp -aL "$B.runfiles" "$STAGE/source_policy.runfiles"
+          RF=$(find "$STAGE/source_policy.runfiles" -name checkout_root.txt | head -1)
+          printf '%s\n' "$GITHUB_WORKSPACE" > "$RF"
+          cd "$GITHUB_WORKSPACE"
+          nix develop --command bash -c '"$RUNNER_TEMP/trusted-scan/source_policy"'
+
+      # Policy-first public lint gate from the proposed tree: materializes a
+      # fresh proposed-graph aquery dump, runs the proposed tree's own live
+      # scanner (classification, anti-smuggling content scan, declared
+      # build-input audit), then buildifier, nixfmt and the Bazel version
+      # pins. Recorded alongside the trusted-revision verdict above.
       - name: Policy-first lint gate
         run: nix run .#lint
 
@@ -53,18 +122,14 @@ jobs:
 
       # The scanner's own laws on real data: the adversarial corpus
       # (including the staged, modified-tracked and committed disguised-Flix
-      # negatives, the legitimate uncommitted cross-module presubmit case and
-      # the live unreadable file/directory fail-closed controls), the pin and
-      # dependency-size delta laws, the declared-source policy and the
-      # hermetic build-input laws.
-      #
-      # The live workspace-audit test is deliberately absent from this CI
-      # list: it is a workstation gate that reports the owner's unclassified
-      # preserved evidence (attune/AGENTS.md) and stays visible in every
-      # local `bazel test //...` and in `nix run .#test`. This explicit,
-      # documented scope is not a silent exclusion; the CI outcome is still
-      # recorded exactly as it lands.
-      - name: Scanner corpus and pin laws
+      # negatives, the data-as-source runfile-laundering negative, the
+      # legitimate uncommitted cross-module presubmit case and the live
+      # unreadable file/directory fail-closed controls), the pin and
+      # dependency-size delta laws, the declared-source policy, the
+      # hermetic build-input laws and the live uncached nested-workspace
+      # audit, which now admits only digest-verified manifest-classified
+      # evidence and still fails on unknown paths.
+      - name: Scanner corpus, pin and audit laws
         run: |
           nix develop --command bash -c \
             'cd attune && bazel --output_base="$HOME/.cache/attune-ci-base" test \
@@ -76,4 +141,5 @@ jobs:
               //test/policy:build_input_law_test \
               //test/policy:frozen_debt_law_test \
               //test/policy:declared_source_policy_test \
+              //test/policy:workspace_audit_test \
               --test_output=errors'

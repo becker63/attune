@@ -12,13 +12,17 @@ pub mod Attune.Policy {
 
     /// These are the maintained roots. Research directories under notes are
     /// deliberately absent: a broad glob must not send retained work to a CAS.
-    /// The live audit therefore reports preserved notes/repository-through-time/
-    /// as unowned user files by design; report failures, never suppress them.
+    /// Preserved evidence is not owned by a prefix either: the frozen data
+    /// manifest classifies those exact paths (digest-verified by the audit),
+    /// so a new unclassified file under them is still reported. The one
+    /// exact generated-policy name is the proposed-graph dump the public
+    /// commands materialize; the scanner itself prunes and parses it as data.
     pub def owned(path: String): Bool =
         List.memberOf(path, List#{
             "AGENTS.md", "BUILD.bazel", "MODULE.bazel", "MODULE.bazel.lock",
             "maven_install.json", "browser_maven_install.json", ".bazelrc", ".bazelversion", ".gitignore",
-            ".bazelignore", "flake.nix", "flake.lock", "notes/BUILD.bazel", "notes/design.md"
+            ".bazelignore", "flake.nix", "flake.lock", "notes/BUILD.bazel", "notes/design.md",
+            ".attune/aquery-dump.json"
         }) or List.exists(prefix -> String.startsWith(prefix = prefix, path),
             List#{"src/", "test/", "example/", "experiments/native_patterns/", "platform/browser/", "platform/build/", "platform/tools/", "platform/support/", "platform/zed/", "policy/"})
 
@@ -46,13 +50,21 @@ pub mod Attune.Policy {
 
     /// No file content is necessary to decide these boundaries. Even a
     /// symlink pointing to a private file is classified without opening it.
-    pub def findings(root: String, entries: List[Entry]): List[String] =
+    ///
+    /// `classified` is the audited path space's subset that the frozen data
+    /// manifest classifies AND whose live content digest the caller has
+    /// verified against the manifest's recorded digest (the audit law hashes
+    /// each such file before admitting it). A classified path passes only
+    /// the unowned-source check; every other boundary still applies, so a
+    /// classified path can still fail as forbidden, unsafe, or malformed.
+    /// Unknown and unverified paths are never admitted.
+    pub def findings(root: String, entries: List[Entry], classified: Map[String, String]): List[String] =
         List.flatMap(entry -> {
             let path = entry#path;
             if (generated(path)) Nil
             else if (not safe(path)) List#{"invalid-path " + path}
             else if (protected(path)) List#{"protected-path " + path}
-            else if (not owned(path)) List#{"unowned-source " + path}
+            else if (not owned(path) and not Map.memberOf(path, classified)) List#{"unowned-source " + path}
             else if (unsupported(path)) List#{"forbidden-language " + path}
             else if (entry#size < 0i64) List#{"invalid-size " + path}
             else if (entry#kind == "symlink" and
@@ -61,6 +73,12 @@ pub mod Attune.Policy {
             else if (entry#kind != "file" and entry#kind != "symlink") List#{"invalid-kind " + path}
             else Nil
         }, entries)
+
+    /// The two-argument form audits with no manifest classification: every
+    /// unowned path is reported. The live audit passes the digest-verified
+    /// classification of the frozen data manifest instead.
+    pub def unclassifiedFindings(root: String, entries: List[Entry]): List[String] =
+        findings(root, entries, Map.empty())
 
     /// The launcher emits one record per path, never its contents. Malformed
     /// records fail rather than quietly disappearing from the population.

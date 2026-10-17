@@ -1,7 +1,7 @@
 {
   "schema": "attune-source-policy/1",
   "kind": "data",
-  "frozenAt": "2026-10-16T23:59:48Z",
+  "frozenAt": "2026-10-17T05:17:06Z",
   "frozenAtHead": "3f91d6e2b2913259811498fbaa4c72df5591207d",
   "classes": [
     {
@@ -101,6 +101,13 @@
       "reason": "website assets in an allowed language; accounted as data so the declared-population check can distinguish compiled source from rendered content",
       "owner": "M1",
       "milestone": "M1"
+    },
+    {
+      "id": "preserved-experiment-source",
+      "provenance": "retained experiment sources under attune/experiments/native_patterns/ from the original repository's native-campaign exploration; they compile only inside their declared manual-tagged experiment targets (pending the M3 retirement) and are rejected by the pinned compiler's standalone check",
+      "reason": "frozen experiment identity; recorded so the live audit classifies them instead of reporting them as unowned sources; never a library build input",
+      "owner": "M1 policy worker",
+      "milestone": "M1"
     }
   ],
   "entries": [
@@ -111,7 +118,7 @@
     },
     {
       "path": ".github/workflows/source-policy.yml",
-      "sha256": "5cf00a53548e693ff6b8e381b50f37828d89e1c425edb3cf97186462dcde0177",
+      "sha256": "bda5cbe5bd73780cc2d7bf50e342fb715a35262acc2b56f4fcb25a541f1e2bbb",
       "classId": "authored-configuration"
     },
     {
@@ -140,9 +147,229 @@
       "classId": "site-and-example-content"
     },
     {
+      "path": "attune/experiments/native_patterns/Admit.flix",
+      "sha256": "da808a3215241e92953fc28d7a93f4dce33715f08db233730dd1fcbec5bb17fe",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Campaign/Replay.flix",
+      "sha256": "cf2638096d2a64f2e4488369d8c0d0bb268685e8b7816fd664ff5cc2c05db924",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/CoreReplay.flix",
+      "sha256": "8e110c115c35e7b880297d915115cf2a8ee21685fc83f650bffe6a9e9ffe29e3",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Evaluate.flix",
+      "sha256": "233534b9ab0f559292c1f8ea586324bd98c54cb5c4cae98fe0802577aab3d507",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Extract.flix",
+      "sha256": "19f0cc6a4dae30e1651b7af1451c7fe91263635a80d76b77b40f7a34cc5c3350",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Finite.flix",
+      "sha256": "666703a1eb9c4bf81b750cde9c5dcd8534fa80354d43f0db2f33b17b38e8c69f",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Jev.flix",
+      "sha256": "75ec97a09b2aa80efd3d3533dfb752ceef80330e55346e5c771458c390fa3d49",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/LegacyAdmit.flix",
+      "sha256": "6d0af6efc0edf85b1b1b7241d8d0f1625c932adf04b4efdb241694d0c51ad481",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/LegacyEmbedding.flix",
+      "sha256": "8c350bff44336ee7507e7a9389519f90da1af56a9c2b7f7ef132c04655a38b28",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Match.flix",
+      "sha256": "adb035ebaa7a91c5852dcf865f563dbc2c4f83c67b4c2bb6ef8db6ec0a8d857d",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/PatternPermutation.flix",
+      "sha256": "6f38b26df0b72521089abeb8f74f65c796b48884762a9ad33bc52d10f4317a8c",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Predict.flix",
+      "sha256": "517c89fac242dd6cc1b5a8e19412a6303c221ac3fcdee2eb4ce1e32087c2bac3",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Rank.flix",
+      "sha256": "87c58c0f2ff6ce3d374610a3f4db0b2f4cf5cc79675f79394b2630503edcb773",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/RankLegacy.flix",
+      "sha256": "1c55ae8b3f6f2cc491fa77aef42b70d815aa9711da715b2f3dd9bca8efc1a9d2",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Summarize.flix",
+      "sha256": "27cd188770c6fa45f5b8d0391e42b946727cea9616317272a3eb340c16ba7754",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/Unavailable.flix",
+      "sha256": "44aedbbba5e5b6b89bb4692432c0801b1cb4e968c2ceef8fe96eddc7a90b48bf",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/Admit.flix",
+      "sha256": "0a3296c916f30b2deb9e9491e8ab590fb5965c6ad882bc2d1769e078ce71566b",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/BindingMain.flix",
+      "sha256": "112706a045407c80ff8180beb1322019ed9d06b2bb00c548bee3bffd8df202ec",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/Evaluate.flix",
+      "sha256": "cb8e7fedd32eeef86b091bf6ae1b528bb65cc09647c915dac861d09000fcffb3",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/Finite.flix",
+      "sha256": "dc8e4e7ea559c6a2ee3df83d998b5d9e5d94fabf2cd82df8d822ceebf97c2348",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/Predict.flix",
+      "sha256": "a94d3c028aaae1d3893111ed7cc315bcf319148d3fa455df33cf386e29f5ca71",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/QualifiedMain.flix",
+      "sha256": "ac6c9aff14d122cd429d445eb1f4a235673df86d036f77910e847c41789b827d",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/QualifiedPredict.flix",
+      "sha256": "69aceabf7e72d246bb8b72667cf6cfe8ee48e47487ea9345bfaec74d77e88646",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/RuleProbe.flix",
+      "sha256": "ac98043483f7e4c9aa2a30367d4d28e7230df342291429ecf9340dad6b9d5774",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/RuleProbeMain.flix",
+      "sha256": "f8d26aa417b88ae6a111b60073186e78e301b46dfe69b217e7d4a45a434f6f31",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/agreement/Selected.flix",
+      "sha256": "aa6dc51ec8ebabaadb34319fa90bd8884ea73cb6f8cdb9bc4590540dddfc5ed0",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/legacy/Attune.flix",
+      "sha256": "d90ba29ffff8e54d599d2e9929eed73089d8ffd3659d3759240ce3d756b85ed8",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/legacy/Attune/Coverage.flix",
+      "sha256": "d21cb96fe70d59f363b9de24cc00a1e77749420d143a4a1061cb145e07ec9437",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/legacy/Attune/Repository.flix",
+      "sha256": "deed55bb5f52268f42196ce1e0d078f5714632f21441d97a94290499235b4c5c",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/legacy/Attune/Repository/Grit.flix",
+      "sha256": "d190b469e59b920632f1da57d52dd14573b17afb6b89aa86d62b38b9737f5c95",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/scratch/Attune/Patterns.flix",
+      "sha256": "1d3765cb7498401749585af47eb23cd772f686e1e5f32e252633497d4f167259",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/scratch/PredictScratch.flix",
+      "sha256": "517c89fac242dd6cc1b5a8e19412a6303c221ac3fcdee2eb4ce1e32087c2bac3",
+      "classId": "preserved-experiment-source"
+    },
+    {
       "path": "attune/experiments/native_patterns/scratch/graph.bzl.txt",
       "sha256": "ac61cae7bfeaa8431c0644a4b975055f2fbc78c282c3bf906d33577f625358d6",
       "classId": "preserved-campaign-capture"
+    },
+    {
+      "path": "attune/experiments/native_patterns/search/Basis.flix",
+      "sha256": "e248f7f367befb28f973e4236e52d332638426cdd730c95846f6ad000fc7361b",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/search/KernelProbe.flix",
+      "sha256": "a4eb5acdd0e10689961f748615d4a1a49491fafda0120af951c3c5448be7b42b",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/search/LanguageProbe.flix",
+      "sha256": "0245d12b34ea0d6450fca3336e88f9fd3cbf6a033d2e8914c6753852e2baf5c1",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/search/Probe.flix",
+      "sha256": "a65a4e769b1a7abc6cbbe6e13ac036b460ca56230a1e0fc31007188e9183cade",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/search/QualityCompose.flix",
+      "sha256": "645b3b19a674f67ba49df00c79d7acea27e1a90f01a422e8e89e9ce6d9134ad7",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/specialization/Apply.flix",
+      "sha256": "bb6195dd50792fd4cb443a3ec972bc87e76a73e238734b15965d4c5a732964ae",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/specialization/Evaluate.flix",
+      "sha256": "3fa16e0f7e3e714741eabb07b2c43b867782f3057e02ecace2db707ec4ae4830",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/specialization/Fit.flix",
+      "sha256": "7bfe522ae257391f5f9a5f4a36f57958f3b305283605e3be9c30da4955c93459",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/specialization/Project.flix",
+      "sha256": "51bd8ebf26b6822bea6d998e1b0123bbb8dd42048a55448fb8f0c85f58e18fa0",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/experiments/native_patterns/specialization/Response.flix",
+      "sha256": "f17ea29e141e65a6c5aee16c5d00b41dfad4c1d827b793d57c9bdc3003b11b2c",
+      "classId": "preserved-experiment-source"
+    },
+    {
+      "path": "attune/notes/repository-through-time/REPLAY.md",
+      "sha256": "fea1c86333e686d5e36c7e48612cd2419164c6ac351fe44e6a37a9f246cf0895",
+      "classId": "preserved-evidence"
+    },
+    {
+      "path": "attune/notes/repository-through-time/REPORT.md",
+      "sha256": "02ba256cf41823635f41e7350e58e907895bf2811f53edd5a5c78632fb0a76e3",
+      "classId": "preserved-evidence"
     },
     {
       "path": "attune/notes/repository-through-time/SHA256SUMS",
@@ -177,6 +404,16 @@
     {
       "path": "attune/notes/repository-through-time/change-points.json",
       "sha256": "a6ce251393600f2f24120960981429759f9dcdab70603880d2a1c7639f77f578",
+      "classId": "preserved-evidence"
+    },
+    {
+      "path": "attune/notes/repository-through-time/checkpoints-v2/REPLAY.md",
+      "sha256": "43d273e68864f496d4a0c67e1af03aa5cce875213a838835afc63563088c1dbd",
+      "classId": "preserved-evidence"
+    },
+    {
+      "path": "attune/notes/repository-through-time/checkpoints-v2/REPORT.md",
+      "sha256": "2593c88d0644a258034384c6d565ee638123cffc7e06d7d6e446fcb70d134393",
       "classId": "preserved-evidence"
     },
     {
@@ -19405,6 +19642,11 @@
       "classId": "preserved-evidence"
     },
     {
+      "path": "attune/notes/repository-through-time/measurements/published/REPORT.md",
+      "sha256": "404d2c99233c7a74880f9c46f2266a055b3e8aa2e886624ba48d341be8bfbc29",
+      "classId": "preserved-evidence"
+    },
+    {
       "path": "attune/notes/repository-through-time/measurements/published/execution.log",
       "sha256": "3d6c5382b95f450086bfc35feaf72559e3dd8b1be23f355c8e2ed476e0bee6a9",
       "classId": "preserved-evidence"
@@ -19666,7 +19908,7 @@
     },
     {
       "path": "attune/test/policy/corpus/policy-corpus.json",
-      "sha256": "9f7eb195e934c0cdfd5688372258172b5fa88e472100f1fa666ae7cb2f6d13b5",
+      "sha256": "9a5c34058094aa51a1c1259cf446ad279b892ef44d3ec5d1b7c5ab3190d7afcf",
       "classId": "adversarial-corpus"
     },
     {

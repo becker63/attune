@@ -8,10 +8,12 @@ pub mod Attune.Frozen.Corpus {
     /// the seed mutation it applies ("" means none), and the pure content
     /// scan shape that must flag it ("" means the case is not a smuggle
     /// shape, so the pure detector is not asserted for it). Cases may
-    /// declare a synthetic aquery dump (`declaredInputs`): the declared
-    /// compilation group that covers the planted file, exercising the
-    /// coverage rule. `expectedFinding` names a finding prefix the report
-    /// must contain ("" means any rejection counts).
+    /// declare a synthetic aquery dump: `declaredInputs` is the program's
+    /// compile-source manifest (the files the pinned compiler compiles for
+    /// it) and `dataInputs` are files its runfile closure merely carries as
+    /// data — exercising exactly the distinction the coverage rule enforces.
+    /// `expectedFinding` names a finding prefix the report must contain
+    /// ("" means any rejection counts).
     pub type alias Case = {
         name = String,
         path = String,
@@ -20,6 +22,7 @@ pub mod Attune.Frozen.Corpus {
         mutation = String,
         expectedShape = String,
         declaredInputs = List[String],
+        dataInputs = List[String],
         expectedFinding = String
     }
 
@@ -52,6 +55,7 @@ pub mod Attune.Frozen.Corpus {
         mutation = str(fields, "mutation"),
         expectedShape = str(fields, "expectedShape"),
         declaredInputs = strList(fields, "declaredInputs"),
+        dataInputs = strList(fields, "dataInputs"),
         expectedFinding = str(fields, "expectedFinding")
     }
 

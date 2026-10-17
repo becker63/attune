@@ -65,8 +65,38 @@ declared_manifest = rule(
     attrs = {"srcs": attr.label_list(allow_files = True)},
 )
 
+def _compile_sources_impl(ctx):
+    # The declared compiler source list of one launcher program, recorded as
+    # a real declared-action-input fact: one symlink action per source makes
+    # the aquery dump name exactly the files the pinned compiler compiles
+    # for this program. The program's runfile closure (which also carries
+    # data, bindings and fixtures) never implies compilation; only this
+    # manifest does. The manifest text mirrors the recorded list.
+    out = ctx.actions.declare_file(ctx.label.name + ".txt")
+    lines = []
+    for file in ctx.files.srcs:
+        if file.owner.workspace_name != ctx.label.workspace_name:
+            fail("compile sources must belong to this workspace: %s" % file.owner)
+        name = file.short_path.split("/", 2)[2] if file.short_path.startswith("../") else file.short_path
+        lines.append(name)
+        link = ctx.actions.declare_file(ctx.label.name + ".sources/" + file.short_path)
+        ctx.actions.symlink(output = link, target_file = file)
+    ctx.actions.write(out, "\n".join(sorted(lines)) + "\n")
+    return [DefaultInfo(files = depset([out]))]
+
+compile_sources = rule(
+    implementation = _compile_sources_impl,
+    attrs = {"srcs": attr.label_list(allow_files = [".flix"])},
+)
+
 def _program(name, srcs, java_deps = [], declared_files = [], native_libs = [], mode = "test", flags = [], data = [], tags = [], host = False, binary = False, size = "small", platform_isolation = False):
     boundary, isolation_flags = _isolation(host, platform_isolation)
+
+    # The compile-source manifest records this program's exact Flix source
+    # list as declared action inputs (one Symlink action per source), so the
+    # source-policy coverage rule reads the real compiler sources from the
+    # aquery dump instead of the runfile closure.
+    compile_sources(name = name + "_sources", srcs = srcs)
     extra = list(data) + native_libs
     properties = flags + ["-Dattune.mode=" + mode, "-Dattune.tests=" + _locations(srcs)]
     if java_deps:

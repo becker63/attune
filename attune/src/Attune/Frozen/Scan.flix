@@ -377,7 +377,7 @@ pub mod Attune.Frozen.Scan {
         scannerDigests = scannerDigests
     }
 
-    def parseDataManifest(text: String): Result[String, Frozen.DataManifest] = forM (
+    pub def parseDataManifest(text: String): Result[String, Frozen.DataManifest] = forM (
         parsed <- Result.mapErr(_ -> "data manifest is not valid JSON", Util.Json.parse(text));
         _header <- checkHeader(parsed, "data");
         fields <- objFields(parsed);

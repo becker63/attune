@@ -118,26 +118,40 @@ def generatedManifestJson(): String =
     "{\"schema\": \"attune-source-policy/1\", \"kind\": \"generated\", \"frozenAt\": \"synthetic\", " +
         "\"frozenAtHead\": \"synthetic\", \"classes\": [], \"entries\": []}"
 
-/// A synthetic aquery dump in the real compact jsonproto shape: one declared
-/// TestRunner action of a java_test group whose runfiles carry exactly the
-/// declared inputs. This is the coverage evidence the live gate reads from
-/// the proposed graph's dump.
-pub def syntheticDump(paths: List[String]): String = {
-    let built = List.foldLeft((acc, p) -> {
-        let (pairs, i) = acc;
-        let id = i + 1;
-        (pairs ++ List#{(Int32.toString(id), p)}, id)
-    }, (Nil, 0), paths);
-    let (pairs, _count) = built;
-    let fragments = List.map(match (id, p) -> "{\"id\": " + id + ", \"label\": \"" + p + "\"}", pairs);
-    let artifacts = List.map(match (id, _p) -> "{\"id\": " + id + ", \"pathFragmentId\": " + id + "}", pairs);
-    let idsCsv = List.join(", ", List.map(match (id, _p) -> id, pairs));
-    "{\"targets\": [{\"id\": 1, \"label\": \"//synthetic:declared_group\", \"ruleClassId\": 1}], " +
-        "\"ruleClasses\": [{\"id\": 1, \"name\": \"java_test\"}], " +
-        "\"actions\": [{\"targetId\": 1, \"mnemonic\": \"TestRunner\", \"inputDepSetIds\": [1]}], " +
-        "\"artifacts\": [" + List.join(", ", artifacts) + "], " +
-        "\"pathFragments\": [" + List.join(", ", fragments) + "], " +
-        "\"depSetOfFiles\": [{\"id\": 1, \"directArtifactIds\": [" + idsCsv + "]}]}"
+/// A synthetic aquery dump in the real compact jsonproto shape, mirroring
+/// what the native `_program` launcher macro declares: the program target
+/// (`java_test`) carries its full runfile closure (compile sources AND
+/// data), while its `compile_sources` manifest target carries one Symlink
+/// action per declared compiler source. The coverage rule reads the
+/// Symlink manifest — never the runfile closure, which would make mere
+/// data membership imply compilation.
+pub def syntheticDump(sources: List[String], data: List[String]): String = {
+    let sourceCount = List.length(sources);
+    let (sourcePairs, _sourceCount) = List.foldLeft((acc, p) -> match acc {
+        case (pairs, n) => (pairs ++ List#{(n + 1, p)}, n + 1)
+    }, (Nil, 0), sources);
+    let (dataPairs, _dataCount) = List.foldLeft((acc, p) -> match acc {
+        case (pairs, n) => (pairs ++ List#{(sourceCount + n + 1, p)}, n + 1)
+    }, (Nil, 0), data);
+    let sourceIds = List.map(match (id, _p) -> id, sourcePairs);
+    let dataIds = List.map(match (id, _p) -> id, dataPairs);
+    let fragments = List.map(match (id, p) -> "{\"id\": " + Int32.toString(id) + ", \"label\": \"" + p + "\"}", sourcePairs ++ dataPairs);
+    let artifacts = List.map(match (id, _p) -> "{\"id\": " + Int32.toString(id) + ", \"pathFragmentId\": " + Int32.toString(id) + "}", sourcePairs ++ dataPairs);
+    let allCsv = List.join(", ", List.map(Int32.toString, sourceIds ++ dataIds));
+    let symlinkActions = List.map(match (id, _p) ->
+        "{\"targetId\": 2, \"mnemonic\": \"Symlink\", \"inputDepSetIds\": [" + Int32.toString(1000 + id) + "]}", sourcePairs);
+    let symlinkSets = List.map(match (id, _p) ->
+        "{\"id\": " + Int32.toString(1000 + id) + ", \"directArtifactIds\": [" + Int32.toString(id) + "]}", sourcePairs);
+    "{" +
+        "\"targets\": [{\"id\": 1, \"label\": \"//synthetic:declared_group\", \"ruleClassId\": 1}, " +
+        "{\"id\": 2, \"label\": \"//synthetic:declared_group_sources\", \"ruleClassId\": 2}], " +
+        "\"ruleClasses\": [{\"id\": 1, \"name\": \"java_test\"}, {\"id\": 2, \"name\": \"compile_sources\"}], " +
+        "\"actions\": [{\"targetId\": 1, \"mnemonic\": \"TestRunner\", \"inputDepSetIds\": [1]}" +
+        (if (List.isEmpty(symlinkActions)) "" else ", " ++ List.join(", ", symlinkActions)) ++ "], " +
+        "\"artifacts\": [" ++ List.join(", ", artifacts) ++ "], " +
+        "\"pathFragments\": [" ++ List.join(", ", fragments) ++ "], " +
+        "\"depSetOfFiles\": [{\"id\": 1, \"directArtifactIds\": [" ++ allCsv ++ "]}" ++
+        (if (List.isEmpty(symlinkSets)) "" else ", " ++ List.join(", ", symlinkSets)) ++ "]}"
 }
 
 /// The synthetic seed: one tracked legacy debt file, one tracked
@@ -297,16 +311,16 @@ def runCase(gitBin: String, flixJar: String, nixBin: String, one: Corpus.Case): 
                 // dump at the same .attune path the live commands use; the
                 // walk prunes it, exactly like the live checkout.
                 let dumpPath = Scan.aqueryDumpPath(candidate);
-                if (List.isEmpty(one#declaredInputs)) () else {
+                if (List.isEmpty(one#declaredInputs) and List.isEmpty(one#dataInputs)) () else {
                     discard Files.createDirectories(Paths.get(candidate, ".attune"));
-                    discard Files.writeString(Paths.get(dumpPath), syntheticDump(one#declaredInputs), StandardCharsets.UTF_8);
+                    discard Files.writeString(Paths.get(dumpPath), syntheticDump(one#declaredInputs, one#dataInputs), StandardCharsets.UTF_8);
                     ()
                 };
                 let tools = {
                     javaBin = Scan.javaBin(),
                     flixJar = flixJar,
                     nixInstantiate = nixBin,
-                    aqueryDump = if (List.isEmpty(one#declaredInputs)) None else Some(dumpPath),
+                    aqueryDump = if (List.isEmpty(one#declaredInputs) and List.isEmpty(one#dataInputs)) None else Some(dumpPath),
                     workspacePrefix = ""
                 };
                 match Scan.check(gitBin, candidate, tools) {

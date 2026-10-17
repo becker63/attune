@@ -31,7 +31,7 @@ def liveCheckoutPassesTheSourcePolicyGate(): Unit \ {Assert, IO} = {
     else {
         println("source-policy: required declared build-input audit did not run: no fresh aquery dump at " + dump);
         println("materialize it with the public commands (nix run .#lint, .#typecheck or .#test), or:");
-        println("  cd attune && mkdir -p .attune && bazel aquery //... --output=jsonproto > .attune/aquery-dump.json");
+        println("  cd attune && mkdir -p .attune && bazel aquery '//... + //test/spine:false_assertion_test' --output=jsonproto > .attune/aquery-dump.json");
         Assert.assertEq(expected = "fresh aquery dump present at " + dump, "absent")
     };
     let tools = {

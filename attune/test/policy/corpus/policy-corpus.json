@@ -302,6 +302,17 @@
       "declaredInputs": ["Cross.flix"]
     },
     {
+      "name": "data-as-source-disguised-flix",
+      "path": "evil.flix",
+      "body": "import std/os\necho 1",
+      "expected": "reject",
+      "mutation": "stage-add",
+      "expectedShape": "",
+      "declaredInputs": ["Valid.flix"],
+      "dataInputs": ["evil.flix"],
+      "expectedFinding": "disguised-flix"
+    },
+    {
       "name": "unreadable-fresh-owned-file",
       "path": "locked-data.bin",
       "body": "opaque",

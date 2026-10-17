@@ -34,12 +34,19 @@ native_flix_declared_test(
 # the current workspace tree and a file added after a green run is seen on the
 # next invocation. It also depends on the declared population, so any change to
 # the declared inventory re-runs the audit that exists to find source no BUILD
-# file admits.
+# file admits. The audit admits an unowned path only when the frozen data
+# manifest classifies that exact path AND its live content digest matches the
+# manifest entry, so unknown or modified evidence still fails.
 native_flix_audit_test(
     name = "workspace_audit_test",
     srcs = [
         "AuditLaw.flix",
         "//src:Attune.flix",
+        "//src:Attune/Frozen.flix",
+        "//src:Attune/Frozen/Check.flix",
+        "//src:Attune/Frozen/Inputs.flix",
+        "//src:Attune/Frozen/Scan.flix",
+        "//src:Attune/Frozen/Smuggle.flix",
         "//src:Attune/Policy.flix",
     ],
     data = ["//:policy_sources"],

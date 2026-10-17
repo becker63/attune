@@ -62,8 +62,11 @@ replay identity, source permissions, exact ranges, and real isolation.
 Register each source package's `policy_files` in `//:policy_sources`. Use explicit
 inputs for retained evidence and editor assets; broad globs must not admit user
 research or grammar checkouts. `Policy.flix` checks path metadata without opening
-source contents. The uncached live audit reports unowned user files, including
-preserved `notes/repository-through-time/`. Report failures; never suppress them.
+source contents. The uncached live audit reports unowned user files. The frozen
+data manifest classifies the exact preserved evidence paths
+(`notes/repository-through-time/`); the audit admits such a path only after
+hashing its live bytes against the manifest entry, and any unknown, modified, or
+unreadable path still fails. Report failures; never suppress them.
 
 ## Size discipline
 
