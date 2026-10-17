@@ -321,6 +321,27 @@ pub mod Attune.Frozen {
             if (Map.memberOf(p, scan#files)) None
             else Some(Finding.MissingFrozen(p, "absent from the worktree scan")), gitPaths);
 
+        // Manifest presence (the M1 scrutiny round1 bypass fix): every
+        // non-retired manifested path — debt, data, and generated — must
+        // remain present in the scanned population (tracked, untracked, and
+        // the walk). A committed or staged deletion without the
+        // corresponding manifest change vanishes from every Git population
+        // while its entry remains: refused outright, so retirement-by-
+        // deletion can never silently pass and the manifest keeps no
+        // phantom entries. Retired paths are skipped: the retirement
+        // requires their absence, and a revival is the revival law's
+        // finding. Absence while still Git-tracked is the existing
+        // missing-frozen law above; this law closes the committed and
+        // staged deletion gaps.
+        let manifestedPaths = List.map(e -> e#path, debt#entries) ++
+            List.map(e -> e#path, manifests#data#entries) ++
+            List.map(e -> e#path, manifests#generated#entries);
+        let absent = List.filterMap(p ->
+            if (Map.memberOf(p, retiredMap) or Map.memberOf(p, union))
+                None
+            else
+                Some(Finding.MissingFrozen(p, "absent from the scanned population")), manifestedPaths);
+
         // Classification: every path is authored allowed, manifested, or refused.
         let unclassified = List.filterMap(p ->
             classify(p, entryMap, dataMap, generatedMap, debt#scannerDigests, scan#files), allPaths);
@@ -373,7 +394,7 @@ pub mod Attune.Frozen {
                 None, Map.toList(retiredMap));
 
         pushAll(evidenceFinding, Nil) ++ schema ++ protectedFound ++ escapes ++ missing ++
-            unclassified ++ symlinkEscapes ++ dropped ++ relabeled ++ identity ++ growth ++ revived ++
+            unclassified ++ symlinkEscapes ++ dropped ++ absent ++ relabeled ++ identity ++ growth ++ revived ++
             scannerDrift |>
             composeWalk(scan#findings)
     }

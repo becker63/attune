@@ -119,18 +119,27 @@ reported (printed first, each on one line); `2` the scan itself failed
 failure fails closed: a new forbidden-language path, an altered frozen hash,
 a hash renewed relative to the baseline evidence, a debt count that grows
 past the evidence-derived count, a baseline debt path that disappears without
-a retirement record, a retirement that reappears, an unknown or unreadable
-source, a walked file Git does not admit, a tracked file missing from the
-worktree, or an incomplete accountability record.
+a retirement record, a manifested path (debt, data, or generated) absent from
+the scanned population because it was deleted without the matching manifest
+change, a retirement that reappears, an unknown or unreadable source, a
+walked file Git does not admit, a tracked file missing from the worktree, or
+an incomplete accountability record. Protected-path presence is itself a
+finding (`protected-present`): a protected path inside the checkout fails
+the gate by being present at all — gitignoring it does not help, because
+the walk does not consult `.gitignore` at scan time; secrets belong outside
+the checkout.
 
 The same check runs as a Bazel test (`//test/policy:checkout_source_policy_test`,
 uncached and local, so every `bazel test` re-reads the current tree), and the
 pure laws behind it run as `//test/policy:frozen_debt_law_test` on synthetic
-manifests (26 laws: hash identity, renewal refusal, smuggling, classification,
-monotonicity, retirement, symlink, protected-never-read, unreadable,
-schema — including the scanner-digest pinning laws — walker-finding
-composition, relabel laundering, and the executable-extension provenance
-rule).
+manifests (33 laws: hash identity, renewal refusal, smuggling, classification,
+monotonicity, retirement, manifest presence — every non-retired debt, data,
+and generated entry must remain in the scanned population, refusing committed
+and staged deletion without the matching manifest or retirement change while
+legitimate staged re-anchors and retirements stay accepted — symlink,
+protected-never-read, unreadable, schema — including the scanner-digest
+pinning laws — walker-finding composition, relabel laundering, and the
+executable-extension provenance rule).
 
 The live nested-workspace audit (`//test/policy:workspace_audit_test`, the
 same uncached law behind `Policy.findings`) walks the attune workspace and
@@ -150,8 +159,13 @@ re-export/fixture/vendor classes, the benign systemd/package seam control,
 and the M1 staged-new/modified-tracked/committed-undeclared disguised-Flix
 negatives, the data-as-source runfile-laundering negative (a disguised
 non-Flix program named `evil.flix` passed as `java_test` data must fail),
-the legitimate uncommitted cross-module presubmit acceptance, and
-the unreadable fresh-owned file and directory fail-closed controls, 40 cases)
+the legitimate uncommitted cross-module presubmit acceptance, the
+manifest-presence negatives (a committed removal of a manifested debt path
+without a retirement record, and committed or staged deletions of manifested
+data paths without the manifest change, all on real disposable Git
+repositories, plus the legitimate staged re-anchor and staged retirement
+positives), and
+the unreadable fresh-owned file and directory fail-closed controls, 45 cases)
 runs as `//test/policy:adversarial_corpus_test`: each case is materialized
 into a disposable synthetic Git checkout (permissions restored before
 cleanup) and judged by the live scanner, with the pure content detector
@@ -214,7 +228,11 @@ binding pointed at the proposed tree — the proposed bytes are data to it.
 It then runs `nix run .#lint`, `nix run .#typecheck`, and the scanner's own
 law suite (corpus, pins, declared-source, build-input laws and the live
 nested-workspace audit). The scanner source delta between the recorded
-revision and each push is printed for review. The recorded revision is
+revision and each push is printed for review with native tool reporting
+only — `sha256sum -c` over the pinned scanner digests and `git diff --stat`
+over the scanner sources — with no embedded interpreter in the workflow; the
+trusted scanner's own drift finding remains the verdict. The recorded
+revision is
 named inside the workflow file, which itself ships in the proposed tree:
 nothing in CI is administrative protection, and a proposal that edits the
 workflow, the recorded revision, or the manifests is visible only as a
@@ -256,6 +274,11 @@ and the gate trusts it only to these limits:
   as missing.
 - Protected paths (credentials, `.env*`, key material, preserved bundles)
   are reported present and are never read, hashed, printed, or exported.
+  Presence alone is a finding: a protected path inside the checkout fails
+  the gate (`protected-present`, exit `1`), and gitignoring it does not
+  change that — the walk's prune set mirrors the ignore files for build
+  outputs, not for secret material, so secrets must live outside the
+  checkout.
 - The freeze is a snapshot: new authored Flix/Nix/Starlark/Markdown source is
   admitted by the declared authored rules; everything else must be manifested
   or the gate fails. Debt may only shrink, and only through explicit

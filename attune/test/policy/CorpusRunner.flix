@@ -106,6 +106,18 @@ def debtManifestJson(evidenceSha: String, count: Int32, entries: List[(String, S
         "\"entries\": [" + List.join(", ", List.map(match (p, s) -> debtEntryJson(p, s), entries)) + "], " +
         "\"retirements\": [], \"seams\": [], \"scannerDigests\": {}}"
 
+/// The debt manifest with the entry dropped and an explicit retirement
+/// recorded: the legitimate channel a manifested path's absence must go
+/// through (original identity, parity, caller switch).
+def retiredDebtManifestJson(evidenceSha: String, retired: List[(String, String)]): String =
+    "{\"schema\": \"attune-source-policy/1\", \"kind\": \"debt\", \"frozenAt\": \"synthetic\", " +
+        "\"frozenAtHead\": \"synthetic\", \"evidenceFile\": \"policy/baseline-evidence.json\", " +
+        "\"evidenceDigest\": \"" + evidenceSha + "\", \"baselineDebtCount\": \"1\", " +
+        "\"entries\": [], \"seams\": [], \"scannerDigests\": {}, " +
+        "\"retirements\": [" + List.join(", ", List.map(match (p, s) ->
+            "{\"path\": \"" + p + "\", \"originalSha256\": \"" + s + "\", \"retiredIn\": \"corpus-positive\", " +
+                "\"parity\": \"recorded parity evidence\", \"callerSwitch\": \"recorded caller switch\"}", retired)) + "]}"
+
 def dataManifestJson(entries: List[(String, String)]): String =
     "{\"schema\": \"attune-source-policy/1\", \"kind\": \"data\", \"frozenAt\": \"synthetic\", " +
         "\"frozenAtHead\": \"synthetic\", " +
@@ -276,6 +288,48 @@ def mutate(root: String, gitBin: String, one: Corpus.Case): Result[String, Unit]
             discard Paths.get(root, "legacy/old.py").toFile().delete();
             write(root, "policy/debt-manifest.json", debtManifestJson(evidenceSha, 0, Nil));
             Ok(())
+        }
+        case "stage-removal" => {
+            // Stage the deletion of a manifested file without committing and
+            // without any manifest change: the pre-commit gate state the
+            // manifest-presence law must refuse.
+            discard Paths.get(root, one#path).toFile().delete();
+            git(root, gitBin, List#{"add", "-A"})
+        }
+        case "commit-removal" => {
+            // Commit the deletion of a manifested file with no manifest or
+            // retirement change: the exact bypass the M1 scrutiny confirmed
+            // (the path vanishes from tracked, untracked, and the walk while
+            // the manifest entry remains).
+            discard Paths.get(root, one#path).toFile().delete();
+            forM (
+                _add <- git(root, gitBin, List#{"add", "-A"});
+                _commit <- git(root, gitBin, List#{"-c", "user.email=corpus@attune.invalid", "-c", "user.name=Attune Corpus",
+                    "-c", "commit.gpgsign=false", "commit", "-m", one#name})
+            ) yield ()
+        }
+        case "re-anchor-data" => {
+            // The legitimate staged re-anchor: the data file and its manifest
+            // entry change together and are staged present. Nothing is
+            // string-patched; the whole manifest is recomposed with the new
+            // digest of the new content.
+            let newSha = sha256Text(one#body);
+            write(root, one#path, one#body);
+            write(root, "policy/data-manifest.json", dataManifestJson(List#{
+                ("policy/baseline-evidence.json", evidenceSha),
+                ("reports/summary.json", newSha)}));
+            git(root, gitBin, List#{"add", "-A"})
+        }
+        case "retire-debt" => {
+            // The legitimate staged retirement: the debt file is staged for
+            // deletion while the manifest drops the entry and records the
+            // retirement with the original identity. The baseline debt count
+            // still matches the evidence (retirement, not deletion, shrinks
+            // the entries; the count field is bound to the evidence).
+            let legacySha = sha256Text("print(1)");
+            discard Paths.get(root, "legacy/old.py").toFile().delete();
+            write(root, "policy/debt-manifest.json", retiredDebtManifestJson(evidenceSha, List#{("legacy/old.py", legacySha)}));
+            git(root, gitBin, List#{"add", "-A"})
         }
         case other => Err("unknown corpus mutation: " + one#name + " " + other)
     }

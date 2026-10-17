@@ -118,7 +118,7 @@
     },
     {
       "path": ".github/workflows/source-policy.yml",
-      "sha256": "c2489d63164affd9fe8d012e946aa3bd69326150dc284e9250913f074421ad52",
+      "sha256": "de36ef9d52464b317cbd4b46507cf29e768df829fb3fbf345846203a1e6b7409",
       "classId": "authored-configuration"
     },
     {
@@ -19908,7 +19908,7 @@
     },
     {
       "path": "attune/test/policy/corpus/policy-corpus.json",
-      "sha256": "9a5c34058094aa51a1c1259cf446ad279b892ef44d3ec5d1b7c5ab3190d7afcf",
+      "sha256": "f077c6b87acfd9e1c871368f81d70fa6adb67f66a167ce774349414b09d75490",
       "classId": "adversarial-corpus"
     },
     {

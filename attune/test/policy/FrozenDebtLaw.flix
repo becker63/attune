@@ -301,6 +301,84 @@ def dataEntryWithExecutableExtensionFails(): Unit \ Assert = {
     Assert.assertTrue(has(findings, Finding.SchemaError("data entry carries forbidden python extension: tables/impl.py")))
 }
 
+// ------------------------------------------------- manifest-presence laws
+
+@Test
+def committedDebtRemovalWithoutRetirementFails(): Unit \ Assert = {
+    // The bypass the M1 scrutiny confirmed: a committed removal of a
+    // manifested debt path (absent from tracked, untracked, and the walk)
+    // with no retirement record produced zero findings, so the phantom
+    // entry stayed green forever. The presence law refuses it: removal
+    // goes through the explicit retirement record, never silent deletion.
+    let (evidence, ms) = evidenceWith(1, List#{"legacy/old.py"});
+    let findings = Frozen.verify(ms, evidence, scanOf(Nil));
+    Assert.assertTrue(has(findings, Finding.MissingFrozen("legacy/old.py", "absent from the scanned population")))
+}
+
+@Test
+def committedDataRemovalWithoutManifestChangeFails(): Unit \ Assert = {
+    // A data-manifested path deleted in a commit while its manifest entry
+    // remains: refused exactly like debt. The manifest edit that removes
+    // the entry is the only legitimate channel.
+    let data = List#{{path = "reports/summary.json", sha256 = h1(), classId = "preserved-evidence"}};
+    let ms = manifestsWith(Nil, Nil, data, Nil, "0");
+    let findings = Frozen.verify(ms, evidenceOf(Nil), scanOf(Nil));
+    Assert.assertTrue(has(findings, Finding.MissingFrozen("reports/summary.json", "absent from the scanned population")))
+}
+
+@Test
+def committedGeneratedRemovalWithoutManifestChangeFails(): Unit \ Assert = {
+    let generated = List#{{path = "gen.lock", sha256 = h1(), producer = "gen", tool = "tool", mapping = "build", classId = "preserved-evidence"}};
+    let ms = manifestsWith(Nil, Nil, Nil, generated, "0");
+    let findings = Frozen.verify(ms, evidenceOf(Nil), scanOf(Nil));
+    Assert.assertTrue(has(findings, Finding.MissingFrozen("gen.lock", "absent from the scanned population")))
+}
+
+@Test
+def stagedDataDeletionFails(): Unit \ Assert = {
+    // A staged deletion removes the path from the index and the worktree;
+    // only the manifest entry remains. The pre-commit gate must refuse it
+    // before the commit, not only discover it afterwards.
+    let data = List#{{path = "reports/summary.json", sha256 = h1(), classId = "preserved-evidence"}};
+    let scan = {staged = List#{"reports/summary.json"} | scanOf(Nil)};
+    let ms = manifestsWith(Nil, Nil, data, Nil, "0");
+    let findings = Frozen.verify(ms, evidenceOf(Nil), scan);
+    Assert.assertTrue(has(findings, Finding.MissingFrozen("reports/summary.json", "absent from the scanned population")))
+}
+
+@Test
+def stagedGeneratedDeletionFails(): Unit \ Assert = {
+    let generated = List#{{path = "gen.lock", sha256 = h1(), producer = "gen", tool = "tool", mapping = "build", classId = "preserved-evidence"}};
+    let scan = {staged = List#{"gen.lock"} | scanOf(Nil)};
+    let ms = manifestsWith(Nil, Nil, Nil, generated, "0");
+    let findings = Frozen.verify(ms, evidenceOf(Nil), scan);
+    Assert.assertTrue(has(findings, Finding.MissingFrozen("gen.lock", "absent from the scanned population")))
+}
+
+@Test
+def stagedDataReAnchorIsAccepted(): Unit \ Assert = {
+    // The legitimate re-anchor: the data file and its manifest entry change
+    // together and are staged present, so the live digest matches the
+    // re-anchored entry and the deletion law never fires.
+    let data = List#{{path = "reports/summary.json", sha256 = h2(), classId = "preserved-evidence"}};
+    let scan = {staged = List#{"reports/summary.json", "policy/data-manifest.json"} |
+        scanOf(List#{("reports/summary.json", fileEntry(h2())), ("policy/data-manifest.json", fileEntry(h1()))})};
+    let ms = manifestsWith(Nil, Nil, data, Nil, "0");
+    Assert.assertEq(expected = Nil, Frozen.verify(ms, evidenceOf(Nil), scan))
+}
+
+@Test
+def stagedDebtRetirementIsAccepted(): Unit \ Assert = {
+    // The legitimate retirement: the debt file is staged for deletion while
+    // the manifest drops the entry and records the retirement with the
+    // original identity. The absence is now required, never a bypass.
+    let retirement = {path = "legacy/old.py", originalSha256 = h1(), retiredIn = "staged retirement", parity = "recorded", callerSwitch = "recorded"};
+    let ms = manifestsWith(Nil, List#{retirement}, Nil, Nil, "1");
+    let scan = {staged = List#{"legacy/old.py", "policy/debt-manifest.json"} |
+        scanOf(List#{("policy/debt-manifest.json", fileEntry(h1()))})};
+    Assert.assertEq(expected = Nil, Frozen.verify(ms, evidenceOf(List#{"legacy/old.py"}), scan))
+}
+
 @Test
 def scannerDigestSchemaLaws(): Unit \ Assert = {
     // A trusted detector path present in the scan without a pinned digest is

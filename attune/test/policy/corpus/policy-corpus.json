@@ -205,6 +205,49 @@
       "expectedShape": ""
     },
     {
+      "name": "committed-debt-removal",
+      "path": "legacy/old.py",
+      "body": "",
+      "expected": "reject",
+      "mutation": "commit-removal",
+      "expectedShape": "",
+      "expectedFinding": "missing-frozen"
+    },
+    {
+      "name": "staged-data-deletion",
+      "path": "reports/summary.json",
+      "body": "",
+      "expected": "reject",
+      "mutation": "stage-removal",
+      "expectedShape": "",
+      "expectedFinding": "missing-frozen"
+    },
+    {
+      "name": "committed-data-removal",
+      "path": "reports/summary.json",
+      "body": "",
+      "expected": "reject",
+      "mutation": "commit-removal",
+      "expectedShape": "",
+      "expectedFinding": "missing-frozen"
+    },
+    {
+      "name": "staged-data-re-anchor",
+      "path": "reports/summary.json",
+      "body": "{\"note\": \"re-anchored\"}",
+      "expected": "accept",
+      "mutation": "re-anchor-data",
+      "expectedShape": ""
+    },
+    {
+      "name": "staged-debt-retirement",
+      "path": "",
+      "body": "",
+      "expected": "accept",
+      "mutation": "retire-debt",
+      "expectedShape": ""
+    },
+    {
       "name": "dynamic-download-eval",
       "path": "new.nix",
       "body": "import (builtins.fetchurl { url = \"https://attune.example/x.sh\"; })",

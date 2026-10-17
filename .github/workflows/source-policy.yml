@@ -60,20 +60,18 @@ jobs:
       # digest the trusted revision pins against the proposed bytes, and the
       # scanner-source delta between the recorded revision and this push. A
       # delta means the trusted scanner judges the recorded revision's logic;
-      # advancing the recorded revision is the operator checkpoint.
+      # advancing the recorded revision is the operator checkpoint. Native
+      # tool reporting only (jq field extraction, sha256sum digest check, git
+      # diff); no embedded interpreter, and the trusted scanner's own drift
+      # finding stays the verdict — this step only makes the evidence
+      # visible.
       - name: Record the scanner source delta against the trusted revision
         run: |
           cd "$GITHUB_WORKSPACE"
           TRUSTED="$RUNNER_TEMP/trusted"
-          echo "scanner digest pinned by the trusted revision:"
-          python3 - "$TRUSTED" <<'PY'
-          import hashlib, json, sys
-          trusted = sys.argv[1]
-          m = json.load(open(trusted + "/policy/debt-manifest.json"))
-          for p, d in sorted(m.get("scannerDigests", {}).items()):
-              live = hashlib.sha256(open(p, "rb").read()).hexdigest()
-              print(f"  {p}: pinned {d[:16]}... live {live[:16]}... {'match' if live == d else 'DIFFERS'}")
-          PY
+          echo "scanner digest pinned by the trusted revision (sha256sum -c over the live bytes):"
+          jq -r '.scannerDigests | to_entries[] | "\(.value)  \(.key)"' \
+            "$TRUSTED/policy/debt-manifest.json" | sha256sum -c - || true
           echo "scanner source delta (recorded revision -> this push):"
           git diff --stat "$TRUSTED_SCANNER_REVISION" HEAD -- attune/src attune/policy attune/platform/build || true
 

@@ -21,13 +21,19 @@ and `example/BUILD.bazel`.
 ## Development
 
 ```sh
-nix run          # saved-answer example, no provider
-nix run .#test   # current library, native integration, and source checks
+nix run            # saved-answer example, no provider
+nix run .#lint     # cheap gate before any commit: source-policy gate, then
+                   # buildifier, nixfmt --check, and the Bazel version pins
+nix run .#typecheck # changed and new authored Flix compiled on their
+                    # declared targets with the pinned compiler
+nix run .#test     # current library, native integration, and source checks
 ```
 
-Both commands work from the checkout root or this workspace, using the pinned
-Nix environment and `$HOME/.cache/attune-v2-bootstrap-bazel`. One Bazel owner at a
+All commands work from the checkout root or this workspace, using the pinned
+Nix environment and a checkout-specific Bazel output base. One Bazel owner at a
 time. Initial dependency downloads are separate from isolated test execution.
+Run `nix run .#lint` (and `.#typecheck` when Flix changed) before every
+commit; committing is never the way to reach green.
 
 BuildBuddy is opt-in with `--config=remote`. Keep its pinned arm64 platform,
 `dockerNetwork=off`, and disabled local fallback. Host isolation tests use the

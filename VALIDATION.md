@@ -108,3 +108,92 @@ certifies nothing for a new revision; historical observations are marked histori
   the only intended difference).
 - Sub-statuses inside each original ID (e.g., which legs of NIX-01 are operator
   checkpoints) are recorded when each milestone sets the ID's final status.
+
+## M1 record (2026-10-17): sole unsigned-commit exception and its signed successor
+
+**Honest verification result for the published commit
+`b93b48665fc2ea2fdba02fbad6ef7f9c3d4ba67b` ("Close the source-policy smuggling
+gaps with corpus and content checks"): this commit is UNSIGNED.** Observed
+2026-10-17 on `migration/flix-consolidation-20261016`:
+
+- `git cat-file commit b93b4866…` shows **zero `gpgsig` header lines**
+  (tree `d7a093c3…`, parent `d7a8a241…`);
+- `git verify-commit b93b4866…` exits **1** (nothing to verify);
+- `git log --show-signature -1 b93b4866…` shows no signature block (`%G?` = `N`),
+  while the other five M1 implementation commits (`d7a8a241`, `f3d145e4`,
+  `40a59c7d`, `03dc21ae`, `30aa201a`) carry SSH signatures that verify
+  `Good "SHA256:phv7My3cq7rnlVeAS81TTjL2JcGDTzTwX9uFFYjSKjA"` under the scoped
+  public allowed-signers file.
+
+The commit is already published on the owned branch; history rewriting and
+force pushes are forbidden, so it can never be retroactively signed. The user
+explicitly approved the sole exception on 2026-10-17: **"Accept documented
+exception with signed successor attestation."** The exception covers that one
+named commit only — it grants no other unsigned commit, no source-language
+exception, no history rewrite, and no force push.
+
+**Independent scrutiny reference:** the M1 scrutiny round1 record
+(`validation/M1-policy/scrutiny/synthesis.json` in the mission archive) re-verified
+the unsigned status directly (`git cat-file commit b93b4866` → 0 gpgsig lines;
+the five other M1 commits verify Good against the approved fingerprint) and
+rejected the reviewer generalization that "every" branch commit was unsigned,
+confirming exactly one unsigned commit.
+
+**Signed successor attestation:** the next signed commit on this branch (this
+feature's own commit, which carries this record in its message) attests that it
+was made after reviewing the original commit by its full SHA
+`b93b48665fc2ea2fdba02fbad6ef7f9c3d4ba67b`, that the original is and remains
+unsigned, and that its publication is covered solely by the user-approved
+exception above. No statement anywhere claims the original commit's signature
+passed or that it was signed; delivery (M7) must verify this exception evidence
+rather than report the original signature as verified.
+
+## M1 record (2026-10-17): manifest-presence repair (scrutiny round1 blocking fix)
+
+The M1 scrutiny round1 confirmed one blocking bypass in `Frozen.verify`: a
+manifested path (debt, data, or generated) deleted in a commit — with no
+manifest entry removal and no retirement record — vanished from every Git
+population while its manifest entry remained, producing zero findings forever
+(the "phantom entry"). Reproduced live on disposable Git repositories before
+the fix and refused after:
+
+- Red first: 5 new pure laws in `//test/policy:frozen_debt_law_test` and 3 new
+  disposable-Git corpus cases (`committed-debt-removal`, `staged-data-deletion`,
+  `committed-data-removal` in `//test/policy:adversarial_corpus_test`, 40 → 45
+  cases) failed against the unfixed scanner — the committed and staged deletion
+  bypass reproduced end-to-end, while the 2 new legitimate positives (staged
+  data re-anchor, staged debt retirement with recorded identity) passed both
+  before and after.
+- Fix: one presence law in `Attune.Frozen.verify` — every non-retired
+  manifested path (272 debt + 4,123 data + 14 generated entries at this
+  revision) must remain present in the scanned population (tracked ∪ untracked
+  ∪ walk), else a `missing-frozen` finding. Removal goes through the explicit,
+  reviewable manifest change: a recorded retirement for debt, or the entry's
+  removal from the data/generated manifest. Retired paths must stay absent
+  (revival remains the revival law's finding). No new framework, no broad
+  exemption; all historical failures and the current manifests are preserved
+  unchanged (entry counts 272/4,123/14, baseline debt count 272).
+- The informational Python heredoc in `.github/workflows/source-policy.yml`
+  (embedded interpreter in authored configuration, added in 03dc21ae) is
+  removed: the trusted-revision digest pins are now checked and printed with
+  `sha256sum -c` (`jq` field extraction only), the source delta with
+  `git diff --stat` — native tool reporting, no interpreter or controller. The
+  workflow file and the corpus JSON are hash-frozen authored
+  configuration/corpus data; both were re-anchored in the data manifest in the
+  same reviewed change (the legitimate re-anchor flow the presence law keeps
+  accepting).
+- `SOURCE_POLICY.md` now states protected-path presence semantics (presence
+  alone fails the gate; gitignoring does not help) and the presence-law exit
+  reasons; `attune/AGENTS.md` Development lists the cheap public gates
+  (`nix run .#lint`, `nix run .#typecheck`, `nix run .#test`) with the
+  before-every-commit rule.
+- `TRUSTED_SCANNER_REVISION` in the workflow stays at the reviewed
+  `40a59c7d05cb05fd233b0f8a74486f29a6d019eb`; this push's scanner-source delta
+  is printed by CI for review, and advancing the pin remains the operator
+  checkpoint. No protection/admin settings were touched.
+
+Narrow results (this revision, aarch64 Asahi, pinned environment): `//test/policy:frozen_debt_law_test`
+33/33 laws; `//test/policy:adversarial_corpus_test` 45/45 cases (red before the
+fix: 5 law + 3 corpus failures, then green). Full public gates recorded below
+after the final run; the remote CI run for the authorized push of this commit
+is recorded from the actual observed run in the feature handoff, never inferred.
